@@ -1,8 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\WebsiteController;
 
 Route::get('/', function () {
     return 'Hello world';
+});
+
+Route::get('/colors', function () {
+    return [
+        'red',
+        'green',
+        'blue',
+        'yellow',
+        'purple',
+        'orange',
+    ];
 });
