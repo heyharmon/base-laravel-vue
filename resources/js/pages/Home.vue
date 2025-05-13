@@ -2,10 +2,13 @@
 import { ref, onMounted } from 'vue';
 import api from '@/services/api';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import Button from '@/components/ui/Button.vue';
+import Input from '@/components/ui/Input.vue';
 
 const colors = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const search = ref('');
 
 onMounted(async () => {
   try {
@@ -37,6 +40,15 @@ onMounted(async () => {
             <span>{{ color }}</span>
           </li>
         </ul>
+
+        <div class="mt-8">
+            <Button>Button</Button>
+        </div>
+
+        <div class="mt-8">
+            <p>Searching: {{ search }}</p>
+            <Input v-model="search" placeholder="Search" />
+        </div>
       </div>
     </div>
   </DefaultLayout>
