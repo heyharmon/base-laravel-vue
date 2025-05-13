@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Models\Conversation;
+use App\Services\ChatService;
 use Illuminate\Http\Request;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\Provider;
-use Prism\Prism\ValueObjects\Messages\UserMessage;
-use Prism\Prism\ValueObjects\Messages\AssistantMessage;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
 
 class ChatController extends Controller
 {
+    public function __construct(
+        protected ChatService $chatService
+    ) {}
+    
     public function index(Conversation $conversation)
     {
         return response()->json($conversation->chats()->get());
@@ -24,55 +24,9 @@ class ChatController extends Controller
             'content' => 'required|string',
         ]);
         
-        // Store the user message
-        $userChat = $conversation->chats()->create([
-            'role' => 'user',
-            'content' => $validated['content'],
-        ]);
+        $response = $this->chatService->generateResponse($conversation, $validated['content']);
         
-        // Fetch all previous chats in the conversation
-        $previousChats = $conversation->chats()->orderBy('created_at', 'asc')->get();
-        
-        // Build messages array for conversation history
-        $messages = [];
-        
-        // Add system message
-        $messages[] = new SystemMessage((string)view('prompts.system'));
-        
-        // Add all previous messages as context
-        foreach ($previousChats as $chat) {
-            if ($chat->role === 'user') {
-                $messages[] = new UserMessage($chat->content);
-            } elseif ($chat->role === 'assistant') {
-                $messages[] = new AssistantMessage($chat->content);
-            }
-        }
-        
-        // Add the current user message
-        $messages[] = new UserMessage($validated['content']);
-        
-        // Generate AI response using Prism with full conversation context
-        $response = Prism::text()
-            ->using(Provider::OpenAI, 'gpt-4o')
-            ->withMessages($messages)
-            ->asText();
-        
-        // Store the AI response
-        $aiChat = $conversation->chats()->create([
-            'role' => 'assistant',
-            'content' => $response->text,
-            'metadata' => [
-                'model' => 'gpt-4o',
-                'provider' => 'openai',
-            ],
-        ]);
-        
-        return response()->json([
-            'id' => $aiChat->id,
-            'role' => $aiChat->role,
-            'content' => $aiChat->content,
-            'created_at' => $aiChat->created_at,
-        ]);
+        return response()->json($response);
     }
     
     public function show(Conversation $conversation, Chat $chat)
