@@ -13,18 +13,18 @@ const chats = ref([]);
 async function handleSendMessage(content) {
     isLoading.value = true
 
-    conversation.value.chats.push({
+    chats.value.push({
         role: 'user',
         content: content,
     });
     
-    let response = await api.post(`/conversation/1/chats`, {
+    let response = await api.post(`/conversations/1/chats`, {
         content: content,
     });
     
-    conversation.value.chats.push({
+    chats.value.push({
         role: 'assistant',
-        content: response.data.content,
+        content: response.content,
     })
 
     isLoading.value = false
@@ -36,13 +36,13 @@ function handleAction(action) {
 }
 
 onMounted(async () => {
-    conversation.value = await api.get(`/conversation/1`);
-    chats.value = await api.get(`/conversation/1/chats`);
+    conversation.value = await api.get(`/conversations/1`);
+    chats.value = await api.get(`/conversations/1/chats`);
 });
 </script>
 
 <template>
-  <DefaultLayout v-if="conversation">
+  <DefaultLayout v-if="conversation && chats">
     <h2 class="text-2xl font-semibold mb-4">Conversation</h2>
 
     <ChatMessage 

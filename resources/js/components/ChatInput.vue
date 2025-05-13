@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import Button from '@/components/ui/Button.vue';
+import Input from '@/components/ui/Input.vue';
 
 const props = defineProps({
     isLoading: {
@@ -25,15 +25,15 @@ function handleAction(action) {
 </script>
 
 <template>
-    <div class="relative px-3 pb-3 border border-neutral-300 dark:border-neutral-700 rounded-3xl bg-white dark:bg-neutral-800 shadow-sm">
+    <div class="relative px-3 pb-3 border border-neutral-300 rounded-3xl bg-white shadow-sm">
         <form @submit.prevent="sendMessage">
             <div class="flex items-center">
                 <!-- Input field -->
-                <Input
+                <input
                     v-model="message"
                     placeholder="Lorem ipsum"
                     autofocus
-                    class="flex-1 py-7 px-2 bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:border-none"
+                    class="flex-1 py-7 px-2 flex h-9 w-full min-w-0 rounded-md outline-none bg-transparent text-base placeholder:text-muted-foreground transition-[color,box-shadow] md:text-base"
                     :disabled="isLoading"
                 />
             </div>
@@ -43,7 +43,7 @@ function handleAction(action) {
                     <!-- Prompt w/ image button -->
                     <button 
                         type="button" 
-                        class="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        class="p-2 text-neutral-500 hover:text-neutral-700"
                         @click="handleAction('image')"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image">
@@ -56,7 +56,7 @@ function handleAction(action) {
                     <!-- Search button -->
                     <button 
                         type="button" 
-                        class="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        class="p-2 text-neutral-500 hover:text-neutral-700"
                         @click="handleAction('search')"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search">
@@ -68,7 +68,7 @@ function handleAction(action) {
                     <!-- Deep research button -->
                     <button 
                         type="button" 
-                        class="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        class="p-2 text-neutral-500 hover:text-neutral-700"
                         @click="handleAction('research')"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open">
@@ -80,7 +80,7 @@ function handleAction(action) {
                     <!-- Internal knowledge button -->
                     <button 
                         type="button" 
-                        class="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        class="p-2 text-neutral-500 hover:text-neutral-700"
                         @click="handleAction('knowledge')"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-database">
@@ -91,7 +91,7 @@ function handleAction(action) {
                     </button>
                     
                     <!-- More options button -->
-                    <button type="button" class="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+                    <button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-more-horizontal">
                             <circle cx="12" cy="12" r="1"/>
                             <circle cx="19" cy="12" r="1"/>
@@ -102,7 +102,7 @@ function handleAction(action) {
                 
                 <div>
                     <!-- Microphone button -->
-                    <button type="button" class="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+                    <button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -113,7 +113,7 @@ function handleAction(action) {
                     <!-- Send button -->
                     <button 
                         type="submit" 
-                        class="p-2 bg-black text-white dark:bg-white dark:text-black rounded-full ml-2 mr-1"
+                        class="p-2 bg-black text-white rounded-full ml-2 mr-1"
                         :disabled="!message.trim() || isLoading"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up">
