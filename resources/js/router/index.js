@@ -13,7 +13,7 @@ const routes = [
   {
     path: '/cms',
     name: 'cms',
-    component: Home,
+    component: CMS,
   },
 ];
 
