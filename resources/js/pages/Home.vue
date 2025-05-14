@@ -20,17 +20,17 @@ watch(() => conversationStore.activeConversationId, async (newId) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex h-full">
+    <div class="flex h-[calc(100vh-4rem)]">
       <!-- Left column - Conversations -->
-      <div class="w-1/4 pr-4 border-r border-neutral-200 h-full">
+      <div class="w-1/4 pr-4 py-4 border-r border-neutral-200 h-full">
         <ConversationsList />
       </div>
       
       <!-- Right column - Chat messages -->
-      <div class="w-3/4 pl-4 flex flex-col h-full">
+      <div class="w-3/4 pl-4 py-4 flex flex-col">
         <h2 class="text-2xl font-semibold mb-4">{{ conversationStore.activeConversation?.title || 'Untitled conversation' }}</h2>
         
-        <div class="flex-grow overflow-y-auto mb-4 space-y-4">
+        <div class="flex-grow mb-4 space-y-4 overflow-y-auto no-scrollbar">
           <ChatMessage 
             v-for="(chat, index) in chatStore.chats" 
             :key="index" 

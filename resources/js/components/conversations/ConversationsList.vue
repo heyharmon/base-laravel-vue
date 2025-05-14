@@ -18,7 +18,7 @@ onMounted(async () => {
       </button>
     </div>
     
-    <div class="space-y-2 overflow-y-auto max-h-[calc(100vh-12rem)]">
+    <div class="space-y-2 overflow-y-auto max-h-[calc(100vh-8rem)] no-scrollbar">
       <div 
         v-for="conversation in conversationStore.conversations" :key="conversation.id" 
         @click="conversationStore.setActiveConversation(conversation.id)" 
