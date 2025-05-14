@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import api from '@/services/api';
 import { useConversationStore } from '@/stores/conversationStore';
+import { useChatStore } from '@/stores/chatStore';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import ChatMessage from '@/components/ChatMessage.vue';
 import ChatInput from '@/components/ChatInput.vue';
@@ -9,42 +9,17 @@ import ChatLoadingIndicator from '@/components/ChatLoadingIndicator.vue';
 import ConversationsList from '@/components/conversations/ConversationsList.vue';
 
 const conversationStore = useConversationStore();
-const isLoading = ref(false);
-const chats = ref([]);
-
-async function handleSendMessage(content) {
-    if (!conversationStore.activeConversationId) return;
-    
-    isLoading.value = true;
-
-    chats.value.push({
-        role: 'user',
-        content: content,
-    });
-    
-    let response = await api.post(`/conversations/${conversationStore.activeConversationId}/chats`, {
-        content: content,
-    });
-    
-    chats.value.push({
-        role: 'assistant',
-        content: response.content,
-    });
-
-    isLoading.value = false;
-}
+const chatStore = useChatStore();
 
 async function loadChats() {
     if (conversationStore.activeConversationId) {
-        chats.value = await api.get(`/conversations/${conversationStore.activeConversationId}/chats`);
+        await chatStore.fetchChats(conversationStore.activeConversationId);
     }
 }
 
 watch(() => conversationStore.activeConversationId, async (newId) => {
     if (newId) {
         await loadChats();
-    } else {
-        chats.value = [];
     }
 });
 
@@ -68,16 +43,16 @@ onMounted(async () => {
         
         <div class="flex-grow overflow-y-auto mb-4 space-y-4">
           <ChatMessage 
-            v-for="(chat, index) in chats" 
+            v-for="(chat, index) in chatStore.chats" 
             :key="index" 
             :message="chat" 
           />
           
-          <ChatLoadingIndicator v-if="isLoading" />
+          <ChatLoadingIndicator v-if="chatStore.isLoading" />
         </div>
         
         <div class="mt-auto">
-          <ChatInput :is-loading="isLoading" @send="handleSendMessage" />
+          <ChatInput :is-loading="chatStore.isLoading" @send="chatStore.sendMessage($event)" />
         </div>
       </div>
     </div>
