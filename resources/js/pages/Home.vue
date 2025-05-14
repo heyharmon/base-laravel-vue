@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useConversationStore } from '@/stores/conversationStore';
 import { useChatStore } from '@/stores/chatStore';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -11,22 +11,11 @@ import ConversationsList from '@/components/conversations/ConversationsList.vue'
 const conversationStore = useConversationStore();
 const chatStore = useChatStore();
 
-async function loadChats() {
-    if (conversationStore.activeConversationId) {
-        await chatStore.fetchChats(conversationStore.activeConversationId);
-    }
-}
-
 watch(() => conversationStore.activeConversationId, async (newId) => {
     if (newId) {
-        await loadChats();
+        await chatStore.fetchChats(conversationStore.activeConversationId);
     }
 });
-
-onMounted(async () => {
-    await conversationStore.fetchConversations();
-    await loadChats();
-})
 </script>
 
 <template>

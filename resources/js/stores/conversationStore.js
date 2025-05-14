@@ -10,6 +10,7 @@ export const useConversationStore = defineStore('conversations', () => {
   
   // Actions
   async function fetchConversations() {
+    console.log('fetching conversations...')
     conversations.value = await api.get('/conversations');
       
     if (conversations.value.length > 0 && !activeConversationId.value) {

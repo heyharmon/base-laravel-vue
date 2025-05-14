@@ -13,6 +13,7 @@ export const useChatStore = defineStore('chats', () => {
   
   // Actions
   async function fetchChats(conversationId) {
+    console.log('fetching chats...')
     chats.value = await api.get(`/conversations/${conversationId}/chats`);
   }
   
@@ -39,6 +40,7 @@ export const useChatStore = defineStore('chats', () => {
   return {
     // State
     chats: computed(() => chats.value),
+    isLoading: computed(() => isLoading.value),
     
     // Actions
     fetchChats,
