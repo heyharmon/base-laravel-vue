@@ -47,8 +47,8 @@ export const useConversationStore = defineStore('conversation', () => {
 
   return {
     // State
-    conversations,
-    activeConversation,
+    conversations: computed(() => conversations.value),
+    activeConversation: computed(() => conversations.value),
     activeConversationId,
     
     // Actions

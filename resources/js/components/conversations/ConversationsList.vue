@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed} from 'vue';
 import { useConversationStore } from '@/stores/conversationStore';
 
 const conversationStore = useConversationStore();
@@ -22,7 +22,7 @@ onMounted(async () => {
       <div 
         v-for="conversation in conversationStore.conversations" :key="conversation.id" 
         @click="conversationStore.setActiveConversation(conversation.id)" 
-        :class="conversationStore.activeConversationId === conversation.id ? 'bg-neutral-200' : 'hover:bg-neutral-100'"
+        :class="conversation.id === conversationStore.activeConversation.id ? 'bg-neutral-200' : 'hover:bg-neutral-100'"
         class="p-3 rounded-md cursor-pointer transition-colors" 
       >
         <div class="font-medium truncate">{{ conversation.title || 'Untitled' }}</div>
