@@ -13,7 +13,9 @@ class Response extends Model
     protected $fillable = [
         'run_id',
         'provider',
+        'model',
         'content',
+        'metadata',
         'tokens',
         'latency',
         'error',

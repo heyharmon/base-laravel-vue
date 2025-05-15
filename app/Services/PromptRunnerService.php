@@ -20,7 +20,7 @@ class PromptRunnerService
         'deepseek' => ['deepseek-chat', Provider::DeepSeek],
     ];
 
-    public function runPrompt(Prompt $prompt, array $selectedProviders): Run
+    public function runPrompt(Prompt $prompt, array $selectedProviders = []): Run
     {
         // Create a new run record
         $run = Run::create([
