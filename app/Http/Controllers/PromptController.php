@@ -27,7 +27,7 @@ class PromptController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'nullable|string',
             'content' => 'required|string',
             'description' => 'nullable|string',
         ]);
@@ -40,7 +40,7 @@ class PromptController extends Controller
     public function update(Request $request, Prompt $prompt): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string',
+            'name' => 'nullable|string',
             'content' => 'required|string',
             'description' => 'nullable|string',
         ]);

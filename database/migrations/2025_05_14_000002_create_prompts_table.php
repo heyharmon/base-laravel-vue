@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('prompts', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->nullable();
             $table->text('content');
             $table->text('description')->nullable();
             $table->timestamps();
