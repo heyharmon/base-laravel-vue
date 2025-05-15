@@ -1,61 +1,52 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LLM Mention Tracker
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This project implements a backend system for tracking mentions in Large Language Model (LLM) responses to specific prompts across multiple providers. It functions as a Google Alerts-like analytics system tailored for LLMs, enabling users to monitor keyword occurrences and analyze response data.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Keyword Tracking**: Monitor specific keywords in LLM responses.
+- **Prompt Management**: Store and execute prompts against multiple LLM providers.
+- **Response Analysis**: Record and analyze responses from various LLMs.
+- **Scheduled Execution**: Run prompts daily via a scheduled command.
+- **Analytics**: Retrieve statistics and time-series data for keyword occurrences.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Implementation Details
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Models
+- **Keyword**: Stores keywords to track in LLM responses.
+- **Prompt**: Manages prompts to be executed against LLMs.
+- **Run**: Logs each execution of a prompt.
+- **Response**: Stores responses from different LLM providers.
 
-## Learning Laravel
+### Pivot Relationships
+- **keyword_prompt**: Tracks keyword occurrences with attributes:
+  - `count`: Number of times the keyword was found.
+  - `last_found_at`: Timestamp of the most recent occurrence.
+- **keyword_run**: Records which keywords were detected in each run.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Controllers (API Endpoints)
+- **CRUD Operations**: Full Create, Read, Update, Delete functionality for all models.
+- **PromptRunController**: Manages execution of prompts against LLMs.
+- **AnalyticsController**: Provides statistics and time-series data for keyword tracking.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Services
+- **PromptRunnerService**: Orchestrates running prompts across multiple LLM providers, including:
+  - OpenAI
+  - Anthropic
+  - Gemini
+  - XAI
+  - DeepSeek
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Commands
+- **RunDailyPrompts**: A scheduled command to execute prompts daily.
 
-## Laravel Sponsors
+## Usage
+1. Configure the system with your preferred LLM provider APIs.
+2. Define keywords and prompts via the API or interface.
+3. Use the `PromptRunController` to trigger prompt executions manually or rely on the `RunDailyPrompts` command for automated runs.
+4. Retrieve analytics through the `AnalyticsController` to monitor keyword trends and response data.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Future Enhancements
+- Add support for additional LLM providers.
+- Implement real-time alerts for keyword detections.
+- Enhance analytics with more granular filtering and visualization options.

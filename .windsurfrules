@@ -2,7 +2,7 @@
 ## Critical: With each of my requests, think carefully and only action the specific task I have given you with the most concise and elegant solution that changes as little code as possible.
 
 ### General Context
-* This is a Laravel 12 api project.
+* This is a Laravel 12 api project that uses PrismPHP to integrate with LLMs.
 
 ### General Rules
 * Always challenge me on my instructions if I am suggesting a pattern that does not map to the Laravel, Inertia, Vue way.
