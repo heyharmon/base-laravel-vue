@@ -18,14 +18,14 @@ class PromptRunController extends Controller
 
     public function store(Request $request, Prompt $prompt): JsonResponse
     {
-        $validated = $request->validate([
-            'providers' => 'nullable|array',
-            'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
-        ]);
+        // $validated = $request->validate([
+        //     'providers' => 'nullable|array',
+        //     'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
+        // ]);
 
-        $providers = $validated['providers'] ?? null;
+        // $providers = $validated['providers'] ?? null;
         
-        $run = $this->promptRunnerService->runPrompt($prompt, $providers);
+        $run = $this->promptRunnerService->runPrompt($prompt, ['openai']);
         
         return response()->json($run, 201);
     }
