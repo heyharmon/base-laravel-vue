@@ -15,5 +15,9 @@ class KeywordSeeder extends Seeder
         Keyword::create([
             'name' => 'laravel'
         ]);
+
+        Keyword::create([
+            'name' => 'taylor otwell'
+        ]);
     }
 }

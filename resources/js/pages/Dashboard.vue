@@ -66,7 +66,10 @@ const runPrompt = async (id) => {
             class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 cursor-pointer"
           >
             <div class="flex justify-between items-center">
-              <span class="font-medium text-neutral-700">{{ keyword.name }}</span>
+              <div>
+                <span class="text-lg font-medium text-neutral-700">{{ keyword.name }}</span>
+                <div class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
+              </div>
               <button 
                 @click="keywordStore.deleteKeyword(keyword.id)" 
                 class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
@@ -110,6 +113,7 @@ const runPrompt = async (id) => {
             <div>
                 <!-- <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3> -->
                 <p class="text-neutral-600 text-lg">{{ prompt.content }}</p>
+                <div class="text-sm text-neutral-500 mt-1">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</div>
             </div>
             <div class="flex justify-end space-x-2">
               <button 
