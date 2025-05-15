@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
+import Modal from '@/components/ui/Modal.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const keywordStore = useKeywordStore();
@@ -9,6 +10,8 @@ const promptStore = usePromptStore();
 
 const newKeyword = ref('');
 const newPrompt = ref({ title: '', content: '' });
+const isKeywordModalOpen = ref(false);
+const isPromptModalOpen = ref(false);
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
@@ -19,6 +22,7 @@ const addKeyword = async () => {
   if (newKeyword.value.trim()) {
     await keywordStore.createKeyword({ name: newKeyword.value.trim() });
     newKeyword.value = '';
+    isKeywordModalOpen.value = false;
   }
 };
 
@@ -26,6 +30,7 @@ const addPrompt = async () => {
   if (newPrompt.value.title.trim() && newPrompt.value.content.trim()) {
     await promptStore.createPrompt(newPrompt.value);
     newPrompt.value = { title: '', content: '' };
+    isPromptModalOpen.value = false;
   }
 };
 
@@ -38,25 +43,18 @@ const runPrompt = async (id) => {
   <DefaultLayout>
     <div class="flex h-[calc(100vh-4rem)]">
       <!-- Left column - Keywords -->
-      <div class="w-1/2 pr-4 py-4 border-r border-neutral-200 h-full overflow-y-auto">
+      <div class="w-1/3 pr-4 py-4 border-r border-neutral-200 h-full overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-semibold">Keywords</h2>
-          <div class="flex space-x-2">
-            <input 
-              v-model="newKeyword" 
-              type="text" 
-              placeholder="New keyword" 
-              class="px-3 py-2 border border-neutral-300 rounded-md"
-              @keyup.enter="addKeyword"
-            />
-            <button 
-              @click="addKeyword" 
-              class="px-4 py-2 bg-neutral-800 text-white rounded-md"
-              :disabled="keywordStore.isLoading"
-            >
-              Add
-            </button>
-          </div>
+          <button 
+            @click="isKeywordModalOpen = true" 
+            class="w-8 h-8 flex items-center justify-center bg-neutral-800 text-white rounded-full hover:bg-neutral-700"
+            aria-label="Add Keyword"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+          </button>
         </div>
         
         <div v-if="keywordStore.isLoading" class="flex justify-center py-8">
@@ -83,27 +81,18 @@ const runPrompt = async (id) => {
       </div>
       
       <!-- Right column - Prompts -->
-      <div class="w-1/2 pl-4 py-4 h-full overflow-y-auto">
+      <div class="w-2/3 pl-4 py-4 h-full overflow-y-auto">
         <div class="mb-4">
-          <h2 class="text-2xl font-semibold mb-2">Prompts</h2>
-          <div class="space-y-2">
-            <input 
-              v-model="newPrompt.title" 
-              type="text" 
-              placeholder="Prompt title" 
-              class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-            />
-            <textarea 
-              v-model="newPrompt.content" 
-              placeholder="Prompt content" 
-              class="w-full px-3 py-2 border border-neutral-300 rounded-md h-24"
-            ></textarea>
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-semibold">Prompts</h2>
             <button 
-              @click="addPrompt" 
-              class="px-4 py-2 bg-neutral-800 text-white rounded-md w-full"
-              :disabled="promptStore.isLoading"
+              @click="isPromptModalOpen = true" 
+              class="w-8 h-8 flex items-center justify-center bg-neutral-800 text-white rounded-full hover:bg-neutral-700"
+              aria-label="Add Prompt"
             >
-              Add Prompt
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
             </button>
           </div>
         </div>
@@ -139,4 +128,64 @@ const runPrompt = async (id) => {
       </div>
     </div>
   </DefaultLayout>
+
+  <!-- Keyword Modal -->
+  <Modal :is-open="isKeywordModalOpen" title="Add Keyword" @close="isKeywordModalOpen = false">
+    <div class="space-y-4">
+      <input 
+        v-model="newKeyword" 
+        type="text" 
+        placeholder="New keyword" 
+        class="w-full px-3 py-2 border border-neutral-300 rounded-md"
+        @keyup.enter="addKeyword"
+      />
+    </div>
+    <template #footer>
+      <button 
+        @click="addKeyword" 
+        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 text-white rounded-md"
+        :disabled="keywordStore.isLoading"
+      >
+        Add
+      </button>
+      <button 
+        @click="isKeywordModalOpen = false" 
+        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 text-neutral-800 rounded-md"
+      >
+        Cancel
+      </button>
+    </template>
+  </Modal>
+
+  <!-- Prompt Modal -->
+  <Modal :is-open="isPromptModalOpen" title="Add Prompt" @close="isPromptModalOpen = false">
+    <div class="space-y-4">
+      <input 
+        v-model="newPrompt.title" 
+        type="text" 
+        placeholder="Prompt title" 
+        class="w-full px-3 py-2 border border-neutral-300 rounded-md"
+      />
+      <textarea 
+        v-model="newPrompt.content" 
+        placeholder="Prompt content" 
+        class="w-full px-3 py-2 border border-neutral-300 rounded-md h-24"
+      ></textarea>
+    </div>
+    <template #footer>
+      <button 
+        @click="addPrompt" 
+        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 text-white rounded-md"
+        :disabled="promptStore.isLoading"
+      >
+        Add
+      </button>
+      <button 
+        @click="isPromptModalOpen = false" 
+        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 text-neutral-800 rounded-md"
+      >
+        Cancel
+      </button>
+    </template>
+  </Modal>
 </template>
