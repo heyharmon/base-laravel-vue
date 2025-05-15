@@ -24,6 +24,7 @@ class Response extends Model
     protected $casts = [
         'tokens' => 'integer',
         'latency' => 'float',
+        'metadata' => 'array',
     ];
 
     /**

@@ -63,13 +63,13 @@ const runPrompt = async (id) => {
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow transition-all duration-200"
+            class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow hover:shadow-md transition-all duration-100 cursor-pointer"
           >
             <div class="flex justify-between items-center">
               <span class="font-medium text-neutral-700">{{ keyword.name }}</span>
               <button 
                 @click="keywordStore.deleteKeyword(keyword.id)" 
-                class="text-neutral-400 hover:text-neutral-600 transition-colors"
+                class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -105,22 +105,22 @@ const runPrompt = async (id) => {
           <div 
             v-for="prompt in promptStore.prompts" 
             :key="prompt.id" 
-            class="flex items-start justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow transition-all duration-200"
+            class="flex items-start justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-lg shadow hover:shadow-md transition-all duration-100 cursor-pointer"
           >
             <div>
-                <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3>
-                <p class="mt-2 text-neutral-600">{{ prompt.content }}</p>
+                <!-- <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3> -->
+                <p class="text-neutral-600 text-lg">{{ prompt.content }}</p>
             </div>
-            <div class="flex justify-end space-x-2 mt-4">
+            <div class="flex justify-end space-x-2">
               <button 
                 @click="runPrompt(prompt.id)" 
-                class="px-3 py-1.5 bg-neutral-700 text-white rounded-md text-xs font-medium hover:bg-neutral-800 transition-colors"
+                class="px-3 py-1.5 bg-neutral-700 text-white rounded-md text-xs font-medium hover:bg-neutral-800 transition-colors cursor-pointer"
               >
                 Run
               </button>
               <button 
                 @click="promptStore.deletePrompt(prompt.id)" 
-                class="p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors"
+                class="p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                 aria-label="Delete prompt"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -165,12 +165,12 @@ const runPrompt = async (id) => {
   <!-- Prompt Modal -->
   <Modal :is-open="isPromptModalOpen" title="Add Prompt" @close="isPromptModalOpen = false">
     <div class="space-y-4">
-      <input 
+      <!-- <input 
         v-model="newPrompt.name" 
         type="text" 
         placeholder="Prompt title" 
         class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-      />
+      /> -->
       <textarea 
         v-model="newPrompt.content" 
         placeholder="Prompt content" 
