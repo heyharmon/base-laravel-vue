@@ -63,7 +63,7 @@ const runPrompt = async (id) => {
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow hover:shadow-md transition-all duration-100 cursor-pointer"
+            class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 cursor-pointer"
           >
             <div class="flex justify-between items-center">
               <span class="font-medium text-neutral-700">{{ keyword.name }}</span>
