@@ -46,12 +46,9 @@ const runPrompt = async (id) => {
           <h2 class="text-2xl font-semibold">Keywords</h2>
           <button 
             @click="isKeywordModalOpen = true" 
-            class="w-8 h-8 flex items-center justify-center bg-neutral-800 text-white rounded-full hover:bg-neutral-700"
-            aria-label="Add Keyword"
+            class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
+            Add keyword
           </button>
         </div>
         
@@ -63,11 +60,11 @@ const runPrompt = async (id) => {
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 cursor-pointer"
+            class="p-3 bg-white border border-neutral-400 hover:border-neutral-500 hover:bg-neutral-50 rounded-lg transition-all duration-100 cursor-pointer"
           >
             <div class="flex justify-between items-center">
               <div>
-                <span class="text-lg font-medium text-neutral-700">{{ keyword.name }}</span>
+                <span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
                 <div class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
               </div>
               <button 
@@ -90,12 +87,9 @@ const runPrompt = async (id) => {
             <h2 class="text-2xl font-semibold">Prompts</h2>
             <button 
               @click="isPromptModalOpen = true" 
-              class="w-8 h-8 flex items-center justify-center bg-neutral-800 text-white rounded-full hover:bg-neutral-700"
-              aria-label="Add Prompt"
+              class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-              </svg>
+              Add prompt
             </button>
           </div>
         </div>
@@ -108,17 +102,17 @@ const runPrompt = async (id) => {
           <div 
             v-for="prompt in promptStore.prompts" 
             :key="prompt.id" 
-            class="flex items-start justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-lg shadow hover:shadow-md transition-all duration-100 cursor-pointer"
+            class="flex items-start justify-between p-4 bg-white border border-neutral-400 hover:border-neutral-500 hover:bg-neutral-50 rounded-lg transition-all duration-100 cursor-pointer"
           >
             <div>
                 <!-- <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3> -->
-                <p class="text-neutral-600 text-lg">{{ prompt.content }}</p>
+                <p class="text-neutral-800 text-lg">{{ prompt.content }}</p>
                 <div class="text-sm text-neutral-500 mt-1">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</div>
             </div>
             <div class="flex justify-end space-x-2">
               <button 
                 @click="runPrompt(prompt.id)" 
-                class="px-3 py-1.5 bg-neutral-700 text-white rounded-md text-xs font-medium hover:bg-neutral-800 transition-colors cursor-pointer"
+                class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
               >
                 Run
               </button>
