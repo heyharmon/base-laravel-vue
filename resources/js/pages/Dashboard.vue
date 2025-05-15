@@ -9,7 +9,7 @@ const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
 
 const newKeyword = ref('');
-const newPrompt = ref({ title: '', content: '' });
+const newPrompt = ref({ name: '', content: '' });
 const isKeywordModalOpen = ref(false);
 const isPromptModalOpen = ref(false);
 
@@ -27,11 +27,9 @@ const addKeyword = async () => {
 };
 
 const addPrompt = async () => {
-  if (newPrompt.value.title.trim() && newPrompt.value.content.trim()) {
     await promptStore.createPrompt(newPrompt.value);
-    newPrompt.value = { title: '', content: '' };
+    newPrompt.value = { name: '', content: '' };
     isPromptModalOpen.value = false;
-  }
 };
 
 const runPrompt = async (id) => {
@@ -61,19 +59,21 @@ const runPrompt = async (id) => {
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
         </div>
         
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-3">
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-4 bg-neutral-100 rounded-md"
+            class="p-3 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow transition-all duration-200"
           >
             <div class="flex justify-between items-center">
-              <span class="font-medium">{{ keyword.name }}</span>
+              <span class="font-medium text-neutral-700">{{ keyword.name }}</span>
               <button 
                 @click="keywordStore.deleteKeyword(keyword.id)" 
-                class="text-neutral-500 hover:text-neutral-700"
+                class="text-neutral-400 hover:text-neutral-600 transition-colors"
               >
-                Delete
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
               </button>
             </div>
           </div>
@@ -105,22 +105,27 @@ const runPrompt = async (id) => {
           <div 
             v-for="prompt in promptStore.prompts" 
             :key="prompt.id" 
-            class="p-4 bg-neutral-100 rounded-md"
+            class="flex items-start justify-between p-4 bg-neutral-50 border border-neutral-100 rounded-lg shadow-sm hover:shadow transition-all duration-200"
           >
-            <h3 class="font-semibold text-lg">{{ prompt.title }}</h3>
-            <p class="mt-2 text-neutral-700">{{ prompt.content }}</p>
+            <div>
+                <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3>
+                <p class="mt-2 text-neutral-600">{{ prompt.content }}</p>
+            </div>
             <div class="flex justify-end space-x-2 mt-4">
               <button 
                 @click="runPrompt(prompt.id)" 
-                class="px-3 py-1 bg-neutral-700 text-white rounded-md text-sm"
+                class="px-3 py-1.5 bg-neutral-700 text-white rounded-md text-xs font-medium hover:bg-neutral-800 transition-colors"
               >
                 Run
               </button>
               <button 
                 @click="promptStore.deletePrompt(prompt.id)" 
-                class="px-3 py-1 bg-neutral-500 text-white rounded-md text-sm"
+                class="p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors"
+                aria-label="Delete prompt"
               >
-                Delete
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
               </button>
             </div>
           </div>
@@ -161,7 +166,7 @@ const runPrompt = async (id) => {
   <Modal :is-open="isPromptModalOpen" title="Add Prompt" @close="isPromptModalOpen = false">
     <div class="space-y-4">
       <input 
-        v-model="newPrompt.title" 
+        v-model="newPrompt.name" 
         type="text" 
         placeholder="Prompt title" 
         class="w-full px-3 py-2 border border-neutral-300 rounded-md"
