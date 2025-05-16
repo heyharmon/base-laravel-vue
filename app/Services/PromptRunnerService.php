@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Keyword;
 use App\Models\Prompt;
 use App\Models\Run;
+use App\Tools\SearchTool;
 use Illuminate\Support\Facades\DB;
 use Prism\Prism\Prism;
 use Prism\Prism\Enums\Provider;
@@ -82,6 +83,7 @@ class PromptRunnerService
         return Prism::text()
             ->using($provider, $model)
             ->withMessages([new UserMessage($promptContent)])
+            ->withTools([new SearchTool()])
             ->asText();
     }
 
