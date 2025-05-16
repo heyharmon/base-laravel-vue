@@ -10,7 +10,7 @@ class KeywordController extends Controller
 {
     public function index(): JsonResponse
     {
-        $keywords = Keyword::withCount('prompts')->get();
+        $keywords = Keyword::withCount('prompts')->latest()->get();
         
         return response()->json($keywords);
     }

@@ -2,15 +2,14 @@
 import { onMounted, ref } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
-import Modal from '@/components/ui/Modal.vue';
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
+import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
+import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
 
-const newKeyword = ref('');
-const newPrompt = ref({ name: '', content: '' });
 const isKeywordModalOpen = ref(false);
 const isPromptModalOpen = ref(false);
 const isKeywordDetailSheetOpen = ref(false);
@@ -20,20 +19,6 @@ onMounted(async () => {
   await keywordStore.fetchKeywords();
   await promptStore.fetchPrompts();
 });
-
-const addKeyword = async () => {
-  if (newKeyword.value.trim()) {
-    await keywordStore.createKeyword({ name: newKeyword.value.trim() });
-    newKeyword.value = '';
-    isKeywordModalOpen.value = false;
-  }
-};
-
-const addPrompt = async () => {
-    await promptStore.createPrompt(newPrompt.value);
-    newPrompt.value = { name: '', content: '' };
-    isPromptModalOpen.value = false;
-};
 
 const runPrompt = async (id) => {
   await promptStore.runPrompt(id);
@@ -48,8 +33,6 @@ const showKeywordDetails = async (keyword) => {
     await keywordStore.fetchKeywordDetails(keyword.id);
   }
 };
-
-
 </script>
 
 <template>
@@ -81,10 +64,11 @@ const showKeywordDetails = async (keyword) => {
             <div class="flex justify-between items-center">
               <div>
                 <span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-                <div class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
+                <div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
+                <div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
               </div>
               <button 
-                @click="keywordStore.deleteKeyword(keyword.id)" 
+                @click.stop="keywordStore.deleteKeyword(keyword.id)" 
                 class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -127,13 +111,13 @@ const showKeywordDetails = async (keyword) => {
             </div>
             <div class="flex justify-end space-x-2">
               <button 
-                @click="runPrompt(prompt.id)" 
+                @click.stop="runPrompt(prompt.id)" 
                 class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
               >
                 Run
               </button>
               <button 
-                @click="promptStore.deletePrompt(prompt.id)" 
+                @click.stop="promptStore.deletePrompt(prompt.id)" 
                 class="p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                 aria-label="Delete prompt"
               >
@@ -149,64 +133,16 @@ const showKeywordDetails = async (keyword) => {
   </DefaultLayout>
 
   <!-- Keyword Modal -->
-  <Modal :is-open="isKeywordModalOpen" title="Add Keyword" @close="isKeywordModalOpen = false">
-    <div class="space-y-4">
-      <input 
-        v-model="newKeyword" 
-        type="text" 
-        placeholder="New keyword" 
-        class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-        @keyup.enter="addKeyword"
-      />
-    </div>
-    <template #footer>
-      <button 
-        @click="addKeyword" 
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 text-white rounded-md"
-        :disabled="keywordStore.isLoading"
-      >
-        Add
-      </button>
-      <button 
-        @click="isKeywordModalOpen = false" 
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 text-neutral-800 rounded-md"
-      >
-        Cancel
-      </button>
-    </template>
-  </Modal>
+  <KeywordCreateModal
+    :is-open="isKeywordModalOpen"
+    @close="isKeywordModalOpen = false"
+  />
 
   <!-- Prompt Modal -->
-  <Modal :is-open="isPromptModalOpen" title="Add Prompt" @close="isPromptModalOpen = false">
-    <div class="space-y-4">
-      <!-- <input 
-        v-model="newPrompt.name" 
-        type="text" 
-        placeholder="Prompt title" 
-        class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-      /> -->
-      <textarea 
-        v-model="newPrompt.content" 
-        placeholder="Prompt content" 
-        class="w-full px-3 py-2 border border-neutral-300 rounded-md h-24"
-      ></textarea>
-    </div>
-    <template #footer>
-      <button 
-        @click="addPrompt" 
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 text-white rounded-md"
-        :disabled="promptStore.isLoading"
-      >
-        Add
-      </button>
-      <button 
-        @click="isPromptModalOpen = false" 
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 text-neutral-800 rounded-md"
-      >
-        Cancel
-      </button>
-    </template>
-  </Modal>
+  <PromptCreateModal
+    :is-open="isPromptModalOpen"
+    @close="isPromptModalOpen = false"
+  />
 
   <!-- Keyword Detail Sheet -->
   <KeywordDetailSheet

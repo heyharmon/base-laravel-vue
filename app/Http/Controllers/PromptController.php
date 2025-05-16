@@ -10,7 +10,7 @@ class PromptController extends Controller
 {
     public function index(): JsonResponse
     {
-        $prompts = Prompt::withCount('keywords')->get();
+        $prompts = Prompt::withCount('keywords')->latest()->get();
         
         return response()->json($prompts);
     }
