@@ -7,9 +7,9 @@ export const useKeywordStore = defineStore('keywords', () => {
   const keywords = ref([]);
   const isLoading = ref(false);
   const isLoadingDetails = ref(false);
-  const isLoadingResponses = ref(false);
+  const isLoadingKeywordResponses = ref(false);
   const selectedKeywordDetails = ref(null);
-  const selectedPromptResponses = ref([]);
+  const selectedKeywordResponses = ref([]);
   
   // Actions
   async function fetchKeywords() {
@@ -81,17 +81,17 @@ export const useKeywordStore = defineStore('keywords', () => {
     }
   }
 
-  async function getPromptResponses(keywordId, promptId) {
-    isLoadingResponses.value = true;
-    selectedPromptResponses.value = [];
+  async function getKeywordResponses(keywordId, promptId) {
+    isLoadingKeywordResponses.value = true;
+    selectedKeywordResponses.value = [];
     try {
-      selectedPromptResponses.value = await api.get(`/keywords/${keywordId}/prompts/${promptId}/responses`);
-      return selectedPromptResponses.value;
+      selectedKeywordResponses.value = await api.get(`/keywords/${keywordId}/prompts/${promptId}/responses`);
+      return selectedKeywordResponses.value;
     } catch (error) {
-      console.error('Error fetching responses:', error);
+      console.error('Error fetching keyword responses:', error);
       throw error;
     } finally {
-      isLoadingResponses.value = false;
+      isLoadingKeywordResponses.value = false;
     }
   }
 
@@ -100,9 +100,9 @@ export const useKeywordStore = defineStore('keywords', () => {
     keywords: computed(() => keywords.value),
     isLoading,
     isLoadingDetails,
-    isLoadingResponses,
+    isLoadingKeywordResponses,
     selectedKeywordDetails: computed(() => selectedKeywordDetails.value),
-    selectedPromptResponses: computed(() => selectedPromptResponses.value),
+    selectedKeywordResponses: computed(() => selectedKeywordResponses.value),
     
     // Actions
     fetchKeywords,
@@ -110,6 +110,6 @@ export const useKeywordStore = defineStore('keywords', () => {
     createKeyword,
     updateKeyword,
     deleteKeyword,
-    getPromptResponses,
+    getKeywordResponses,
   };
 });

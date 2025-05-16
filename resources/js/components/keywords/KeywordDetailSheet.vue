@@ -30,6 +30,8 @@ const selectedPromptId = ref(null);
 const selectedPrompt = ref(null);
 
 const closeSheet = () => {
+  selectedPromptId.value = null;
+  selectedPrompt.value = null;
   emit('close');
 };
 
@@ -43,7 +45,7 @@ const fetchDetails = async () => {
 const showPromptResponses = async (prompt) => {
   selectedPromptId.value = prompt.id;
   selectedPrompt.value = prompt;
-  await keywordStore.getPromptResponses(props.keywordId, prompt.id);
+  await keywordStore.getKeywordResponses(props.keywordId, prompt.id);
 };
 
 onMounted(fetchDetails);
@@ -104,7 +106,7 @@ watch(() => props.keywordId, fetchDetails);
       
       <!-- Responses Column -->
       <div class="flex-1 pl-4">
-        <div v-if="selectedPromptId && keywordStore.isLoadingResponses" class="flex justify-center py-8">
+        <div v-if="selectedPromptId && keywordStore.isLoadingKeywordResponses" class="flex justify-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
         </div>
         <div v-else-if="selectedPromptId && selectedPrompt" class="space-y-4">
@@ -118,12 +120,12 @@ watch(() => props.keywordId, fetchDetails);
           </div>
 
           <h3 class="text-lg font-medium text-neutral-800 mb-2">Responses</h3>
-          <div v-if="keywordStore.selectedPromptResponses.length === 0" class="text-neutral-500 italic">
+          <div v-if="keywordStore.selectedKeywordResponses.length === 0" class="text-neutral-500 italic">
             No responses found containing this keyword.
           </div>
           <div v-else class="space-y-4 overflow-y-auto max-h-[600px] pr-2">
             <div 
-              v-for="response in keywordStore.selectedPromptResponses" 
+              v-for="response in keywordStore.selectedKeywordResponses" 
               :key="response.id"
               class="bg-white border border-neutral-200 p-4 rounded-lg"
             >
