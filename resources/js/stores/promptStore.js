@@ -7,6 +7,7 @@ export const usePromptStore = defineStore('prompts', () => {
   const prompts = ref([]);
   const isLoading = ref(false);
   const isLoadingDetails = ref(false);
+  const loadingPromptIds = ref([]);
   const selectedPromptDetails = ref(null);
   
   // Actions
@@ -80,14 +81,14 @@ export const usePromptStore = defineStore('prompts', () => {
   }
   
   async function runPrompt(id) {
-    isLoading.value = true;
+    loadingPromptIds.value.push(id);
     try {
       return await api.post(`/prompts/${id}/run`);
     } catch (error) {
       console.error('Error running prompt:', error);
       throw error;
     } finally {
-      isLoading.value = false;
+      loadingPromptIds.value = loadingPromptIds.value.filter(promptId => promptId !== id);
     }
   }
 
@@ -96,6 +97,7 @@ export const usePromptStore = defineStore('prompts', () => {
     prompts: computed(() => prompts.value),
     isLoading,
     isLoadingDetails,
+    loadingPromptIds,
     selectedPromptDetails: computed(() => selectedPromptDetails.value),
     
     // Actions

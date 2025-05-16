@@ -117,9 +117,11 @@ const showPromptDetails = async (prompt) => {
             <div class="flex justify-end space-x-2">
               <button 
                 @click.stop="runPrompt(prompt.id)" 
-                class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
+                class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
+                :disabled="promptStore.loadingPromptIds.includes(prompt.id)"
               >
-                Run
+                <div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
+                <span v-else>Run</span>
               </button>
               <button 
                 @click.stop="promptStore.deletePrompt(prompt.id)" 
