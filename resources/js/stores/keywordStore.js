@@ -7,7 +7,9 @@ export const useKeywordStore = defineStore('keywords', () => {
   const keywords = ref([]);
   const isLoading = ref(false);
   const isLoadingDetails = ref(false);
+  const isLoadingResponses = ref(false);
   const selectedKeywordDetails = ref(null);
+  const selectedPromptResponses = ref([]);
   
   // Actions
   async function fetchKeywords() {
@@ -79,12 +81,28 @@ export const useKeywordStore = defineStore('keywords', () => {
     }
   }
 
+  async function getPromptResponses(keywordId, promptId) {
+    isLoadingResponses.value = true;
+    selectedPromptResponses.value = [];
+    try {
+      selectedPromptResponses.value = await api.get(`/keywords/${keywordId}/prompts/${promptId}/responses`);
+      return selectedPromptResponses.value;
+    } catch (error) {
+      console.error('Error fetching responses:', error);
+      throw error;
+    } finally {
+      isLoadingResponses.value = false;
+    }
+  }
+
   return {
     // State
     keywords: computed(() => keywords.value),
     isLoading,
     isLoadingDetails,
+    isLoadingResponses,
     selectedKeywordDetails: computed(() => selectedKeywordDetails.value),
+    selectedPromptResponses: computed(() => selectedPromptResponses.value),
     
     // Actions
     fetchKeywords,
@@ -92,5 +110,6 @@ export const useKeywordStore = defineStore('keywords', () => {
     createKeyword,
     updateKeyword,
     deleteKeyword,
+    getPromptResponses,
   };
 });

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Keyword;
+use App\Models\Prompt;
+use App\Models\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
