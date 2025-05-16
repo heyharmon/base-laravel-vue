@@ -60,7 +60,7 @@ const runPrompt = async (id) => {
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-3 bg-white border border-neutral-400 hover:border-neutral-500 hover:bg-neutral-50 rounded-lg transition-all duration-100 cursor-pointer"
+            class="p-3 bg-white border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
           >
             <div class="flex justify-between items-center">
               <div>
@@ -102,7 +102,7 @@ const runPrompt = async (id) => {
           <div 
             v-for="prompt in promptStore.prompts" 
             :key="prompt.id" 
-            class="flex items-start justify-between p-4 bg-white border border-neutral-400 hover:border-neutral-500 hover:bg-neutral-50 rounded-lg transition-all duration-100 cursor-pointer"
+            class="flex items-start justify-between p-4 bg-white border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
           >
             <div>
                 <!-- <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3> -->

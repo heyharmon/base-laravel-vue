@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-neutral-50">
+  <div class="min-h-screen bg-white">
     <header class="border-b border-neutral-200">
       <div class="max-w-7xl p-4 mx-auto flex justify-between items-center">
         <h1 class="text-xl font-semibold">Laravel API with Vue 3</h1>
