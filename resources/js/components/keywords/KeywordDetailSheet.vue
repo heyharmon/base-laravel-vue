@@ -29,6 +29,13 @@ const keywordDetails = computed(() => {
 const selectedPromptId = ref(null);
 const selectedPrompt = ref(null);
 
+const highlightKeyword = (content) => {
+  if (!keywordDetails.value?.name || !content) return content;
+  
+  const regex = new RegExp(keywordDetails.value.name, 'gi');
+  return content.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
+};
+
 const closeSheet = () => {
   selectedPromptId.value = null;
   selectedPrompt.value = null;
@@ -60,24 +67,23 @@ watch(() => props.keywordId, fetchDetails);
     position="right"
     title="Keyword"
   >
-    <div class="w-[1200px] flex">
-      <div v-if="keywordStore.isLoadingDetails" class="flex-1 flex justify-center py-8">
+    <div class="flex w-[1300px] h-full">
+      <div v-if="keywordStore.isLoadingDetails" class="flex-[1] h-full flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
       </div>
-      <div v-else-if="keywordDetails" class="flex-1 space-y-6 pr-4 border-r border-neutral-200">
+      <div v-else-if="keywordDetails" class="flex-[1] h-full space-y-6 pr-4 border-r border-neutral-200">
         <div>
           <div class="bg-neutral-50 p-4 rounded-lg">
-            <div class="mb-2">
-              <span class="text-neutral-500 text-sm">Name:</span>
-              <span class="text-neutral-800 ml-2 font-medium">{{ keywordDetails.name }}</span>
+            <div class="mb-3">
+              <div class="text-neutral-500 text-sm mb-1">Keyword:</div>
+              <span class="text-neutral-800 text-2xl/7 font-medium">{{ keywordDetails.name }}</span>
             </div>
-            <div v-if="keywordDetails.description" class="mb-2">
-              <span class="text-neutral-500 text-sm">Description:</span>
+            <div v-if="keywordDetails.description" class="mb-2 text-lg">
+              <span class="text-neutral-500">Description:</span>
               <span class="text-neutral-800 ml-2">{{ keywordDetails.description }}</span>
             </div>
-            <div class="mb-2">
-              <span class="text-neutral-500 text-sm">Found in:</span>
-              <span class="text-neutral-800 ml-2">{{ keywordDetails.prompts?.length || 0 }} {{ keywordDetails.prompts?.length === 1 ? 'prompt' : 'prompts' }}</span>
+            <div class="mb-2 text-sm">
+              <span class="text-neutral-500">Found in {{ keywordDetails.prompts?.length || 0 }} {{ keywordDetails.prompts?.length === 1 ? 'prompt' : 'prompts' }}</span>
             </div>
           </div>
         </div>
@@ -105,7 +111,7 @@ watch(() => props.keywordId, fetchDetails);
       </div>
       
       <!-- Responses Column -->
-      <div class="flex-1 pl-4">
+      <div class="flex-[2] h-full pl-4">
         <div v-if="selectedPromptId && keywordStore.isLoadingKeywordResponses" class="flex justify-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
         </div>
@@ -113,7 +119,7 @@ watch(() => props.keywordId, fetchDetails);
           <div class="bg-neutral-50 p-4 rounded-lg mb-4">
             <div class="mb-2">
               <span class="text-neutral-500 text-sm">Prompt:</span>
-              <div class="text-neutral-800 mt-1 p-2 bg-white border border-neutral-200 rounded">
+              <div class="text-neutral-800 mt-2 text-lg">
                 {{ selectedPrompt?.content }}
               </div>
             </div>
@@ -133,12 +139,11 @@ watch(() => props.keywordId, fetchDetails);
                 <span class="text-neutral-500 text-sm">Provider: <span class="font-medium">{{ response.provider }}</span></span>
                 <span class="text-neutral-500 text-sm">Model: <span class="font-medium">{{ response.model }}</span></span>
               </div>
-              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-sm">
-                {{ response.content }}
+              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7" v-html="highlightKeyword(response.content)">
               </div>
               <div class="mt-2 text-xs text-neutral-500 flex justify-between">
                 <span>Run Date: {{ new Date(response.run.run_date).toLocaleString() }}</span>
-                <span>Tokens: {{ response.tokens }}</span>
+                <span>Tokens: {{ response.metadata.usage.promptTokens + response.metadata.usage.completionTokens }}</span>
               </div>
             </div>
           </div>
