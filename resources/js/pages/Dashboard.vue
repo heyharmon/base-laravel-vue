@@ -116,9 +116,9 @@ const showPromptDetails = async (prompt) => {
             @click="showPromptDetails(prompt)"
           >
             <div>
-                <!-- <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3> -->
                 <p class="text-neutral-800 text-lg">{{ prompt.content }}</p>
-                <div class="text-sm text-neutral-500 mt-1">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</div>
+                <div v-if="prompt.keywords_count >= 0" class="text-sm text-neutral-500 mt-1">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</div>
+                <div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
             </div>
             <div class="flex justify-end space-x-2">
               <button 
