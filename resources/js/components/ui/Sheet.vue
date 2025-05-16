@@ -41,7 +41,7 @@ onUnmounted(() => {
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 overflow-hidden">
     <!-- Backdrop overlay -->
-    <div class="fixed inset-0 bg-neutral-300/50 transition-opacity" @click="closeSheet"></div>
+    <div class="fixed inset-0 bg-neutral-300/30 transition-opacity" @click="closeSheet"></div>
     
     <div class="absolute inset-y-0" :class="position === 'right' ? 'right-0' : 'left-0'">
       <div 
@@ -49,7 +49,7 @@ onUnmounted(() => {
         :class="isOpen ? 'translate-x-0' : position === 'right' ? 'translate-x-full' : '-translate-x-full'"
         @click.stop
       >
-        <div class="p-6 border-b border-neutral-200 flex justify-between items-center">
+        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center">
           <h3 class="text-lg font-medium text-neutral-900" v-if="title">
             {{ title }}
           </h3>
