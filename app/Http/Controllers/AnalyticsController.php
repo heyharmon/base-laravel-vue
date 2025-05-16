@@ -36,6 +36,7 @@ class AnalyticsController extends Controller
             $keyword = Keyword::findOrFail($keywordId);
             
             $stats = [
+                'id' => $keyword->id,
                 'keyword' => $keyword->name,
                 'total_occurrences' => $keyword->prompts()->sum('count'),
                 'prompt_count' => $keyword->prompts()->count(),
@@ -46,7 +47,7 @@ class AnalyticsController extends Controller
                     ->map(function ($prompt) {
                         return [
                             'id' => $prompt->id,
-                            'name' => $prompt->name,
+                            'content' => $prompt->content,
                             'count' => $prompt->pivot->count,
                             'last_found_at' => $prompt->pivot->last_found_at,
                         ];

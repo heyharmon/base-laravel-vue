@@ -92,7 +92,6 @@ const selectKeyword = async (keyword) => {
 };
 
 const fetchKeywordDetails = async (keywordId) => {
-  isLoading.value = true;
   try {
     const response = await fetch(`/api/analytics/keywords?keyword_id=${keywordId}&period=${selectedPeriod.value}`);
     if (!response.ok) throw new Error('Failed to fetch keyword details');
@@ -103,7 +102,6 @@ const fetchKeywordDetails = async (keywordId) => {
   } catch (error) {
     console.error('Error fetching keyword details:', error);
   } finally {
-    isLoading.value = false;
   }
 };
 
@@ -231,7 +229,7 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr v-for="prompt in selectedKeyword.prompts" :key="prompt.id" class="border-t border-neutral-200">
-                <td class="py-2 px-4 text-sm">{{ prompt.name }}</td>
+                <td class="py-2 px-4 text-sm max-w-xs truncate">{{ prompt.content }}</td>
                 <td class="py-2 px-4 text-sm">{{ prompt.count }}</td>
                 <td class="py-2 px-4 text-sm">{{ new Date(prompt.last_found_at).toLocaleDateString() }}</td>
               </tr>
