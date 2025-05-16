@@ -1,8 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
 import Modal from '@/components/ui/Modal.vue';
+import Sheet from '@/components/ui/Sheet.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const keywordStore = useKeywordStore();
@@ -12,6 +13,8 @@ const newKeyword = ref('');
 const newPrompt = ref({ name: '', content: '' });
 const isKeywordModalOpen = ref(false);
 const isPromptModalOpen = ref(false);
+const isKeywordDetailSheetOpen = ref(false);
+const selectedKeyword = ref(null);
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
@@ -35,6 +38,20 @@ const addPrompt = async () => {
 const runPrompt = async (id) => {
   await promptStore.runPrompt(id);
 };
+
+const showKeywordDetails = async (keyword) => {
+  selectedKeyword.value = keyword;
+  isKeywordDetailSheetOpen.value = true;
+  
+  // Fetch the keyword with its prompts relationship
+  if (keyword) {
+    await keywordStore.fetchKeywordDetails(keyword.id);
+  }
+};
+
+const keywordDetails = computed(() => {
+  return keywordStore.selectedKeywordDetails;
+});
 </script>
 
 <template>
@@ -61,6 +78,7 @@ const runPrompt = async (id) => {
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
             class="p-3 bg-white border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            @click="showKeywordDetails(keyword)"
           >
             <div class="flex justify-between items-center">
               <div>
@@ -191,4 +209,57 @@ const runPrompt = async (id) => {
       </button>
     </template>
   </Modal>
+
+  <!-- Keyword Detail Sheet -->
+  <Sheet 
+    :is-open="isKeywordDetailSheetOpen" 
+    @close="isKeywordDetailSheetOpen = false"
+    position="right"
+    :title="selectedKeyword?.name || 'Keyword Details'"
+  >
+    <div class="w-[800px]">
+        <div v-if="keywordStore.isLoadingDetails" class="flex justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
+        </div>
+        <div v-else-if="keywordDetails" class="space-y-6">
+            <div>
+                <h3 class="text-lg font-medium text-neutral-800 mb-2">Keyword Information</h3>
+                <div class="bg-neutral-50 p-4 rounded-lg">
+                    <div class="mb-2">
+                        <span class="text-neutral-500 text-sm">Name:</span>
+                        <span class="text-neutral-800 ml-2 font-medium">{{ keywordDetails.name }}</span>
+                    </div>
+                    <div v-if="keywordDetails.description" class="mb-2">
+                        <span class="text-neutral-500 text-sm">Description:</span>
+                        <span class="text-neutral-800 ml-2">{{ keywordDetails.description }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-neutral-500 text-sm">Found in:</span>
+                        <span class="text-neutral-800 ml-2">{{ keywordDetails.prompts?.length || 0 }} {{ keywordDetails.prompts?.length === 1 ? 'prompt' : 'prompts' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="keywordDetails.prompts && keywordDetails.prompts.length > 0">
+                <h3 class="text-lg font-medium text-neutral-800 mb-2">Found in Prompts</h3>
+                <div class="space-y-3">
+                    <div 
+                        v-for="prompt in keywordDetails.prompts" 
+                        :key="prompt.id"
+                        class="bg-white border border-neutral-300 p-3 rounded-lg"
+                    >
+                        <p class="text-neutral-800">{{ prompt.content }}</p>
+                        <div class="mt-2 text-sm text-neutral-500 flex justify-between">
+                            <span>Occurrences: <span class="font-medium">{{ prompt.pivot.count }}</span></span>
+                            <span>Last found: {{ new Date(prompt.pivot.last_found_at).toLocaleDateString() }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="text-neutral-500 italic">
+                This keyword hasn't been found in any prompts yet.
+            </div>
+        </div>
+    </div>
+  </Sheet>
 </template>

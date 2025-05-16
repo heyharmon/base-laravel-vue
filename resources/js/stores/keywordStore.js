@@ -6,6 +6,8 @@ export const useKeywordStore = defineStore('keywords', () => {
   // State
   const keywords = ref([]);
   const isLoading = ref(false);
+  const isLoadingDetails = ref(false);
+  const selectedKeywordDetails = ref(null);
   
   // Actions
   async function fetchKeywords() {
@@ -64,16 +66,31 @@ export const useKeywordStore = defineStore('keywords', () => {
       isLoading.value = false;
     }
   }
+  
+  async function fetchKeywordDetails(id) {
+    isLoadingDetails.value = true;
+    try {
+      selectedKeywordDetails.value = await api.get(`/keywords/${id}?include=prompts`);
+    } catch (error) {
+      console.error('Error fetching keyword details:', error);
+      throw error;
+    } finally {
+      isLoadingDetails.value = false;
+    }
+  }
 
   return {
     // State
     keywords: computed(() => keywords.value),
     isLoading,
+    isLoadingDetails,
+    selectedKeywordDetails: computed(() => selectedKeywordDetails.value),
     
     // Actions
     fetchKeywords,
     createKeyword,
     updateKeyword,
     deleteKeyword,
+    fetchKeywordDetails,
   };
 });
