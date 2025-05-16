@@ -6,6 +6,8 @@ export const usePromptStore = defineStore('prompts', () => {
   // State
   const prompts = ref([]);
   const isLoading = ref(false);
+  const isLoadingDetails = ref(false);
+  const selectedPromptDetails = ref(null);
   
   // Actions
   async function fetchPrompts() {
@@ -16,6 +18,18 @@ export const usePromptStore = defineStore('prompts', () => {
       console.error('Error fetching prompts:', error);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  async function showPrompt(id) {
+    isLoadingDetails.value = true;
+    try {
+      selectedPromptDetails.value = await api.get(`/prompts/${id}?include=keywords`);
+    } catch (error) {
+      console.error('Error fetching prompt details:', error);
+      throw error;
+    } finally {
+      isLoadingDetails.value = false;
     }
   }
   
@@ -81,9 +95,12 @@ export const usePromptStore = defineStore('prompts', () => {
     // State
     prompts: computed(() => prompts.value),
     isLoading,
+    isLoadingDetails,
+    selectedPromptDetails: computed(() => selectedPromptDetails.value),
     
     // Actions
     fetchPrompts,
+    showPrompt,
     createPrompt,
     updatePrompt,
     deletePrompt,

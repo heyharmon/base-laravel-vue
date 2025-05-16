@@ -1,7 +1,7 @@
 <script setup>
 import { computed, watch, onMounted } from 'vue';
-import Sheet from '@/components/ui/Sheet.vue';
 import { useKeywordStore } from '@/stores/keywordStore';
+import Sheet from '@/components/ui/Sheet.vue';
 
 const props = defineProps({
   isOpen: {
@@ -33,7 +33,7 @@ const closeSheet = () => {
 // Fetch keyword details when component mounts or keywordId changes
 const fetchDetails = async () => {
   if (props.keywordId) {
-    await keywordStore.fetchKeywordDetails(props.keywordId);
+    await keywordStore.showKeyword(props.keywordId);
   }
 };
 

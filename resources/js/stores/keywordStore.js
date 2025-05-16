@@ -20,6 +20,18 @@ export const useKeywordStore = defineStore('keywords', () => {
       isLoading.value = false;
     }
   }
+
+  async function showKeyword(id) {
+    isLoadingDetails.value = true;
+    try {
+      selectedKeywordDetails.value = await api.get(`/keywords/${id}?include=prompts`);
+    } catch (error) {
+      console.error('Error fetching keyword details:', error);
+      throw error;
+    } finally {
+      isLoadingDetails.value = false;
+    }
+  }
   
   async function createKeyword(data) {
     isLoading.value = true;
@@ -66,18 +78,6 @@ export const useKeywordStore = defineStore('keywords', () => {
       isLoading.value = false;
     }
   }
-  
-  async function fetchKeywordDetails(id) {
-    isLoadingDetails.value = true;
-    try {
-      selectedKeywordDetails.value = await api.get(`/keywords/${id}?include=prompts`);
-    } catch (error) {
-      console.error('Error fetching keyword details:', error);
-      throw error;
-    } finally {
-      isLoadingDetails.value = false;
-    }
-  }
 
   return {
     // State
@@ -88,9 +88,9 @@ export const useKeywordStore = defineStore('keywords', () => {
     
     // Actions
     fetchKeywords,
+    showKeyword,
     createKeyword,
     updateKeyword,
     deleteKeyword,
-    fetchKeywordDetails,
   };
 });

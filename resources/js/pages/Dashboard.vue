@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
+import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
 import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
@@ -10,10 +11,13 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
 
-const isKeywordModalOpen = ref(false);
-const isPromptModalOpen = ref(false);
+const isKeywordCreateModalOpen = ref(false);
+const isPromptCreateModalOpen = ref(false);
 const isKeywordDetailSheetOpen = ref(false);
+const isPromptDetailSheetOpen = ref(false);
+
 const selectedKeyword = ref(null);
+const selectedPrompt = ref(null);
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
@@ -27,11 +31,11 @@ const runPrompt = async (id) => {
 const showKeywordDetails = async (keyword) => {
   selectedKeyword.value = keyword;
   isKeywordDetailSheetOpen.value = true;
-  
-  // Fetch the keyword with its prompts relationship
-  if (keyword) {
-    await keywordStore.fetchKeywordDetails(keyword.id);
-  }
+};
+
+const showPromptDetails = async (prompt) => {
+  selectedPrompt.value = prompt;
+  isPromptDetailSheetOpen.value = true;
 };
 </script>
 
@@ -43,7 +47,7 @@ const showKeywordDetails = async (keyword) => {
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-semibold">Keywords</h2>
           <button 
-            @click="isKeywordModalOpen = true" 
+            @click="isKeywordCreateModalOpen = true" 
             class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
           >
             Add keyword
@@ -86,7 +90,7 @@ const showKeywordDetails = async (keyword) => {
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-semibold">Prompts</h2>
             <button 
-              @click="isPromptModalOpen = true" 
+              @click="isPromptCreateModalOpen = true" 
               class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
             >
               Add prompt
@@ -103,6 +107,7 @@ const showKeywordDetails = async (keyword) => {
             v-for="prompt in promptStore.prompts" 
             :key="prompt.id" 
             class="flex items-start justify-between p-4 bg-white border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            @click="showPromptDetails(prompt)"
           >
             <div>
                 <!-- <h3 class="font-semibold text-lg text-neutral-800">{{ prompt.name }}</h3> -->
@@ -134,14 +139,14 @@ const showKeywordDetails = async (keyword) => {
 
   <!-- Keyword Modal -->
   <KeywordCreateModal
-    :is-open="isKeywordModalOpen"
-    @close="isKeywordModalOpen = false"
+    :is-open="isKeywordCreateModalOpen"
+    @close="isKeywordCreateModalOpen = false"
   />
 
   <!-- Prompt Modal -->
   <PromptCreateModal
-    :is-open="isPromptModalOpen"
-    @close="isPromptModalOpen = false"
+    :is-open="isPromptCreateModalOpen"
+    @close="isPromptCreateModalOpen = false"
   />
 
   <!-- Keyword Detail Sheet -->
@@ -150,5 +155,13 @@ const showKeywordDetails = async (keyword) => {
     :keyword="selectedKeyword"
     :keyword-id="selectedKeyword?.id"
     @close="isKeywordDetailSheetOpen = false"
+  />
+
+  <!-- Prompt Detail Sheet -->
+  <PromptDetailSheet
+    :is-open="isPromptDetailSheetOpen"
+    :prompt="selectedPrompt"
+    :prompt-id="selectedPrompt?.id"
+    @close="isPromptDetailSheetOpen = false"
   />
 </template>
