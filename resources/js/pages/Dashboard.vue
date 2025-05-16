@@ -17,7 +17,9 @@ const isKeywordDetailSheetOpen = ref(false);
 const isPromptDetailSheetOpen = ref(false);
 
 const selectedKeyword = ref(null);
+const selectedKeywordId = ref(null);
 const selectedPrompt = ref(null);
+const selectedPromptId = ref(null);
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
@@ -30,11 +32,13 @@ const runPrompt = async (id) => {
 
 const showKeywordDetails = async (keyword) => {
   selectedKeyword.value = keyword;
+  selectedKeywordId.value = keyword.id;
   isKeywordDetailSheetOpen.value = true;
 };
 
 const showPromptDetails = async (prompt) => {
   selectedPrompt.value = prompt;
+  selectedPromptId.value = prompt.id;
   isPromptDetailSheetOpen.value = true;
 };
 </script>
@@ -62,7 +66,8 @@ const showPromptDetails = async (prompt) => {
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-3 bg-white border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            class="p-3 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
             @click="showKeywordDetails(keyword)"
           >
             <div class="flex justify-between items-center">
@@ -106,7 +111,8 @@ const showPromptDetails = async (prompt) => {
           <div 
             v-for="prompt in promptStore.prompts" 
             :key="prompt.id" 
-            class="flex items-start justify-between p-4 bg-white border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            class="flex items-start justify-between p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedPromptId === prompt.id }"
             @click="showPromptDetails(prompt)"
           >
             <div>
@@ -156,7 +162,10 @@ const showPromptDetails = async (prompt) => {
     :is-open="isKeywordDetailSheetOpen"
     :keyword="selectedKeyword"
     :keyword-id="selectedKeyword?.id"
-    @close="isKeywordDetailSheetOpen = false"
+    @close="() => {
+      isKeywordDetailSheetOpen = false;
+      selectedKeywordId = null;
+    }"
   />
 
   <!-- Prompt Detail Sheet -->
@@ -164,6 +173,9 @@ const showPromptDetails = async (prompt) => {
     :is-open="isPromptDetailSheetOpen"
     :prompt="selectedPrompt"
     :prompt-id="selectedPrompt?.id"
-    @close="isPromptDetailSheetOpen = false"
+    @close="() => {
+      isPromptDetailSheetOpen = false;
+      selectedPromptId = null;
+    }"
   />
 </template>

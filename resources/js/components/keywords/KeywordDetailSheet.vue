@@ -94,7 +94,8 @@ watch(() => props.keywordId, fetchDetails);
             <div 
               v-for="prompt in keywordDetails.prompts" 
               :key="prompt.id"
-              class="bg-white border border-neutral-300 p-3 rounded-lg cursor-pointer hover:bg-neutral-50"
+              class="border border-neutral-300 hover:border-neutral-400 p-3 rounded-lg cursor-pointer hover:bg-neutral-50"
+              :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedPromptId === prompt.id }"
               @click="showPromptResponses(prompt)"
             >
               <p class="text-neutral-800">{{ prompt.content }}</p>
@@ -129,7 +130,7 @@ watch(() => props.keywordId, fetchDetails);
           <div v-if="keywordStore.selectedKeywordResponses.length === 0" class="text-neutral-500 italic">
             No responses found containing this keyword.
           </div>
-          <div v-else class="space-y-4 overflow-y-auto max-h-[600px] pr-2">
+          <div v-else class="space-y-4 pr-2">
             <div 
               v-for="response in keywordStore.selectedKeywordResponses" 
               :key="response.id"
