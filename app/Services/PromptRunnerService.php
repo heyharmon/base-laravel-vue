@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\Keyword;
-use App\Models\Prompt;
-use App\Models\Run;
-use App\Tools\SearchTool;
-use Illuminate\Support\Facades\DB;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\Provider;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\Prism;
+use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\Enums\Provider;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use App\Tools\SearchTool;
+use App\Models\Run;
+use App\Models\Prompt;
+use App\Models\Keyword;
 
 class PromptRunnerService
 {
@@ -48,6 +50,24 @@ class PromptRunnerService
             try {
                 // Get response from the LLM
                 $llmResponse = $this->getLlmResponse($prompt->content, $model, $provider);
+
+                Log::info("LLM Response: " . $llmResponse->text . "\n");
+
+                // if ($llmResponse->toolResults) {
+                //     foreach ($llmResponse->toolResults as $toolResult) {
+                //         Log::info("Tool: " . $toolResult->toolName . "\n");
+                //         Log::info("Result: " . $toolResult->result . "\n");
+                //     }
+                // }
+
+                // foreach ($llmResponse->steps as $step) {
+                //     if ($step->toolCalls) {
+                //         foreach ($step->toolCalls as $toolCall) {
+                //             Log::info("Tool: " . $toolCall->name . "\n");
+                //             Log::info("Arguments: " . json_encode($toolCall->arguments()) . "\n");
+                //         }
+                //     }
+                // }
                 
                 // Store the response
                 $response = $run->responses()->create([
@@ -82,8 +102,10 @@ class PromptRunnerService
     {
         return Prism::text()
             ->using($provider, $model)
+            ->withMaxSteps(1)
             ->withMessages([new UserMessage($promptContent)])
             ->withTools([new SearchTool()])
+            ->withToolChoice(ToolChoice::Any)
             ->asText();
     }
 

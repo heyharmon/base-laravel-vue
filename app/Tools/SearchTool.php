@@ -18,26 +18,27 @@ class SearchTool extends Tool
 
     public function __invoke(string $query): string
     {
-        $response = Http::get('https://api.firecrawl.dev/search', [
-            'query' => $query,
-            'limit' => 4,
-            'lang' => 'en',
-            'country' => 'us',
-            'api_key' => config('services.firecrawl.api_key'),
+        $response = Http::get('https://serpapi.com/search', [
+            'engine' => 'google',
+            'q' => $query,
+            'google_domain' => 'google.com',
+            'gl' => 'us',
+            'hl' => 'en',
+            'api_key' => config('services.serpapi.api_key'),
         ]);
 
-        $results = collect($response->json('results'));
+        $results = collect($response->json('organic_results'));
 
-        $formattedResults = $results->map(function ($result) {
+        $results->map(function ($result) {
             return [
-                'title' => $result['title'] ?? '',
-                'link' => $result['url'] ?? '',
-                'snippet' => $result['snippet'] ?? '',
+                'title' => $result['title'],
+                'link' => $result['link'],
+                'snippet' => $result['snippet'],
             ];
         })->take(4);
 
         return view('prompts.search-tool-results', [
-            'results' => $formattedResults,
+            'results' => $results,
         ])->render();
     }
 }

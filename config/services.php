@@ -39,4 +39,7 @@ return [
         'api_key' => env('FIRECRAWL_API_KEY'),
     ],
 
+    'serpapi' => [
+        'api_key' => env('SERPAPI_API_KEY'),
+    ],
 ];
