@@ -34,9 +34,6 @@ class SearchTool extends Tool
                 'title' => $result['title'],
                 'link' => $result['link'],
                 'snippet' => $result['snippet'],
-                // 'title' => $result['title'] ?? '',
-                // 'link' => $result['link'] ?? '',
-                // 'snippet' => $result['snippet'] ?? '',
             ];
         })->take(4);
         
