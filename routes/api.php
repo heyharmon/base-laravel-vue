@@ -12,6 +12,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\AuthController;
 
 //AI chat
 Route::resource('conversations', ConversationController::class);
@@ -37,3 +38,16 @@ Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
 Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
 Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
 Route::resource('websites/{website}/pages', PageController::class);
+// Public routes
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// Protected routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'user']);
+    
+    Route::resource('conversations', ConversationController::class);
+    Route::resource('conversations/{conversation}/chats', ChatController::class);
+    Route::resource('websites', WebsiteController::class);
+});

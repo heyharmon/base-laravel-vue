@@ -4,12 +4,15 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/pages/Home.vue';
 import Dashboard from '@/pages/Dashboard.vue';
 import Analytics from '@/pages/Analytics.vue';
+import Login from '@/Pages/auth/Login.vue';
+import Register from '@/Pages/auth/Register.vue';
 
 const routes = [
   {
     path: '/',
     name: 'home',
     component: Dashboard,
+    meta: { requiresAuth: true }
   },
   {
     path: '/dashboard',
@@ -21,11 +24,44 @@ const routes = [
     name: 'analytics',
     component: Analytics,
   },
+  {
+    path: '/login',
+    name: 'login',
+    component: Login,
+    meta: { guest: true }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: Register,
+    meta: { guest: true }
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// Navigation guard for authentication
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token');
+  
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!token) {
+      next({ name: 'login' });
+    } else {
+      next();
+    }
+  } else if (to.matched.some(record => record.meta.guest)) {
+    if (token) {
+      next({ name: 'home' });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
 });
 
 export default router;
