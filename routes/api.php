@@ -11,6 +11,7 @@ use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\PageController;
 
 //AI chat
 Route::resource('conversations', ConversationController::class);
@@ -35,3 +36,4 @@ Route::resource('runs/{run}/responses', ResponseController::class);
 Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
 Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
 Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
+Route::resource('websites/{website}/pages', PageController::class);

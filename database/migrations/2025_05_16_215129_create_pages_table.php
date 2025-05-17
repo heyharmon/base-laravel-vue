@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('responses', function (Blueprint $table) {
+        Schema::create('pages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('run_id')->constrained()->cascadeOnDelete();
-            $table->string('provider');
-            $table->string('model');
-            $table->text('content');
-            $table->json('metadata')->nullable();
-            $table->json('search')->nullable();
+            $table->foreignId('website_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->text('url');
+            $table->text('summary');
+            $table->longText('llm_text');
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('responses');
+        Schema::dropIfExists('pages');
     }
 };

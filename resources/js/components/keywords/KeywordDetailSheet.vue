@@ -136,13 +136,26 @@ watch(() => props.keywordId, fetchDetails);
               :key="response.id"
               class="bg-white border border-neutral-200 p-4 rounded-lg"
             >
-              <div class="mb-2 flex justify-between">
+              <!-- Response provider and model -->
+              <div class="mb-3 flex justify-between">
                 <span class="text-neutral-500 text-sm">Provider: <span class="font-medium">{{ response.provider }}</span></span>
                 <span class="text-neutral-500 text-sm">Model: <span class="font-medium">{{ response.model }}</span></span>
               </div>
-              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7" v-html="highlightKeyword(response.content)">
+
+              <!-- Response content -->
+              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7 mb-4" v-html="highlightKeyword(response.content)"></div>
+
+              <!-- Response search queries -->
+              <div v-if="response.search && response.search.queries && response.search.queries.length > 0" class="p-2 rounded border border-neutral-200">
+                <div class="text-sm text-neutral-500 mb-2">Google searches performed by the agent</div>
+                <div class="flex flex-wrap gap-2 mb-2">
+                  <span v-for="(query, index) in response.search.queries" :key="index" class="text-xs bg-white px-2 py-1 rounded border border-neutral-200">{{ query }}</span>
+                </div>
+                <div class="text-xs text-neutral-500">Agent may perform Google searches at its discretion to provide accurate answers.</div>
               </div>
-              <div class="mt-2 text-xs text-neutral-500 flex justify-between">
+
+              <!-- Response metadata -->
+              <div class="mt-3 text-xs text-neutral-500 flex justify-between">
                 <span>Run Date: {{ new Date(response.run.run_date).toLocaleString() }}</span>
                 <span>Tokens: {{ response.metadata.usage.promptTokens + response.metadata.usage.completionTokens }}</span>
               </div>

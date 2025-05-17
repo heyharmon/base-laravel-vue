@@ -16,15 +16,15 @@ class Response extends Model
         'model',
         'content',
         'metadata',
-        'tokens',
-        'latency',
-        'error',
+        'search',
+        // 'error',
     ];
 
     protected $casts = [
-        'tokens' => 'integer',
-        'latency' => 'float',
+        // 'tokens' => 'integer',
+        // 'latency' => 'float',
         'metadata' => 'array',
+        'search' => 'array',
     ];
 
     /**

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Website extends Model
+class Page extends Model
 {
     use HasFactory;
 
@@ -15,16 +15,18 @@ class Website extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name', // The name of the website
-        'description', // The description of the website
-        'outline', // The AI generated outline of content of the website
+        'name',
+        'url',
+        'summary',
+        'llm_text',
+        'website_id',
     ];
 
     /**
-     * Get the pages for the website.
+     * Get the website that owns the page.
      */
-    public function pages()
+    public function website()
     {
-        return $this->hasMany(Page::class);
+        return $this->belongsTo(Website::class);
     }
 }
