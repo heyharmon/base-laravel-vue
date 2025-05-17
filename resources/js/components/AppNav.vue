@@ -17,7 +17,7 @@ const logout = async () => {
   <nav class="bg-neutral-900 text-white">
     <div class="container mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-4">
-        <router-link to="/" class="text-xl font-bold">App</router-link>
+        <router-link to="/" class="text-xl font-bold">Paraloom</router-link>
       </div>
       
       <div class="flex items-center space-x-4">
@@ -25,7 +25,7 @@ const logout = async () => {
           <span class="text-sm">{{ user?.name }}</span>
           <button 
             @click="logout" 
-            class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm"
+            class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm cursor-pointer"
           >
             Logout
           </button>
