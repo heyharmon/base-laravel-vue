@@ -4,8 +4,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/pages/Home.vue';
 import Dashboard from '@/pages/Dashboard.vue';
 import Analytics from '@/pages/Analytics.vue';
-import Login from '@/Pages/auth/Login.vue';
-import Register from '@/Pages/auth/Register.vue';
+import Login from '@/pages/auth/Login.vue';
+import Register from '@/pages/auth/Register.vue';
 
 const routes = [
   {
