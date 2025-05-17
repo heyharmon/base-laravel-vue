@@ -42,4 +42,8 @@ return [
     'serpapi' => [
         'api_key' => env('SERPAPI_API_KEY'),
     ],
+
+    'searchapi' => [
+        'api_key' => env('SEARCHAPIIO_API_KEY'),
+    ],
 ];

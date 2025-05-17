@@ -9,6 +9,7 @@ use Prism\Prism\Enums\Provider;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Tools\SearchTool;
+use App\Tools\SearchApiTool;
 use App\Models\Run;
 use App\Models\Response;
 use App\Models\Prompt;
@@ -80,13 +81,13 @@ class PromptRunnerService
 
     private function getLlmResponse(string $promptContent, string $model, Provider $provider)
     {
-        $searchTool = new SearchTool();
+        $searchApiTool = new SearchApiTool();
 
         $response = Prism::text()
             ->using($provider, $model)
             ->withMaxSteps(10)
             ->withMessages([new UserMessage($promptContent)])
-            ->withTools([$searchTool])
+            ->withTools([$searchApiTool])
             ->withToolChoice(ToolChoice::Auto)
             ->asText();
         
@@ -99,7 +100,7 @@ class PromptRunnerService
 
         foreach ($steps as $step) {
             foreach ($step->toolResults as $tool) {
-                if ($tool->toolName == 'search') {
+                if ($tool->toolName == 'search_api') {
                     $searchQueries[] = $tool->args['query']; 
                 }
             }
