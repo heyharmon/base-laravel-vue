@@ -3,10 +3,12 @@
 
 @foreach($results as $result)
 ## {{ $result['title'] }}
+@if($result['snippet'])
 {{ $result['snippet'] }}
+@endif
 [{{ $result['link'] }}]({{ $result['link'] }})
-
 @endforeach
+
 @else
 No search results found.
 @endif

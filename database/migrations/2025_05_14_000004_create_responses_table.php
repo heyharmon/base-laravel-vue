@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('model');
             $table->text('content');
             $table->json('metadata')->nullable();
+            $table->json('search')->nullable();
             $table->timestamps();
         });
     }

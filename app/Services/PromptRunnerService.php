@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Tools\SearchTool;
 use App\Models\Run;
+use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Keyword;
 
@@ -17,13 +18,13 @@ class PromptRunnerService
 {
     private array $providers = [
         'openai' => ['gpt-4o', Provider::OpenAI],
-        'anthropic' => ['claude-3-opus', Provider::Anthropic],
+        'anthropic' => ['claude-3-5-haiku-latest', Provider::Anthropic],
         'gemini' => ['gemini-pro', Provider::Gemini],
         'xai' => ['grok-1', Provider::XAI],
         'deepseek' => ['deepseek-chat', Provider::DeepSeek],
     ];
 
-    public function runPrompt(Prompt $prompt, array $selectedProviders = []): Run
+    public function runPrompt(Prompt $prompt, array $selectedProviders = [])
     {
         // Create a new run record
         $run = Run::create([
@@ -31,67 +32,46 @@ class PromptRunnerService
             'run_date' => now(),
         ]);
 
+        // Get all keywords to check for
+        $keywords = Keyword::all();
+
         // If no providers specified, use all
         if (!$selectedProviders) {
             $selectedProviders = array_keys($this->providers);
         }
 
-        // Get all keywords to check for
-        $keywords = Keyword::all();
-
         // Run the prompt with each provider
         foreach ($selectedProviders as $providerName) {
-            if (!isset($this->providers[$providerName])) {
-                continue;
-            }
-
+            
+            // Setup the LLM provider
+            if (!isset($this->providers[$providerName])) { continue; }
             [$model, $provider] = $this->providers[$providerName];
             
             try {
                 // Get response from the LLM
-                $llmResponse = $this->getLlmResponse($prompt->content, $model, $provider);
-
-                Log::info("LLM Response: " . $llmResponse->text . "\n");
-
-                // if ($llmResponse->toolResults) {
-                //     foreach ($llmResponse->toolResults as $toolResult) {
-                //         Log::info("Tool: " . $toolResult->toolName . "\n");
-                //         Log::info("Result: " . $toolResult->result . "\n");
-                //     }
-                // }
-
-                // foreach ($llmResponse->steps as $step) {
-                //     if ($step->toolCalls) {
-                //         foreach ($step->toolCalls as $toolCall) {
-                //             Log::info("Tool: " . $toolCall->name . "\n");
-                //             Log::info("Arguments: " . json_encode($toolCall->arguments()) . "\n");
-                //         }
-                //     }
-                // }
+                $llm = $this->getLlmResponse($prompt->content, $model, $provider);
                 
-                // Store the response
+                // dd($llm->steps);
+                
+                // Store the LLM's response
                 $response = $run->responses()->create([
                     'provider' => $providerName,
                     'model' => $model,
-                    'content' => $llmResponse->text,
+                    'content' => $llm->responseMessages->last()->content,
                     'metadata' => [
-                        'usage' => $llmResponse->usage ?? null,
+                        'usage' => $llm->usage ?? null,
                     ],
                 ]);
-                
+
+                // Save search tool results
+                $this->saveSearchToolResults($llm->steps, $response);
+
                 // Check for keywords in the response
-                $this->checkForKeywords($keywords, $llmResponse->text, $run, $prompt);
+                $this->checkForKeywords($keywords, $llm->text, $run, $prompt);
+
             } catch (\Exception $e) {
                 // Log the error but continue with other providers
-                $run->responses()->create([
-                    'provider' => $providerName,
-                    'model' => $model,
-                    'content' => 'Error: ' . $e->getMessage(),
-                    'metadata' => [
-                        'error' => true,
-                        'message' => $e->getMessage(),
-                    ],
-                ]);
+                Log::error('Error running prompt: ' . $e);
             }
         }
 
@@ -100,13 +80,32 @@ class PromptRunnerService
 
     private function getLlmResponse(string $promptContent, string $model, Provider $provider)
     {
-        return Prism::text()
+        $searchTool = new SearchTool();
+
+        $response = Prism::text()
             ->using($provider, $model)
-            ->withMaxSteps(1)
+            ->withMaxSteps(10)
             ->withMessages([new UserMessage($promptContent)])
-            ->withTools([new SearchTool()])
-            ->withToolChoice(ToolChoice::Any)
+            ->withTools([$searchTool])
+            ->withToolChoice(ToolChoice::Auto)
             ->asText();
+        
+        return $response;
+    }
+
+    private function saveSearchToolResults(iterable $steps, Response $response): void
+    {
+        $searchQueries = [];
+
+        foreach ($steps as $step) {
+            foreach ($step->toolResults as $tool) {
+                if ($tool->toolName == 'search') {
+                    $searchQueries[] = $tool->args['query']; 
+                }
+            }
+        }
+
+        $response->update(['search' => [ 'queries' => $searchQueries ]]);
     }
 
     private function checkForKeywords(iterable $keywords, string $responseText, Run $run, Prompt $prompt): void
