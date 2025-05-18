@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch, onMounted, ref } from 'vue';
+import { watch, onMounted, ref } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import Sheet from '@/components/ui/Sheet.vue';
 
@@ -37,21 +37,21 @@ const closeSheet = () => {
   emit('close');
 };
 
-const fetchDetails = async () => {
+const showKeyword = async () => {
   if (props.keywordId) {
     await keywordStore.showKeyword(props.keywordId);
   }
 };
 
-const showPromptResponses = async (prompt) => {
+const getKeywordResponses = async (prompt) => {
   selectedPromptId.value = prompt.id;
   selectedPrompt.value = prompt;
   await keywordStore.getKeywordResponses(props.keywordId, prompt.id);
 };
 
 // Lifecycle hooks
-onMounted(fetchDetails);
-watch(() => props.keywordId, fetchDetails);
+onMounted(showKeyword);
+watch(() => props.keywordId, showKeyword);
 </script>
 
 <template>
@@ -95,7 +95,7 @@ watch(() => props.keywordId, fetchDetails);
                 :key="prompt.id"
                 class="border border-neutral-300 hover:border-neutral-400 p-3 rounded-lg cursor-pointer hover:bg-neutral-50"
                 :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedPromptId === prompt.id }"
-                @click="showPromptResponses(prompt)"
+                @click="getKeywordResponses(prompt)"
               >
                 <p class="text-neutral-800">{{ prompt.content }}</p>
                 <div class="mt-2 text-sm text-neutral-500 flex justify-between">
