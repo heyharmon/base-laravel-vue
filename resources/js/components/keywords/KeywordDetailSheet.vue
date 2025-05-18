@@ -54,12 +54,10 @@ onMounted(showKeyword);
 watch(() => props.keywordId, showKeyword);
 
 // Watch for keyword details to load, then select the latest prompt
-watch(() => keywordStore.selectedKeywordDetails, (newDetails) => {
-  if (newDetails?.prompts?.length > 0) {
-    const latestPrompt = newDetails.prompts[0];
+watch(() => keywordStore.selectedKeywordDetails, (newDetails, oldDetails) => {
+    const latestPrompt = keywordStore.selectedKeywordDetails?.prompts[0];
     getKeywordResponses(latestPrompt);
-  }
-}, { immediate: true });
+}, { deep: true });
 </script>
 
 <template>
