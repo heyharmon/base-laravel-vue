@@ -55,9 +55,19 @@ watch(() => props.keywordId, showKeyword);
 
 // Watch for keyword details to load, then select the latest prompt
 watch(() => keywordStore.selectedKeywordDetails, (newDetails, oldDetails) => {
-    const latestPrompt = keywordStore.selectedKeywordDetails?.prompts[0];
-    getKeywordResponses(latestPrompt);
+    if (newDetails?.prompts?.length > 0) {
+        const latestPrompt = newDetails.prompts[0];
+        getKeywordResponses(latestPrompt);
+    }
 }, { deep: true });
+
+// Watch for sheet open state to ensure prompt is shown when sheet is opened
+watch(() => props.isOpen, (isOpen) => {
+    if (isOpen && keywordStore.selectedKeywordDetails?.prompts?.length > 0) {
+        const latestPrompt = keywordStore.selectedKeywordDetails.prompts[0];
+        getKeywordResponses(latestPrompt);
+    }
+});
 </script>
 
 <template>
