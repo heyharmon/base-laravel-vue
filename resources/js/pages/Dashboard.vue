@@ -20,6 +20,7 @@ const selectedKeyword = ref(null);
 const selectedKeywordId = ref(null);
 const selectedPrompt = ref(null);
 const selectedPromptId = ref(null);
+const activeTab = ref('keywords'); // Default tab for mobile view
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
@@ -53,11 +54,29 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex h-[calc(100vh-4rem)]">
+    <div class="flex flex-col md:flex-row h-[calc(100vh-4rem)] overflow-hidden">
+      <!-- Mobile tabs -->
+      <div class="flex md:hidden border-b border-neutral-200 sticky top-0 bg-white z-10 shadow-sm">
+        <button 
+          @click="activeTab = 'keywords'" 
+          class="w-1/2 py-2 text-center font-medium"
+          :class="activeTab === 'keywords' ? 'text-neutral-800 border-b-2 border-neutral-800' : 'text-neutral-500'"
+        >
+          Keywords
+        </button>
+        <button 
+          @click="activeTab = 'prompts'" 
+          class="w-1/2 py-2 text-center font-medium"
+          :class="activeTab === 'prompts' ? 'text-neutral-800 border-b-2 border-neutral-800' : 'text-neutral-500'"
+        >
+          Prompts
+        </button>
+      </div>
+
       <!-- Left column - Keywords -->
-      <div class="w-1/3 pr-4 py-4 border-r border-neutral-200 h-full overflow-y-auto">
+      <div class="w-full md:w-1/3 md:pr-4 md:px-4 py-4 md:border-r border-neutral-200 overflow-y-auto" :class="{'block': activeTab === 'keywords', 'hidden': activeTab !== 'keywords', 'md:block': true}">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-semibold">Keywords</h2>
+          <h2 class="text-xl md:text-2xl font-semibold">Keywords</h2>
           <button 
             @click="isKeywordCreateModalOpen = true" 
             class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
@@ -74,7 +93,7 @@ const showPromptDetails = async (prompt) => {
           <div 
             v-for="keyword in keywordStore.keywords" 
             :key="keyword.id" 
-            class="p-3 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
+            class="p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
             :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
             @click="showKeywordDetails(keyword)"
           >
@@ -98,10 +117,10 @@ const showPromptDetails = async (prompt) => {
       </div>
       
       <!-- Right column - Prompts -->
-      <div class="w-2/3 pl-4 py-4 h-full overflow-y-auto">
+      <div class="w-full md:w-2/3 md:pl-4 md:px-4 py-4 overflow-y-auto" :class="{'block': activeTab === 'prompts', 'hidden': activeTab !== 'prompts', 'md:block': true}">
         <div class="mb-4">
           <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-semibold">Prompts</h2>
+            <h2 class="text-xl md:text-2xl font-semibold">Prompts</h2>
             <div class="flex space-x-2">
               <button 
                 @click="runAllPrompts" 
@@ -148,7 +167,7 @@ const showPromptDetails = async (prompt) => {
               </button>
               <button 
                 @click.stop="promptStore.deletePrompt(prompt.id)" 
-                class="p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+                class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                 aria-label="Delete prompt"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
