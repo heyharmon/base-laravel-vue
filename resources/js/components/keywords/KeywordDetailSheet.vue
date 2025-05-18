@@ -52,6 +52,14 @@ const getKeywordResponses = async (prompt) => {
 // Lifecycle hooks
 onMounted(showKeyword);
 watch(() => props.keywordId, showKeyword);
+
+// Watch for keyword details to load, then select the latest prompt
+watch(() => keywordStore.selectedKeywordDetails, (newDetails) => {
+  if (newDetails?.prompts?.length > 0) {
+    const latestPrompt = newDetails.prompts[0];
+    getKeywordResponses(latestPrompt);
+  }
+}, { immediate: true });
 </script>
 
 <template>
