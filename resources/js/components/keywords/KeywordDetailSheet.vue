@@ -67,11 +67,11 @@ watch(() => props.keywordId, fetchDetails);
     position="right"
     title="Keyword"
   >
-    <div class="flex w-[1300px] h-full">
-      <div v-if="keywordStore.isLoadingDetails" class="flex-[1] h-full flex justify-center py-8">
+    <div class="flex flex-col md:flex-row w-full h-full">
+      <div v-if="keywordStore.isLoadingDetails" class="w-full md:w-1/3 h-full flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
       </div>
-      <div v-else-if="keywordDetails" class="flex-[1] h-full space-y-6 pr-4 border-r border-neutral-200">
+      <div v-else-if="keywordDetails" class="w-full md:w-1/3 h-full space-y-6 md:p-4 md:pr-4 md:border-r border-b md:border-b-0 border-neutral-200 overflow-y-auto">
         <div>
           <div class="bg-neutral-50 p-4 rounded-lg">
             <div class="mb-3">
@@ -112,7 +112,7 @@ watch(() => props.keywordId, fetchDetails);
       </div>
       
       <!-- Responses Column -->
-      <div class="flex-[2] h-full pl-4">
+      <div class="w-full md:w-2/3 h-full p-4 md:pl-4 overflow-y-auto">
         <div v-if="selectedPromptId && keywordStore.isLoadingKeywordResponses" class="flex justify-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
         </div>
@@ -130,7 +130,7 @@ watch(() => props.keywordId, fetchDetails);
           <div v-if="keywordStore.selectedKeywordResponses.length === 0" class="text-neutral-500 italic">
             No responses found containing this keyword.
           </div>
-          <div v-else class="space-y-4 pr-2">
+          <div v-else class="space-y-4">
             <div 
               v-for="response in keywordStore.selectedKeywordResponses" 
               :key="response.id"
