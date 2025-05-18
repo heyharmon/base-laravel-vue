@@ -67,7 +67,7 @@ watch(() => props.keywordId, fetchDetails);
     position="right"
     title="Keyword"
   >
-    <div class="flex flex-col md:flex-row w-full h-full">
+    <div class="flex flex-col md:flex-row xl:w-[1300px] w-full h-full">
       <div v-if="keywordStore.isLoadingDetails" class="w-full md:w-1/3 h-full flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
       </div>

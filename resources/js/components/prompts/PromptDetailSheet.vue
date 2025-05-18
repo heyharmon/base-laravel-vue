@@ -49,7 +49,7 @@ watch(() => props.promptId, fetchDetails);
     position="right"
     title="Prompt"
   >
-    <div class="w-[800px]">
+    <div class="w-full xl:w-[800px] md:p-4">
       <div v-if="promptStore.isLoadingDetails" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
       </div>
