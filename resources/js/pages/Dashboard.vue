@@ -30,6 +30,14 @@ const runPrompt = async (id) => {
   await promptStore.runPrompt(id);
 };
 
+const runAllPrompts = async () => {
+  const allPrompts = promptStore.prompts;
+  for (const prompt of allPrompts) {
+    promptStore.runPrompt(prompt.id);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+};
+
 const showKeywordDetails = async (keyword) => {
   selectedKeyword.value = keyword;
   selectedKeywordId.value = keyword.id;
@@ -94,12 +102,21 @@ const showPromptDetails = async (prompt) => {
         <div class="mb-4">
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-semibold">Prompts</h2>
-            <button 
-              @click="isPromptCreateModalOpen = true" 
-              class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
-            >
-              Add prompt
-            </button>
+            <div class="flex space-x-2">
+              <button 
+                @click="runAllPrompts" 
+                class="px-3 py-1.5 bg-white text-neutral-700 rounded-md text-xs font-medium hover:bg-neutral-100 border transition-colors cursor-pointer"
+                :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0"
+              >
+                Run all prompts
+              </button>
+              <button 
+                @click="isPromptCreateModalOpen = true" 
+                class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
+              >
+                Add prompt
+              </button>
+            </div>
           </div>
         </div>
         
