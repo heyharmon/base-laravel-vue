@@ -33,7 +33,7 @@ const register = async () => {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-neutral-50">
+  <div class="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
     <div class="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
       <h1 class="mb-6 text-2xl font-bold text-neutral-900">Register</h1>
       
