@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -21,6 +22,19 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+        ]);
+
+        // Create a team for the user
+        $team = Team::create([
+            'name' => $user->name . ' Team',
+            'owner_id' => $user->id,
+        ]);
+
+        // Add user to their team as admin
+        $team->users()->attach($user->id, [
+            'role' => 'admin',
+            'invitation_accepted' => true,
+            'joined_at' => now(),
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
