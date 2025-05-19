@@ -15,6 +15,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
+use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Team routes
     Route::resource('teams', TeamController::class);
     Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
+    Route::post('teams/{team}/switch', [TeamController::class, 'switchTeam']);
     Route::post('teams/{team}/accept-invitation', [TeamController::class, 'acceptInvitation']);
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);

@@ -43,6 +43,10 @@ class AuthController extends Controller
             'invitation_accepted' => true,
             'joined_at' => now(),
         ]);
+        
+        // Set the user's current team
+        $user->current_team_id = $team->id;
+        $user->save();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -69,6 +73,25 @@ class AuthController extends Controller
 
         // Revoke all existing tokens
         $user->tokens()->delete();
+        
+        // Set current team if not already set
+        if (!$user->current_team_id) {
+            // Try to find a team where the user is an owner
+            $ownedTeam = Team::where('owner_id', $user->id)->first();
+            
+            if ($ownedTeam) {
+                $user->current_team_id = $ownedTeam->id;
+                $user->save();
+            } else {
+                // Try to find a team where the user is a member
+                $memberTeam = $user->joinedTeams()->first();
+                
+                if ($memberTeam) {
+                    $user->current_team_id = $memberTeam->id;
+                    $user->save();
+                }
+            }
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -135,6 +158,10 @@ class AuthController extends Controller
             
         // Delete the used token
         $invitationToken->delete();
+        
+        // Set the user's current team to the invited team
+        $user->current_team_id = $invitationToken->team_id;
+        $user->save();
         
         // Generate auth token
         $token = $user->createToken('auth_token')->plainTextToken;

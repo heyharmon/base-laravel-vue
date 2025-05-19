@@ -321,4 +321,30 @@ class TeamController extends Controller
 
         return response()->json(['message' => 'Member role updated successfully']);
     }
+    
+    /**
+     * Switch the authenticated user's current team.
+     */
+    public function switchTeam(Team $team)
+    {
+        $user = Auth::user();
+        
+        // Check if user is a member of the team
+        $isMember = $team->members()->where('user_id', $user->id)->exists();
+        $isOwner = $team->owner_id === $user->id;
+        
+        if (!$isMember && !$isOwner) {
+            return response()->json(['message' => 'You are not a member of this team'], 403);
+        }
+        
+        // Update the user's current team
+        DB::table('users')
+            ->where('id', $user->id)
+            ->update(['current_team_id' => $team->id]);
+        
+        return response()->json([
+            'message' => 'Current team updated successfully',
+            'team' => $team
+        ]);
+    }
 }

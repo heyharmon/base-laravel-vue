@@ -24,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'current_team_id',
     ];
 
     /**
@@ -81,5 +82,13 @@ class User extends Authenticatable
     public function pendingTeamInvitations(): BelongsToMany
     {
         return $this->teams()->wherePivot('invitation_accepted', false);
+    }
+    
+    /**
+     * Get the user's current team.
+     */
+    public function currentTeam()
+    {
+        return $this->belongsTo(Team::class, 'current_team_id');
     }
 }
