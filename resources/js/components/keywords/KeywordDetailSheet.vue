@@ -31,13 +31,10 @@ const highlightKeyword = (content) => {
   return content.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
 };
 
-const closeSheet = () => {
+const showKeyword = async () => {
   selectedPromptId.value = null;
   selectedPrompt.value = null;
-  emit('close');
-};
 
-const showKeyword = async () => {
   if (props.keywordId) {
     await keywordStore.showKeyword(props.keywordId);
   }
@@ -73,7 +70,7 @@ watch(() => props.isOpen, (isOpen) => {
 <template>
   <Sheet 
     :is-open="isOpen" 
-    @close="closeSheet"
+    @close="emit('close')"
     position="right"
     title="Keyword"
   >
@@ -142,7 +139,7 @@ watch(() => props.isOpen, (isOpen) => {
           <div class="bg-neutral-50 p-4 rounded-lg mb-4">
             <div class="mb-2">
               <span class="text-neutral-500 text-sm">Prompt:</span>
-              <div class="text-neutral-800 mt-2 text-lg">
+              <div class="text-neutral-800 mt-2 text-2xl/7 font-medium">
                 {{ selectedPrompt.content }}
               </div>
             </div>

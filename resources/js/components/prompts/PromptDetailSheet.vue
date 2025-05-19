@@ -26,6 +26,21 @@ const promptDetails = computed(() => {
   return promptStore.selectedPromptDetails;
 });
 
+// Method to highlight keywords in response content
+const highlightKeywords = (content) => {
+  if (!promptDetails.value?.keywords || !content) return content;
+  
+  let highlightedContent = content;
+  
+  // Apply highlighting for each keyword
+  promptDetails.value.keywords.forEach(keyword => {
+    const regex = new RegExp(keyword.name, 'gi');
+    highlightedContent = highlightedContent.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
+  });
+  
+  return highlightedContent;
+};
+
 const closeSheet = () => {
   emit('close');
 };
@@ -59,7 +74,7 @@ watch(() => props.promptId, fetchDetails);
           <div class="bg-neutral-50 p-4 rounded-lg">
             <div class="mb-2">
               <span class="text-neutral-500 text-sm">Content:</span>
-              <p class="text-neutral-800 mt-1">{{ promptDetails.content }}</p>
+              <p class="text-neutral-800 text-2xl/7 font-medium mt-1">{{ promptDetails.content }}</p>
             </div>
             <div class="mb-2">
               <span class="text-neutral-500 text-sm">Keyword occurrences:</span>
@@ -103,7 +118,7 @@ watch(() => props.promptId, fetchDetails);
               </div>
 
               <!-- Response content -->
-              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7 mb-4">{{ response.content }}</div>
+              <div class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7 mb-4" v-html="highlightKeywords(response.content)"></div>
 
               <!-- Response search queries -->
               <div v-if="response.search?.queries?.length > 0" class="p-2 rounded border border-neutral-200">

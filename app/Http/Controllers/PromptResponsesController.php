@@ -11,9 +11,9 @@ class PromptResponsesController extends Controller
     public function index(Prompt $prompt): JsonResponse
     {
         // Get all responses for this prompt
-        $responses = Response::whereHas('run', function($query) use ($prompt) {
-            $query->where('prompt_id', $prompt->id);
-        })->with('run')->get();
+        $responses = Response::whereHas('run', function($run) use ($prompt) {
+            $run->where('prompt_id', $prompt->id);
+        })->with('run')->latest()->get();
         
         return response()->json($responses);
     }

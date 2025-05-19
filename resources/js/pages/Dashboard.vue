@@ -35,7 +35,7 @@ const runAllPrompts = async () => {
   const allPrompts = promptStore.prompts;
   for (const prompt of allPrompts) {
     promptStore.runPrompt(prompt.id);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
   }
 };
 
