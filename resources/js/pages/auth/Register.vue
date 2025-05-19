@@ -1,27 +1,43 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import auth from '@/services/auth';
 
 const router = useRouter();
+const route = useRoute();
 const name = ref('');
 const email = ref('');
 const password = ref('');
 const password_confirmation = ref('');
 const error = ref('');
 const loading = ref(false);
+const token = ref('');
+
+onMounted(() => {
+  // Check for token in URL query parameters
+  if (route.query.token) {
+    token.value = route.query.token;
+  }
+});
 
 const register = async () => {
   loading.value = true;
   error.value = '';
   
   try {
-    await auth.register({
+    const registrationData = {
       name: name.value,
       email: email.value,
       password: password.value,
       password_confirmation: password_confirmation.value
-    });
+    };
+    
+    // Add token if it exists
+    if (token.value) {
+      registrationData.token = token.value;
+    }
+    
+    await auth.register(registrationData);
     
     router.push('/');
   } catch (err) {
@@ -60,6 +76,7 @@ const register = async () => {
             v-model="email"
             type="email"
             required
+            :disabled="!!token.value"
             class="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-neutral-500 focus:outline-none"
           />
         </div>

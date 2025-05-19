@@ -13,10 +13,13 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\TeamController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/invitations/verify', [InvitationController::class, 'verify']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -46,4 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
     Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
     Route::resource('websites/{website}/pages', PageController::class);
+    
+    // Team routes
+    Route::resource('teams', TeamController::class);
+    Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
+    Route::post('teams/{team}/accept-invitation', [TeamController::class, 'acceptInvitation']);
+    Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
+    Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
+    Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 });

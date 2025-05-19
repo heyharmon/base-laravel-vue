@@ -18,6 +18,10 @@ const logout = async () => {
     <div class="container mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-4">
         <router-link to="/" class="text-xl font-bold">Paraloom</router-link>
+        <div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
+          <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
+          <router-link to="/teams" class="text-sm hover:text-neutral-300">Teams</router-link>
+        </div>
       </div>
       
       <div class="flex items-center space-x-4">
