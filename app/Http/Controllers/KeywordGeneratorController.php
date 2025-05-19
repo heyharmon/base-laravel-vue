@@ -54,7 +54,7 @@ class KeywordGeneratorController extends Controller
             $response = Prism::structured()
                 ->using(Provider::OpenAI, 'gpt-4o')
                 ->withSchema($schema)
-                ->withPrompt('Here is a list of brand names associated with my brand, please return them as an array of keywords: ' . $textResponse)
+                ->withPrompt('Here is a list of brand names associated with my brand, please return them as an array of keywords: ' . $textResponse->text)
                 ->asStructured();
                 
             $result = $response->structured;

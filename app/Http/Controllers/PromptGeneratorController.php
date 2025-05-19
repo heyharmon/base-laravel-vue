@@ -62,11 +62,7 @@ Research the products offered by the brand and consider prompts that relate dire
             $response = Prism::structured()
                 ->using(Provider::OpenAI, 'gpt-4o')
                 ->withSchema($schema)
-                ->withPrompt('Here is a list of brand names associated with my brand, please return them as an array of keywords: ' . $textResponse)
-                ->withProviderOptions([
-                    'tools' => [$searchApiTool],
-                    'tool_choice' => 'auto'
-                ])
+                ->withPrompt('Here is a list of prompts for my brand, please return them as an array: ' . $textResponse->text)
                 ->asStructured();
                 
             $result = $response->structured;
