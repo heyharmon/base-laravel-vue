@@ -73,8 +73,11 @@ onMounted(() => {
             class="flex items-center space-x-1 px-3 py-1 rounded bg-white text-neutral-800 hover:bg-neutral-100 text-sm cursor-pointer"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-              <path d="m8 9 3 3-3 3"/>
-              <path d="M13 15h3a2 2 0 0 0 0-4h-3v-3a2 2 0 0 0-4 0v3H6a2 2 0 0 0 0 4h3v3a2 2 0 0 0 4 0z"/>
+              <path d="m4 19 8-8"/>
+              <path d="m12 19-8-8"/>
+              <path d="m20 12-4-4"/>
+              <path d="m15 13-1-1"/>
+              <path d="m22 14-1.5-1.5"/>
             </svg>
             <span>Generate</span>
           </button>
