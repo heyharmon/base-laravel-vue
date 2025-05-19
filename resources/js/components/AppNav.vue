@@ -70,14 +70,10 @@ onMounted(() => {
         <div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
           <button
             @click="isGenerateModalOpen = true"
-            class="flex items-center space-x-1 px-3 py-1 rounded bg-white text-neutral-800 hover:bg-neutral-100 text-sm cursor-pointer"
+            class="flex items-center space-x-1 px-2 py-1 rounded bg-white text-neutral-800 hover:bg-neutral-100 text-sm cursor-pointer"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-              <path d="m4 19 8-8"/>
-              <path d="m12 19-8-8"/>
-              <path d="m20 12-4-4"/>
-              <path d="m15 13-1-1"/>
-              <path d="m22 14-1.5-1.5"/>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
             </svg>
             <span>Generate</span>
           </button>
