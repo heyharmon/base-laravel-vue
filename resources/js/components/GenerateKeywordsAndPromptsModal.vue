@@ -147,7 +147,7 @@ const createAll = async () => {
         {{ error }}
       </div>
       
-      <div v-if="generatedKeywords.length > 0 || generatedPrompts.length > 0" class="mt-4">
+      <div v-if="generatedKeywords.length > 0 || generatedPrompts.length > 0" class="mt-4 min-h-[calc(100vh-30rem)]">
         <!-- Tabs -->
         <div class="border-b border-neutral-200 mb-4">
           <nav class="flex -mb-px">
@@ -179,7 +179,7 @@ const createAll = async () => {
         <!-- Keywords Tab -->
         <div v-if="activeTab === 'keywords' && generatedKeywords.length > 0">
           <h3 class="font-medium mb-2">Generated Keywords:</h3>
-          <ul class="space-y-1 max-h-96 overflow-y-auto">
+          <ul class="space-y-1 max-h-[calc(100vh-20rem)] overflow-y-auto">
             <li v-for="(keyword, index) in generatedKeywords" :key="index" class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1">
               <span class="text-sm">{{ keyword }}</span>
               <button 
@@ -199,7 +199,7 @@ const createAll = async () => {
         <!-- Prompts Tab -->
         <div v-if="activeTab === 'prompts' && generatedPrompts.length > 0">
           <h3 class="font-medium mb-2">Generated Prompts:</h3>
-          <ul class="space-y-1 max-h-96 overflow-y-auto">
+          <ul class="space-y-1 max-h-[calc(100vh-20rem)] overflow-y-auto">
             <li v-for="(prompt, index) in generatedPrompts" :key="index" class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1">
               <span class="text-sm">{{ prompt }}</span>
               <button 
