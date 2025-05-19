@@ -14,13 +14,14 @@ class PromptController extends Controller
         // TODO: Change this if adding projects model
         $teamId = Auth::user()->current_team_id;
         $prompts = Prompt::where('team_id', $teamId)
-            ->withCount('keywords')
+            ->withCount(['keywords', 'runs'])
             ->latest()
             ->get();
             
         // Calculate percentage of responses with mentions for each prompt
         $prompts->each(function ($prompt) {
             $runs = $prompt->runs;
+            
             if ($runs->count() > 0) {
                 $totalResponses = 0;
                 $mentionedResponses = 0;
