@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\Provider;
-use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\Schema\StringSchema;
 use Prism\Prism\Schema\ObjectSchema;
 use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\Prism;
+use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\Enums\Provider;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Tools\SearchApiTool;
 
 class KeywordGeneratorController extends Controller
@@ -25,6 +26,14 @@ class KeywordGeneratorController extends Controller
         
         try {
             $searchApiTool = new SearchApiTool();
+
+            $textResponse = Prism::text()
+                ->using(Provider::OpenAI, 'gpt-4o')
+                ->withMaxSteps(10)
+                ->withMessages([new UserMessage("I'm going to give you a website domain: {$domain}. Your job is to tell me the brand names associated with the domain. I want you to thoroughly search for the primary brand name as well as any alternate names, such as abbreviations, acronyms, nicknames, shortened names, etc and return them in a list.")])
+                ->withTools([$searchApiTool])
+                ->withToolChoice(ToolChoice::Auto)
+                ->asText();
             
             $schema = new ObjectSchema(
                 name: 'domain_keywords',
@@ -45,11 +54,7 @@ class KeywordGeneratorController extends Controller
             $response = Prism::structured()
                 ->using(Provider::OpenAI, 'gpt-4o')
                 ->withSchema($schema)
-                ->withPrompt("I'm going to give you a website domain: {$domain}. Your job is to tell me the brand names associated with the domain. I want you to thoroughly search for the primary brand name as well as any alternate names, such as abbreviations, acronyms, nicknames, shortened names, etc.")
-                ->withProviderOptions([
-                    'tools' => [$searchApiTool],
-                    'tool_choice' => 'auto'
-                ])
+                ->withPrompt('Here is a list of brand names associated with my brand, please return them as an array of keywords: ' . $textResponse)
                 ->asStructured();
                 
             $result = $response->structured;

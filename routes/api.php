@@ -17,6 +17,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\KeywordGeneratorController;
+use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
@@ -42,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('keywords', KeywordController::class);
         Route::resource('prompts', PromptController::class);
         Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']);
+        Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']);
     });
     Route::resource('runs', RunController::class);
 
