@@ -49,7 +49,7 @@ onUnmounted(() => {
         :class="isOpen ? 'translate-x-0' : position === 'right' ? 'translate-x-full' : '-translate-x-full'"
         @click.stop
       >
-        <div class="px-6 py-4 border-b border-neutral-200 flex justify-between items-center">
+        <div class="px-6 py-3 border-b border-neutral-200 flex justify-between items-center">
           <h3 class="text-lg font-medium text-neutral-900" v-if="title">
             {{ title }}
           </h3>
