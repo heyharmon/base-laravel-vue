@@ -6,6 +6,7 @@ use App\Http\Controllers\RunController;
 use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\PromptRunController;
 use App\Http\Controllers\PromptController;
+use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\KeywordResponsesController;
 use App\Http\Controllers\KeywordController;
 use App\Http\Controllers\ConversationController;
@@ -44,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Keyword responses
     Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
+    
+    // Prompt responses
+    Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);

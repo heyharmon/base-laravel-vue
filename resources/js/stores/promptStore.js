@@ -9,6 +9,8 @@ export const usePromptStore = defineStore('prompts', () => {
   const isLoadingDetails = ref(false);
   const loadingPromptIds = ref([]);
   const selectedPromptDetails = ref(null);
+  const selectedPromptResponses = ref([]);
+  const isLoadingPromptResponses = ref(false);
   
   // Actions
   async function fetchPrompts() {
@@ -92,6 +94,19 @@ export const usePromptStore = defineStore('prompts', () => {
     }
   }
 
+  async function getPromptResponses(promptId) {
+    isLoadingPromptResponses.value = true;
+    try {
+      selectedPromptResponses.value = await api.get(`/prompts/${promptId}/responses`);
+      return selectedPromptResponses.value;
+    } catch (error) {
+      console.error('Error fetching prompt responses:', error);
+      throw error;
+    } finally {
+      isLoadingPromptResponses.value = false;
+    }
+  }
+
   return {
     // State
     prompts: computed(() => prompts.value),
@@ -99,6 +114,8 @@ export const usePromptStore = defineStore('prompts', () => {
     isLoadingDetails,
     loadingPromptIds,
     selectedPromptDetails: computed(() => selectedPromptDetails.value),
+    selectedPromptResponses: computed(() => selectedPromptResponses.value),
+    isLoadingPromptResponses,
     
     // Actions
     fetchPrompts,
@@ -107,5 +124,6 @@ export const usePromptStore = defineStore('prompts', () => {
     updatePrompt,
     deletePrompt,
     runPrompt,
+    getPromptResponses,
   };
 });
