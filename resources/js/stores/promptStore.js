@@ -70,7 +70,6 @@ export const usePromptStore = defineStore('prompts', () => {
   }
   
   async function deletePrompt(id) {
-    isLoading.value = true;
     try {
       await api.delete(`/prompts/${id}`);
       prompts.value = prompts.value.filter(p => p.id !== id);
@@ -78,7 +77,6 @@ export const usePromptStore = defineStore('prompts', () => {
       console.error('Error deleting prompt:', error);
       throw error;
     } finally {
-      isLoading.value = false;
     }
   }
   

@@ -69,7 +69,6 @@ export const useKeywordStore = defineStore('keywords', () => {
   }
   
   async function deleteKeyword(id) {
-    isLoading.value = true;
     try {
       await api.delete(`/keywords/${id}`);
       keywords.value = keywords.value.filter(k => k.id !== id);
@@ -77,7 +76,6 @@ export const useKeywordStore = defineStore('keywords', () => {
       console.error('Error deleting keyword:', error);
       throw error;
     } finally {
-      isLoading.value = false;
     }
   }
 

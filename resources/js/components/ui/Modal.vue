@@ -43,7 +43,7 @@ onUnmounted(() => {
     <!-- Backdrop overlay -->
     <div class="fixed inset-0 bg-neutral-300/50 transition-opacity" @click="closeModal"></div>
     
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
+    <div class="flex items-center justify-center min-h-screen px-4 text-center">
       <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
       <div 
