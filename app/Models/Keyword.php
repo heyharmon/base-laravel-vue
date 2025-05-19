@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Keyword extends Model
@@ -11,6 +12,7 @@ class Keyword extends Model
     use HasFactory;
 
     protected $fillable = [
+        'team_id', // TODO: Change this if adding projects model
         'name',
         'description',
     ];
@@ -32,5 +34,14 @@ class Keyword extends Model
     {
         return $this->belongsToMany(Run::class)
             ->withTimestamps();
+    }
+    
+    /**
+     * Get the team that owns the keyword.
+     */
+    // TODO: Change this if adding projects model
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 }

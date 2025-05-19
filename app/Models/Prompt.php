@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -12,6 +13,7 @@ class Prompt extends Model
     use HasFactory;
 
     protected $fillable = [
+        'team_id', // TODO: Change this if adding projects model
         'name',
         'content',
         'description',
@@ -39,5 +41,14 @@ class Prompt extends Model
     public function runs(): HasMany
     {
         return $this->hasMany(Run::class);
+    }
+    
+    /**
+     * Get the team that owns the prompt.
+     */
+    // TODO: Change this if adding projects model
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 }

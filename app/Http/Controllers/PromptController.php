@@ -5,18 +5,30 @@ namespace App\Http\Controllers;
 use App\Models\Prompt;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class PromptController extends Controller
 {
     public function index(): JsonResponse
     {
-        $prompts = Prompt::withCount('keywords')->latest()->get();
+        // TODO: Change this if adding projects model
+        $teamId = Auth::user()->current_team_id;
+        $prompts = Prompt::where('team_id', $teamId)
+            ->withCount('keywords')
+            ->latest()
+            ->get();
         
         return response()->json($prompts);
     }
 
     public function show(Prompt $prompt): JsonResponse
     {
+        // Check if prompt belongs to user's current team
+        // TODO: Change this if adding projects model
+        if ($prompt->team_id !== Auth::user()->current_team_id) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        
         $prompt->load(['keywords' => function($query) {
             $query->withPivot('count', 'last_found_at');
         }]);
@@ -31,6 +43,10 @@ class PromptController extends Controller
             'content' => 'required|string',
             'description' => 'nullable|string',
         ]);
+        
+        // Add the team_id to the validated data
+        // TODO: Change this if adding projects model
+        $validated['team_id'] = Auth::user()->current_team_id;
 
         $prompt = Prompt::create($validated);
         
@@ -39,6 +55,12 @@ class PromptController extends Controller
 
     public function update(Request $request, Prompt $prompt): JsonResponse
     {
+        // Check if prompt belongs to user's current team
+        // TODO: Change this if adding projects model
+        if ($prompt->team_id !== Auth::user()->current_team_id) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        
         $validated = $request->validate([
             'name' => 'nullable|string',
             'content' => 'required|string',
@@ -52,6 +74,12 @@ class PromptController extends Controller
 
     public function destroy(Prompt $prompt): JsonResponse
     {
+        // Check if prompt belongs to user's current team
+        // TODO: Change this if adding projects model
+        if ($prompt->team_id !== Auth::user()->current_team_id) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        
         $prompt->delete();
         
         return response()->json(null, 204);

@@ -31,8 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('websites', WebsiteController::class);
 
     // Core resources
-    Route::resource('keywords', KeywordController::class);
-    Route::resource('prompts', PromptController::class);
+    Route::middleware(EnsureHasTeam::class)->group(function () {
+        Route::resource('keywords', KeywordController::class);
+        Route::resource('prompts', PromptController::class);
+    });
     Route::resource('runs', RunController::class);
 
     // Keyword responses

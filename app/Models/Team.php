@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
 {
@@ -53,5 +54,23 @@ class Team extends Model
     public function pendingInvitations(): BelongsToMany
     {
         return $this->users()->wherePivot('invitation_accepted', false);
+    }
+    
+    /**
+     * Get the keywords that belong to the team.
+     */
+    // TODO: Change this if adding projects model
+    public function keywords(): HasMany
+    {
+        return $this->hasMany(Keyword::class);
+    }
+    
+    /**
+     * Get the prompts that belong to the team.
+     */
+    // TODO: Change this if adding projects model
+    public function prompts(): HasMany
+    {
+        return $this->hasMany(Prompt::class);
     }
 }
