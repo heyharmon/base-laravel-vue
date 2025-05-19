@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::table('keywords', function (Blueprint $table) {
             // TODO: Change this if adding projects model
-            $table->foreignId('team_id')->after('id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade')->after('id');
         });
         
         Schema::table('prompts', function (Blueprint $table) {
             // TODO: Change this if adding projects model
-            $table->foreignId('team_id')->after('id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade')->after('id');
         });
     }
 

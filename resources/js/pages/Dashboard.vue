@@ -153,7 +153,10 @@ const showPromptDetails = async (prompt) => {
           >
             <div>
                 <p class="text-neutral-800 text-lg">{{ prompt.content }}</p>
-                <div v-if="prompt.keywords_count >= 0" class="text-sm text-neutral-500 mt-1">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</div>
+                <div v-if="prompt.keywords_count >= 0" class="flex items-center gap-2 text-sm text-neutral-500 mt-1">
+                    <p v-if="prompt.mentions_percentage !== undefined" class="min-w-[200px]">Mentioned {{ prompt.mentions_percentage }}% of the time</p>
+                    <p class="">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</p>
+                </div>
                 <div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
             </div>
             <div class="flex justify-end space-x-2">

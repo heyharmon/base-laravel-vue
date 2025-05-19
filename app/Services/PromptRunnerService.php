@@ -70,7 +70,7 @@ class PromptRunnerService
                 $this->saveSearchToolResults($llm->steps, $response);
 
                 // Check for keywords in the response
-                $this->checkForKeywords($keywords, $llm->text, $run, $prompt);
+                $this->checkForKeywords($keywords, $response, $run, $prompt);
 
             } catch (\Exception $e) {
                 // Log the error but continue with other providers
@@ -111,10 +111,11 @@ class PromptRunnerService
         $response->update(['search' => [ 'queries' => $searchQueries ]]);
     }
 
-    private function checkForKeywords(iterable $keywords, string $responseText, Run $run, Prompt $prompt): void
+    private function checkForKeywords(iterable $keywords, Response $response, Run $run, Prompt $prompt): void
     {
-        $responseText = strtolower($responseText);
+        $responseText = strtolower($response->content);
         $foundKeywords = [];
+        $mentioned = false;
 
         foreach ($keywords as $keyword) {
             $keywordName = strtolower($keyword->name);
@@ -122,6 +123,7 @@ class PromptRunnerService
             // Check if the keyword exists in the response
             if (str_contains($responseText, $keywordName)) {
                 $foundKeywords[] = $keyword->id;
+                $mentioned = true;
                 
                 // Update the pivot table for keyword-prompt relationship
                 $pivot = $prompt->keywords()->syncWithoutDetaching([$keyword->id]);
@@ -146,5 +148,8 @@ class PromptRunnerService
         if (!empty($foundKeywords)) {
             $run->keywords()->syncWithoutDetaching($foundKeywords);
         }
+        
+        // Update the response with the mentioned flag
+        $response->update(['mentioned' => $mentioned]);
     }
 }

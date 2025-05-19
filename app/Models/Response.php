@@ -14,6 +14,7 @@ class Response extends Model
         'run_id',
         'provider',
         'model',
+        'mentioned',
         'content',
         'metadata',
         'search',

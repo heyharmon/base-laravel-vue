@@ -72,12 +72,16 @@ watch(() => props.promptId, fetchDetails);
       <div v-else-if="promptDetails" class="space-y-6">
         <div>
           <div class="bg-neutral-50 p-4 rounded-lg">
-            <div class="mb-2">
+            <div class="mb-4">
               <span class="text-neutral-500 text-sm">Content:</span>
               <p class="text-neutral-800 text-2xl/7 font-medium mt-1">{{ promptDetails.content }}</p>
             </div>
-            <div class="mb-2">
-              <span class="text-neutral-500 text-sm">Keyword occurrences:</span>
+            <div class="mb-1 text-sm">
+              <span class="text-neutral-500">Mentioned:</span>
+              <span class="text-neutral-800 ml-2">{{ prompt.mentions_percentage }}% of the time</span>
+            </div>
+            <div class="mb-2 text-sm">
+              <span class="text-neutral-500">Keyword occurrences:</span>
               <span class="text-neutral-800 ml-2">{{ promptDetails.keywords?.length || 0 }} {{ promptDetails.keywords?.length === 1 ? 'keyword' : 'keywords' }}</span>
             </div>
           </div>
