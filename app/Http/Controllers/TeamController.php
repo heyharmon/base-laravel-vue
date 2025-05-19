@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewUserTeamInvitation;
+use App\Mail\TeamInvitation;
+use App\Models\InvitationToken;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -186,7 +190,36 @@ class TeamController extends Controller
             'invitation_sent_at' => now(),
         ]);
 
-        // TODO: Send invitation email to user
+        // Check if this is a new user (just created) or existing user
+        $wasRecentlyCreated = $user->wasRecentlyCreated;
+        
+        if ($wasRecentlyCreated) {
+            // For new users, create a token and send registration invitation
+            $token = Str::random(64);
+            
+            // Store the token with expiration
+            InvitationToken::create([
+                'email' => $user->email,
+                'token' => $token,
+                'team_id' => $team->id,
+                'expires_at' => now()->addHours(24),
+            ]);
+            
+            // Send email with registration link
+            Mail::to($user->email)->send(new NewUserTeamInvitation(
+                $team,
+                $user,
+                $validated['role'],
+                $token
+            ));
+        } else {
+            // For existing users, send regular team invitation
+            Mail::to($user->email)->send(new TeamInvitation(
+                $team,
+                $user,
+                $validated['role']
+            ));
+        }
 
         return response()->json(['message' => 'Invitation sent successfully']);
     }

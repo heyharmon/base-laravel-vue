@@ -5,11 +5,13 @@ use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/invitations/verify', [InvitationController::class, 'verify']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
