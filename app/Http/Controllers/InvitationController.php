@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 class InvitationController extends Controller
 {
     /**
-     * Verify an invitation token.
+     * TODO: Are we using this verification method at all anywhere in the app?
+     * Verify an invitation token. 
      */
     public function verify(Request $request)
     {

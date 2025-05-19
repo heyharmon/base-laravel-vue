@@ -28,8 +28,7 @@ api.interceptors.response.use(
       if (error.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // If using a router, you could redirect to login here
-        // window.location.href = '/login';
+        window.location.href = '/login';
       }
       
       // Return the error response data for better error handling

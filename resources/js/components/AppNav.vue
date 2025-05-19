@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import auth from '@/services/auth';
-import teamService from '@/services/team';
+import { useTeamStore } from '@/stores/teamStore';
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui';
 
 const router = useRouter();
+const teamStore = useTeamStore();
 const isAuthenticated = computed(() => auth.isAuthenticated());
 const user = computed(() => auth.getUser());
 const teams = ref(null);
@@ -21,7 +22,12 @@ const logout = async () => {
 const loadTeams = async () => {
   if (isAuthenticated.value) {
     try {
-      teams.value = await teamService.getTeams();
+      await teamStore.fetchTeams();
+      teams.value = {
+        ownedTeams: teamStore.ownedTeams,
+        joinedTeams: teamStore.joinedTeams,
+        pendingInvitations: teamStore.pendingInvitations
+      };
       updateCurrentTeam();
     } catch (error) {
       console.error('Error loading teams:', error);
@@ -31,13 +37,13 @@ const loadTeams = async () => {
 
 const updateCurrentTeam = () => {
   if (teams.value && user.value) {
-    currentTeam.value = teamService.getCurrentTeam(teams.value, user.value);
+    currentTeam.value = teamStore.getCurrentTeam(teams.value, user.value);
   }
 };
 
 const switchTeam = async (teamId) => {
   try {
-    await teamService.switchTeam(teamId);
+    await teamStore.switchTeam(teamId);
     await loadTeams();
     isTeamDropdownOpen.value = false;
     // Refresh the page after switching teams
