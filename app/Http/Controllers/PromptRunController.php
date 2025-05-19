@@ -23,9 +23,6 @@ class PromptRunController extends Controller
         //     'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
         // ]);
 
-        // $providers = $validated['providers'] ?? null;
-        
-        // $run = $this->promptRunnerService->runPrompt($prompt, ['openai', 'anthropic']);
         $run = $this->promptRunnerService->runPrompt($prompt, ['openai']);
         
         return response()->json($run, 201);
