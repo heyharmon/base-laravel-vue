@@ -14,6 +14,7 @@ use App\Models\Run;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Keyword;
+use Illuminate\Support\Facades\Auth;
 
 class PromptRunnerService
 {
@@ -33,8 +34,9 @@ class PromptRunnerService
             'run_date' => now(),
         ]);
 
-        // Get all keywords to check for
-        $keywords = Keyword::all();
+        // Get keywords scoped to the user's current team
+        $teamId = Auth::user()->current_team_id;
+        $keywords = Keyword::where('team_id', $teamId)->get();
 
         // If no providers specified, use all
         if (!$selectedProviders) {
