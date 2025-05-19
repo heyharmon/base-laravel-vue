@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import auth from '@/services/auth';
 import { useTeamStore } from '@/stores/teamStore';
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui';
+import GenerateKeywordsAndPrompts from '@/components/GenerateKeywordsAndPrompts.vue';
 
 const router = useRouter();
 const teamStore = useTeamStore();
@@ -13,6 +14,7 @@ const teams = ref(null);
 const currentTeam = ref(null);
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false);
+const isGenerateModalOpen = ref(false);
 
 const logout = async () => {
   await auth.logout();
@@ -66,6 +68,16 @@ onMounted(() => {
       <div class="flex items-center space-x-4">
         <router-link to="/" class="text-xl font-bold">Paraloom</router-link>
         <div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
+          <button
+            @click="isGenerateModalOpen = true"
+            class="flex items-center space-x-1 px-3 py-1 rounded bg-white text-neutral-800 hover:bg-neutral-100 text-sm cursor-pointer"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+              <path d="m8 9 3 3-3 3"/>
+              <path d="M13 15h3a2 2 0 0 0 0-4h-3v-3a2 2 0 0 0-4 0v3H6a2 2 0 0 0 0 4h3v3a2 2 0 0 0 4 0z"/>
+            </svg>
+            <span>Generate</span>
+          </button>
           <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
           <router-link to="/analytics" class="text-sm hover:text-neutral-300">Analytics</router-link>
           <router-link to="/teams" class="text-sm hover:text-neutral-300">Teams</router-link>
@@ -144,4 +156,5 @@ onMounted(() => {
       </div>
     </div>
   </nav>
+  <GenerateKeywordsAndPrompts :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
 </template>
