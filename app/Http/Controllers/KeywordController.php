@@ -41,7 +41,7 @@ class KeywordController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|unique:keywords,name',
+            'name' => 'required|string',
         ]);
         
         // Add the team_id to the validated data
@@ -62,7 +62,7 @@ class KeywordController extends Controller
         }
         
         $validated = $request->validate([
-            'name' => 'required|string|unique:keywords,name,' . $keyword->id,
+            'name' => 'required|string',
         ]);
 
         $keyword->update($validated);

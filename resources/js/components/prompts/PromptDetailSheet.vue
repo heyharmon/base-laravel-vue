@@ -107,7 +107,11 @@ watch(() => props.promptId, fetchDetails);
           No keywords have been found in this prompt yet.
         </div>
         
-        <div v-if="promptDetails && promptStore.selectedPromptResponses.length > 0" class="mt-6">
+        <div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
+        </div>
+
+        <div v-else-if="promptDetails && promptStore.selectedPromptResponses.length > 0" class="mt-6">
           <h3 class="text-lg font-medium text-neutral-800 mb-2">Responses</h3>
           <div class="space-y-4">
             <div 
@@ -144,14 +148,11 @@ watch(() => props.promptId, fetchDetails);
             </div>
           </div>
         </div>
-        
+
         <div v-else-if="promptDetails && promptStore.selectedPromptResponses.length === 0" class="mt-6 text-neutral-500 italic">
           No responses found for this prompt.
         </div>
         
-        <div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-        </div>
       </div>
     </div>
   </Sheet>

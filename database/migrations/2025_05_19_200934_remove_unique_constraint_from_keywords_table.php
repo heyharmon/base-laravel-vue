@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('keywords', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->timestamps();
+        Schema::table('keywords', function (Blueprint $table) {
+            $table->dropUnique(['name']);
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('keywords');
+        Schema::table('keywords', function (Blueprint $table) {
+            $table->unique(['name']);
+        });
     }
 };
