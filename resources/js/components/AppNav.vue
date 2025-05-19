@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import auth from '@/services/auth';
 import { useTeamStore } from '@/stores/teamStore';
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui';
-import GenerateKeywordsAndPrompts from '@/components/GenerateKeywordsAndPrompts.vue';
+import GenerateKeywordsAndPromptsModal from '@/components/GenerateKeywordsAndPromptsModal.vue';
 
 const router = useRouter();
 const teamStore = useTeamStore();
@@ -155,5 +155,5 @@ onMounted(() => {
       </div>
     </div>
   </nav>
-  <GenerateKeywordsAndPrompts :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
+  <GenerateKeywordsAndPromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
 </template>
