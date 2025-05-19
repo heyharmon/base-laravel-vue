@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
@@ -21,6 +21,7 @@ const selectedKeywordId = ref(null);
 const selectedPrompt = ref(null);
 const selectedPromptId = ref(null);
 const activeTab = ref('keywords'); // Default tab for mobile view
+const sortOption = ref('default'); // Default sort option
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
@@ -32,12 +33,34 @@ const runPrompt = async (id) => {
 };
 
 const runAllPrompts = async () => {
-  const allPrompts = promptStore.prompts;
+  const allPrompts = sortedPrompts.value;
   for (const prompt of allPrompts) {
     promptStore.runPrompt(prompt.id);
     await new Promise(resolve => setTimeout(resolve, 800));
   }
 };
+
+const sortedPrompts = computed(() => {
+  if (!promptStore.prompts || promptStore.prompts.length === 0) return [];
+  
+  if (sortOption.value === 'default') {
+    return [...promptStore.prompts];
+  } else if (sortOption.value === 'mentions-asc') {
+    return [...promptStore.prompts].sort((a, b) => {
+      const aPercentage = a.mentions_percentage !== undefined ? a.mentions_percentage : 0;
+      const bPercentage = b.mentions_percentage !== undefined ? b.mentions_percentage : 0;
+      return aPercentage - bPercentage;
+    });
+  } else if (sortOption.value === 'mentions-desc') {
+    return [...promptStore.prompts].sort((a, b) => {
+      const aPercentage = a.mentions_percentage !== undefined ? a.mentions_percentage : 0;
+      const bPercentage = b.mentions_percentage !== undefined ? b.mentions_percentage : 0;
+      return bPercentage - aPercentage;
+    });
+  }
+  
+  return [...promptStore.prompts];
+});
 
 const showKeywordDetails = async (keyword) => {
   selectedKeyword.value = keyword;
@@ -122,9 +145,25 @@ const showPromptDetails = async (prompt) => {
           <div class="flex justify-between items-center">
             <h2 class="text-xl md:text-2xl font-semibold">Prompts</h2>
             <div class="flex space-x-2">
+              <!-- Sort prompts -->
+              <div class="relative inline-block">
+                <select 
+                  v-model="sortOption" 
+                  class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium appearance-none pr-8 cursor-pointer"
+                >
+                  <option value="default">Default order</option>
+                  <option value="mentions-desc">Mentions (high to low)</option>
+                  <option value="mentions-asc">Mentions (low to high)</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-700">
+                  <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+              </div>
               <button 
                 @click="runAllPrompts" 
-                class="px-3 py-1.5 bg-white text-neutral-700 rounded-md text-xs font-medium hover:bg-neutral-100 border transition-colors cursor-pointer"
+                class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
                 :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0"
               >
                 Run all prompts
@@ -145,7 +184,7 @@ const showPromptDetails = async (prompt) => {
         
         <div v-else class="space-y-4">
           <div 
-            v-for="prompt in promptStore.prompts" 
+            v-for="prompt in sortedPrompts" 
             :key="prompt.id" 
             class="flex items-start justify-between p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
             :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedPromptId === prompt.id }"
