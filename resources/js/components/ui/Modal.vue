@@ -9,6 +9,11 @@ const props = defineProps({
   title: {
     type: String,
     default: ''
+  },
+  width: {
+    type: String,
+    default: 'default',
+    validator: (value) => ['default', 'wide', 'wider', 'full'].includes(value)
   }
 });
 
@@ -42,7 +47,13 @@ onUnmounted(() => {
       <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
       <div 
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all p-6 sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10"
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all p-6 sm:my-8 sm:align-middle relative z-10"
+        :class="{
+          'sm:max-w-lg sm:w-full': props.width === 'default',
+          'sm:max-w-2xl sm:w-full': props.width === 'wide',
+          'sm:max-w-3xl sm:w-full': props.width === 'wider',
+          'sm:max-w-4xl sm:w-full': props.width === 'full'
+        }"
         @click.stop
       >
         <div class="bg-white pb-6">

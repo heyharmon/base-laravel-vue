@@ -128,7 +128,7 @@ const createAll = async () => {
 </script>
 
 <template>
-  <Modal :is-open="isOpen" title="Generate Keywords & Prompts" @close="closeModal">
+  <Modal :is-open="isOpen" title="Generate Keywords & Prompts" width="wider" @close="closeModal">
     <div class="space-y-4">
       <input 
         v-model="domain" 
