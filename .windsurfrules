@@ -37,9 +37,6 @@
 * Always import components then layouts after all other imports.
 * Always use '@' for imports.
 
-### Authorization Rules
-* We are not using authentication or authorization in this app, ignore any authorization logic.
-
 ### Tailwind Rules
 * Always use Tailwind CSS classes for styling.
 * Always use shades of bg-neutral for backgrounds.

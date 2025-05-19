@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import api from '@/services/api.js';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -59,9 +60,7 @@ const chartData = computed(() => {
 const fetchKeywords = async () => {
   isLoading.value = true;
   try {
-    const response = await fetch(`/api/analytics/keywords?period=${selectedPeriod.value}`);
-    if (!response.ok) throw new Error('Failed to fetch keywords');
-    keywords.value = await response.json();
+    keywords.value = await api.get(`/analytics/keywords?period=${selectedPeriod.value}`);
   } catch (error) {
     console.error('Error fetching keywords:', error);
   } finally {
@@ -72,12 +71,10 @@ const fetchKeywords = async () => {
 const fetchTimeSeriesData = async (keywordId = null, days = 30) => {
   isTimeSeriesLoading.value = true;
   try {
-    let url = `/api/analytics/timeseries?days=${days}`;
+    let url = `/analytics/timeseries?days=${days}`;
     if (keywordId) url += `&keyword_id=${keywordId}`;
     
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch time series data');
-    timeSeriesData.value = await response.json();
+    timeSeriesData.value = await api.get(url);
   } catch (error) {
     console.error('Error fetching time series data:', error);
   } finally {
@@ -93,15 +90,10 @@ const selectKeyword = async (keyword) => {
 
 const fetchKeywordDetails = async (keywordId) => {
   try {
-    const response = await fetch(`/api/analytics/keywords?keyword_id=${keywordId}&period=${selectedPeriod.value}`);
-    if (!response.ok) throw new Error('Failed to fetch keyword details');
-    const data = await response.json();
-    
     // Update the selected keyword with detailed data
-    selectedKeyword.value = data;
+    selectedKeyword.value = await api.get(`/analytics/keywords?keyword_id=${keywordId}&period=${selectedPeriod.value}`);
   } catch (error) {
     console.error('Error fetching keyword details:', error);
-  } finally {
   }
 };
 

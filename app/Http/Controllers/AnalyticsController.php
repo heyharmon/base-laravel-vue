@@ -7,6 +7,7 @@ use App\Models\Prompt;
 use App\Models\Run;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
@@ -15,6 +16,9 @@ class AnalyticsController extends Controller
     {
         $period = $request->input('period', 'all');
         $keywordId = $request->input('keyword_id');
+        
+        // Get the user's current team ID
+        $teamId = Auth::user()->current_team_id;
         
         $query = Run::query();
         
@@ -33,7 +37,9 @@ class AnalyticsController extends Controller
         
         if ($keywordId) {
             // Get stats for a specific keyword
-            $keyword = Keyword::findOrFail($keywordId);
+            $keyword = Keyword::where('id', $keywordId)
+                ->where('team_id', $teamId)
+                ->firstOrFail();
             
             $stats = [
                 'id' => $keyword->id,
@@ -65,6 +71,7 @@ class AnalyticsController extends Controller
         } else {
             // Get stats for all keywords
             $stats = Keyword::withCount('prompts')
+                ->where('team_id', $teamId)
                 ->get()
                 ->map(function ($keyword) {
                     return [
@@ -84,7 +91,12 @@ class AnalyticsController extends Controller
         $period = $request->input('period', 'all');
         $promptId = $request->input('prompt_id');
         
-        $query = Run::query();
+        // Get the user's current team ID
+        $teamId = Auth::user()->current_team_id;
+        
+        $query = Run::query()->whereHas('prompt', function($q) use ($teamId) {
+            $q->where('team_id', $teamId);
+        });
         
         // Apply date filters based on period
         switch ($period) {
@@ -101,7 +113,9 @@ class AnalyticsController extends Controller
         
         if ($promptId) {
             // Get stats for a specific prompt
-            $prompt = Prompt::findOrFail($promptId);
+            $prompt = Prompt::where('id', $promptId)
+                ->where('team_id', $teamId)
+                ->firstOrFail();
             $query->where('prompt_id', $promptId);
             
             $stats = [
@@ -124,6 +138,7 @@ class AnalyticsController extends Controller
         } else {
             // Get stats for all prompts
             $stats = Prompt::withCount('keywords')
+                ->where('team_id', $teamId)
                 ->get()
                 ->map(function ($prompt) {
                     return [
@@ -145,6 +160,9 @@ class AnalyticsController extends Controller
         $promptId = $request->input('prompt_id');
         $days = $request->input('days', 30);
         
+        // Get the user's current team ID
+        $teamId = Auth::user()->current_team_id;
+        
         $startDate = now()->subDays($days)->startOfDay();
         $endDate = now()->endOfDay();
         
@@ -158,7 +176,10 @@ class AnalyticsController extends Controller
         }
         
         $query = Run::where('run_date', '>=', $startDate)
-            ->where('run_date', '<=', $endDate);
+            ->where('run_date', '<=', $endDate)
+            ->whereHas('prompt', function($q) use ($teamId) {
+                $q->where('team_id', $teamId);
+            });
             
         if ($promptId) {
             $query->where('prompt_id', $promptId);
@@ -167,6 +188,11 @@ class AnalyticsController extends Controller
         $runs = $query->get();
         
         if ($keywordId) {
+            // Verify keyword belongs to user's team
+            $keyword = Keyword::where('id', $keywordId)
+                ->where('team_id', $teamId)
+                ->firstOrFail();
+                
             // Get time series data for a specific keyword
             foreach ($runs as $run) {
                 $date = $run->run_date->format('Y-m-d');
@@ -177,7 +203,7 @@ class AnalyticsController extends Controller
             }
             
             $series = [
-                'name' => Keyword::find($keywordId)->name ?? 'Unknown',
+                'name' => $keyword->name,
                 'data' => array_values($dates),
                 'labels' => array_keys($dates),
             ];

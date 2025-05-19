@@ -24,6 +24,10 @@ Route::get('/invitations/verify', [InvitationController::class, 'verify']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    // Analytics endpoints
+    Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
+    Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
+    Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     
@@ -47,10 +51,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Run responses TODO: May never use this
     Route::resource('runs/{run}/responses', ResponseController::class);
 
-    // Analytics endpoints
-    Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
-    Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
-    Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
     Route::resource('websites/{website}/pages', PageController::class);
     
     // Team routes
