@@ -43,6 +43,15 @@ const auth = {
 
   isAuthenticated() {
     return !!this.getToken();
+  },
+
+  async forgotPassword(email) {
+    const response = await api.post('/forgot-password', { email });
+    return response;
+  },
+
+  async resetPassword(resetData) {
+    return await api.post('/reset-password', resetData);
   }
 };
 
