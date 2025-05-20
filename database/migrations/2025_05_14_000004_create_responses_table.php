@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('prompt_id')->constrained()->cascadeOnDelete();
             $table->string('provider');
             $table->string('model');
+            $table->boolean('mentioned')->default(false);
             $table->text('content');
             $table->json('metadata')->nullable();
             $table->json('search')->nullable();

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('prompts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('name')->nullable();
             $table->text('content');
             $table->text('description')->nullable();

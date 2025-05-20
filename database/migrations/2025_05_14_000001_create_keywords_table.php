@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('keywords', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
+            $table->string('name');
             $table->text('description')->nullable();
             $table->timestamps();
         });
