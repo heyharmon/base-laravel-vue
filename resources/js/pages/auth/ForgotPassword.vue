@@ -35,7 +35,7 @@ const requestReset = async () => {
     <div class="w-full max-w-md rounded-lg border border-neutral-200 bg-white p-8 shadow-sm">
       <h1 class="mb-6 text-2xl font-bold text-neutral-900">Reset Password</h1>
       
-      <div v-if="success" class="rounded-md bg-green-50 p-4 text-sm text-green-700 mb-4">
+      <div v-if="success" class="rounded-md bg-green-50 p-4 text-green-700 mb-4">
         If this is a valid account email, you will receive a password reset email.
       </div>
       
@@ -72,7 +72,7 @@ const requestReset = async () => {
         </div>
       </form>
       
-      <div v-if="success" class="text-center">
+      <div v-if="success" class="text-sm">
         <button
           @click="router.push('/login')"
           class="font-medium text-neutral-900 hover:underline"

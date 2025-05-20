@@ -58,11 +58,6 @@ const login = async () => {
             required
             class="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-neutral-500 focus:outline-none"
           />
-          <div class="mt-1 text-right">
-            <router-link to="/forgot-password" class="text-sm text-neutral-600 hover:text-neutral-900 hover:underline">
-              Forgot password? Reset password
-            </router-link>
-          </div>
         </div>
         
         <div>
@@ -75,11 +70,20 @@ const login = async () => {
           </button>
         </div>
         
-        <div class="text-center text-sm text-neutral-600">
-          Don't have an account?
-          <router-link to="/register" class="font-medium text-neutral-900 hover:underline">
-            Register
-          </router-link>
+        <div class="pt-2">
+            <div class="text-center text-sm text-neutral-600 mb-2">
+                Don't have an account?
+                <router-link to="/register" class="font-medium text-neutral-900 hover:underline">
+                    Register
+                </router-link>
+            </div>
+
+            <div class="text-center text-sm text-neutral-600">
+                Forgot password? 
+                <router-link to="/forgot-password" class="font-medium text-neutral-900 hover:underline">
+                    Reset password
+                </router-link>
+            </div>
         </div>
       </form>
     </div>
