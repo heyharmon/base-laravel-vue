@@ -4,10 +4,10 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/pages/Home.vue';
 import Dashboard from '@/pages/Dashboard.vue';
 import Analytics from '@/pages/Analytics.vue';
-import Login from '@/Pages/Auth/Login.vue';
+import Login from '@/pages/Auth/Login.vue';
 import Register from '@/pages/auth/Register.vue';
-import ForgotPassword from '@/Pages/Auth/ForgotPassword.vue';
-import ResetPassword from '@/Pages/Auth/ResetPassword.vue';
+import ForgotPassword from '@/pages/Auth/ForgotPassword.vue';
+import ResetPassword from '@/pages/Auth/ResetPassword.vue';
 import TeamsIndex from '@/pages/teams/Index.vue';
 import TeamShow from '@/pages/teams/Show.vue';
 
