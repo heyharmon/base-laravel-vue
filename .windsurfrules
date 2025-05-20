@@ -29,7 +29,7 @@
 
 ### Vue Rules
 * Never write typescript. If you see typescript, do not remove it just leave it, unless instructed to remove it.
-* Always look at resources/js/Pages for Inertia page examples.
+* Always look at resources/js/pages for Inertia page examples.
 * Always use script setup style in Vue components.
 * Always attempt to use a component in resources/js/components for components you can use before writing new components.
 * Always attempt to use a ui element in resources/js/components/ui before writing new ui elements such as buttons, cards and form elements.
