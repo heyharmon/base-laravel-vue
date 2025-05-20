@@ -28,11 +28,11 @@ class Keyword extends Model
     }
 
     /**
-     * The runs that found this keyword.
+     * The responses that contain this keyword.
      */
-    public function runs(): BelongsToMany
+    public function responses(): BelongsToMany
     {
-        return $this->belongsToMany(Run::class)
+        return $this->belongsToMany(Response::class)
             ->withTimestamps();
     }
     

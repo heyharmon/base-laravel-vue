@@ -23,8 +23,8 @@ class PromptRunController extends Controller
         //     'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
         // ]);
 
-        $run = $this->promptRunnerService->runPrompt($prompt, ['openai']);
+        $responses = $this->promptRunnerService->runPrompt($prompt, ['openai']);
         
-        return response()->json($run, 201);
+        return response()->json($responses, 201);
     }
 }

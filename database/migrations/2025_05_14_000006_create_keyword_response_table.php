@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('keyword_run', function (Blueprint $table) {
+        Schema::create('keyword_response', function (Blueprint $table) {
             $table->id();
             $table->foreignId('keyword_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('run_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('response_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
-            
-            $table->unique(['keyword_id', 'run_id']);
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('keyword_run');
+        Schema::dropIfExists('keyword_response');
     }
 };

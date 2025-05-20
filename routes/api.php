@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebsiteController;
-use App\Http\Controllers\RunController;
 use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\PromptRunController;
 use App\Http\Controllers\PromptController;
@@ -45,7 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']);
         Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']);
     });
-    Route::resource('runs', RunController::class);
+    // Removed Run model routes
 
     // Keyword responses
     Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
@@ -56,8 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
 
-    // Run responses TODO: May never use this
-    Route::resource('runs/{run}/responses', ResponseController::class);
+    // Prompt responses (detailed)
+    Route::resource('prompts/{prompt}/responses', ResponseController::class);
 
     Route::resource('websites/{website}/pages', PageController::class);
     

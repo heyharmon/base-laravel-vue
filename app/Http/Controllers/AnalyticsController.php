@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Keyword;
 use App\Models\Prompt;
-use App\Models\Run;
+use App\Models\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,18 +20,18 @@ class AnalyticsController extends Controller
         // Get the user's current team ID
         $teamId = Auth::user()->current_team_id;
         
-        $query = Run::query();
+        $query = Response::query();
         
         // Apply date filters based on period
         switch ($period) {
             case 'yesterday':
-                $query->whereDate('run_date', now()->subDay()->toDateString());
+                $query->whereDate('created_at', now()->subDay()->toDateString());
                 break;
             case 'last7days':
-                $query->where('run_date', '>=', now()->subDays(7));
+                $query->where('created_at', '>=', now()->subDays(7));
                 break;
             case 'last28days':
-                $query->where('run_date', '>=', now()->subDays(28));
+                $query->where('created_at', '>=', now()->subDays(28));
                 break;
         }
         
@@ -62,9 +62,9 @@ class AnalyticsController extends Controller
             
             if ($period !== 'all') {
                 // Add period-specific data
-                $runIds = $query->pluck('id');
-                $stats['period_occurrences'] = DB::table('keyword_run')
-                    ->whereIn('run_id', $runIds)
+                $responseIds = $query->pluck('id');
+                $stats['period_occurrences'] = DB::table('keyword_response')
+                    ->whereIn('response_id', $responseIds)
                     ->where('keyword_id', $keywordId)
                     ->count();
             }
@@ -94,20 +94,20 @@ class AnalyticsController extends Controller
         // Get the user's current team ID
         $teamId = Auth::user()->current_team_id;
         
-        $query = Run::query()->whereHas('prompt', function($q) use ($teamId) {
+        $query = Response::query()->whereHas('prompt', function($q) use ($teamId) {
             $q->where('team_id', $teamId);
         });
         
         // Apply date filters based on period
         switch ($period) {
             case 'yesterday':
-                $query->whereDate('run_date', now()->subDay()->toDateString());
+                $query->whereDate('created_at', now()->subDay()->toDateString());
                 break;
             case 'last7days':
-                $query->where('run_date', '>=', now()->subDays(7));
+                $query->where('created_at', '>=', now()->subDays(7));
                 break;
             case 'last28days':
-                $query->where('run_date', '>=', now()->subDays(28));
+                $query->where('created_at', '>=', now()->subDays(28));
                 break;
         }
         
@@ -133,7 +133,7 @@ class AnalyticsController extends Controller
                             'last_found_at' => $keyword->pivot->last_found_at,
                         ];
                     }),
-                'runs' => $query->with('responses', 'keywords')->get(),
+                'responses' => $query->with('keywords')->get(),
             ];
         } else {
             // Get stats for all prompts
@@ -145,8 +145,8 @@ class AnalyticsController extends Controller
                         'id' => $prompt->id,
                         'name' => $prompt->name,
                         'keyword_count' => $prompt->keywords_count,
-                        'run_count' => $prompt->runs()->count(),
-                        'last_run' => $prompt->runs()->latest('run_date')->first()?->run_date,
+                        'response_count' => $prompt->responses()->count(),
+                        'last_response' => $prompt->responses()->latest('created_at')->first()?->created_at,
                     ];
                 });
         }
@@ -175,8 +175,8 @@ class AnalyticsController extends Controller
             $currentDate->addDay();
         }
         
-        $query = Run::where('run_date', '>=', $startDate)
-            ->where('run_date', '<=', $endDate)
+        $query = Response::where('created_at', '>=', $startDate)
+            ->where('created_at', '<=', $endDate)
             ->whereHas('prompt', function($q) use ($teamId) {
                 $q->where('team_id', $teamId);
             });
@@ -185,7 +185,7 @@ class AnalyticsController extends Controller
             $query->where('prompt_id', $promptId);
         }
         
-        $runs = $query->get();
+        $responses = $query->get();
         
         if ($keywordId) {
             // Verify keyword belongs to user's team
@@ -194,10 +194,10 @@ class AnalyticsController extends Controller
                 ->firstOrFail();
                 
             // Get time series data for a specific keyword
-            foreach ($runs as $run) {
-                $date = $run->run_date->format('Y-m-d');
+            foreach ($responses as $response) {
+                $date = $response->created_at->format('Y-m-d');
                 
-                if (isset($dates[$date]) && $run->keywords()->where('keyword_id', $keywordId)->exists()) {
+                if (isset($dates[$date]) && $response->keywords()->where('keyword_id', $keywordId)->exists()) {
                     $dates[$date]++;
                 }
             }
@@ -208,9 +208,9 @@ class AnalyticsController extends Controller
                 'labels' => array_keys($dates),
             ];
         } else {
-            // Get time series data for all runs
-            foreach ($runs as $run) {
-                $date = $run->run_date->format('Y-m-d');
+            // Get time series data for all responses
+            foreach ($responses as $response) {
+                $date = $response->created_at->format('Y-m-d');
                 
                 if (isset($dates[$date])) {
                     $dates[$date]++;
@@ -218,7 +218,7 @@ class AnalyticsController extends Controller
             }
             
             $series = [
-                'name' => 'Runs',
+                'name' => 'Responses',
                 'data' => array_values($dates),
                 'labels' => array_keys($dates),
             ];
