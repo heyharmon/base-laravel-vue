@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('current_team_id')->nullable()->onDelete('set null');
-            // $table->foreignId('current_team_id')->nullable()->constrained('teams')->onDelete('set null')->after('remember_token');
+            $table->foreignId('current_team_id')->after('remember_token')->nullable()->onDelete('set null');
+            // $table->foreignId('current_team_id')->after('remember_token')->nullable()->constrained('teams')->onDelete('set null');
         });
     }
 
