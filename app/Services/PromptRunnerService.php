@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Tools\SearchTool;
 use App\Tools\SearchApiTool;
-use App\Models\Run;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Keyword;
@@ -28,12 +27,6 @@ class PromptRunnerService
 
     public function runPrompt(Prompt $prompt, array $selectedProviders = [])
     {
-        // Create a new run record
-        $run = Run::create([
-            'prompt_id' => $prompt->id,
-            'run_date' => now(),
-        ]);
-
         // Get keywords scoped to the user's current team
         $teamId = Auth::user()->current_team_id;
         $keywords = Keyword::where('team_id', $teamId)->get();
@@ -42,6 +35,8 @@ class PromptRunnerService
         if (!$selectedProviders) {
             $selectedProviders = array_keys($this->providers);
         }
+
+        $responses = [];
 
         // Run the prompt with each provider
         foreach ($selectedProviders as $providerName) {
@@ -54,10 +49,8 @@ class PromptRunnerService
                 // Get response from the LLM
                 $llm = $this->getLlmResponse($prompt->content, $model, $provider);
                 
-                // dd($llm->steps);
-                
                 // Store the LLM's response
-                $response = $run->responses()->create([
+                $response = $prompt->responses()->create([
                     'provider' => $providerName,
                     'model' => $model,
                     'content' => $llm->responseMessages->last()->content,
@@ -66,11 +59,13 @@ class PromptRunnerService
                     ],
                 ]);
 
+                $responses[] = $response;
+
                 // Save search tool results
                 $this->saveSearchToolResults($llm->steps, $response);
 
                 // Check for keywords in the response
-                $this->checkForKeywords($keywords, $response, $run, $prompt);
+                $this->checkForKeywords($keywords, $response, $prompt);
 
             } catch (\Exception $e) {
                 // Log the error but continue with other providers
@@ -78,7 +73,7 @@ class PromptRunnerService
             }
         }
 
-        return $run->fresh(['responses', 'keywords']);
+        return $prompt->responses()->latest()->with('keywords')->get();
     }
 
     private function getLlmResponse(string $promptContent, string $model, Provider $provider)
@@ -111,7 +106,7 @@ class PromptRunnerService
         $response->update(['search' => [ 'queries' => $searchQueries ]]);
     }
 
-    private function checkForKeywords(iterable $keywords, Response $response, Run $run, Prompt $prompt): void
+    private function checkForKeywords(iterable $keywords, Response $response, Prompt $prompt): void
     {
         $responseText = strtolower($response->content);
         $foundKeywords = [];
@@ -144,9 +139,9 @@ class PromptRunnerService
             }
         }
         
-        // Attach found keywords to the run
+        // Attach found keywords to the response
         if (!empty($foundKeywords)) {
-            $run->keywords()->syncWithoutDetaching($foundKeywords);
+            $response->keywords()->syncWithoutDetaching($foundKeywords);
         }
         
         // Update the response with the mentioned flag

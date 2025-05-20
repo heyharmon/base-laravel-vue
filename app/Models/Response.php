@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Response extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'run_id',
+        'prompt_id',
         'provider',
         'model',
         'mentioned',
@@ -28,11 +29,22 @@ class Response extends Model
         'search' => 'array',
     ];
 
+    // Run relationship removed
+    
     /**
-     * The run that this response belongs to.
+     * The prompt that this response belongs to.
      */
-    public function run(): BelongsTo
+    public function prompt(): BelongsTo
     {
-        return $this->belongsTo(Run::class);
+        return $this->belongsTo(Prompt::class);
+    }
+    
+    /**
+     * The keywords found in this response.
+     */
+    public function keywords(): BelongsToMany
+    {
+        return $this->belongsToMany(Keyword::class)
+            ->withTimestamps();
     }
 }

@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('current_team_id')->after('remember_token')->nullable()->constrained('teams')->onDelete('set null');
+            $table->foreignId('current_team_id')->after('remember_token')->nullable()->onDelete('set null');
+            // $table->foreignId('current_team_id')->after('remember_token')->nullable()->constrained('teams')->onDelete('set null');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {  
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['current_team_id']);
+            // $table->dropForeign(['current_team_id']);
             $table->dropColumn('current_team_id');
         });
     }

@@ -36,11 +36,11 @@ class Prompt extends Model
     }
 
     /**
-     * The runs of this prompt.
+     * The responses of this prompt.
      */
-    public function runs(): HasMany
+    public function responses(): HasMany
     {
-        return $this->hasMany(Run::class);
+        return $this->hasMany(Response::class);
     }
     
     /**

@@ -13,12 +13,12 @@ class KeywordResponsesController extends Controller
     public function index(Keyword $keyword, Prompt $prompt): JsonResponse
     {
         // Get responses containing the keyword for this prompt
-        $responses = Response::whereHas('run', function($run) use ($prompt, $keyword) {
-            $run->where('prompt_id', $prompt->id)
-                  ->whereHas('keywords', function($keywords) use ($keyword) {
-                      $keywords->where('keywords.id', $keyword->id);
-                  });
-        })->with('run')->latest()->get();
+        $responses = Response::where('prompt_id', $prompt->id)
+            ->whereHas('keywords', function($keywords) use ($keyword) {
+                $keywords->where('keywords.id', $keyword->id);
+            })
+            ->latest()
+            ->get();
         
         return response()->json($responses);
     }

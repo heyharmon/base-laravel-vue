@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('responses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('run_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('prompt_id')->constrained()->cascadeOnDelete();
             $table->string('provider');
             $table->string('model');
+            $table->boolean('mentioned')->default(false);
             $table->text('content');
             $table->json('metadata')->nullable();
             $table->json('search')->nullable();

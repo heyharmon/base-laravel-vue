@@ -142,7 +142,7 @@ watch(() => props.promptId, fetchDetails);
 
               <!-- Response metadata -->
               <div class="mt-3 text-xs text-neutral-500 flex justify-between">
-                <span>Run Date: {{ new Date(response.run.run_date).toLocaleString() }}</span>
+                <span>Date: {{ new Date(response.created_at).toLocaleString() }}</span>
                 <span>Tokens: {{ response.metadata.usage.promptTokens + response.metadata.usage.completionTokens }}</span>
               </div>
             </div>
