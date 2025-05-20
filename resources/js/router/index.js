@@ -6,6 +6,8 @@ import Dashboard from '@/pages/Dashboard.vue';
 import Analytics from '@/pages/Analytics.vue';
 import Login from '@/pages/auth/Login.vue';
 import Register from '@/pages/auth/Register.vue';
+import ForgotPassword from '@/pages/auth/ForgotPassword.vue';
+import ResetPassword from '@/pages/auth/ResetPassword.vue';
 import TeamsIndex from '@/pages/teams/Index.vue';
 import TeamShow from '@/pages/teams/Show.vue';
 
@@ -36,6 +38,18 @@ const routes = [
     path: '/register',
     name: 'register',
     component: Register,
+    meta: { guest: true }
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPassword,
+    meta: { guest: true }
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: ResetPassword,
     meta: { guest: true }
   },
   {

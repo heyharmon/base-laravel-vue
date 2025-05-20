@@ -17,12 +17,15 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\KeywordGeneratorController;
 use App\Http\Controllers\PromptGeneratorController;
+use App\Http\Controllers\AuthPasswordController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/invitations/verify', [InvitationController::class, 'verify']);
+Route::post('/forgot-password', [AuthPasswordController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthPasswordController::class, 'resetPassword']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
