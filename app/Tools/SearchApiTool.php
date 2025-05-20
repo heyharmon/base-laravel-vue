@@ -31,9 +31,9 @@ class SearchApiTool extends Tool
 
         $results->map(function ($result) {
             return [
-                'title' => $result['title'],
-                'link' => $result['link'],
-                'snippet' => $result['snippet'],
+                'title' => $result['title'] ?? '',
+                'link' => $result['url'] ?? '',
+                'snippet' => $result['snippet'] ?? '',
             ];
         })->take(4);
         
