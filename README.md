@@ -15,14 +15,13 @@ This project implements a backend system for tracking mentions in Large Language
 ### Models
 - **Keyword**: Stores keywords to track in LLM responses.
 - **Prompt**: Manages prompts to be executed against LLMs.
-- **Run**: Logs each execution of a prompt.
 - **Response**: Stores responses from different LLM providers.
 
 ### Pivot Relationships
 - **keyword_prompt**: Tracks keyword occurrences with attributes:
   - `count`: Number of times the keyword was found.
   - `last_found_at`: Timestamp of the most recent occurrence.
-- **keyword_run**: Records which keywords were detected in each run.
+- **keyword_response**: Records which keywords were detected in a response.
 
 ### Controllers (API Endpoints)
 - **CRUD Operations**: Full Create, Read, Update, Delete functionality for all models.
@@ -38,7 +37,6 @@ This project implements a backend system for tracking mentions in Large Language
   - DeepSeek
 
 ### Commands
-- **RunDailyPrompts**: A scheduled command to execute prompts daily.
 
 ## Usage
 1. Configure the system with your preferred LLM provider APIs.

@@ -40,7 +40,6 @@ class PromptRunnerService
 
         // Run the prompt with each provider
         foreach ($selectedProviders as $providerName) {
-            
             // Setup the LLM provider
             if (!isset($this->providers[$providerName])) { continue; }
             [$model, $provider] = $this->providers[$providerName];
@@ -73,7 +72,7 @@ class PromptRunnerService
             }
         }
 
-        return $prompt->responses()->latest()->with('keywords')->get();
+        return $prompt->loadCount(['keywords', 'responses']);
     }
 
     private function getLlmResponse(string $promptContent, string $model, Provider $provider)
