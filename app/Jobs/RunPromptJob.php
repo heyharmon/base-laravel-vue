@@ -8,6 +8,7 @@ use App\Models\Keyword;
 use App\Tools\SearchApiTool;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Bus\Batchable;
 use Prism\Prism\Prism;
 use Prism\Prism\Enums\ToolChoice;
 use Prism\Prism\Enums\Provider;
@@ -16,6 +17,7 @@ use Throwable;
 
 class RunPromptJob extends TrackableJob
 {
+    use Batchable;
     /**
      * The number of times the job may be attempted.
      *

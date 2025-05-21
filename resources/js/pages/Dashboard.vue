@@ -32,8 +32,22 @@ onMounted(async () => {
   await jobStatusStore.fetchTeamJobs();
 });
 
-const runPrompt = async (id) => {
-  await promptStore.runPrompt(id);
+const openRunMenuId = ref(null);
+
+const toggleRunMenu = (id) => {
+  if (openRunMenuId.value === id) {
+    openRunMenuId.value = null;
+  } else {
+    openRunMenuId.value = id;
+  }
+};
+
+const closeRunMenu = () => {
+  openRunMenuId.value = null;
+};
+
+const runPrompt = async (id, count = 1) => {
+  await promptStore.runPrompt(id, count);
   // Refresh job statuses after running a prompt
   await jobStatusStore.fetchTeamJobs();
 };
@@ -219,14 +233,40 @@ const showPromptDetails = async (prompt) => {
                 </div>
             </div>
             <div class="flex justify-end space-x-2">
-              <button 
-                @click.stop="runPrompt(prompt.id)" 
-                class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
-                :disabled="promptStore.loadingPromptIds.includes(prompt.id)"
-              >
-                <div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
-                <span v-else>Run</span>
-              </button>
+              <div class="relative">
+                <button 
+                  @click.stop="toggleRunMenu(prompt.id)" 
+                  class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
+                  :disabled="promptStore.loadingPromptIds.includes(prompt.id)"
+                >
+                  <div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
+                  <span v-else>Run</span>
+                </button>
+                <div 
+                  v-if="openRunMenuId === prompt.id" 
+                  class="absolute right-0 mt-1 w-20 bg-white border border-neutral-300 rounded-md shadow-lg z-10"
+                  @click.stop
+                >
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 1); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 1x
+                  </button>
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 2); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 2x
+                  </button>
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 3); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 3x
+                  </button>
+                </div>
+              </div>
               <button 
                 @click.stop="promptStore.deletePrompt(prompt.id)" 
                 class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"

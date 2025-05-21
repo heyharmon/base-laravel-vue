@@ -80,10 +80,10 @@ export const usePromptStore = defineStore('prompts', () => {
     }
   }
   
-  async function runPrompt(id) {
+  async function runPrompt(id, count = 1) {
     loadingPromptIds.value.push(id);
     try {
-      return await api.post(`/prompts/${id}/run`);
+      return await api.post(`/prompts/${id}/run`, { count });
     } catch (error) {
       console.error('Error running prompt:', error);
       throw error;
