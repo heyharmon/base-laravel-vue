@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick, watch } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
 import { usePromptStore } from '@/stores/promptStore';
 
@@ -14,6 +14,16 @@ const emit = defineEmits(['close']);
 
 const promptStore = usePromptStore();
 const newPrompt = ref({ name: '', content: '' });
+const promptTextarea = ref(null);
+
+watch(() => props.isOpen, async (isOpen) => {
+  if (isOpen) {
+    await nextTick();
+    if (promptTextarea.value) {
+      promptTextarea.value.focus();
+    }
+  }
+}, { immediate: true });
 
 const closeModal = () => {
   newPrompt.value = { name: '', content: '' };
@@ -31,13 +41,8 @@ const addPrompt = async () => {
 <template>
   <Modal :is-open="isOpen" title="Add Prompt" @close="closeModal">
     <div class="space-y-4">
-      <!-- <input 
-        v-model="newPrompt.name" 
-        type="text" 
-        placeholder="Prompt title" 
-        class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-      /> -->
       <textarea 
+        ref="promptTextarea"
         v-model="newPrompt.content" 
         placeholder="Prompt content" 
         class="w-full px-3 py-2 border border-neutral-300 rounded-md h-24"

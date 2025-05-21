@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick, watch } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
 import api from '@/services/api';
 import { useKeywordStore } from '@/stores/keywordStore';
@@ -15,6 +15,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const domain = ref('');
+const domainInput = ref(null);
 const isLoading = ref(false);
 const generatedKeywords = ref([]);
 const generatedPrompts = ref([]);
@@ -22,6 +23,15 @@ const error = ref(null);
 const activeTab = ref('keywords');
 const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
+
+watch(() => props.isOpen, async (isOpen) => {
+  if (isOpen) {
+    await nextTick();
+    if (domainInput.value) {
+      domainInput.value.focus();
+    }
+  }
+}, { immediate: true });
 
 const closeModal = () => {
   domain.value = '';
@@ -131,6 +141,7 @@ const createAll = async () => {
   <Modal :is-open="isOpen" title="Generate Keywords & Prompts" width="wider" @close="closeModal">
     <div class="space-y-4">
       <input 
+        ref="domainInput"
         v-model="domain" 
         type="text" 
         placeholder="Enter website domain (e.g. acme.com)" 

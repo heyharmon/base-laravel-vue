@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick, watch } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 
@@ -14,6 +14,16 @@ const emit = defineEmits(['close']);
 
 const keywordStore = useKeywordStore();
 const newKeyword = ref('');
+const keywordInput = ref(null);
+
+watch(() => props.isOpen, async (isOpen) => {
+  if (isOpen) {
+    await nextTick();
+    if (keywordInput.value) {
+      keywordInput.value.focus();
+    }
+  }
+}, { immediate: true });
 
 const closeModal = () => {
   newKeyword.value = '';
@@ -32,6 +42,7 @@ const addKeyword = async () => {
   <Modal :is-open="isOpen" title="Add Keyword" @close="closeModal">
     <div class="space-y-4">
       <input 
+        ref="keywordInput"
         v-model="newKeyword" 
         type="text" 
         placeholder="New keyword" 
