@@ -17,6 +17,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\KeywordGeneratorController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\AuthPasswordController;
+use App\Http\Controllers\JobStatusController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
@@ -69,4 +70,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+    
+    // Job status routes
+    Route::get('/job-statuses', [JobStatusController::class, 'getModelJobStatuses']);
+    Route::get('/job-status/{jobId}', [JobStatusController::class, 'getJobStatus']);
+    Route::get('/active-jobs', [JobStatusController::class, 'getActiveJobs']);
+    Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
+    Route::get('/job-batch/{batchId}', [JobStatusController::class, 'getBatchInfo']);
 });

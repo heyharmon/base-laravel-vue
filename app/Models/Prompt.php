@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\HasJobStatus;
 
 class Prompt extends Model
 {
-    use HasFactory;
+    use HasFactory, HasJobStatus;
 
     protected $fillable = [
         'team_id', // TODO: Change this if adding projects model

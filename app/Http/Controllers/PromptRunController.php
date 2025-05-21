@@ -4,12 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Prompt;
 use App\Jobs\RunPromptJob;
+use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class PromptRunController extends Controller
 {
+    protected $jobDispatcher;
+    
+    public function __construct(JobDispatcherService $jobDispatcher)
+    {
+        $this->jobDispatcher = $jobDispatcher;
+    }
 
     public function store(Request $request, Prompt $prompt): JsonResponse
     {
@@ -21,10 +28,16 @@ class PromptRunController extends Controller
         $providers = $validated['providers'] ?? ['openai'];
         $teamId = Auth::user()->current_team_id;
         
-        // Dispatch the job to run the prompt
-        RunPromptJob::dispatch($prompt, $providers, $teamId);
+        // Create the job
+        $job = new RunPromptJob($prompt, $providers, $teamId);
+
+        // Dispatch the job with tracking
+        $jobStatus = $this->jobDispatcher->dispatch($prompt, $job);
         
-        // Return the existing responses immediately
-        return response()->json($prompt);
+        // Return the prompt and job status
+        return response()->json([
+            'prompt' => $prompt,
+            'job_status' => $jobStatus
+        ]);
     }
 }

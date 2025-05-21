@@ -2,14 +2,17 @@
 import { onMounted, ref, computed } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
+import { useJobStatusStore } from '@/stores/jobStatusStore';
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
 import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
+import JobStatus from '@/components/jobs/JobStatus.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
+const jobStatusStore = useJobStatusStore();
 
 const isKeywordCreateModalOpen = ref(false);
 const isPromptCreateModalOpen = ref(false);
@@ -26,10 +29,13 @@ const sortOption = ref('default'); // Default sort option
 onMounted(async () => {
   await keywordStore.fetchKeywords();
   await promptStore.fetchPrompts();
+  await jobStatusStore.fetchTeamJobs();
 });
 
 const runPrompt = async (id) => {
   await promptStore.runPrompt(id);
+  // Refresh job statuses after running a prompt
+  await jobStatusStore.fetchTeamJobs();
 };
 
 const runAllPrompts = async () => {
@@ -38,6 +44,8 @@ const runAllPrompts = async () => {
     promptStore.runPrompt(prompt.id);
     await new Promise(resolve => setTimeout(resolve, 800));
   }
+  // Refresh job statuses after running all prompts
+  await jobStatusStore.fetchTeamJobs();
 };
 
 const sortedPrompts = computed(() => {
@@ -77,7 +85,12 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex flex-col md:flex-row h-[calc(100vh-4rem)] overflow-hidden">
+    <!-- Job Status Section at the top -->
+    <div class="border-b border-neutral-200 p-4">
+      <JobStatus class="mb-4" />
+    </div>
+    
+    <div class="flex flex-col md:flex-row h-[calc(100vh-10rem)] overflow-hidden">
       <!-- Mobile tabs -->
       <div class="flex md:hidden border-b border-neutral-200 sticky top-0 bg-white z-10 shadow-sm">
         <button 
@@ -198,6 +211,12 @@ const showPromptDetails = async (prompt) => {
                     <p class="">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</p>
                 </div>
                 <div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
+                
+                <!-- Show job status indicator if there's an active job for this prompt -->
+                <div v-if="jobStatusStore.jobs.some(job => job.trackable_id === prompt.id && (job.status === 'pending' || job.status === 'processing'))" class="mt-2 flex items-center text-sm text-blue-600">
+                  <div class="animate-spin h-3 w-3 border-b-2 border-blue-600 rounded-full mr-2"></div>
+                  <span>Processing...</span>
+                </div>
             </div>
             <div class="flex justify-end space-x-2">
               <button 

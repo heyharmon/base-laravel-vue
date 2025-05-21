@@ -6,22 +6,16 @@ use App\Models\Prompt;
 use App\Models\Response;
 use App\Models\Keyword;
 use App\Tools\SearchApiTool;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Prism\Prism\Prism;
 use Prism\Prism\Enums\ToolChoice;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Throwable;
 
-class RunPromptJob implements ShouldQueue
+class RunPromptJob extends TrackableJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
     /**
      * The number of times the job may be attempted.
      *
@@ -85,22 +79,38 @@ class RunPromptJob implements ShouldQueue
      */
     public function handle()
     {
-        // Get keywords scoped to the team
-        $keywords = Keyword::where('team_id', $this->teamId)->get();
+        try {
+            // Mark the job as started
+            $this->markJobAsStarted();
+            
+            // Update progress
+            $this->updateJobProgress(10, 'Fetching keywords');
+            
+            // Get keywords scoped to the team
+            $keywords = Keyword::where('team_id', $this->teamId)->get();
 
-        // If no providers specified, use all
-        if (!$this->providers) {
-            $this->providers = array_keys($this->availableProviders);
-        }
+            // If no providers specified, use all
+            if (!$this->providers) {
+                $this->providers = array_keys($this->availableProviders);
+            }
 
-        $responses = [];
+            $responses = [];
+            
+            $this->updateJobProgress(20, 'Preparing to send prompts to LLMs');
 
         // Run the prompt with each provider
+        $totalProviders = count($this->providers);
+        $currentProvider = 0;
+        
         foreach ($this->providers as $providerName) {
+            $currentProvider++;
+            $progress = 20 + (60 * ($currentProvider / $totalProviders));
             
             // Setup the LLM provider
             if (!isset($this->availableProviders[$providerName])) { continue; }
             [$model, $provider] = $this->availableProviders[$providerName];
+            
+            $this->updateJobProgress((int)$progress, "Sending prompt to {$providerName}");
             
             try {
                 // Get response from the LLM
@@ -128,6 +138,17 @@ class RunPromptJob implements ShouldQueue
                 // Log the error but continue with other providers
                 Log::error('Error running prompt: ' . $e);
             }
+        }
+        
+        $this->updateJobProgress(90, 'Processing LLM responses');
+        
+        // Mark the job as completed
+        $this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt #' . $this->prompt->id);
+        
+        } catch (Throwable $exception) {
+            Log::error('Prompt run failed: ' . $exception->getMessage());
+            $this->markJobAsFailed($exception);
+            throw $exception;
         }
     }
 
