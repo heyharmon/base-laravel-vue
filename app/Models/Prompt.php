@@ -24,6 +24,10 @@ class Prompt extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+    
+    protected $appends = [
+        'mentions_percentage',
+    ];
 
     /**
      * The keywords that are associated with this prompt.
@@ -50,5 +54,24 @@ class Prompt extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+    
+    /**
+     * Get the mentions percentage for this prompt.
+     */
+    public function getMentionsPercentageAttribute(): int
+    {
+        $responses = $this->responses;
+        
+        if ($responses->count() === 0) {
+            return 0;
+        }
+        
+        $totalResponses = $responses->count();
+        $mentionedResponses = $responses->where('mentioned', true)->count();
+        
+        return $totalResponses > 0 
+            ? round(($mentionedResponses / $totalResponses) * 100) 
+            : 0;
     }
 }

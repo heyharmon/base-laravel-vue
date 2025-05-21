@@ -73,7 +73,7 @@ class PromptRunnerService
             }
         }
 
-        return $prompt->responses()->latest()->with('keywords')->get();
+        return $prompt->load('responses')->loadCount(['keywords', 'responses']);
     }
 
     private function getLlmResponse(string $promptContent, string $model, Provider $provider)

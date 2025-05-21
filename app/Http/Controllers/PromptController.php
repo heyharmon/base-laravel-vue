@@ -17,22 +17,6 @@ class PromptController extends Controller
             ->withCount(['keywords', 'responses'])
             ->latest()
             ->get();
-            
-        // Calculate percentage of responses with mentions for each prompt
-        $prompts->each(function ($prompt) {
-            $responses = $prompt->responses;
-            
-            if ($responses->count() > 0) {
-                $totalResponses = $responses->count();
-                $mentionedResponses = $responses->where('mentioned', true)->count();
-                
-                $prompt->mentions_percentage = $totalResponses > 0 
-                    ? round(($mentionedResponses / $totalResponses) * 100) 
-                    : 0;
-            } else {
-                $prompt->mentions_percentage = 0;
-            }
-        });
         
         return response()->json($prompts);
     }

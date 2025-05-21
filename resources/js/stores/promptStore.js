@@ -83,7 +83,20 @@ export const usePromptStore = defineStore('prompts', () => {
   async function runPrompt(id) {
     loadingPromptIds.value.push(id);
     try {
-      return await api.post(`/prompts/${id}/run`);
+      const updatedPrompt = await api.post(`/prompts/${id}/run`);
+      
+      // Update the prompt in the prompts array
+      const index = prompts.value.findIndex(p => p.id === id);
+      if (index !== -1) {
+        prompts.value[index] = updatedPrompt;
+      }
+      
+      // If this is the currently selected prompt, update it too
+      if (selectedPromptDetails.value && selectedPromptDetails.value.id === id) {
+        selectedPromptDetails.value = updatedPrompt;
+      }
+      
+      return updatedPrompt;
     } catch (error) {
       console.error('Error running prompt:', error);
       throw error;
