@@ -61,17 +61,14 @@ class Prompt extends Model
      */
     public function getMentionsPercentageAttribute(): int
     {
-        $responses = $this->responses;
+        $totalResponses = $this->responses()->count();
         
-        if ($responses->count() === 0) {
+        if ($totalResponses === 0) {
             return 0;
         }
         
-        $totalResponses = $responses->count();
-        $mentionedResponses = $responses->where('mentioned', true)->count();
+        $mentionedResponses = $this->responses()->where('mentioned', true)->count();
         
-        return $totalResponses > 0 
-            ? round(($mentionedResponses / $totalResponses) * 100) 
-            : 0;
+        return round(($mentionedResponses / $totalResponses) * 100);
     }
 }

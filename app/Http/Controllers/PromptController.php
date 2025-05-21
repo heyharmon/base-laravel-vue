@@ -28,10 +28,8 @@ class PromptController extends Controller
         if ($prompt->team_id !== Auth::user()->current_team_id) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        
-        $prompt->load(['keywords' => function($query) {
-            $query->withPivot('count', 'last_found_at');
-        }]);
+
+        $prompt->load('keywords');
         
         return response()->json($prompt);
     }
