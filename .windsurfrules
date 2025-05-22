@@ -3,6 +3,7 @@
 
 ### General Context
 * This is a Laravel 12 api project that uses PrismPHP to integrate with LLMs.
+* You can find the AI agent overview which summarizes the key components of the application, in AI_AGENT_OVERVIEW.md.
 
 ### General Rules
 * Always challenge me on my instructions if I am suggesting a pattern that does not map to the Laravel, Inertia, Vue way.
