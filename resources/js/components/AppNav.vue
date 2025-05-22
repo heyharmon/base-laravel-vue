@@ -1,13 +1,16 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import auth from '@/services/auth';
 import { useTeamStore } from '@/stores/teamStore';
+import { useJobStatusStore } from '@/stores/jobStatusStore';
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui';
 import GenerateKeywordsAndPromptsModal from '@/components/GenerateKeywordsAndPromptsModal.vue';
+import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue';
 
 const router = useRouter();
 const teamStore = useTeamStore();
+const jobStatusStore = useJobStatusStore();
 const isAuthenticated = computed(() => auth.isAuthenticated());
 const user = computed(() => auth.getUser());
 const teams = ref(null);
@@ -15,6 +18,14 @@ const currentTeam = ref(null);
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false);
 const isGenerateModalOpen = ref(false);
+const isJobStatusSheetOpen = ref(false);
+
+// Computed property to count pending or processing jobs
+const activeJobsCount = computed(() => {
+  return jobStatusStore.jobs?.filter(job => 
+    job.status === 'pending' || job.status === 'processing'
+  )?.length || 0;
+});
 
 const logout = async () => {
   await auth.logout();
@@ -55,10 +66,25 @@ const switchTeam = async (teamId) => {
   }
 };
 
+const loadActiveJobs = async () => {
+  if (isAuthenticated.value) {
+    try {
+      await jobStatusStore.fetchActiveJobs();
+    } catch (error) {
+      console.error('Error loading active jobs:', error);
+    }
+  }
+};
+
 onMounted(() => {
   loadTeams();
-  // Ensure popover is closed on mount
+  loadActiveJobs();
   isTeamDropdownOpen.value = false;
+});
+
+// Clean up interval when component is unmounted
+onUnmounted(() => {
+  jobStatusStore.stopAutoRefresh();
 });
 </script>
 
@@ -79,13 +105,23 @@ onMounted(() => {
           </button>
           <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
           <router-link to="/analytics" class="text-sm hover:text-neutral-300">Analytics</router-link>
-          <router-link to="/teams" class="text-sm hover:text-neutral-300">Teams</router-link>
         </div>
       </div>
       
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-3">
         <template v-if="isAuthenticated">
-          <span class="text-sm">{{ user?.name }}</span>
+          <button @click="isJobStatusSheetOpen = true" class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
+            <div v-if="activeJobsCount > 0" class="relative size-5">
+              <svg class="animate-spin absolute inset-0" viewBox="0 0 24 24">
+                <circle class="text-neutral-800" stroke="currentColor" fill="transparent" stroke-width="2" cx="12" cy="12" r="11"></circle>
+                <circle class="text-neutral-400" stroke="currentColor" fill="transparent" stroke-width="2" stroke-dasharray="17.27875959474386 51.83627878423158" stroke-dashoffset="0" stroke-linecap="butt" cx="12" cy="12" r="11"></circle>
+              </svg>
+              <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-xs font-bold">{{ activeJobsCount }}</span>
+              </div>
+            </div>
+            <span class="text-sm font-medium">Jobs</span>
+          </button>
 
           <PopoverRoot>
             <PopoverTrigger as-child>
@@ -126,6 +162,11 @@ onMounted(() => {
                       Manage Teams
                     </router-link>
                   </PopoverClose>
+                  <!-- <PopoverClose as-child>
+                    <button @click="logout" class="w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+                      Logout
+                    </button>
+                  </PopoverClose> -->
                 </div>
               </PopoverContent>
             </PopoverPortal>
@@ -156,4 +197,5 @@ onMounted(() => {
     </div>
   </nav>
   <GenerateKeywordsAndPromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
+  <JobStatusSheet :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

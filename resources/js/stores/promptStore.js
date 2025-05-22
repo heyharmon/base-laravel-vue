@@ -11,6 +11,7 @@ export const usePromptStore = defineStore('prompts', () => {
   const selectedPromptDetails = ref(null);
   const selectedPromptResponses = ref([]);
   const isLoadingPromptResponses = ref(false);
+  const isRunningAll = ref(false);
   
   // Actions
   async function fetchPrompts() {
@@ -80,28 +81,27 @@ export const usePromptStore = defineStore('prompts', () => {
     }
   }
   
-  async function runPrompt(id) {
+  async function runPrompt(id, count = 1) {
     loadingPromptIds.value.push(id);
     try {
-      const updatedPrompt = await api.post(`/prompts/${id}/run`);
-      
-      // Update the prompt in the prompts array
-      const index = prompts.value.findIndex(p => p.id === id);
-      if (index !== -1) {
-        prompts.value[index] = updatedPrompt;
-      }
-      
-      // If this is the currently selected prompt, update it too
-      if (selectedPromptDetails.value && selectedPromptDetails.value.id === id) {
-        selectedPromptDetails.value = updatedPrompt;
-      }
-      
-      return updatedPrompt;
+      return await api.post(`/prompts/${id}/run`, { count });
     } catch (error) {
       console.error('Error running prompt:', error);
       throw error;
     } finally {
       loadingPromptIds.value = loadingPromptIds.value.filter(promptId => promptId !== id);
+    }
+  }
+  
+  async function runAllPrompts(count = 1) {
+    isRunningAll.value = true;
+    try {
+      return await api.post('/prompt-run-batch', { count });
+    } catch (error) {
+      console.error('Error running all prompts:', error);
+      throw error;
+    } finally {
+      isRunningAll.value = false;
     }
   }
 
@@ -127,6 +127,7 @@ export const usePromptStore = defineStore('prompts', () => {
     selectedPromptDetails: computed(() => selectedPromptDetails.value),
     selectedPromptResponses: computed(() => selectedPromptResponses.value),
     isLoadingPromptResponses,
+    isRunningAll,
     
     // Actions
     fetchPrompts,
@@ -135,6 +136,7 @@ export const usePromptStore = defineStore('prompts', () => {
     updatePrompt,
     deletePrompt,
     runPrompt,
+    runAllPrompts,
     getPromptResponses,
   };
 });
