@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\PromptRunController;
+use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptController;
 use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\KeywordResponsesController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\KeywordGeneratorController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\AuthPasswordController;
+use App\Http\Controllers\JobStatusController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
@@ -57,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
+    Route::post('prompt-run-batch', [PromptRunBatchController::class, 'store']);
 
     // Prompt responses (detailed)
     Route::resource('prompts/{prompt}/responses', ResponseController::class);
@@ -69,4 +72,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+    
+    // Job status routes
+    Route::get('/job-statuses', [JobStatusController::class, 'getModelJobStatuses']);
+    Route::get('/job-status/{jobId}', [JobStatusController::class, 'getJobStatus']);
+    Route::get('/active-jobs', [JobStatusController::class, 'getActiveJobs']);
+    Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
+    Route::get('/job-batch/{batchId}', [JobStatusController::class, 'getBatchInfo']);
 });

@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
+import { useJobStatusStore } from '@/stores/jobStatusStore';
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
 import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
@@ -10,6 +11,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
+const jobStatusStore = useJobStatusStore();
 
 const isKeywordCreateModalOpen = ref(false);
 const isPromptCreateModalOpen = ref(false);
@@ -23,20 +25,88 @@ const selectedPromptId = ref(null);
 const activeTab = ref('keywords'); // Default tab for mobile view
 const sortOption = ref('default'); // Default sort option
 
+// Track if we have active jobs
+const hasActiveJobs = computed(() => {
+  return jobStatusStore.jobs && jobStatusStore.jobs.some(job => 
+    job.status === 'pending' || job.status === 'processing'
+  );
+});
+
+// Track completed jobs to detect when individual jobs complete
+const completedJobIds = ref(new Set());
+
+// Watch for changes in job statuses
+watch(() => jobStatusStore.jobs, async (currentJobs, previousJobs) => {
+  if (!previousJobs || !currentJobs) return;
+  
+  // Check for newly completed jobs
+  let shouldRefresh = false;
+  
+  currentJobs.forEach(job => {
+    // If the job is completed or failed and we haven't processed it yet
+    if ((job.status === 'completed' || job.status === 'failed') && 
+        !completedJobIds.value.has(job.job_id) &&
+        job.trackable_type === 'App\\Models\\Prompt') {
+      
+      // Mark this job as processed
+      completedJobIds.value.add(job.job_id);
+      shouldRefresh = true;
+    }
+  });
+  
+  // Refresh prompts if we found newly completed jobs
+  if (shouldRefresh) {
+    await promptStore.fetchPrompts();
+  }
+}, { deep: true });
+
+// Also keep the original watcher for when all jobs complete
+watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
+  // If we previously had active jobs but now we don't, refresh prompts
+  if (previousHasActiveJobs && !currentHasActiveJobs) {
+    await promptStore.fetchPrompts();
+  }
+}, { immediate: false });
+
 onMounted(async () => {
   await keywordStore.fetchKeywords();
   await promptStore.fetchPrompts();
+  await jobStatusStore.fetchTeamJobs();
 });
 
-const runPrompt = async (id) => {
-  await promptStore.runPrompt(id);
+const openRunMenuId = ref(null);
+const isRunAllMenuOpen = ref(false);
+
+const toggleRunMenu = (id) => {
+  if (openRunMenuId.value === id) {
+    openRunMenuId.value = null;
+  } else {
+    openRunMenuId.value = id;
+  }
 };
 
-const runAllPrompts = async () => {
-  const allPrompts = sortedPrompts.value;
-  for (const prompt of allPrompts) {
-    promptStore.runPrompt(prompt.id);
-    await new Promise(resolve => setTimeout(resolve, 800));
+const closeRunMenu = () => {
+  openRunMenuId.value = null;
+};
+
+const closeRunAllMenu = () => {
+  isRunAllMenuOpen.value = false;
+};
+
+const runPrompt = async (id, count = 1) => {
+  await promptStore.runPrompt(id, count);
+  await jobStatusStore.fetchTeamJobs();
+
+  jobStatusStore.startAutoRefresh(1000);
+};
+
+const runAllPrompts = async (count = 1) => {
+  try {
+    await promptStore.runAllPrompts(count);
+    await jobStatusStore.fetchTeamJobs();
+    jobStatusStore.startAutoRefresh(1000);
+  } catch (error) {
+    console.error('Error running all prompts:', error);
   }
 };
 
@@ -77,7 +147,7 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex flex-col md:flex-row h-[calc(100vh-4rem)] overflow-hidden">
+    <div class="flex flex-col md:flex-row h-[calc(100vh-10rem)] overflow-hidden">
       <!-- Mobile tabs -->
       <div class="flex md:hidden border-b border-neutral-200 sticky top-0 bg-white z-10 shadow-sm">
         <button 
@@ -141,6 +211,7 @@ const showPromptDetails = async (prompt) => {
       
       <!-- Right column - Prompts -->
       <div class="w-full md:w-2/3 md:pl-4 md:px-4 py-4 overflow-y-auto" :class="{'block': activeTab === 'prompts', 'hidden': activeTab !== 'prompts', 'md:block': true}">
+        <!-- <pre>{{ jobStatusStore.jobs }}</pre> -->
         <div class="mb-4">
           <div class="flex justify-between items-center">
             <h2 class="text-xl md:text-2xl font-semibold">Prompts</h2>
@@ -161,13 +232,40 @@ const showPromptDetails = async (prompt) => {
                   </svg>
                 </div>
               </div>
-              <button 
-                @click="runAllPrompts" 
-                class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
-                :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0"
-              >
-                Run all prompts
-              </button>
+              <div class="relative">
+                <button 
+                  @click.stop="isRunAllMenuOpen = !isRunAllMenuOpen" 
+                  class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center"
+                  :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0 || promptStore.isRunningAll"
+                >
+                  <div v-if="promptStore.isRunningAll" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full mr-1"></div>
+                  <span>Run all prompts</span>
+                </button>
+                <div 
+                  v-if="isRunAllMenuOpen" 
+                  class="absolute right-0 mt-1 w-32 bg-white border border-neutral-300 rounded-md shadow-lg z-10"
+                  @click.stop
+                >
+                  <button 
+                    @click.stop="runAllPrompts(1); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 1x
+                  </button>
+                  <button 
+                    @click.stop="runAllPrompts(2); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 2x
+                  </button>
+                  <button 
+                    @click.stop="runAllPrompts(3); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 3x
+                  </button>
+                </div>
+              </div>
               <button 
                 @click="isPromptCreateModalOpen = true" 
                 class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
@@ -198,16 +296,48 @@ const showPromptDetails = async (prompt) => {
                     <p class="">{{ prompt.keywords_count }} keyword {{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}</p>
                 </div>
                 <div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
+                
+                <!-- Show job status indicator if there's an active job for this prompt -->
+                <div v-if="jobStatusStore.jobs?.some(job => job.trackable_id === prompt.id && (job.status === 'pending' || job.status === 'processing'))" class="mt-2 flex items-center text-sm text-blue-600">
+                  <div class="animate-spin h-3 w-3 border-b-2 border-blue-600 rounded-full mr-2"></div>
+                  <span>Processing...</span>
+                </div>
             </div>
             <div class="flex justify-end space-x-2">
-              <button 
-                @click.stop="runPrompt(prompt.id)" 
-                class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
-                :disabled="promptStore.loadingPromptIds.includes(prompt.id)"
-              >
-                <div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
-                <span v-else>Run</span>
-              </button>
+              <div class="relative">
+                <button 
+                  @click.stop="toggleRunMenu(prompt.id)" 
+                  class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
+                  :disabled="promptStore.loadingPromptIds.includes(prompt.id)"
+                >
+                  <div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
+                  <span v-else>Run</span>
+                </button>
+                <div 
+                  v-if="openRunMenuId === prompt.id" 
+                  class="absolute right-0 mt-1 w-20 bg-white border border-neutral-300 rounded-md shadow-lg z-10"
+                  @click.stop
+                >
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 1); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 1x
+                  </button>
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 2); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 2x
+                  </button>
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 3); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 3x
+                  </button>
+                </div>
+              </div>
               <button 
                 @click.stop="promptStore.deletePrompt(prompt.id)" 
                 class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"

@@ -1,16 +1,8 @@
-# Product Requirements Document
+# Product Requirements Document Template
 
 ## Overview
 This document outlines the requirements for the Agent CMS project.
 
-## Goals and objectives
-
-TBD
-
-## Features
-
-TBD
-
-### Agents
+## Implementation Steps
 
 TBD
