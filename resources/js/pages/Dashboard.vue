@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
 import { useJobStatusStore } from '@/stores/jobStatusStore';
@@ -24,6 +24,21 @@ const selectedPrompt = ref(null);
 const selectedPromptId = ref(null);
 const activeTab = ref('keywords'); // Default tab for mobile view
 const sortOption = ref('default'); // Default sort option
+
+// Track if we have active jobs
+const hasActiveJobs = computed(() => {
+  return jobStatusStore.jobs && jobStatusStore.jobs.some(job => 
+    job.status === 'pending' || job.status === 'processing'
+  );
+});
+
+// Watch for changes in active jobs status
+watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
+  // If we previously had active jobs but now we don't, refresh prompts
+  if (previousHasActiveJobs && !currentHasActiveJobs) {
+    await promptStore.fetchPrompts();
+  }
+}, { immediate: false });
 
 onMounted(async () => {
   await keywordStore.fetchKeywords();
