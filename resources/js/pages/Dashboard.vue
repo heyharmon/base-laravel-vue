@@ -253,16 +253,16 @@ const showPromptDetails = async (prompt) => {
                     Run all prompts 1x
                   </button>
                   <button 
-                    @click.stop="runAllPrompts(2); closeRunAllMenu()" 
-                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
-                  >
-                    Run all prompts 2x
-                  </button>
-                  <button 
                     @click.stop="runAllPrompts(3); closeRunAllMenu()" 
                     class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
                   >
                     Run all prompts 3x
+                  </button>
+                  <button 
+                    @click.stop="runAllPrompts(5); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 5x
                   </button>
                 </div>
               </div>
@@ -325,16 +325,16 @@ const showPromptDetails = async (prompt) => {
                     Run 1x
                   </button>
                   <button 
-                    @click.stop="runPrompt(prompt.id, 2); closeRunMenu()" 
-                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
-                  >
-                    Run 2x
-                  </button>
-                  <button 
                     @click.stop="runPrompt(prompt.id, 3); closeRunMenu()" 
                     class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
                   >
                     Run 3x
+                  </button>
+                  <button 
+                    @click.stop="runPrompt(prompt.id, 5); closeRunMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run 5x
                   </button>
                 </div>
               </div>

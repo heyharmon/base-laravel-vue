@@ -23,7 +23,7 @@ class PromptRunController extends Controller
         $validated = $request->validate([
             'providers' => 'nullable|array',
             'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
-            'count' => 'nullable|integer|min:1|max:3',
+            'count' => 'nullable|integer|min:1|max:5',
         ]);
 
         $providers = $validated['providers'] ?? ['openai'];
