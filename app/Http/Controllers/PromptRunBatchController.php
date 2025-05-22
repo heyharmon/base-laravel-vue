@@ -48,10 +48,8 @@ class PromptRunBatchController extends Controller
             }
         }
         
-        // Dispatch as a single batch with tracking
-        // Use the first prompt as the trackable model for the batch
-        $trackablePrompt = $prompts->first();
-        $batch = $this->jobDispatcher->dispatchBatch($trackablePrompt, $jobs, [
+        // Dispatch as a single batch with tracking using all prompts as models
+        $batch = $this->jobDispatcher->dispatchBatch($prompts, $jobs, [
             'name' => "All Prompts Batch ({$count}x each)",
             'allowFailures' => true
         ]);

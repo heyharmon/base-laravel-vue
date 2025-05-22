@@ -31,6 +31,13 @@ class RunPromptJob extends TrackableJob
      * @var \App\Models\Prompt
      */
     protected $prompt;
+    
+    /**
+     * The model to use for job tracking.
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    public $model;
 
     /**
      * The providers to use for running the prompt.
@@ -72,16 +79,7 @@ class RunPromptJob extends TrackableJob
         $this->prompt = $prompt;
         $this->providers = $providers;
         $this->teamId = $teamId;
-    }
-    
-    /**
-     * Get the model associated with this job for tracking purposes.
-     *
-     * @return \App\Models\Prompt
-     */
-    public function getModel()
-    {
-        return $this->prompt;
+        $this->model = $prompt;
     }
 
     /**

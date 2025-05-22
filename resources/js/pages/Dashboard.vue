@@ -32,7 +32,35 @@ const hasActiveJobs = computed(() => {
   );
 });
 
-// Watch for changes in active jobs status
+// Track completed jobs to detect when individual jobs complete
+const completedJobIds = ref(new Set());
+
+// Watch for changes in job statuses
+watch(() => jobStatusStore.jobs, async (currentJobs, previousJobs) => {
+  if (!previousJobs || !currentJobs) return;
+  
+  // Check for newly completed jobs
+  let shouldRefresh = false;
+  
+  currentJobs.forEach(job => {
+    // If the job is completed or failed and we haven't processed it yet
+    if ((job.status === 'completed' || job.status === 'failed') && 
+        !completedJobIds.value.has(job.job_id) &&
+        job.trackable_type === 'App\\Models\\Prompt') {
+      
+      // Mark this job as processed
+      completedJobIds.value.add(job.job_id);
+      shouldRefresh = true;
+    }
+  });
+  
+  // Refresh prompts if we found newly completed jobs
+  if (shouldRefresh) {
+    await promptStore.fetchPrompts();
+  }
+}, { deep: true });
+
+// Also keep the original watcher for when all jobs complete
 watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
   // If we previously had active jobs but now we don't, refresh prompts
   if (previousHasActiveJobs && !currentHasActiveJobs) {
