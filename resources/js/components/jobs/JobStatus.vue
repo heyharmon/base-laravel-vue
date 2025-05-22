@@ -1,5 +1,5 @@
 <template>
-    <div class="job-status-container">
+    <div>
         <h3 class="flex items-center gap-2 text-lg font-medium mb-2" v-if="title">
             {{ title }}
             <div v-if="loading" class="spinner"></div>
@@ -152,7 +152,7 @@ const props = defineProps({
   },
   refreshInterval: {
     type: Number,
-    default: 5000
+    default: 1000
   }
 });
 
@@ -200,10 +200,8 @@ const nonBatchedJobs = computed(() => {
 
 // Fetch jobs on mount
 onMounted(async () => {
-  await fetchJobs();
-  
   if (props.autoRefresh) {
-    jobStatusStore.startAutoRefresh(fetchJobs, props.refreshInterval);
+    jobStatusStore.startAutoRefresh(props.refreshInterval);
   }
 });
 
@@ -213,14 +211,6 @@ onBeforeUnmount(() => {
 });
 
 // Methods
-async function fetchJobs() {
-  try {
-    await jobStatusStore.fetchTeamJobs();
-  } catch (err) {
-    console.error('Error fetching team jobs:', err);
-  }
-}
-
 function getJobName(job) {
   // Extract class name from full namespace
   const className = job.job_class.split('\\').pop();

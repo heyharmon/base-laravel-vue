@@ -90,6 +90,7 @@ class JobStatusController extends Controller
         // Get job statuses for this team
         $jobStatuses = JobStatus::where('team_id', $teamId)
             ->orderBy('created_at', 'desc')
+            ->limit(100)
             ->get();
             
         return response()->json($jobStatuses);

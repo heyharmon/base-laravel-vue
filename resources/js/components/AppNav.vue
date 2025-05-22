@@ -79,9 +79,6 @@ const loadActiveJobs = async () => {
 onMounted(() => {
   loadTeams();
   loadActiveJobs();
-  // Set up auto-refresh for active jobs
-  jobStatusStore.startAutoRefresh(loadActiveJobs, 10000);
-  // Ensure popover is closed on mount
   isTeamDropdownOpen.value = false;
 });
 
@@ -111,7 +108,7 @@ onUnmounted(() => {
         </div>
       </div>
       
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-3">
         <template v-if="isAuthenticated">
           <button @click="isJobStatusSheetOpen = true" class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
             <div v-if="activeJobsCount > 0" class="relative size-5">
@@ -165,6 +162,11 @@ onUnmounted(() => {
                       Manage Teams
                     </router-link>
                   </PopoverClose>
+                  <!-- <PopoverClose as-child>
+                    <button @click="logout" class="w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+                      Logout
+                    </button>
+                  </PopoverClose> -->
                 </div>
               </PopoverContent>
             </PopoverPortal>

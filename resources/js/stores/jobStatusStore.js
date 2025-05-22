@@ -34,6 +34,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
   }
   
   async function fetchTeamJobs() {
+    console.log('Fetching team jobs...')
     loading.value = true;
     error.value = null;
     
@@ -113,12 +114,12 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
     );
   }
   
-  function startAutoRefresh(callback, interval = 5000) {
+  function startAutoRefresh(interval = 1000) {
     stopAutoRefresh();
     
     refreshTimer.value = setInterval(() => {
       if (hasActiveJobs()) {
-        callback();
+        fetchTeamJobs();
       }
     }, interval);
   }

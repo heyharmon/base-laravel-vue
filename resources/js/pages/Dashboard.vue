@@ -47,8 +47,9 @@ const closeRunMenu = () => {
 
 const runPrompt = async (id, count = 1) => {
   await promptStore.runPrompt(id, count);
-  // Refresh job statuses after running a prompt
   await jobStatusStore.fetchTeamJobs();
+
+  jobStatusStore.startAutoRefresh(1000);
 };
 
 const runAllPrompts = async () => {
@@ -162,7 +163,7 @@ const showPromptDetails = async (prompt) => {
       
       <!-- Right column - Prompts -->
       <div class="w-full md:w-2/3 md:pl-4 md:px-4 py-4 overflow-y-auto" :class="{'block': activeTab === 'prompts', 'hidden': activeTab !== 'prompts', 'md:block': true}">
-        <pre>{{ jobStatusStore.jobs }}</pre>
+        <!-- <pre>{{ jobStatusStore.jobs }}</pre> -->
         <div class="mb-4">
           <div class="flex justify-between items-center">
             <h2 class="text-xl md:text-2xl font-semibold">Prompts</h2>
