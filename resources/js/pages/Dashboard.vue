@@ -7,7 +7,6 @@ import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
 import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
-import JobStatus from '@/components/jobs/JobStatus.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const keywordStore = useKeywordStore();
@@ -99,11 +98,6 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <!-- Job Status Section at the top -->
-    <div class="border-b border-neutral-200 p-4">
-      <JobStatus class="mb-4" />
-    </div>
-    
     <div class="flex flex-col md:flex-row h-[calc(100vh-10rem)] overflow-hidden">
       <!-- Mobile tabs -->
       <div class="flex md:hidden border-b border-neutral-200 sticky top-0 bg-white z-10 shadow-sm">
@@ -168,6 +162,7 @@ const showPromptDetails = async (prompt) => {
       
       <!-- Right column - Prompts -->
       <div class="w-full md:w-2/3 md:pl-4 md:px-4 py-4 overflow-y-auto" :class="{'block': activeTab === 'prompts', 'hidden': activeTab !== 'prompts', 'md:block': true}">
+        <pre>{{ jobStatusStore.jobs }}</pre>
         <div class="mb-4">
           <div class="flex justify-between items-center">
             <h2 class="text-xl md:text-2xl font-semibold">Prompts</h2>
@@ -227,7 +222,7 @@ const showPromptDetails = async (prompt) => {
                 <div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
                 
                 <!-- Show job status indicator if there's an active job for this prompt -->
-                <div v-if="jobStatusStore.jobs.some(job => job.trackable_id === prompt.id && (job.status === 'pending' || job.status === 'processing'))" class="mt-2 flex items-center text-sm text-blue-600">
+                <div v-if="jobStatusStore.jobs?.some(job => job.trackable_id === prompt.id && (job.status === 'pending' || job.status === 'processing'))" class="mt-2 flex items-center text-sm text-blue-600">
                   <div class="animate-spin h-3 w-3 border-b-2 border-blue-600 rounded-full mr-2"></div>
                   <span>Processing...</span>
                 </div>
