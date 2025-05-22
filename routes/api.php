@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\PromptRunController;
+use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptController;
 use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\KeywordResponsesController;
@@ -58,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
+    Route::post('prompt-run-batch', [PromptRunBatchController::class, 'store']);
 
     // Prompt responses (detailed)
     Route::resource('prompts/{prompt}/responses', ResponseController::class);

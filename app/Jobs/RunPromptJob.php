@@ -73,6 +73,16 @@ class RunPromptJob extends TrackableJob
         $this->providers = $providers;
         $this->teamId = $teamId;
     }
+    
+    /**
+     * Get the model associated with this job for tracking purposes.
+     *
+     * @return \App\Models\Prompt
+     */
+    public function getModel()
+    {
+        return $this->prompt;
+    }
 
     /**
      * Execute the job.

@@ -11,6 +11,7 @@ export const usePromptStore = defineStore('prompts', () => {
   const selectedPromptDetails = ref(null);
   const selectedPromptResponses = ref([]);
   const isLoadingPromptResponses = ref(false);
+  const isRunningAll = ref(false);
   
   // Actions
   async function fetchPrompts() {
@@ -91,6 +92,18 @@ export const usePromptStore = defineStore('prompts', () => {
       loadingPromptIds.value = loadingPromptIds.value.filter(promptId => promptId !== id);
     }
   }
+  
+  async function runAllPrompts(count = 1) {
+    isRunningAll.value = true;
+    try {
+      return await api.post('/prompt-run-batch', { count });
+    } catch (error) {
+      console.error('Error running all prompts:', error);
+      throw error;
+    } finally {
+      isRunningAll.value = false;
+    }
+  }
 
   async function getPromptResponses(promptId) {
     isLoadingPromptResponses.value = true;
@@ -114,6 +127,7 @@ export const usePromptStore = defineStore('prompts', () => {
     selectedPromptDetails: computed(() => selectedPromptDetails.value),
     selectedPromptResponses: computed(() => selectedPromptResponses.value),
     isLoadingPromptResponses,
+    isRunningAll,
     
     // Actions
     fetchPrompts,
@@ -122,6 +136,7 @@ export const usePromptStore = defineStore('prompts', () => {
     updatePrompt,
     deletePrompt,
     runPrompt,
+    runAllPrompts,
     getPromptResponses,
   };
 });

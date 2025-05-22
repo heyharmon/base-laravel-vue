@@ -47,6 +47,7 @@ onMounted(async () => {
 });
 
 const openRunMenuId = ref(null);
+const isRunAllMenuOpen = ref(false);
 
 const toggleRunMenu = (id) => {
   if (openRunMenuId.value === id) {
@@ -60,6 +61,10 @@ const closeRunMenu = () => {
   openRunMenuId.value = null;
 };
 
+const closeRunAllMenu = () => {
+  isRunAllMenuOpen.value = false;
+};
+
 const runPrompt = async (id, count = 1) => {
   await promptStore.runPrompt(id, count);
   await jobStatusStore.fetchTeamJobs();
@@ -67,14 +72,14 @@ const runPrompt = async (id, count = 1) => {
   jobStatusStore.startAutoRefresh(1000);
 };
 
-const runAllPrompts = async () => {
-  const allPrompts = sortedPrompts.value;
-  for (const prompt of allPrompts) {
-    promptStore.runPrompt(prompt.id);
-    await new Promise(resolve => setTimeout(resolve, 800));
+const runAllPrompts = async (count = 1) => {
+  try {
+    await promptStore.runAllPrompts(count);
+    await jobStatusStore.fetchTeamJobs();
+    jobStatusStore.startAutoRefresh(1000);
+  } catch (error) {
+    console.error('Error running all prompts:', error);
   }
-  // Refresh job statuses after running all prompts
-  await jobStatusStore.fetchTeamJobs();
 };
 
 const sortedPrompts = computed(() => {
@@ -199,13 +204,40 @@ const showPromptDetails = async (prompt) => {
                   </svg>
                 </div>
               </div>
-              <button 
-                @click="runAllPrompts" 
-                class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
-                :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0"
-              >
-                Run all prompts
-              </button>
+              <div class="relative">
+                <button 
+                  @click.stop="isRunAllMenuOpen = !isRunAllMenuOpen" 
+                  class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center"
+                  :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0 || promptStore.isRunningAll"
+                >
+                  <div v-if="promptStore.isRunningAll" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full mr-1"></div>
+                  <span>Run all prompts</span>
+                </button>
+                <div 
+                  v-if="isRunAllMenuOpen" 
+                  class="absolute right-0 mt-1 w-32 bg-white border border-neutral-300 rounded-md shadow-lg z-10"
+                  @click.stop
+                >
+                  <button 
+                    @click.stop="runAllPrompts(1); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 1x
+                  </button>
+                  <button 
+                    @click.stop="runAllPrompts(2); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 2x
+                  </button>
+                  <button 
+                    @click.stop="runAllPrompts(3); closeRunAllMenu()" 
+                    class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+                  >
+                    Run all prompts 3x
+                  </button>
+                </div>
+              </div>
               <button 
                 @click="isPromptCreateModalOpen = true" 
                 class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
