@@ -29,6 +29,7 @@
 
 ### Vue Rules
 * Never write typescript. If you see typescript, do not remove it just leave it, unless instructed to remove it.
+* Always write Pinia store in composition api setup style not option api style.
 * Always look at resources/js/pages for Inertia page examples.
 * Always use script setup style in Vue components.
 * Always attempt to use a component in resources/js/components for components you can use before writing new components.

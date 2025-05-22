@@ -14,7 +14,8 @@ class Prompt extends Model
     use HasFactory, HasJobStatus;
 
     protected $fillable = [
-        'team_id', // TODO: Change this if adding projects model
+        'team_id',
+        'organization_id',
         'name',
         'content',
         'description',
@@ -51,10 +52,17 @@ class Prompt extends Model
     /**
      * Get the team that owns the prompt.
      */
-    // TODO: Change this if adding projects model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+    
+    /**
+     * Get the organization that owns the prompt.
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
     
     /**

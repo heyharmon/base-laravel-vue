@@ -33,7 +33,7 @@ class AuthController extends Controller
 
         // Create a team for the user
         $team = Team::create([
-            'name' => $user->name . ' Team',
+            'name' => $user->name . '\'s Team',
             'owner_id' => $user->id,
         ]);
 

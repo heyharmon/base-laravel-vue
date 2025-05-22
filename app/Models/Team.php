@@ -59,7 +59,6 @@ class Team extends Model
     /**
      * Get the keywords that belong to the team.
      */
-    // TODO: Change this if adding projects model
     public function keywords(): HasMany
     {
         return $this->hasMany(Keyword::class);
@@ -68,9 +67,16 @@ class Team extends Model
     /**
      * Get the prompts that belong to the team.
      */
-    // TODO: Change this if adding projects model
     public function prompts(): HasMany
     {
         return $this->hasMany(Prompt::class);
+    }
+    
+    /**
+     * Get the organizations that belong to the team.
+     */
+    public function organizations(): HasMany
+    {
+        return $this->hasMany(Organization::class);
     }
 }

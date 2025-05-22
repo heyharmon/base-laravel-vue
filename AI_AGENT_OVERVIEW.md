@@ -17,6 +17,8 @@ The application tracks how often specified keywords appear in the responses of v
 - **Conversation/Chat** – Simple chat feature used by the `ChatService` to demonstrate AI conversations.
 
 ### Relationships
+- Prompts -> Team (many-to-one) (prompts belong to a team) 
+- Keywords -> Team (many-to-one) (keywords belong to a team) 
 - Prompts <-> Keywords (many‑to‑many with count & last_found_at fields).
 - Responses -> Prompt (one‑to‑many).
 - Responses <-> Keywords (many‑to‑many).
