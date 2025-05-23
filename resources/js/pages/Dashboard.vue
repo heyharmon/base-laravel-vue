@@ -75,6 +75,8 @@ onMounted(async () => {
 
 const openRunMenuId = ref(null);
 const isRunAllMenuOpen = ref(false);
+const promptToDelete = ref(null);
+const showDeleteConfirmation = ref(false);
 
 const toggleRunMenu = (id) => {
   if (openRunMenuId.value === id) {
@@ -107,6 +109,24 @@ const runAllPrompts = async (count = 1) => {
   } catch (error) {
     console.error('Error running all prompts:', error);
   }
+};
+
+const confirmDeletePrompt = (prompt) => {
+  promptToDelete.value = prompt;
+  showDeleteConfirmation.value = true;
+};
+
+const deletePrompt = async () => {
+  if (promptToDelete.value) {
+    await promptStore.deletePrompt(promptToDelete.value.id);
+    promptToDelete.value = null;
+    showDeleteConfirmation.value = false;
+  }
+};
+
+const cancelDelete = () => {
+  promptToDelete.value = null;
+  showDeleteConfirmation.value = false;
 };
 
 const sortedPrompts = computed(() => {
@@ -323,7 +343,7 @@ const showPromptDetails = async (prompt) => {
 						</div>
 					</div>
 					<button
-						@click.stop="promptStore.deletePrompt(prompt.id)"
+						@click.stop="confirmDeletePrompt(prompt)"
 						class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
 						aria-label="Delete prompt"
 					>
@@ -358,4 +378,28 @@ const showPromptDetails = async (prompt) => {
       selectedPromptId = null;
     }"
   />
+
+  <!-- Delete Confirmation Modal -->
+  <div v-if="showDeleteConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="cancelDelete">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" @click.stop>
+      <h3 class="text-lg font-medium text-neutral-900 mb-4">Delete Prompt</h3>
+      <p class="text-sm text-neutral-600 mb-6">
+        Are you sure you want to delete this prompt? This action cannot be undone.
+      </p>
+      <div class="flex justify-end space-x-3">
+        <button
+          @click="cancelDelete"
+          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          @click="deletePrompt"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
