@@ -380,7 +380,7 @@ const showPromptDetails = async (prompt) => {
   />
 
   <!-- Delete Confirmation Modal -->
-  <div v-if="showDeleteConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="cancelDelete">
+  <div v-if="showDeleteConfirmation" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50" @click="cancelDelete">
     <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" @click.stop>
       <h3 class="text-lg font-medium text-neutral-900 mb-4">Delete Prompt</h3>
       <p class="text-sm text-neutral-600 mb-6">
@@ -389,13 +389,13 @@ const showPromptDetails = async (prompt) => {
       <div class="flex justify-end space-x-3">
         <button
           @click="cancelDelete"
-          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors"
+          class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
         >
           Cancel
         </button>
         <button
           @click="deletePrompt"
-          class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors"
+          class="ml-3 inline-flex justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md cursor-pointer"
         >
           Delete
         </button>

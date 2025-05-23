@@ -220,7 +220,7 @@ const updateRole = async (userId, role) => {
       </div>
 
       <!-- Edit Team Modal -->
-      <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div v-if="showEditModal" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
           <h2 class="text-xl font-bold mb-4">Edit Team</h2>
           <div class="mb-4">
@@ -235,14 +235,14 @@ const updateRole = async (userId, role) => {
           <div class="flex justify-end space-x-2">
             <Button
               @click="showEditModal = false"
-              class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
+              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
             >
               Cancel
             </Button>
             <Button
               @click="updateTeam"
               :disabled="isSubmitting || !editTeamName"
-              class="bg-blue-600 hover:bg-blue-700 text-white"
+              class="bg-neutral-800 hover:bg-neutral-700 text-white"
             >
               {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
             </Button>
@@ -251,7 +251,7 @@ const updateRole = async (userId, role) => {
       </div>
 
       <!-- Invite Member Modal -->
-      <div v-if="showInviteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div v-if="showInviteModal" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
           <h2 class="text-xl font-bold mb-4">Invite Team Member</h2>
           <div class="mb-4">
@@ -276,14 +276,14 @@ const updateRole = async (userId, role) => {
           <div class="flex justify-end space-x-2">
             <Button
               @click="showInviteModal = false"
-              class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
+              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
             >
               Cancel
             </Button>
             <Button
               @click="inviteUser"
               :disabled="isSubmitting || !inviteEmail"
-              class="bg-blue-600 hover:bg-blue-700 text-white"
+              class="bg-neutral-800 hover:bg-neutral-700 text-white"
             >
               {{ isSubmitting ? 'Sending Invitation...' : 'Send Invitation' }}
             </Button>
