@@ -2,9 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Models\Keyword;
+use App\Models\Mention;
 use App\Models\Prompt;
 use App\Models\Response;
-use App\Models\Keyword;
 use App\Tools\SearchApiTool;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -233,31 +234,44 @@ class RunPromptJob extends TrackableJob
         
       // Check if the keyword exists in the response
       if (str_contains($responseText, $keywordName)) {
-          $foundKeywords[] = $keyword->id;
-          $mentioned = true;
-            
-          // Update the pivot table for keyword-prompt relationship
-          $pivot = $prompt->keywords()->syncWithoutDetaching([$keyword->id]);
-            
-          // If this is a new relationship, initialize the count
-          if (isset($pivot[$keyword->id]) && $pivot[$keyword->id]['created']) {
-              $prompt->keywords()->updateExistingPivot($keyword->id, [
-                  'count' => 1,
-                  'last_found_at' => now(),
-              ]);
-          } else {
-              // Increment the count and update last_found_at
-              $prompt->keywords()->updateExistingPivot($keyword->id, [
-                  'count' => DB::raw('count + 1'),
-                  'last_found_at' => now(),
-              ]);
-          }
+        $foundKeywords[] = $keyword->id;
+        $mentioned = true;
+          
+        // Update the pivot table for keyword-prompt relationship
+        $pivot = $prompt->keywords()->syncWithoutDetaching([$keyword->id]);
+          
+        // If this is a new relationship, initialize the count
+        if (isset($pivot[$keyword->id]) && $pivot[$keyword->id]['created']) {
+          $prompt->keywords()->updateExistingPivot($keyword->id, [
+            'count' => 1,
+            'last_found_at' => now(),
+          ]);
+        } else {
+          // Increment the count and update last_found_at
+          $prompt->keywords()->updateExistingPivot($keyword->id, [
+            'count' => DB::raw('count + 1'),
+            'last_found_at' => now(),
+          ]);
+        }
       }
     }
     
     // Attach found keywords to the response
     if (!empty($foundKeywords)) {
       $response->keywords()->syncWithoutDetaching($foundKeywords);
+      
+      // Create mention records for each found keyword
+      foreach ($foundKeywords as $keywordId) {
+        $keyword = Keyword::find($keywordId);
+        
+        Mention::create([
+          'keyword_id' => $keywordId,
+          'response_id' => $response->id,
+          'prompt_id' => $prompt->id,
+          'organization_id' => $keyword->organization_id,
+          'team_id' => $this->teamId,
+        ]);
+      }
     }
     
     // Update the response with the mentioned flag

@@ -41,7 +41,7 @@ class Prompt extends Model
     }
 
     /**
-     * The responses of this prompt.
+     * The responses to this prompt.
      */
     public function responses(): HasMany
     {
@@ -57,6 +57,14 @@ class Prompt extends Model
     }
     
     /**
+     * Get the mentions for this prompt.
+     */
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(Mention::class);
+    }
+    
+    /**
      * Get the mentions percentage for this prompt.
      */
     public function getMentionsPercentageAttribute(): int
@@ -67,8 +75,8 @@ class Prompt extends Model
             return 0;
         }
         
-        $mentionedResponses = $this->responses()->where('mentioned', true)->count();
+        $mentions = $this->responses()->where('mentioned', true)->count();
         
-        return round(($mentionedResponses / $totalResponses) * 100);
+        return round(($mentions / $totalResponses) * 100);
     }
 }

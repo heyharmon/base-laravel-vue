@@ -8,6 +8,8 @@ export const useOrganizationStore = defineStore('organization', () => {
   const currentOrganization = ref(null);
   const isLoading = ref(false);
   const error = ref(null);
+  const visibilityMetrics = ref([]);
+  const isLoadingVisibility = ref(false);
 
   // Getters
   const ownedOrganizations = computed(() => 
@@ -103,13 +105,38 @@ export const useOrganizationStore = defineStore('organization', () => {
       isLoading.value = false;
     }
   }
+  
+  async function fetchVisibilityMetrics(params = {}) {
+    isLoadingVisibility.value = true;
+    error.value = null;
+    
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append('start_date', params.startDate);
+      if (params.endDate) queryParams.append('end_date', params.endDate);
+      
+      const queryString = queryParams.toString();
+      const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await api.get(url);
+      visibilityMetrics.value = response;
+      return response;
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to fetch organization visibility metrics';
+      console.error('Error fetching organization visibility metrics:', err);
+    } finally {
+      isLoadingVisibility.value = false;
+    }
+  }
 
   return {
     // State
     organizations,
     currentOrganization,
     isLoading,
+    isLoadingVisibility,
     error,
+    visibilityMetrics,
     
     // Getters
     ownedOrganizations,
@@ -120,6 +147,7 @@ export const useOrganizationStore = defineStore('organization', () => {
     fetchOrganization,
     createOrganization,
     updateOrganization,
-    deleteOrganization
+    deleteOrganization,
+    fetchVisibilityMetrics
   };
 });

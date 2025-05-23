@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Keyword extends Model
 {
@@ -51,5 +52,13 @@ class Keyword extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+    
+    /**
+     * Get the mentions for this keyword.
+     */
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(Mention::class);
     }
 }

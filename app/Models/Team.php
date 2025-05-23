@@ -79,4 +79,12 @@ class Team extends Model
     {
         return $this->hasMany(Organization::class);
     }
+    
+    /**
+     * Get the mentions that belong to the team.
+     */
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(Mention::class);
+    }
 }
