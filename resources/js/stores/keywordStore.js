@@ -12,10 +12,10 @@ export const useKeywordStore = defineStore('keywords', () => {
   const selectedKeywordResponses = ref([]);
   
   // Actions
-  async function fetchKeywords() {
+  async function fetchKeywords(organizationId) {
     isLoading.value = true;
     try {
-      keywords.value = await api.get('/keywords');
+      keywords.value = await api.get(`organizations/${organizationId}/keywords`);
     } catch (error) {
       console.error('Error fetching keywords:', error);
     } finally {
@@ -23,10 +23,10 @@ export const useKeywordStore = defineStore('keywords', () => {
     }
   }
 
-  async function showKeyword(id) {
+  async function showKeyword(organizationId, id) {
     isLoadingDetails.value = true;
     try {
-      selectedKeywordDetails.value = await api.get(`/keywords/${id}?include=prompts`);
+      selectedKeywordDetails.value = await api.get(`organizations/${organizationId}/keywords/${id}?include=prompts`);
     } catch (error) {
       console.error('Error fetching keyword details:', error);
       throw error;
@@ -35,10 +35,10 @@ export const useKeywordStore = defineStore('keywords', () => {
     }
   }
   
-  async function createKeyword(data) {
+  async function createKeyword(organizationId, data) {
     isLoading.value = true;
     try {
-      const newKeyword = await api.post('/keywords', data);
+      const newKeyword = await api.post(`organizations/${organizationId}/keywords`, data);
       keywords.value.unshift(newKeyword);
       return newKeyword;
     } catch (error) {
@@ -49,28 +49,9 @@ export const useKeywordStore = defineStore('keywords', () => {
     }
   }
   
-  async function updateKeyword(id, data) {
-    isLoading.value = true;
+  async function deleteKeyword(organizationId,id) {
     try {
-      const updatedKeyword = await api.put(`/keywords/${id}`, data);
-      
-      const index = keywords.value.findIndex(k => k.id === id);
-      if (index !== -1) {
-        keywords.value[index] = updatedKeyword;
-      }
-      
-      return updatedKeyword;
-    } catch (error) {
-      console.error('Error updating keyword:', error);
-      throw error;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-  
-  async function deleteKeyword(id) {
-    try {
-      await api.delete(`/keywords/${id}`);
+      await api.delete(`organizations/${organizationId}/keywords/${id}`);
       keywords.value = keywords.value.filter(k => k.id !== id);
     } catch (error) {
       console.error('Error deleting keyword:', error);
@@ -79,6 +60,7 @@ export const useKeywordStore = defineStore('keywords', () => {
     }
   }
 
+  // TODO: Test
   async function getKeywordResponses(keywordId, promptId) {
     isLoadingKeywordResponses.value = true;
     selectedKeywordResponses.value = [];
@@ -106,7 +88,6 @@ export const useKeywordStore = defineStore('keywords', () => {
     fetchKeywords,
     showKeyword,
     createKeyword,
-    updateKeyword,
     deleteKeyword,
     getKeywordResponses,
   };

@@ -2,7 +2,9 @@
 import { ref, nextTick, watch } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
 import { useKeywordStore } from '@/stores/keywordStore';
+import { useRoute } from 'vue-router';
 
+const route = useRoute(); 
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -10,7 +12,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'create']);
 
 const keywordStore = useKeywordStore();
 const newKeyword = ref('');
@@ -32,7 +34,9 @@ const closeModal = () => {
 
 const addKeyword = async () => {
   if (newKeyword.value.trim()) {
-    await keywordStore.createKeyword({ name: newKeyword.value.trim() });
+    const keywordData = { name: newKeyword.value.trim() };
+    const processedData = emit('create', keywordData) || keywordData;
+    await keywordStore.createKeyword(route.params.id, processedData);
     closeModal();
   }
 };

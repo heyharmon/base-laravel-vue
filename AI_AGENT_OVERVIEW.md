@@ -4,7 +4,7 @@ This document summarizes the key components of the **LLM Mention Tracker** appli
 
 ## Overview
 
-The application tracks how often specified keywords appear in the responses of various Large Language Models (LLMs). Users can define prompts, run them across different providers, and collect responses to analyze keyword mentions. The stack consists of a Laravel API backend and a Vue 3 frontend.
+The application tracks how often specified keywords appear in the responses of various Large Language Models (LLMs). Users create organizations and keywords that are associated with those organizations. Users then define prompts relevant to all organizations, run them across different providers, and collect responses to analyze keyword mentions. The stack consists of a Laravel API backend and a Vue 3 frontend.
 
 ## Core Concepts
 
@@ -17,6 +17,8 @@ The application tracks how often specified keywords appear in the responses of v
 - **Conversation/Chat** – Simple chat feature used by the `ChatService` to demonstrate AI conversations.
 
 ### Relationships
+- Prompts -> Team (many-to-one) (prompts belong to a team) 
+- Keywords -> Organization (many-to-one) (keywords belong to an organization) 
 - Prompts <-> Keywords (many‑to‑many with count & last_found_at fields).
 - Responses -> Prompt (one‑to‑many).
 - Responses <-> Keywords (many‑to‑many).

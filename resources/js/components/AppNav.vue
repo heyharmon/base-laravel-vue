@@ -105,6 +105,7 @@ onUnmounted(() => {
           </button>
           <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
           <router-link to="/analytics" class="text-sm hover:text-neutral-300">Analytics</router-link>
+          <router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
         </div>
       </div>
       

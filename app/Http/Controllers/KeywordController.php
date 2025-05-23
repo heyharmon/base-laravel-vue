@@ -3,19 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Keyword;
-use App\Models\Prompt;
-use App\Models\Response;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class KeywordController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Organization $organization, Request $request): JsonResponse
     {
-        // TODO: Change this if adding projects model
         $teamId = Auth::user()->current_team_id;
-        $keywords = Keyword::where('team_id', $teamId)
+
+        // Verify the organization belongs to the user's team
+        if ($organization->team_id !== $teamId) {
+          return response()->json(['message' => 'Organization not found'], 404);
+        }
+        
+        $keywords = $organization->keywords()
             ->withCount('prompts')
             ->latest()
             ->get();
@@ -23,14 +27,21 @@ class KeywordController extends Controller
         return response()->json($keywords);
     }
 
-    public function show(Keyword $keyword): JsonResponse
+    public function show(Organization $organization, Keyword $keyword): JsonResponse
     {
-        // Check if keyword belongs to user's current team
-        // TODO: Change this if adding projects model
-        if ($keyword->team_id !== Auth::user()->current_team_id) {
+        $teamId = Auth::user()->current_team_id;
+        
+        // Verify the organization belongs to the user's team
+        if ($organization->team_id !== $teamId) {
+          return response()->json(['message' => 'Organization not found'], 404);
+        }
+
+        // Check if keyword belongs to organization owned by user's current team
+        if ($keyword->organization->team_id !== $teamId) {
             return response()->json(['message' => 'Not found'], 404);
         }
         
+        // Load keyword prompts with pivot data
         $keyword->load(['prompts' => function($query) {
             $query->withPivot('count', 'last_found_at');
         }]);
@@ -38,43 +49,35 @@ class KeywordController extends Controller
         return response()->json($keyword);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Organization $organization, Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string',
         ]);
         
-        // Add the team_id to the validated data
-        // TODO: Change this if adding projects model
-        $validated['team_id'] = Auth::user()->current_team_id;
+        $teamId = Auth::user()->current_team_id;
+        
+        // Verify the organization belongs to the user's team
+        if ($organization->team_id !== $teamId) {
+          return response()->json(['message' => 'Organization not found'], 404);
+        }
 
-        $keyword = Keyword::create($validated);
+        $keyword = $organization->keywords()->create($validated);
         
         return response()->json($keyword, 201);
     }
 
-    public function update(Request $request, Keyword $keyword): JsonResponse
+    public function destroy(Organization $organization, Keyword $keyword): JsonResponse
     {
-        // Check if keyword belongs to user's current team
-        // TODO: Change this if adding projects model
-        if ($keyword->team_id !== Auth::user()->current_team_id) {
-            return response()->json(['message' => 'Not found'], 404);
+        $teamId = Auth::user()->current_team_id;
+        
+        // Verify the organization belongs to the user's team
+        if ($organization->team_id !== $teamId) {
+          return response()->json(['message' => 'Organization not found'], 404);
         }
-        
-        $validated = $request->validate([
-            'name' => 'required|string',
-        ]);
 
-        $keyword->update($validated);
-        
-        return response()->json($keyword);
-    }
-
-    public function destroy(Keyword $keyword): JsonResponse
-    {
-        // Check if keyword belongs to user's current team
-        // TODO: Change this if adding projects model
-        if ($keyword->team_id !== Auth::user()->current_team_id) {
+        // Check if keyword belongs to organization owned by user's current team
+        if ($keyword->organization->team_id !== $teamId) {
             return response()->json(['message' => 'Not found'], 404);
         }
         

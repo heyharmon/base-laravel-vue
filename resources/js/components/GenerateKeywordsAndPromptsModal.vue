@@ -1,9 +1,10 @@
 <script setup>
-import { ref, nextTick, watch } from 'vue';
+import { ref, nextTick, watch, onMounted } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
 import api from '@/services/api';
 import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
+import { useOrganizationStore } from '@/stores/organizationStore';
 
 const props = defineProps({
   isOpen: {
@@ -23,6 +24,13 @@ const error = ref(null);
 const activeTab = ref('keywords');
 const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
+const organizationStore = useOrganizationStore();
+const selectedOrganizationId = ref(null);
+const organizations = ref([]);
+
+onMounted(async () => {
+  await fetchOrganizations();
+});
 
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
@@ -30,8 +38,29 @@ watch(() => props.isOpen, async (isOpen) => {
     if (domainInput.value) {
       domainInput.value.focus();
     }
+    
+    if (organizations.value.length > 0 && !selectedOrganizationId.value) {
+      // Set default to the first owned organization
+      const ownedOrg = organizations.value.find(org => !org.is_competitor);
+      if (ownedOrg) {
+        selectedOrganizationId.value = ownedOrg.id;
+      }
+    }
   }
 }, { immediate: true });
+
+const fetchOrganizations = async () => {
+  isLoading.value = true;
+  try {
+    await organizationStore.fetchOrganizations();
+    organizations.value = organizationStore.organizations;
+  } catch (err) {
+    console.error('Error fetching organizations:', err);
+    error.value = 'Failed to fetch organizations. Please try again.';
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const closeModal = () => {
   domain.value = '';
@@ -75,13 +104,13 @@ const generateKeywordsAndPrompts = async () => {
 };
 
 const createKeywords = async () => {
-  if (!generatedKeywords.value.length) return;
+  if (!generatedKeywords.value.length || !selectedOrganizationId.value) return;
   
   isLoading.value = true;
   
   try {
     const promises = generatedKeywords.value.map(keyword => 
-      keywordStore.createKeyword({ name: keyword })
+      keywordStore.createKeyword(selectedOrganizationId.value, { name: keyword })
     );
     
     await Promise.all(promises);
@@ -95,13 +124,13 @@ const createKeywords = async () => {
 };
 
 const createPrompts = async () => {
-  if (!generatedPrompts.value.length) return;
+  if (!generatedPrompts.value.length || !selectedOrganizationId.value) return;
   
   isLoading.value = true;
   
   try {
     const promises = generatedPrompts.value.map(prompt => 
-      promptStore.createPrompt({ content: prompt })
+      promptStore.createPrompt({ content: prompt, organization_id: selectedOrganizationId.value })
     );
     
     await Promise.all(promises);
@@ -115,15 +144,17 @@ const createPrompts = async () => {
 };
 
 const createAll = async () => {
+  if (!selectedOrganizationId.value) return;
+  
   isLoading.value = true;
   
   try {
     const keywordPromises = generatedKeywords.value.map(keyword => 
-      keywordStore.createKeyword({ name: keyword })
+      keywordStore.createKeyword(selectedOrganizationId.value, { name: keyword })
     );
     
     const promptPromises = generatedPrompts.value.map(prompt => 
-      promptStore.createPrompt({ content: prompt })
+      promptStore.createPrompt({ content: prompt, organization_id: selectedOrganizationId.value })
     );
     
     await Promise.all([...keywordPromises, ...promptPromises]);
@@ -140,6 +171,28 @@ const createAll = async () => {
 <template>
   <Modal :is-open="isOpen" title="Generate Keywords & Prompts" width="wider" @close="closeModal">
     <div class="space-y-4">
+      <!-- Organization Selector -->
+      <div class="mb-4">
+        <label for="organization" class="block text-sm font-medium text-neutral-700 mb-1">Organization</label>
+        <select
+          id="organization"
+          v-model="selectedOrganizationId"
+          class="w-full px-3 py-2 border border-neutral-300 rounded-md"
+          :disabled="isLoading || organizations.length === 0"
+        >
+          <option v-if="organizations.length === 0" value="" disabled>No organizations available</option>
+          <optgroup label="Owned Organizations">
+            <option 
+              v-for="org in organizations.filter(o => !o.is_competitor)" 
+              :key="org.id" 
+              :value="org.id"
+            >
+              {{ org.name }}
+            </option>
+          </optgroup>
+        </select>
+      </div>
+      
       <input 
         ref="domainInput"
         v-model="domain" 
@@ -244,7 +297,7 @@ const createAll = async () => {
           v-if="activeTab === 'keywords' && generatedKeywords.length > 0"
           @click="createKeywords" 
           class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
-          :disabled="isLoading"
+          :disabled="isLoading || !selectedOrganizationId"
         >
           Create Keywords
         </button>
@@ -253,7 +306,7 @@ const createAll = async () => {
           v-if="activeTab === 'prompts' && generatedPrompts.length > 0"
           @click="createPrompts" 
           class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
-          :disabled="isLoading"
+          :disabled="isLoading || !selectedOrganizationId"
         >
           Create Prompts
         </button>
@@ -261,7 +314,7 @@ const createAll = async () => {
         <button 
           @click="createAll" 
           class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
-          :disabled="isLoading"
+          :disabled="isLoading || !selectedOrganizationId"
         >
           Create All
         </button>

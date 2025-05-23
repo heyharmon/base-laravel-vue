@@ -1,29 +1,27 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
-import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
 import { useJobStatusStore } from '@/stores/jobStatusStore';
-import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
+import { useOrganizationStore } from '@/stores/organizationStore';
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
-import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
-const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
 const jobStatusStore = useJobStatusStore();
+const organizationStore = useOrganizationStore();
 
-const isKeywordCreateModalOpen = ref(false);
 const isPromptCreateModalOpen = ref(false);
-const isKeywordDetailSheetOpen = ref(false);
 const isPromptDetailSheetOpen = ref(false);
 
-const selectedKeyword = ref(null);
-const selectedKeywordId = ref(null);
 const selectedPrompt = ref(null);
 const selectedPromptId = ref(null);
-const activeTab = ref('keywords'); // Default tab for mobile view
+const activeTab = ref('prompts'); // Default tab for mobile view
 const sortOption = ref('default'); // Default sort option
+const dateRange = ref({
+  startDate: null,
+  endDate: null
+});
 
 // Track if we have active jobs
 const hasActiveJobs = computed(() => {
@@ -69,9 +67,10 @@ watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
 }, { immediate: false });
 
 onMounted(async () => {
-  await keywordStore.fetchKeywords();
   await promptStore.fetchPrompts();
   await jobStatusStore.fetchTeamJobs();
+  await organizationStore.fetchOrganizations();
+  await organizationStore.fetchVisibilityMetrics();
 });
 
 const openRunMenuId = ref(null);
@@ -147,70 +146,93 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex flex-col md:flex-row h-[calc(100vh-10rem)] overflow-hidden">
-      <!-- Mobile tabs -->
-      <div class="flex md:hidden border-b border-neutral-200 sticky top-0 bg-white z-10 shadow-sm">
-        <button 
-          @click="activeTab = 'keywords'" 
-          class="w-1/2 py-2 text-center font-medium"
-          :class="activeTab === 'keywords' ? 'text-neutral-800 border-b-2 border-neutral-800' : 'text-neutral-500'"
-        >
-          Keywords
-        </button>
-        <button 
-          @click="activeTab = 'prompts'" 
-          class="w-1/2 py-2 text-center font-medium"
-          :class="activeTab === 'prompts' ? 'text-neutral-800 border-b-2 border-neutral-800' : 'text-neutral-500'"
-        >
-          Prompts
-        </button>
-      </div>
-
-      <!-- Left column - Keywords -->
-      <div class="w-full md:w-1/3 md:pr-4 md:px-4 py-4 md:border-r border-neutral-200 overflow-y-auto" :class="{'block': activeTab === 'keywords', 'hidden': activeTab !== 'keywords', 'md:block': true}">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl md:text-2xl font-semibold">Keywords</h2>
-          <button 
-            @click="isKeywordCreateModalOpen = true" 
-            class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
-          >
-            Add keyword
-          </button>
-        </div>
-        
-        <div v-if="keywordStore.isLoading" class="flex justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-        </div>
-        
-        <div v-else class="space-y-3">
+    <div class="flex flex-col space-y-4 mt-6">
+      <!-- Top Section: Visibility Cards -->
+      <div class="flex flex-wrap gap-4">
+        <!-- Company Visibility Card -->
+        <div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0" class="flex-1 flex">
           <div 
-            v-for="keyword in keywordStore.keywords" 
-            :key="keyword.id" 
-            class="p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
-            :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
-            @click="showKeywordDetails(keyword)"
+            v-for="org in organizationStore.visibilityMetrics.filter(o => !o.is_competitor)" 
+            :key="org.id" 
+            class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col"
           >
-            <div class="flex justify-between items-center">
-              <div>
-                <span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-                <div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
-                <div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
+            <div class="flex justify-between items-start">
+              <h3 class="text-lg font-medium">{{ org.name || 'Your Organization' }}</h3>
+              <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your Organization</span>
+            </div>
+            
+            <div class="mt-4">
+              <div class="flex justify-between mb-1">
+                <span class="text-sm font-medium">Visibility</span>
+                <span class="text-sm font-medium">{{ org.visibility }}%</span>
               </div>
+              <div class="w-full bg-neutral-200 rounded-full h-2">
+                <div 
+                  class="h-2 rounded-full bg-green-500" 
+                  :style="{width: `${org.visibility}%`}"
+                ></div>
+              </div>
+              <div class="mt-2 text-sm text-neutral-600">
+                <p>{{ org.total_mentions }} mentions in {{ org.total_responses }} responses</p>
+              </div>
+
               <button 
-                @click.stop="keywordStore.deleteKeyword(keyword.id)" 
-                class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+                @click="organizationStore.fetchVisibilityMetrics()" 
+                class="mt-6 px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
+                Refresh
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Competitors Table -->
+        <div class="flex-1 flex">
+          <div class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col">
+            <h3 class="text-lg font-medium mb-4">Competitors</h3>
+            
+            <div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-4">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-800"></div>
+            </div>
+            
+            <div v-else-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.filter(o => o.is_competitor).length > 0">
+              <table class="min-w-full divide-y divide-neutral-200">
+                <thead>
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Name</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visibility</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mentions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                  <tr v-for="org in organizationStore.visibilityMetrics.filter(o => o.is_competitor)" :key="org.id">
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.name || 'Unnamed Competitor' }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">
+                      <div class="flex items-center">
+                        <div class="w-16 bg-neutral-200 rounded-full h-2 mr-2">
+                          <div class="h-2 rounded-full bg-red-500" :style="{width: `${org.visibility}%`}"></div>
+                        </div>
+                        <span>{{ org.visibility }}%</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div v-else class="text-center py-4 text-neutral-500 text-sm">
+              No competitor data available
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Right column - Prompts -->
-      <div class="w-full md:w-2/3 md:pl-4 md:px-4 py-4 overflow-y-auto" :class="{'block': activeTab === 'prompts', 'hidden': activeTab !== 'prompts', 'md:block': true}">
+      <!-- Main Content -->
+      <div class="flex flex-col md:flex-row h-[calc(100vh-16rem)] overflow-hidden">
+
+      <!-- Prompts column -->
+      <div class="w-full px-4 py-4 overflow-y-auto">
         <!-- <pre>{{ jobStatusStore.jobs }}</pre> -->
         <div class="mb-4">
           <div class="flex justify-between items-center">
@@ -352,29 +374,13 @@ const showPromptDetails = async (prompt) => {
         </div>
       </div>
     </div>
+    </div>
   </DefaultLayout>
-
-  <!-- Keyword Modal -->
-  <KeywordCreateModal
-    :is-open="isKeywordCreateModalOpen"
-    @close="isKeywordCreateModalOpen = false"
-  />
 
   <!-- Prompt Modal -->
   <PromptCreateModal
     :is-open="isPromptCreateModalOpen"
     @close="isPromptCreateModalOpen = false"
-  />
-
-  <!-- Keyword Detail Sheet -->
-  <KeywordDetailSheet
-    :is-open="isKeywordDetailSheetOpen"
-    :keyword="selectedKeyword"
-    :keyword-id="selectedKeyword?.id"
-    @close="() => {
-      isKeywordDetailSheetOpen = false;
-      selectedKeywordId = null;
-    }"
   />
 
   <!-- Prompt Detail Sheet -->
