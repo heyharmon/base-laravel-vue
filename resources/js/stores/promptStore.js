@@ -12,9 +12,10 @@ export const usePromptStore = defineStore('prompts', () => {
   const selectedPromptResponses = ref([]);
   const isLoadingPromptResponses = ref(false);
   const isRunningAll = ref(false);
-  
+
   // Actions
   async function fetchPrompts() {
+	console.log('Fetching prompts...')
     isLoading.value = true;
     try {
       prompts.value = await api.get('/prompts');
@@ -26,6 +27,7 @@ export const usePromptStore = defineStore('prompts', () => {
   }
 
   async function showPrompt(id) {
+	console.log('Fetching prompt details for prompt ID:', id)
     isLoadingDetails.value = true;
     try {
       selectedPromptDetails.value = await api.get(`/prompts/${id}?include=keywords`);
@@ -36,8 +38,9 @@ export const usePromptStore = defineStore('prompts', () => {
       isLoadingDetails.value = false;
     }
   }
-  
+
   async function createPrompt(data) {
+	console.log('Creating prompt...')
     isLoading.value = true;
     try {
       const newPrompt = await api.post('/prompts', data);
@@ -50,17 +53,18 @@ export const usePromptStore = defineStore('prompts', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function updatePrompt(id, data) {
+	console.log('Updating prompt ID:', id)
     isLoading.value = true;
     try {
       const updatedPrompt = await api.put(`/prompts/${id}`, data);
-      
+
       const index = prompts.value.findIndex(p => p.id === id);
       if (index !== -1) {
         prompts.value[index] = updatedPrompt;
       }
-      
+
       return updatedPrompt;
     } catch (error) {
       console.error('Error updating prompt:', error);
@@ -69,8 +73,9 @@ export const usePromptStore = defineStore('prompts', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function deletePrompt(id) {
+	console.log('Deleting prompt ID:', id)
     try {
       await api.delete(`/prompts/${id}`);
       prompts.value = prompts.value.filter(p => p.id !== id);
@@ -80,8 +85,9 @@ export const usePromptStore = defineStore('prompts', () => {
     } finally {
     }
   }
-  
+
   async function runPrompt(id, count = 1) {
+	console.log('Running prompt ID:', id)
     loadingPromptIds.value.push(id);
     try {
       return await api.post(`/prompts/${id}/run`, { count });
@@ -92,8 +98,9 @@ export const usePromptStore = defineStore('prompts', () => {
       loadingPromptIds.value = loadingPromptIds.value.filter(promptId => promptId !== id);
     }
   }
-  
+
   async function runAllPrompts(count = 1) {
+	console.log('Running all prompts...')
     isRunningAll.value = true;
     try {
       return await api.post('/prompt-run-batch', { count });
@@ -106,6 +113,7 @@ export const usePromptStore = defineStore('prompts', () => {
   }
 
   async function getPromptResponses(promptId) {
+	console.log('Fetching prompt responses for prompt ID:', promptId)
     isLoadingPromptResponses.value = true;
     try {
       selectedPromptResponses.value = await api.get(`/prompts/${promptId}/responses`);
@@ -128,7 +136,7 @@ export const usePromptStore = defineStore('prompts', () => {
     selectedPromptResponses: computed(() => selectedPromptResponses.value),
     isLoadingPromptResponses,
     isRunningAll,
-    
+
     // Actions
     fetchPrompts,
     showPrompt,

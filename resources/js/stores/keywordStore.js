@@ -10,9 +10,10 @@ export const useKeywordStore = defineStore('keywords', () => {
   const isLoadingKeywordResponses = ref(false);
   const selectedKeywordDetails = ref(null);
   const selectedKeywordResponses = ref([]);
-  
+
   // Actions
   async function fetchKeywords(organizationId) {
+	console.log('Fetching keywords for organization ID:', organizationId)
     isLoading.value = true;
     try {
       keywords.value = await api.get(`organizations/${organizationId}/keywords`);
@@ -24,6 +25,7 @@ export const useKeywordStore = defineStore('keywords', () => {
   }
 
   async function showKeyword(organizationId, id) {
+	console.log('Fetching details for keyword ID:', id)
     isLoadingDetails.value = true;
     try {
       selectedKeywordDetails.value = await api.get(`organizations/${organizationId}/keywords/${id}?include=prompts`);
@@ -34,8 +36,9 @@ export const useKeywordStore = defineStore('keywords', () => {
       isLoadingDetails.value = false;
     }
   }
-  
+
   async function createKeyword(organizationId, data) {
+	console.log('Creating keyword for organization ID:', organizationId)
     isLoading.value = true;
     try {
       const newKeyword = await api.post(`organizations/${organizationId}/keywords`, data);
@@ -48,8 +51,9 @@ export const useKeywordStore = defineStore('keywords', () => {
       isLoading.value = false;
     }
   }
-  
-  async function deleteKeyword(organizationId,id) {
+
+  async function deleteKeyword(organizationId, id) {
+	console.log('Deleting keyword ID:', id)
     try {
       await api.delete(`organizations/${organizationId}/keywords/${id}`);
       keywords.value = keywords.value.filter(k => k.id !== id);
@@ -62,6 +66,7 @@ export const useKeywordStore = defineStore('keywords', () => {
 
   // TODO: Test
   async function getKeywordResponses(keywordId, promptId) {
+	console.log('Fetching keyword responses for keyword ID:', keywordId, 'and prompt ID:', promptId)
     isLoadingKeywordResponses.value = true;
     selectedKeywordResponses.value = [];
     try {
@@ -83,7 +88,7 @@ export const useKeywordStore = defineStore('keywords', () => {
     isLoadingKeywordResponses,
     selectedKeywordDetails: computed(() => selectedKeywordDetails.value),
     selectedKeywordResponses: computed(() => selectedKeywordResponses.value),
-    
+
     // Actions
     fetchKeywords,
     showKeyword,

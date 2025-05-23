@@ -9,9 +9,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
   const loading = ref(false);
   const error = ref(null);
   let refreshTimer = ref(null);
-  
+
   // Actions
   async function fetchModelJobs(modelType, modelId) {
+	console.log('Fetching model jobs for model type:', modelType, 'and model ID:', modelId)
     loading.value = true;
     error.value = null;
 
@@ -22,7 +23,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
           model_id: modelId
         }
       });
-      
+
       jobs.value = response.data;
       return jobs.value;
     } catch (err) {
@@ -32,12 +33,12 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
       loading.value = false;
     }
   }
-  
+
   async function fetchTeamJobs() {
     console.log('Fetching team jobs...')
     loading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.get('/team-jobs');
       jobs.value = response;
@@ -49,15 +50,16 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
       loading.value = false;
     }
   }
-  
+
   async function fetchJobStatus(jobId) {
+	console.log('Fetching job status for job ID:', jobId)
     loading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.get(`/job-status/${jobId}`);
       const job = response.data;
-      
+
       // Update job in the list if it exists
       const index = jobs.value.findIndex(j => j.job_id === jobId);
       if (index !== -1) {
@@ -65,7 +67,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
       } else {
         jobs.value.push(job);
       }
-      
+
       return job;
     } catch (err) {
       error.value = 'Failed to load job status: ' + (err.response?.data?.error || err.message);
@@ -74,11 +76,12 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
       loading.value = false;
     }
   }
-  
+
   async function fetchBatchInfo(batchId) {
+	console.log('Fetching batch info for batch ID:', batchId)
     loading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.get(`/job-batch/${batchId}`);
       batch.value = response.data.batch;
@@ -91,11 +94,12 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
       loading.value = false;
     }
   }
-  
+
   async function fetchActiveJobs() {
+	console.log('Fetching active jobs...')
     loading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.get('/active-jobs');
       jobs.value = response.data.data;
@@ -107,48 +111,48 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
       loading.value = false;
     }
   }
-  
+
   function hasActiveJobs() {
-    return jobs.value.some(job => 
+    return jobs.value.some(job =>
       job.status === 'pending' || job.status === 'processing'
     );
   }
-  
+
   function startAutoRefresh(interval = 1000) {
     stopAutoRefresh();
-    
+
     refreshTimer.value = setInterval(() => {
       if (hasActiveJobs()) {
         fetchTeamJobs();
       }
     }, interval);
   }
-  
+
   function stopAutoRefresh() {
     if (refreshTimer.value) {
       clearInterval(refreshTimer.value);
       refreshTimer.value = null;
     }
   }
-  
+
   function getJobById(jobId) {
     return jobs.value.find(job => job.job_id === jobId);
   }
-  
+
   function getBatchById(batchId) {
     if (batch.value && batch.value.id === batchId) {
       return batch.value;
     }
     return null;
   }
-  
+
   return {
     // State
     jobs: computed(() => jobs.value),
     batch: computed(() => batch.value),
     loading,
     error,
-    
+
     // Actions
     fetchModelJobs,
     fetchTeamJobs,

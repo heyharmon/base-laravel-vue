@@ -68,10 +68,10 @@ watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
 }, { immediate: false });
 
 onMounted(async () => {
-  await promptStore.fetchPrompts();
-  await jobStatusStore.fetchTeamJobs();
+//   await promptStore.fetchPrompts();
+//   await jobStatusStore.fetchTeamJobs();
   await organizationStore.fetchOrganizations();
-  await organizationStore.fetchVisibilityMetrics();
+//   await organizationStore.fetchVisibilityMetrics();
 });
 
 const openRunMenuId = ref(null);
@@ -131,12 +131,6 @@ const sortedPrompts = computed(() => {
 
   return [...promptStore.prompts];
 });
-
-const showKeywordDetails = async (keyword) => {
-  selectedKeyword.value = keyword;
-  selectedKeywordId.value = keyword.id;
-  isKeywordDetailSheetOpen.value = true;
-};
 
 const showPromptDetails = async (prompt) => {
   selectedPrompt.value = prompt;

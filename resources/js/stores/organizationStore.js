@@ -12,19 +12,20 @@ export const useOrganizationStore = defineStore('organization', () => {
   const isLoadingVisibility = ref(false);
 
   // Getters
-  const ownedOrganizations = computed(() => 
+  const ownedOrganizations = computed(() =>
     organizations.value ? organizations.value.filter(org => !org.is_competitor) : []
   );
-  
-  const competitorOrganizations = computed(() => 
+
+  const competitorOrganizations = computed(() =>
     organizations.value ? organizations.value.filter(org => org.is_competitor) : []
   );
 
   // Actions
   async function fetchOrganizations() {
+	console.log('Fetching organizations...')
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.get('/organizations');
       organizations.value = response;
@@ -35,11 +36,12 @@ export const useOrganizationStore = defineStore('organization', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function fetchOrganization(organizationId) {
+	console.log('Fetching organization details for organization ID:', organizationId)
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.get(`/organizations/${organizationId}`);
       currentOrganization.value = response;
@@ -51,11 +53,12 @@ export const useOrganizationStore = defineStore('organization', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function createOrganization(organizationData) {
+	console.log('Creating organization...')
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.post('/organizations', organizationData);
       await fetchOrganizations();
@@ -68,11 +71,12 @@ export const useOrganizationStore = defineStore('organization', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function updateOrganization(organizationId, organizationData) {
+	console.log('Updating organization ID:', organizationId)
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.put(`/organizations/${organizationId}`, organizationData);
       if (currentOrganization.value && currentOrganization.value.id === organizationId) {
@@ -88,11 +92,12 @@ export const useOrganizationStore = defineStore('organization', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function deleteOrganization(organizationId) {
+	console.log('Deleting organization ID:', organizationId)
     isLoading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.delete(`/organizations/${organizationId}`);
       await fetchOrganizations();
@@ -105,19 +110,20 @@ export const useOrganizationStore = defineStore('organization', () => {
       isLoading.value = false;
     }
   }
-  
+
   async function fetchVisibilityMetrics(params = {}) {
+	console.log('Fetching visibility metrics...')
     isLoadingVisibility.value = true;
     error.value = null;
-    
+
     try {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append('start_date', params.startDate);
       if (params.endDate) queryParams.append('end_date', params.endDate);
-      
+
       const queryString = queryParams.toString();
       const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await api.get(url);
       visibilityMetrics.value = response;
       return response;
@@ -137,11 +143,11 @@ export const useOrganizationStore = defineStore('organization', () => {
     isLoadingVisibility,
     error,
     visibilityMetrics,
-    
+
     // Getters
     ownedOrganizations,
     competitorOrganizations,
-    
+
     // Actions
     fetchOrganizations,
     fetchOrganization,
