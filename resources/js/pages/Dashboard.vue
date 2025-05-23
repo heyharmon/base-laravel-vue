@@ -162,6 +162,7 @@ const showPromptDetails = async (prompt) => {
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visibility</th>
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mentions</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Responses</th>
 								</tr>
 							</thead>
 							<tbody class="bg-white divide-y divide-neutral-200">
@@ -180,6 +181,7 @@ const showPromptDetails = async (prompt) => {
 										</div>
 									</td>
 									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
+									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_responses }}</td>
 								</tr>
 							</tbody>
 						</table>
