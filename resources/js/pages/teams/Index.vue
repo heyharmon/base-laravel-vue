@@ -162,7 +162,7 @@ const declineInvitation = async (teamId) => {
       </div>
 
       <!-- Create Team Modal -->
-      <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div v-if="showCreateModal" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
           <h2 class="text-xl font-bold mb-4">Create New Team</h2>
           <div class="mb-4">
@@ -177,14 +177,14 @@ const declineInvitation = async (teamId) => {
           <div class="flex justify-end space-x-2">
             <Button
               @click="showCreateModal = false"
-              class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
+              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
             >
               Cancel
             </Button>
             <Button
               @click="createTeam"
               :disabled="isSubmitting || !newTeamName"
-              class="bg-blue-600 hover:bg-blue-700 text-white"
+              class="bg-neutral-800 hover:bg-neutral-700 text-white"
             >
               {{ isSubmitting ? 'Creating...' : 'Create Team' }}
             </Button>
