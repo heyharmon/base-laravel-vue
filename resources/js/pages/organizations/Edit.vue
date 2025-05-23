@@ -7,6 +7,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import Button from '@/components/ui/Button.vue';
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
 import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
+import GenerateKeywordsModal from '@/components/GenerateKeywordsModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,6 +23,7 @@ const organization = ref({
 const isSubmitting = ref(false);
 const isLoading = ref(true);
 const isKeywordCreateModalOpen = ref(false);
+const isGenerateKeywordsModalOpen = ref(false);
 const isKeywordDetailSheetOpen = ref(false);
 const selectedKeyword = ref(null);
 const selectedKeywordId = ref(null);
@@ -92,34 +94,34 @@ const cancelEdit = () => {
           <form @submit.prevent="updateOrganization" class="space-y-6">
           <div>
             <label class="block text-sm font-medium text-neutral-700 mb-1">Organization Name</label>
-            <input 
+            <input
               v-model="organization.name"
               type="text"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter organization name"
             />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-neutral-700 mb-1">Website</label>
-            <input 
+            <input
               v-model="organization.website"
               type="text"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter website URL"
             />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-neutral-700 mb-1">Founded</label>
-            <input 
+            <input
               v-model="organization.founded"
               type="text"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter founding year"
             />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-neutral-700 mb-1">Employee Count</label>
             <select
@@ -135,9 +137,9 @@ const cancelEdit = () => {
               <option value="1000+">1000+</option>
             </select>
           </div>
-          
+
           <div v-if="organization.is_competitor" class="flex items-center">
-            <input 
+            <input
               id="is-competitor"
               v-model="organization.is_competitor"
               type="checkbox"
@@ -148,9 +150,9 @@ const cancelEdit = () => {
               This is a competitor organization
             </label>
           </div>
-          
+
           <div class="pt-4">
-            <Button 
+            <Button
               type="submit"
               :disabled="isSubmitting"
               class="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -160,27 +162,38 @@ const cancelEdit = () => {
           </div>
           </form>
         </div>
-        
+
         <!-- Right column - Keywords section -->
         <div class="w-full md:w-1/2 bg-neutral-100 p-6 rounded-lg shadow h-fit">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">Keywords</h2>
-            <button 
-              @click="isKeywordCreateModalOpen = true" 
-              class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
-            >
-              Add keyword
-            </button>
+            <div class="flex gap-2">
+              <button
+                @click="isGenerateKeywordsModalOpen = true"
+                class="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+              >
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+					<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+				</svg>
+                <span>Generate keywords</span>
+              </button>
+              <button
+                @click="isKeywordCreateModalOpen = true"
+                class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
+              >
+                Add keyword
+              </button>
+            </div>
           </div>
-          
+
           <div v-if="keywordStore.isLoading" class="flex justify-center py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
           </div>
-          
+
           <div v-else class="space-y-3">
-            <div 
-              v-for="keyword in keywordStore.keywords" 
-              :key="keyword.id" 
+            <div
+              v-for="keyword in keywordStore.keywords"
+              :key="keyword.id"
               class="p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
               :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
               @click="showKeywordDetails(keyword)"
@@ -191,8 +204,8 @@ const cancelEdit = () => {
                   <div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
                   <div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
                 </div>
-                <button 
-                  @click.stop="keywordStore.deleteKeyword(route.params.id, keyword.id)" 
+                <button
+                  @click.stop="keywordStore.deleteKeyword(route.params.id, keyword.id)"
                   class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -206,12 +219,18 @@ const cancelEdit = () => {
       </div>
     </div>
   </DefaultLayout>
-  
+
   <!-- Keyword Modal -->
   <KeywordCreateModal
     :is-open="isKeywordCreateModalOpen"
     @close="isKeywordCreateModalOpen = false"
     @create="addKeyword"
+  />
+
+  <!-- Generate Keywords Modal -->
+  <GenerateKeywordsModal
+    :is-open="isGenerateKeywordsModalOpen"
+    @close="isGenerateKeywordsModalOpen = false"
   />
 
   <!-- Keyword Detail Sheet -->

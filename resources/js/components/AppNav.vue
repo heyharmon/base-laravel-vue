@@ -110,8 +110,8 @@ onUnmounted(() => {
 
       <div class="flex items-center space-x-3">
         <template v-if="isAuthenticated">
-          <button @click="isJobStatusSheetOpen = true" class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
-            <div v-if="activeJobsCount > 0" class="relative size-5">
+          <button v-if="activeJobsCount > 0" @click="isJobStatusSheetOpen = true" class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded hover:bg-neutral-800">
+            <div class="relative size-5">
               <svg class="animate-spin absolute inset-0" viewBox="0 0 24 24">
                 <circle class="text-neutral-800" stroke="currentColor" fill="transparent" stroke-width="2" cx="12" cy="12" r="11"></circle>
                 <circle class="text-neutral-400" stroke="currentColor" fill="transparent" stroke-width="2" stroke-dasharray="17.27875959474386 51.83627878423158" stroke-dashoffset="0" stroke-linecap="butt" cx="12" cy="12" r="11"></circle>
@@ -162,22 +162,22 @@ onUnmounted(() => {
                       Manage Teams
                     </router-link>
                   </PopoverClose>
-                  <!-- <PopoverClose as-child>
+                  <PopoverClose as-child>
                     <button @click="logout" class="w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
                       Logout
                     </button>
-                  </PopoverClose> -->
+                  </PopoverClose>
                 </div>
               </PopoverContent>
             </PopoverPortal>
           </PopoverRoot>
 
-          <button
+          <!-- <button
             @click="logout"
             class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm cursor-pointer"
           >
             Logout
-          </button>
+          </button> -->
         </template>
         <template v-else>
           <router-link
