@@ -150,76 +150,77 @@ const showPromptDetails = async (prompt) => {
     <div class="flex flex-col space-y-4 mt-6">
 		<!-- Top Section: Visibility Cards -->
 		<div class="flex flex-wrap gap-4">
-		<!-- Company Visibility Card -->
-		<div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0" class="flex-1 flex">
-		<div
-		v-for="org in organizationStore.visibilityMetrics.filter(o => !o.is_competitor)"
-		:key="org.id"
-		class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col"
-		>
-		<div class="flex justify-between items-start">
-			<h3 class="text-lg font-medium">{{ org.name || 'Your Organization' }}</h3>
-			<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your Organization</span>
-		</div>
 
-		<div class="mt-4">
-			<div class="flex justify-between mb-1">
-			<span class="text-sm font-medium">Visibility</span>
-			<span class="text-sm font-medium">{{ org.visibility }}%</span>
-			</div>
-			<div class="w-full bg-neutral-200 rounded-full h-2">
-			<div
-				class="h-2 rounded-full bg-green-500"
-				:style="{width: `${org.visibility}%`}"
-			></div>
-			</div>
-			<div class="mt-2 text-sm text-neutral-600">
-			<p>{{ org.total_mentions }} mentions in {{ org.total_responses }} responses</p>
-			</div>
-		</div>
-		</div>
-		</div>
-
-		<!-- Competitors Table -->
-		<div class="flex-1 flex">
-		<div class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col">
-		<h3 class="text-lg font-medium mb-4">Competitors</h3>
-
-		<div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-4">
-			<div class="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-800"></div>
-		</div>
-
-		<div v-else-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.filter(o => o.is_competitor).length > 0">
-			<table class="min-w-full divide-y divide-neutral-200">
-			<thead>
-				<tr>
-				<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Name</th>
-				<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visibility</th>
-				<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mentions</th>
-				</tr>
-			</thead>
-			<tbody class="bg-white divide-y divide-neutral-200">
-				<tr v-for="org in organizationStore.visibilityMetrics.filter(o => o.is_competitor)" :key="org.id">
-				<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.name || 'Unnamed Competitor' }}</td>
-				<td class="px-3 py-2 whitespace-nowrap text-sm">
-					<div class="flex items-center">
-					<div class="w-16 bg-neutral-200 rounded-full h-2 mr-2">
-						<div class="h-2 rounded-full bg-red-500" :style="{width: `${org.visibility}%`}"></div>
+			<!-- Company Visibility Card -->
+			<div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0" class="flex-1 flex">
+				<div
+					v-for="org in organizationStore.visibilityMetrics.filter(o => !o.is_competitor)"
+					:key="org.id"
+					class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col"
+				>
+					<div class="flex justify-between items-start">
+						<h3 class="text-lg font-medium">{{ org.name || 'Your Organization' }}</h3>
+						<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your Organization</span>
 					</div>
-					<span>{{ org.visibility }}%</span>
-					</div>
-				</td>
-				<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
-				</tr>
-			</tbody>
-			</table>
-		</div>
 
-		<div v-else class="text-center py-4 text-neutral-500 text-sm">
-			No competitor data available
-		</div>
-		</div>
-		</div>
+					<div class="mt-4">
+						<div class="flex justify-between mb-1">
+							<span class="text-sm font-medium">Visibility</span>
+							<span class="text-sm font-medium">{{ org.visibility }}%</span>
+						</div>
+						<div class="w-full bg-neutral-200 rounded-full h-2">
+							<div
+								class="h-2 rounded-full bg-green-500"
+								:style="{width: `${org.visibility}%`}"
+							></div>
+						</div>
+						<div class="mt-2 text-sm text-neutral-600">
+							<p>{{ org.total_mentions }} mentions in {{ org.total_responses }} responses</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Competitors Table -->
+			<div class="flex-1 flex">
+				<div class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col">
+					<h3 class="text-lg font-medium mb-4">Competitors</h3>
+
+					<div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-4">
+						<div class="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-800"></div>
+					</div>
+
+					<div v-else-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.filter(o => o.is_competitor).length > 0">
+						<table class="min-w-full divide-y divide-neutral-200">
+							<thead>
+								<tr>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Name</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visibility</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mentions</th>
+								</tr>
+							</thead>
+							<tbody class="bg-white divide-y divide-neutral-200">
+								<tr v-for="org in organizationStore.visibilityMetrics.filter(o => o.is_competitor).sort((a, b) => b.visibility - a.visibility)" :key="org.id">
+									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.name || 'Unnamed Competitor' }}</td>
+									<td class="px-3 py-2 whitespace-nowrap text-sm">
+										<div class="flex items-center">
+											<div class="w-16 bg-neutral-200 rounded-full h-2 mr-2">
+												<div class="h-2 rounded-full bg-red-500" :style="{width: `${org.visibility}%`}"></div>
+											</div>
+											<span>{{ org.visibility }}%</span>
+										</div>
+									</td>
+									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div v-else class="text-center py-4 text-neutral-500 text-sm">
+						No competitor data available
+					</div>
+				</div>
+			</div>
 		</div>
 
 		<!-- Main Content -->
