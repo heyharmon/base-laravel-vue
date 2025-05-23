@@ -72,9 +72,9 @@ const cancelEdit = () => {
   <DefaultLayout>
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
-        <h1 class="text-2xl font-bold">{{ organization.name }}</h1>
-        <Button @click="cancelEdit" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800">
-          Cancel
+        <h1 class="text-2xl font-bold">Edit Organization</h1>
+        <Button @click="cancelEdit" variant="neutral">
+          Back
         </Button>
       </div>
 
@@ -97,7 +97,7 @@ const cancelEdit = () => {
             <div class="flex gap-2">
               <button
                 @click="isGenerateKeywordsModalOpen = true"
-                class="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+                class="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
               >
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 					<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
@@ -106,9 +106,9 @@ const cancelEdit = () => {
               </button>
               <button
                 @click="isKeywordCreateModalOpen = true"
-                class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
+                class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
               >
-                Add keyword
+                Add a keyword
               </button>
             </div>
           </div>
@@ -211,7 +211,7 @@ const cancelEdit = () => {
             <Button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              variant="dark"
             >
               {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
             </Button>

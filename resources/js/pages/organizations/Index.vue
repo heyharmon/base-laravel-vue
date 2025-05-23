@@ -173,18 +173,19 @@ const deleteOrganization = async (organizationId) => {
         </div>
 
         <template #footer>
-          <Button
-            @click="showCreateModal = false"
-            class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800 ml-2"
-          >
-            Cancel
-          </Button>
-          <Button
+		<Button
             @click="createOrganization"
             :disabled="isSubmitting || !newOrganization.name"
-            class="bg-neutral-800 hover:bg-neutral-700 text-white"
+            variant="dark"
+			class="ml-2"
           >
             {{ isSubmitting ? 'Creating...' : 'Add competitor' }}
+          </Button>
+          <Button
+            @click="showCreateModal = false"
+            variant="neutral"
+          >
+            Cancel
           </Button>
         </template>
       </Modal>

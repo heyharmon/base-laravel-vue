@@ -24,6 +24,11 @@ const variants = {
     secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
     ghost: 'hover:bg-accent hover:text-accent-foreground',
     link: 'text-black underline-offset-4 hover:underline',
+    neutral: 'bg-neutral-200 text-neutral-800 hover:bg-neutral-100',
+    dark: 'bg-neutral-800 text-white hover:bg-neutral-700',
+    primary: 'bg-blue-600 text-white hover:bg-blue-700',
+    success: 'bg-green-600 text-white hover:bg-green-700',
+    muted: 'bg-neutral-600 text-white hover:bg-neutral-700',
 }
 
 const sizes = {
