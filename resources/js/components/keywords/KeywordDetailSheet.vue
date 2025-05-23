@@ -2,6 +2,9 @@
 import { watch, onMounted, ref } from 'vue';
 import { useKeywordStore } from '@/stores/keywordStore';
 import Sheet from '@/components/ui/Sheet.vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
 
 const props = defineProps({
   isOpen: {
@@ -36,7 +39,7 @@ const showKeyword = async () => {
   selectedPrompt.value = null;
 
   if (props.keywordId) {
-    await keywordStore.showKeyword(props.keywordId);
+    await keywordStore.showKeyword(route.params.id, props.keywordId);
   }
 };
 
