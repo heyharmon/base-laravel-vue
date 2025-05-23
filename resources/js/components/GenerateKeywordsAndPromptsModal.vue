@@ -38,7 +38,7 @@ watch(() => props.isOpen, async (isOpen) => {
     if (domainInput.value) {
       domainInput.value.focus();
     }
-    
+
     if (organizations.value.length > 0 && !selectedOrganizationId.value) {
       // Set default to the first owned organization
       const ownedOrg = organizations.value.find(org => !org.is_competitor);
@@ -80,19 +80,19 @@ const removePrompt = (index) => {
 
 const generateKeywordsAndPrompts = async () => {
   if (!domain.value.trim()) return;
-  
+
   isLoading.value = true;
   error.value = null;
   generatedKeywords.value = [];
   generatedPrompts.value = [];
-  
+
   try {
     // Generate keywords and prompts in parallel
     const [keywordsResponse, promptsResponse] = await Promise.all([
       api.post('/generate-keywords', { domain: domain.value.trim() }),
       api.post('/generate-prompts', { domain: domain.value.trim() })
     ]);
-    
+
     generatedKeywords.value = keywordsResponse || [];
     generatedPrompts.value = promptsResponse || [];
   } catch (err) {
@@ -105,14 +105,14 @@ const generateKeywordsAndPrompts = async () => {
 
 const createKeywords = async () => {
   if (!generatedKeywords.value.length || !selectedOrganizationId.value) return;
-  
+
   isLoading.value = true;
-  
+
   try {
-    const promises = generatedKeywords.value.map(keyword => 
+    const promises = generatedKeywords.value.map(keyword =>
       keywordStore.createKeyword(selectedOrganizationId.value, { name: keyword })
     );
-    
+
     await Promise.all(promises);
     closeModal();
   } catch (err) {
@@ -125,14 +125,14 @@ const createKeywords = async () => {
 
 const createPrompts = async () => {
   if (!generatedPrompts.value.length || !selectedOrganizationId.value) return;
-  
+
   isLoading.value = true;
-  
+
   try {
-    const promises = generatedPrompts.value.map(prompt => 
+    const promises = generatedPrompts.value.map(prompt =>
       promptStore.createPrompt({ content: prompt, organization_id: selectedOrganizationId.value })
     );
-    
+
     await Promise.all(promises);
     closeModal();
   } catch (err) {
@@ -145,18 +145,18 @@ const createPrompts = async () => {
 
 const createAll = async () => {
   if (!selectedOrganizationId.value) return;
-  
+
   isLoading.value = true;
-  
+
   try {
-    const keywordPromises = generatedKeywords.value.map(keyword => 
+    const keywordPromises = generatedKeywords.value.map(keyword =>
       keywordStore.createKeyword(selectedOrganizationId.value, { name: keyword })
     );
-    
-    const promptPromises = generatedPrompts.value.map(prompt => 
+
+    const promptPromises = generatedPrompts.value.map(prompt =>
       promptStore.createPrompt({ content: prompt, organization_id: selectedOrganizationId.value })
     );
-    
+
     await Promise.all([...keywordPromises, ...promptPromises]);
     closeModal();
   } catch (err) {
@@ -182,9 +182,18 @@ const createAll = async () => {
         >
           <option v-if="organizations.length === 0" value="" disabled>No organizations available</option>
           <optgroup label="Owned Organizations">
-            <option 
-              v-for="org in organizations.filter(o => !o.is_competitor)" 
-              :key="org.id" 
+            <option
+              v-for="org in organizations.filter(o => !o.is_competitor)"
+              :key="org.id"
+              :value="org.id"
+            >
+              {{ org.name }}
+            </option>
+          </optgroup>
+          <optgroup label="Competitor Organizations">
+            <option
+              v-for="org in organizations.filter(o => o.is_competitor)"
+              :key="org.id"
               :value="org.id"
             >
               {{ org.name }}
@@ -192,25 +201,25 @@ const createAll = async () => {
           </optgroup>
         </select>
       </div>
-      
-      <input 
+
+      <input
         ref="domainInput"
-        v-model="domain" 
-        type="text" 
-        placeholder="Enter website domain (e.g. acme.com)" 
+        v-model="domain"
+        type="text"
+        placeholder="Enter website domain (e.g. acme.com)"
         class="w-full px-3 py-2 border border-neutral-300 rounded-md"
         @keyup.enter="generateKeywordsAndPrompts"
         :disabled="isLoading"
       />
-      
+
       <div v-if="isLoading" class="flex justify-center py-4">
         <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-neutral-800"></div>
       </div>
-      
+
       <div v-if="error" class="text-red-500 text-sm">
         {{ error }}
       </div>
-      
+
       <div v-if="generatedKeywords.length > 0 || generatedPrompts.length > 0" class="mt-4 min-h-[calc(100vh-30rem)]">
         <!-- Tabs -->
         <div class="border-b border-neutral-200 mb-4">
@@ -239,15 +248,15 @@ const createAll = async () => {
             </button>
           </nav>
         </div>
-        
+
         <!-- Keywords Tab -->
         <div v-if="activeTab === 'keywords' && generatedKeywords.length > 0">
           <h3 class="font-medium mb-2">Generated Keywords:</h3>
           <ul class="space-y-1 max-h-[calc(100vh-20rem)] overflow-y-auto">
             <li v-for="(keyword, index) in generatedKeywords" :key="index" class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1">
               <span class="text-sm">{{ keyword }}</span>
-              <button 
-                @click="removeKeyword(index)" 
+              <button
+                @click="removeKeyword(index)"
                 class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
                 type="button"
               >
@@ -259,15 +268,15 @@ const createAll = async () => {
             </li>
           </ul>
         </div>
-        
+
         <!-- Prompts Tab -->
         <div v-if="activeTab === 'prompts' && generatedPrompts.length > 0">
           <h3 class="font-medium mb-2">Generated Prompts:</h3>
           <ul class="space-y-1 max-h-[calc(100vh-20rem)] overflow-y-auto">
             <li v-for="(prompt, index) in generatedPrompts" :key="index" class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1">
               <span class="text-sm">{{ prompt }}</span>
-              <button 
-                @click="removePrompt(index)" 
+              <button
+                @click="removePrompt(index)"
                 class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
                 type="button"
               >
@@ -281,47 +290,47 @@ const createAll = async () => {
         </div>
       </div>
     </div>
-    
+
     <template #footer>
-      <button 
+      <button
         v-if="generatedKeywords.length === 0 && generatedPrompts.length === 0"
-        @click="generateKeywordsAndPrompts" 
+        @click="generateKeywordsAndPrompts"
         class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
         :disabled="isLoading || !domain.trim()"
       >
         Generate
       </button>
-      
+
       <template v-if="generatedKeywords.length > 0 || generatedPrompts.length > 0">
-        <button 
+        <button
           v-if="activeTab === 'keywords' && generatedKeywords.length > 0"
-          @click="createKeywords" 
+          @click="createKeywords"
           class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
           :disabled="isLoading || !selectedOrganizationId"
         >
           Create Keywords
         </button>
-        
-        <button 
+
+        <button
           v-if="activeTab === 'prompts' && generatedPrompts.length > 0"
-          @click="createPrompts" 
+          @click="createPrompts"
           class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
           :disabled="isLoading || !selectedOrganizationId"
         >
           Create Prompts
         </button>
-        
-        <button 
-          @click="createAll" 
+
+        <button
+          @click="createAll"
           class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
           :disabled="isLoading || !selectedOrganizationId"
         >
           Create All
         </button>
       </template>
-      
-      <button 
-        @click="closeModal" 
+
+      <button
+        @click="closeModal"
         class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
         :disabled="isLoading"
       >
