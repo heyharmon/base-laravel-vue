@@ -227,7 +227,6 @@ const showPromptDetails = async (prompt) => {
 
 			<!-- Prompts column -->
 			<div class="w-full py-4 overflow-y-auto">
-				<!-- <pre>{{ jobStatusStore.jobs }}</pre> -->
 				<div class="mb-4">
 				<div class="flex justify-between items-center">
 					<h2 class="text-xl md:text-2xl font-semibold">Prompts</h2>

@@ -22,7 +22,7 @@ const isJobStatusSheetOpen = ref(false);
 
 // Computed property to count pending or processing jobs
 const activeJobsCount = computed(() => {
-  return jobStatusStore.jobs?.filter(job => 
+  return jobStatusStore.jobs?.filter(job =>
     job.status === 'pending' || job.status === 'processing'
   )?.length || 0;
 });
@@ -108,7 +108,7 @@ onUnmounted(() => {
           <router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
         </div>
       </div>
-      
+
       <div class="flex items-center space-x-3">
         <template v-if="isAuthenticated">
           <button @click="isJobStatusSheetOpen = true" class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
@@ -121,7 +121,7 @@ onUnmounted(() => {
                 <span class="text-xs font-bold">{{ activeJobsCount }}</span>
               </div>
             </div>
-            <span class="text-sm font-medium">Jobs</span>
+            <span class="text-sm font-medium">Runs</span>
           </button>
 
           <PopoverRoot>
@@ -134,7 +134,7 @@ onUnmounted(() => {
               </div>
             </PopoverTrigger>
             <PopoverPortal>
-              <PopoverContent 
+              <PopoverContent
                 class="w-56 p-0 bg-neutral-800 rounded shadow-lg overflow-hidden border border-neutral-700 z-50"
                 side="bottom"
                 align="end"
@@ -145,7 +145,7 @@ onUnmounted(() => {
                   <div v-if="teams" class="space-y-1">
                     <div v-if="teams.joinedTeams && teams.joinedTeams.length > 0">
                       <PopoverClose as-child v-for="team in teams.joinedTeams" :key="team.id">
-                        <div 
+                        <div
                           @click="switchTeam(team.id)"
                           class="flex items-center px-2 py-1 rounded cursor-pointer hover:bg-neutral-700"
                           :class="{ 'bg-neutral-700': currentTeam?.id === team.id }">
@@ -172,23 +172,23 @@ onUnmounted(() => {
               </PopoverContent>
             </PopoverPortal>
           </PopoverRoot>
-          
-          <button 
-            @click="logout" 
+
+          <button
+            @click="logout"
             class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm cursor-pointer"
           >
             Logout
           </button>
         </template>
         <template v-else>
-          <router-link 
-            to="/login" 
+          <router-link
+            to="/login"
             class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm"
           >
             Login
           </router-link>
-          <router-link 
-            to="/register" 
+          <router-link
+            to="/register"
             class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm"
           >
             Register
