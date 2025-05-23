@@ -87,7 +87,9 @@ const createPrompts = async () => {
 
   try {
     const promises = generatedPrompts.value.map(prompt =>
-      promptStore.createPrompt(selectedOrganizationId.value, { content: prompt })
+      promptStore.createPrompt({ 
+        content: prompt
+      })
     );
 
     await Promise.all(promises);
