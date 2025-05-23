@@ -157,8 +157,8 @@ const showPromptDetails = async (prompt) => {
 							<thead>
 								<tr>
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/10">Org</th>
-									<!-- <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/8">Type</th> -->
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Visibility</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"></th>
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Mentions</th>
 									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Responses</th>
 								</tr>
@@ -168,19 +168,14 @@ const showPromptDetails = async (prompt) => {
 									<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 										<span>{{ org.name || (org.is_competitor ? 'Unnamed Competitor' : 'Your Organization') }}</span>
 										<span v-if="!org.is_competitor" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-md">You</span>
-										<!-- <span v-if="org.is_competitor" class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-md">Competitor</span> -->
 									</td>
-									<!-- <td class="px-3 py-2 whitespace-nowrap text-sm">
-										<span v-if="!org.is_competitor" class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your Organization</span>
-										<span v-else class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Competitor</span>
-									</td> -->
-									<td class="pl-3 pr-12 py-2 whitespace-nowrap text-sm">
-										<div class="flex items-center">
-											<div class="w-full bg-neutral-200 rounded-full h-2 mr-2">
-												<div class="h-2 rounded-full" :class="org.is_competitor ? 'bg-red-500' : 'bg-green-500'" :style="{width: `${org.visibility}%`}"></div>
-											</div>
-											<span>{{ org.visibility }}%</span>
+									<td class="pl-3 pr-4 py-2 whitespace-nowrap text-sm">
+										<div class="w-full bg-neutral-200 rounded-full h-2 mr-2">
+											<div class="h-2 rounded-full" :class="org.is_competitor ? 'bg-red-500' : 'bg-green-500'" :style="{width: `${org.visibility}%`}"></div>
 										</div>
+									</td>
+									<td class="py-2 whitespace-nowrap text-sm">
+										{{ org.visibility }}%
 									</td>
 									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
 									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_responses }}</td>
