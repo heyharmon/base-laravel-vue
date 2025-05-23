@@ -12,10 +12,15 @@ export const useKeywordStore = defineStore('keywords', () => {
   const selectedKeywordResponses = ref([]);
   
   // Actions
-  async function fetchKeywords() {
+  async function fetchKeywords(organizationId) {
+    if (!organizationId) {
+      console.error('Organization ID is required');
+      return;
+    }
+    
     isLoading.value = true;
     try {
-      keywords.value = await api.get('/keywords');
+      keywords.value = await api.get(`/keywords?organization_id=${organizationId}`);
     } catch (error) {
       console.error('Error fetching keywords:', error);
     } finally {
@@ -36,6 +41,11 @@ export const useKeywordStore = defineStore('keywords', () => {
   }
   
   async function createKeyword(data) {
+    if (!data.organization_id) {
+      console.error('Organization ID is required');
+      return;
+    }
+    
     isLoading.value = true;
     try {
       const newKeyword = await api.post('/keywords', data);

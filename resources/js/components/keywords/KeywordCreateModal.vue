@@ -10,7 +10,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'create']);
 
 const keywordStore = useKeywordStore();
 const newKeyword = ref('');
@@ -32,7 +32,9 @@ const closeModal = () => {
 
 const addKeyword = async () => {
   if (newKeyword.value.trim()) {
-    await keywordStore.createKeyword({ name: newKeyword.value.trim() });
+    const keywordData = { name: newKeyword.value.trim() };
+    const processedData = emit('create', keywordData) || keywordData;
+    await keywordStore.createKeyword(processedData);
     closeModal();
   }
 };

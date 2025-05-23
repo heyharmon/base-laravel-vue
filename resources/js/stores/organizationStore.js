@@ -40,8 +40,8 @@ export const useOrganizationStore = defineStore('organization', () => {
     
     try {
       const response = await api.get(`/organizations/${organizationId}`);
-      currentOrganization.value = response.data;
-      return response.data;
+      currentOrganization.value = response;
+      return response;
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to fetch organization details';
       console.error('Error fetching organization details:', err);

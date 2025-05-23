@@ -1,28 +1,20 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
-import { useKeywordStore } from '@/stores/keywordStore';
 import { usePromptStore } from '@/stores/promptStore';
 import { useJobStatusStore } from '@/stores/jobStatusStore';
-import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue';
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
-import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue';
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
-const keywordStore = useKeywordStore();
 const promptStore = usePromptStore();
 const jobStatusStore = useJobStatusStore();
 
-const isKeywordCreateModalOpen = ref(false);
 const isPromptCreateModalOpen = ref(false);
-const isKeywordDetailSheetOpen = ref(false);
 const isPromptDetailSheetOpen = ref(false);
 
-const selectedKeyword = ref(null);
-const selectedKeywordId = ref(null);
 const selectedPrompt = ref(null);
 const selectedPromptId = ref(null);
-const activeTab = ref('keywords'); // Default tab for mobile view
+const activeTab = ref('prompts'); // Default tab for mobile view
 const sortOption = ref('default'); // Default sort option
 
 // Track if we have active jobs
@@ -69,7 +61,6 @@ watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
 }, { immediate: false });
 
 onMounted(async () => {
-  await keywordStore.fetchKeywords();
   await promptStore.fetchPrompts();
   await jobStatusStore.fetchTeamJobs();
 });
@@ -166,51 +157,8 @@ const showPromptDetails = async (prompt) => {
         </button>
       </div>
 
-      <!-- Left column - Keywords -->
-      <div class="w-full md:w-1/3 md:pr-4 md:px-4 py-4 md:border-r border-neutral-200 overflow-y-auto" :class="{'block': activeTab === 'keywords', 'hidden': activeTab !== 'keywords', 'md:block': true}">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl md:text-2xl font-semibold">Keywords</h2>
-          <button 
-            @click="isKeywordCreateModalOpen = true" 
-            class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
-          >
-            Add keyword
-          </button>
-        </div>
-        
-        <div v-if="keywordStore.isLoading" class="flex justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-        </div>
-        
-        <div v-else class="space-y-3">
-          <div 
-            v-for="keyword in keywordStore.keywords" 
-            :key="keyword.id" 
-            class="p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
-            :class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
-            @click="showKeywordDetails(keyword)"
-          >
-            <div class="flex justify-between items-center">
-              <div>
-                <span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-                <div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">Found in {{ keyword.prompts_count }} {{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}</div>
-                <div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
-              </div>
-              <button 
-                @click.stop="keywordStore.deleteKeyword(keyword.id)" 
-                class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Right column - Prompts -->
-      <div class="w-full md:w-2/3 md:pl-4 md:px-4 py-4 overflow-y-auto" :class="{'block': activeTab === 'prompts', 'hidden': activeTab !== 'prompts', 'md:block': true}">
+      <!-- Prompts column -->
+      <div class="w-full px-4 py-4 overflow-y-auto">
         <!-- <pre>{{ jobStatusStore.jobs }}</pre> -->
         <div class="mb-4">
           <div class="flex justify-between items-center">
@@ -354,27 +302,10 @@ const showPromptDetails = async (prompt) => {
     </div>
   </DefaultLayout>
 
-  <!-- Keyword Modal -->
-  <KeywordCreateModal
-    :is-open="isKeywordCreateModalOpen"
-    @close="isKeywordCreateModalOpen = false"
-  />
-
   <!-- Prompt Modal -->
   <PromptCreateModal
     :is-open="isPromptCreateModalOpen"
     @close="isPromptCreateModalOpen = false"
-  />
-
-  <!-- Keyword Detail Sheet -->
-  <KeywordDetailSheet
-    :is-open="isKeywordDetailSheetOpen"
-    :keyword="selectedKeyword"
-    :keyword-id="selectedKeyword?.id"
-    @close="() => {
-      isKeywordDetailSheetOpen = false;
-      selectedKeywordId = null;
-    }"
   />
 
   <!-- Prompt Detail Sheet -->
