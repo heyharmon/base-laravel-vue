@@ -150,7 +150,7 @@ const deleteOrganization = async (organizationId) => {
       </div>
 
       <!-- Create Organization Modal -->
-      <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div v-if="showCreateModal" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
           <h2 class="text-xl font-bold mb-4">Add Organization</h2>
           <div class="space-y-4">
@@ -211,14 +211,14 @@ const deleteOrganization = async (organizationId) => {
           <div class="flex justify-end space-x-2 mt-6">
             <Button
               @click="showCreateModal = false"
-              class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
+              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
             >
               Cancel
             </Button>
             <Button
               @click="createOrganization"
               :disabled="isSubmitting || !newOrganization.name"
-              class="bg-blue-600 hover:bg-blue-700 text-white"
+              class="bg-neutral-800 hover:bg-neutral-700 text-white"
             >
               {{ isSubmitting ? 'Creating...' : 'Add Organization' }}
             </Button>
