@@ -142,7 +142,7 @@ onUnmounted(() => {
                 <div class="p-2">
                   <p class="text-xs font-medium text-neutral-300 mb-2">Your Teams</p>
                   <div v-if="teams" class="space-y-1">
-                    <div v-if="teams.joinedTeams && teams.joinedTeams.length > 0">
+                    <div v-if="teams.joinedTeams && teams.joinedTeams.length > 0" class="space-y-1.5">
                       <PopoverClose as-child v-for="team in teams.joinedTeams" :key="team.id">
                         <div
                           @click="switchTeam(team.id)"
@@ -163,9 +163,9 @@ onUnmounted(() => {
                     </router-link>
                   </PopoverClose>
                   <PopoverClose as-child>
-                    <button @click="logout" class="w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+                    <a @click="logout" class="cursor-pointer w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
                       Logout
-                    </button>
+                    </a>
                   </PopoverClose>
                 </div>
               </PopoverContent>

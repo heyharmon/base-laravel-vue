@@ -147,13 +147,12 @@ const showPromptDetails = async (prompt) => {
 			<!-- All Organizations Table -->
 			<div class="flex-1 flex">
 				<div class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col">
-					<h3 class="text-lg font-medium mb-4">Visibility</h3>
-
-					<div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-4">
-						<div class="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-800"></div>
+					<div class="flex items-center gap-2 mb-4">
+						<h3 class="text-lg font-medium">Visibility</h3>
+						<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 					</div>
 
-					<div v-else-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0">
+					<div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0">
 						<table class="min-w-full divide-y divide-neutral-200">
 							<thead>
 								<tr>
@@ -204,7 +203,11 @@ const showPromptDetails = async (prompt) => {
 			<div class="w-full py-4">
 				<div class="mb-4">
 				<div class="flex justify-between items-center">
-					<h2 class="text-xl md:text-2xl font-medium">Prompts</h2>
+					<div class="flex items-center gap-3">
+						<h2 class="text-xl md:text-xl font-medium">Prompts</h2>
+						<div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+					</div>
+
 					<div class="flex space-x-2">
 					<!-- Sort prompts -->
 					<div class="relative inline-block">
@@ -266,11 +269,7 @@ const showPromptDetails = async (prompt) => {
 				</div>
 				</div>
 
-				<div v-if="promptStore.isLoading" class="flex justify-center py-8">
-				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-				</div>
-
-				<div v-else class="space-y-4">
+				<div v-if="sortedPrompts.length" class="space-y-4">
 				<div
 					v-for="prompt in sortedPrompts"
 					:key="prompt.id"
@@ -339,6 +338,9 @@ const showPromptDetails = async (prompt) => {
 					</button>
 					</div>
 				</div>
+				</div>
+				<div v-else class="text-center py-4 text-neutral-500 text-sm">
+					No prompts data available
 				</div>
 			</div>
 		</div>
