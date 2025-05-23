@@ -13,8 +13,8 @@ const currentUser = computed(() => auth.getUser());
 const isOwner = computed(() => teamStore.currentTeam?.owner_id === currentUser.value?.id);
 const isAdmin = computed(() => {
   if (!teamStore.members || !currentUser.value) return false;
-  return teamStore.members.some(member => 
-    member.id === currentUser.value.id && 
+  return teamStore.members.some(member =>
+    member.id === currentUser.value.id &&
     member.pivot.role === 'admin'
   );
 });
@@ -38,7 +38,7 @@ const loadTeam = async () => {
 
 const updateTeam = async () => {
   if (!editTeamName.value) return;
-  
+
   isSubmitting.value = true;
   try {
     await teamStore.updateTeam(teamId.value, { name: editTeamName.value });
@@ -52,10 +52,10 @@ const updateTeam = async () => {
 
 const inviteUser = async () => {
   if (!inviteEmail.value) return;
-  
+
   isSubmitting.value = true;
   try {
-    await teamStore.inviteUser(teamId.value, { 
+    await teamStore.inviteUser(teamId.value, {
       email: inviteEmail.value,
       role: inviteRole.value
     });
@@ -71,7 +71,7 @@ const inviteUser = async () => {
 
 const removeMember = async (userId) => {
   if (!confirm('Are you sure you want to remove this member?')) return;
-  
+
   try {
     await teamStore.removeMember(teamId.value, userId);
   } catch (error) {
@@ -90,7 +90,7 @@ const updateRole = async (userId, role) => {
 
 <template>
   <DefaultLayout>
-    <div class="container mx-auto py-8 px-4">
+    <div class="container mx-auto py-8">
       <!-- Loading state -->
       <div v-if="teamStore.isLoading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
@@ -110,14 +110,14 @@ const updateRole = async (userId, role) => {
             </p>
           </div>
           <div class="flex space-x-2">
-            <Button 
+            <Button
               v-if="isOwner || isAdmin"
               @click="showEditModal = true"
               class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
             >
               Edit Team
             </Button>
-            <Button 
+            <Button
               v-if="isOwner || isAdmin"
               @click="showInviteModal = true"
               class="bg-blue-600 hover:bg-blue-700 text-white"
@@ -133,8 +133,8 @@ const updateRole = async (userId, role) => {
             <h2 class="text-lg font-semibold">Team Members ({{ teamStore.members.length }})</h2>
           </div>
           <div class="divide-y divide-neutral-200">
-            <div 
-              v-for="member in teamStore.members" 
+            <div
+              v-for="member in teamStore.members"
               :key="member.id"
               class="px-6 py-4 flex items-center justify-between"
             >
@@ -144,13 +144,13 @@ const updateRole = async (userId, role) => {
               </div>
               <div class="flex items-center space-x-4">
                 <div class="text-sm">
-                  <span 
-                    v-if="member.id === teamStore.currentTeam.owner_id" 
+                  <span
+                    v-if="member.id === teamStore.currentTeam.owner_id"
                     class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs"
                   >
                     Owner
                   </span>
-                  <span 
+                  <span
                     v-else
                     class="bg-neutral-100 text-neutral-800 px-2 py-1 rounded-full text-xs"
                   >
@@ -159,7 +159,7 @@ const updateRole = async (userId, role) => {
                 </div>
                 <div v-if="isOwner || isAdmin">
                   <div v-if="member.id !== teamStore.currentTeam.owner_id" class="flex space-x-2">
-                    <select 
+                    <select
                       v-if="member.id !== $route.meta?.user?.id"
                       :value="member.pivot.role"
                       @change="updateRole(member.id, $event.target.value)"
@@ -168,7 +168,7 @@ const updateRole = async (userId, role) => {
                       <option value="member">Member</option>
                       <option value="admin">Admin</option>
                     </select>
-                    <button 
+                    <button
                       v-if="member.id !== $route.meta?.user?.id"
                       @click="removeMember(member.id)"
                       class="text-red-600 hover:text-red-800 text-sm"
@@ -188,8 +188,8 @@ const updateRole = async (userId, role) => {
             <h2 class="text-lg font-semibold">Pending Invitations ({{ teamStore.pendingMembers.length }})</h2>
           </div>
           <div class="divide-y divide-neutral-200">
-            <div 
-              v-for="member in teamStore.pendingMembers" 
+            <div
+              v-for="member in teamStore.pendingMembers"
               :key="member.id"
               class="px-6 py-4 flex items-center justify-between"
             >
@@ -206,7 +206,7 @@ const updateRole = async (userId, role) => {
                     Pending
                   </span>
                 </div>
-                <button 
+                <button
                   v-if="isOwner || isAdmin"
                   @click="removeMember(member.id)"
                   class="text-red-600 hover:text-red-800 text-sm"
@@ -225,7 +225,7 @@ const updateRole = async (userId, role) => {
           <h2 class="text-xl font-bold mb-4">Edit Team</h2>
           <div class="mb-4">
             <label class="block text-sm font-medium text-neutral-700 mb-1">Team Name</label>
-            <input 
+            <input
               v-model="editTeamName"
               type="text"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -233,13 +233,13 @@ const updateRole = async (userId, role) => {
             />
           </div>
           <div class="flex justify-end space-x-2">
-            <Button 
+            <Button
               @click="showEditModal = false"
               class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               @click="updateTeam"
               :disabled="isSubmitting || !editTeamName"
               class="bg-blue-600 hover:bg-blue-700 text-white"
@@ -256,7 +256,7 @@ const updateRole = async (userId, role) => {
           <h2 class="text-xl font-bold mb-4">Invite Team Member</h2>
           <div class="mb-4">
             <label class="block text-sm font-medium text-neutral-700 mb-1">Email Address</label>
-            <input 
+            <input
               v-model="inviteEmail"
               type="email"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -265,7 +265,7 @@ const updateRole = async (userId, role) => {
           </div>
           <div class="mb-4">
             <label class="block text-sm font-medium text-neutral-700 mb-1">Role</label>
-            <select 
+            <select
               v-model="inviteRole"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -274,13 +274,13 @@ const updateRole = async (userId, role) => {
             </select>
           </div>
           <div class="flex justify-end space-x-2">
-            <Button 
+            <Button
               @click="showInviteModal = false"
               class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               @click="inviteUser"
               :disabled="isSubmitting || !inviteEmail"
               class="bg-blue-600 hover:bg-blue-700 text-white"

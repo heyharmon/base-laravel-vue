@@ -156,19 +156,19 @@ const createKeywords = async () => {
       </button>
 
       <button
+	  	v-if="!isLoadingKeywords"
         @click="generateKeywords"
         class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
         :disabled="isLoadingKeywords || !organization?.website"
       >
-        Regenerate keywords
+	  Regenerate
       </button>
 
       <button
         @click="closeModal"
         class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
-        :disabled="isLoadingKeywords"
       >
-        {{ generatedKeywords.length > 0 ? 'Close' : 'Cancel' }}
+        Cancel
       </button>
     </template>
   </Modal>

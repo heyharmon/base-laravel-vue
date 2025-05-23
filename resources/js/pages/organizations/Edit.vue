@@ -70,7 +70,7 @@ const cancelEdit = () => {
 
 <template>
   <DefaultLayout>
-    <div class="container mx-auto py-8 px-4">
+    <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Edit Organization</h1>
         <Button @click="cancelEdit" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800">

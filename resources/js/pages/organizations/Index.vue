@@ -59,7 +59,7 @@ const deleteOrganization = async (organizationId) => {
 
 <template>
   <DefaultLayout>
-    <div class="container mx-auto py-8 px-4">
+    <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Keywords</h1>
         <Button @click="showCreateModal = true">Add Organization</Button>

@@ -5,7 +5,7 @@ import auth from '@/services/auth';
 import { useTeamStore } from '@/stores/teamStore';
 import { useJobStatusStore } from '@/stores/jobStatusStore';
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui';
-import GenerateKeywordsAndPromptsModal from '@/components/GenerateKeywordsAndPromptsModal.vue';
+import GeneratePromptsModal from '@/components/GeneratePromptsModal.vue';
 import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue';
 
 const router = useRouter();
@@ -196,6 +196,6 @@ onUnmounted(() => {
       </div>
     </div>
   </nav>
-  <GenerateKeywordsAndPromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
+  <GeneratePromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
   <JobStatusSheet :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

@@ -14,8 +14,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-const domain = ref('');
-const domainInput = ref(null);
 const isLoadingPrompts = ref(false);
 const generatedPrompts = ref([]);
 const error = ref(null);
@@ -30,11 +28,6 @@ onMounted(async () => {
 
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
-    await nextTick();
-    if (domainInput.value) {
-      domainInput.value.focus();
-    }
-
     if (organizations.value.length > 0 && !selectedOrganizationId.value) {
       // Set default to the first owned organization
       const ownedOrg = organizations.value.find(org => !org.is_competitor);
@@ -44,16 +37,6 @@ watch(() => props.isOpen, async (isOpen) => {
     }
   }
 }, { immediate: true });
-
-// Watch for organization selection changes and pre-populate domain
-watch(selectedOrganizationId, (newOrgId) => {
-  if (newOrgId) {
-    const selectedOrg = organizations.value.find(org => org.id === newOrgId);
-    if (selectedOrg && selectedOrg.website) {
-      domain.value = selectedOrg.website;
-    }
-  }
-});
 
 const fetchOrganizations = async () => {
   try {
@@ -66,7 +49,6 @@ const fetchOrganizations = async () => {
 };
 
 const closeModal = () => {
-  domain.value = '';
   generatedPrompts.value = [];
   error.value = null;
   emit('close');
@@ -77,14 +59,20 @@ const removePrompt = (index) => {
 };
 
 const generatePrompts = async () => {
-  if (!domain.value.trim()) return;
+  if (!selectedOrganizationId.value) return;
+
+  const selectedOrg = organizations.value.find(org => org.id === selectedOrganizationId.value);
+  if (!selectedOrg || !selectedOrg.website) {
+    error.value = 'Selected organization must have a website domain.';
+    return;
+  }
 
   isLoadingPrompts.value = true;
   error.value = null;
   generatedPrompts.value = [];
 
   try {
-    const response = await api.post('/generate-prompts', { domain: domain.value.trim() });
+    const response = await api.post('/generate-prompts', { domain: selectedOrg.website });
     generatedPrompts.value = response || [];
   } catch (err) {
     console.error('Error generating prompts:', err);
@@ -116,7 +104,7 @@ const createPrompts = async () => {
     <div class="space-y-4">
       <!-- Organization Selector -->
       <div class="mb-4">
-        <label for="organization" class="block text-sm font-medium text-neutral-700 mb-1">Organization</label>
+        <label for="organization" class="block text-sm font-medium text-neutral-700 mb-1">Based on:</label>
         <select
           id="organization"
           v-model="selectedOrganizationId"
@@ -145,21 +133,11 @@ const createPrompts = async () => {
         </select>
       </div>
 
-      <input
-        ref="domainInput"
-        v-model="domain"
-        type="text"
-        placeholder="Enter website domain (e.g. acme.com)"
-        class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-        @keyup.enter="generatePrompts"
-        :disabled="isLoadingPrompts"
-      />
-
       <div v-if="error" class="text-red-500 text-sm">
         {{ error }}
       </div>
 
-      <div class="mt-4 h-[calc(100vh-30rem)]">
+      <div class="mt-4 max-h-[calc(100vh-30rem)]">
         <!-- Prompts Content -->
         <div class="max-h-[calc(100vh-30rem)] overflow-y-auto">
           <div v-if="isLoadingPrompts" class="flex flex-col items-center justify-center py-8">
@@ -189,16 +167,7 @@ const createPrompts = async () => {
     </div>
 
     <template #footer>
-      <button
-        v-if="generatedPrompts.length === 0"
-        @click="generatePrompts"
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
-        :disabled="isLoadingPrompts || !domain.trim()"
-      >
-        Generate
-      </button>
-
-      <button
+		<button
         v-if="generatedPrompts.length > 0"
         @click="createPrompts"
         class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
@@ -207,12 +176,29 @@ const createPrompts = async () => {
         Create Prompts
       </button>
 
+	  <button
+        v-if="!isLoadingPrompts && generatedPrompts.length === 0"
+        @click="generatePrompts"
+        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
+        :disabled="isLoadingPrompts || !selectedOrganizationId"
+      >
+        Generate
+      </button>
+
+      <button
+        v-if="!isLoadingPrompts && generatedPrompts.length > 0"
+        @click="generatePrompts"
+        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
+        :disabled="isLoadingPrompts || !selectedOrganizationId"
+      >
+        Regenerate
+      </button>
+
       <button
         @click="closeModal"
         class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
-        :disabled="isLoadingPrompts"
       >
-        Cancel
+	  Cancel
       </button>
     </template>
   </Modal>

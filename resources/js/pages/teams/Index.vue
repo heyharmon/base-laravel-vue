@@ -15,7 +15,7 @@ onMounted(async () => {
 
 const createTeam = async () => {
   if (!newTeamName.value) return;
-  
+
   isSubmitting.value = true;
   try {
     await teamStore.createTeam({ name: newTeamName.value });
@@ -47,7 +47,7 @@ const declineInvitation = async (teamId) => {
 
 <template>
   <DefaultLayout>
-    <div class="container mx-auto py-8 px-4">
+    <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Teams</h1>
         <Button @click="showCreateModal = true">Create Team</Button>
@@ -71,9 +71,9 @@ const declineInvitation = async (teamId) => {
             You don't own any teams yet.
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="team in teamStore.ownedTeams" 
-              :key="team.id" 
+            <div
+              v-for="team in teamStore.ownedTeams"
+              :key="team.id"
               class="bg-neutral-100 p-4 rounded-lg shadow"
             >
               <div class="flex justify-between items-start">
@@ -87,7 +87,7 @@ const declineInvitation = async (teamId) => {
                 </div>
               </div>
               <div class="mt-4">
-                <router-link 
+                <router-link
                   :to="{ name: 'teams.show', params: { id: team.id } }"
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
@@ -105,9 +105,9 @@ const declineInvitation = async (teamId) => {
             You haven't joined any teams yet.
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="team in teamStore.joinedTeams" 
-              :key="team.id" 
+            <div
+              v-for="team in teamStore.joinedTeams"
+              :key="team.id"
               class="bg-neutral-100 p-4 rounded-lg shadow"
             >
               <div class="flex justify-between items-start">
@@ -118,7 +118,7 @@ const declineInvitation = async (teamId) => {
                 <div>{{ team.members_count }} members</div>
               </div>
               <div class="mt-4">
-                <router-link 
+                <router-link
                   :to="{ name: 'teams.show', params: { id: team.id } }"
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
@@ -136,20 +136,20 @@ const declineInvitation = async (teamId) => {
             You don't have any pending invitations.
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="team in teamStore.pendingInvitations" 
-              :key="team.id" 
+            <div
+              v-for="team in teamStore.pendingInvitations"
+              :key="team.id"
               class="bg-neutral-100 p-4 rounded-lg shadow border-l-4 border-blue-500"
             >
               <h3 class="text-lg font-medium">{{ team.name }}</h3>
               <div class="mt-4 flex space-x-2">
-                <Button 
+                <Button
                   @click="acceptInvitation(team.id)"
                   class="bg-green-600 hover:bg-green-700 text-white"
                 >
                   Accept
                 </Button>
-                <Button 
+                <Button
                   @click="declineInvitation(team.id)"
                   class="bg-neutral-600 hover:bg-neutral-700 text-white"
                 >
@@ -167,7 +167,7 @@ const declineInvitation = async (teamId) => {
           <h2 class="text-xl font-bold mb-4">Create New Team</h2>
           <div class="mb-4">
             <label class="block text-sm font-medium text-neutral-700 mb-1">Team Name</label>
-            <input 
+            <input
               v-model="newTeamName"
               type="text"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -175,13 +175,13 @@ const declineInvitation = async (teamId) => {
             />
           </div>
           <div class="flex justify-end space-x-2">
-            <Button 
+            <Button
               @click="showCreateModal = false"
               class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               @click="createTeam"
               :disabled="isSubmitting || !newTeamName"
               class="bg-blue-600 hover:bg-blue-700 text-white"
