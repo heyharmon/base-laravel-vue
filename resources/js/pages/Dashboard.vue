@@ -68,10 +68,9 @@ watch(hasActiveJobs, async (currentHasActiveJobs, previousHasActiveJobs) => {
 }, { immediate: false });
 
 onMounted(async () => {
-//   await promptStore.fetchPrompts();
-//   await jobStatusStore.fetchTeamJobs();
   await organizationStore.fetchOrganizations();
-//   await organizationStore.fetchVisibilityMetrics();
+  await organizationStore.fetchVisibilityMetrics();
+  await promptStore.fetchPrompts();
 });
 
 const openRunMenuId = ref(null);
@@ -158,23 +157,27 @@ const showPromptDetails = async (prompt) => {
 						<table class="min-w-full divide-y divide-neutral-200">
 							<thead>
 								<tr>
-									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Name</th>
-									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
-									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visibility</th>
-									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mentions</th>
-									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Responses</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/10">Org</th>
+									<!-- <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/8">Type</th> -->
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Visibility</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Mentions</th>
+									<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Responses</th>
 								</tr>
 							</thead>
 							<tbody class="bg-white divide-y divide-neutral-200">
 								<tr v-for="org in organizationStore.visibilityMetrics.sort((a, b) => b.visibility - a.visibility)" :key="org.id">
-									<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.name || (org.is_competitor ? 'Unnamed Competitor' : 'Your Organization') }}</td>
-									<td class="px-3 py-2 whitespace-nowrap text-sm">
+									<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
+										<span>{{ org.name || (org.is_competitor ? 'Unnamed Competitor' : 'Your Organization') }}</span>
+										<span v-if="!org.is_competitor" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-md">You</span>
+										<!-- <span v-if="org.is_competitor" class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-md">Competitor</span> -->
+									</td>
+									<!-- <td class="px-3 py-2 whitespace-nowrap text-sm">
 										<span v-if="!org.is_competitor" class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your Organization</span>
 										<span v-else class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Competitor</span>
-									</td>
-									<td class="px-3 py-2 whitespace-nowrap text-sm">
+									</td> -->
+									<td class="pl-3 pr-12 py-2 whitespace-nowrap text-sm">
 										<div class="flex items-center">
-											<div class="w-16 bg-neutral-200 rounded-full h-2 mr-2">
+											<div class="w-full bg-neutral-200 rounded-full h-2 mr-2">
 												<div class="h-2 rounded-full" :class="org.is_competitor ? 'bg-red-500' : 'bg-green-500'" :style="{width: `${org.visibility}%`}"></div>
 											</div>
 											<span>{{ org.visibility }}%</span>
