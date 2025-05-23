@@ -21,7 +21,7 @@ onMounted(async () => {
 
 const createOrganization = async () => {
   if (!newOrganization.value.name) return;
-  
+
   isSubmitting.value = true;
   try {
     await organizationStore.createOrganization(newOrganization.value);
@@ -48,7 +48,7 @@ const deleteOrganization = async (organizationId) => {
   if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
     return;
   }
-  
+
   try {
     await organizationStore.deleteOrganization(organizationId);
   } catch (error) {
@@ -61,7 +61,7 @@ const deleteOrganization = async (organizationId) => {
   <DefaultLayout>
     <div class="container mx-auto py-8 px-4">
       <div class="flex justify-between items-center mb-8">
-        <h1 class="text-2xl font-bold">Organizations</h1>
+        <h1 class="text-2xl font-bold">Keywords</h1>
         <Button @click="showCreateModal = true">Add Organization</Button>
       </div>
 
@@ -83,9 +83,9 @@ const deleteOrganization = async (organizationId) => {
             You don't have an organization yet.
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="org in organizationStore.ownedOrganizations" 
-              :key="org.id" 
+            <div
+              v-for="org in organizationStore.ownedOrganizations"
+              :key="org.id"
               class="bg-neutral-100 p-4 rounded-lg shadow"
             >
               <div class="flex justify-between items-start">
@@ -98,7 +98,7 @@ const deleteOrganization = async (organizationId) => {
                 <div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
               </div>
               <div class="mt-4 flex space-x-2">
-                <router-link 
+                <router-link
                   :to="{ name: 'organizations.edit', params: { id: org.id } }"
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
@@ -116,9 +116,9 @@ const deleteOrganization = async (organizationId) => {
             You haven't added any competitor organizations yet.
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="org in organizationStore.competitorOrganizations" 
-              :key="org.id" 
+            <div
+              v-for="org in organizationStore.competitorOrganizations"
+              :key="org.id"
               class="bg-neutral-100 p-4 rounded-lg shadow"
             >
               <div class="flex justify-between items-start">
@@ -131,13 +131,13 @@ const deleteOrganization = async (organizationId) => {
                 <div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
               </div>
               <div class="mt-4 flex space-x-2">
-                <router-link 
+                <router-link
                   :to="{ name: 'organizations.edit', params: { id: org.id } }"
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-2"
                 >
                   Edit
                 </router-link>
-                <button 
+                <button
                   @click="deleteOrganization(org.id)"
                   class="text-red-600 hover:text-red-800 text-sm font-medium"
                 >
@@ -156,7 +156,7 @@ const deleteOrganization = async (organizationId) => {
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-neutral-700 mb-1">Organization Name</label>
-              <input 
+              <input
                 v-model="newOrganization.name"
                 type="text"
                 class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -165,7 +165,7 @@ const deleteOrganization = async (organizationId) => {
             </div>
             <div>
               <label class="block text-sm font-medium text-neutral-700 mb-1">Website</label>
-              <input 
+              <input
                 v-model="newOrganization.website"
                 type="text"
                 class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -174,7 +174,7 @@ const deleteOrganization = async (organizationId) => {
             </div>
             <div>
               <label class="block text-sm font-medium text-neutral-700 mb-1">Founded</label>
-              <input 
+              <input
                 v-model="newOrganization.founded"
                 type="text"
                 class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -197,7 +197,7 @@ const deleteOrganization = async (organizationId) => {
               </select>
             </div>
             <div class="flex items-center">
-              <input 
+              <input
                 id="is-competitor"
                 v-model="newOrganization.is_competitor"
                 type="checkbox"
@@ -209,13 +209,13 @@ const deleteOrganization = async (organizationId) => {
             </div>
           </div>
           <div class="flex justify-end space-x-2 mt-6">
-            <Button 
+            <Button
               @click="showCreateModal = false"
               class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               @click="createOrganization"
               :disabled="isSubmitting || !newOrganization.name"
               class="bg-blue-600 hover:bg-blue-700 text-white"

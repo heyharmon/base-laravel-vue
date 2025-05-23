@@ -103,9 +103,8 @@ onUnmounted(() => {
             </svg>
             <span>Generate</span>
           </button>
-          <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
-          <router-link to="/analytics" class="text-sm hover:text-neutral-300">Analytics</router-link>
-          <router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
+          <router-link to="/" class="text-sm hover:text-neutral-300">Prompts</router-link>
+          <router-link to="/organizations" class="text-sm hover:text-neutral-300">Keywords</router-link>
         </div>
       </div>
 
