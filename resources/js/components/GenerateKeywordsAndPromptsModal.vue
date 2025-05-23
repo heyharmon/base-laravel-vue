@@ -50,6 +50,16 @@ watch(() => props.isOpen, async (isOpen) => {
   }
 }, { immediate: true });
 
+// Watch for organization selection changes and pre-populate domain
+watch(selectedOrganizationId, (newOrgId) => {
+  if (newOrgId) {
+    const selectedOrg = organizations.value.find(org => org.id === newOrgId);
+    if (selectedOrg && selectedOrg.website) {
+      domain.value = selectedOrg.website;
+    }
+  }
+});
+
 const fetchOrganizations = async () => {
   try {
     await organizationStore.fetchOrganizations();
