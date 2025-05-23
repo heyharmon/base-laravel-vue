@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useOrganizationStore } from '@/stores/organizationStore';
 import { useKeywordStore } from '@/stores/keywordStore';
@@ -20,6 +20,13 @@ const organization = ref({
   employee_count: '',
   is_competitor: false
 });
+const originalOrganization = ref({
+  name: '',
+  website: '',
+  founded: '',
+  employee_count: '',
+  is_competitor: false
+});
 const isSubmitting = ref(false);
 const isLoading = ref(true);
 const isKeywordCreateModalOpen = ref(false);
@@ -32,12 +39,21 @@ onMounted(async () => {
   try {
     const data = await organizationStore.fetchOrganization(route.params.id);
     organization.value = { ...data };
+    originalOrganization.value = { ...data };
     await keywordStore.fetchKeywords(route.params.id);
   } catch (error) {
     console.error('Error fetching organization:', error);
   } finally {
     isLoading.value = false;
   }
+});
+
+const hasChanges = computed(() => {
+  return organization.value.name !== originalOrganization.value.name ||
+         organization.value.website !== originalOrganization.value.website ||
+         organization.value.founded !== originalOrganization.value.founded ||
+         organization.value.employee_count !== originalOrganization.value.employee_count ||
+         organization.value.is_competitor !== originalOrganization.value.is_competitor;
 });
 
 const showKeywordDetails = (keyword) => {
@@ -115,6 +131,10 @@ const cancelEdit = () => {
 
           <div v-if="keywordStore.isLoading" class="flex justify-center py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
+          </div>
+
+          <div v-else-if="keywordStore.keywords.length === 0" class="text-center py-12 border border-neutral-200 rounded-xl">
+            <div class="text-neutral-400 text-sm">No keywords yet</div>
           </div>
 
           <div v-else class="space-y-3">
@@ -209,6 +229,7 @@ const cancelEdit = () => {
 
           <div class="pt-4">
             <Button
+              v-if="hasChanges"
               type="submit"
               :disabled="isSubmitting"
               variant="dark"
