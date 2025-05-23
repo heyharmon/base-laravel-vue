@@ -146,24 +146,83 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex flex-col md:flex-row h-[calc(100vh-10rem)] overflow-hidden">
-      <!-- Mobile tabs -->
-      <!-- <div class="flex md:hidden border-b border-neutral-200 sticky top-0 bg-white z-10 shadow-sm">
-        <button 
-          @click="activeTab = 'prompts'" 
-          class="flex-1 py-2 px-4 text-sm font-medium" 
-          :class="activeTab === 'prompts' ? 'text-neutral-800 border-b-2 border-neutral-800' : 'text-neutral-500'"
-        >
-          Prompts
-        </button>
-        <button 
-          @click="activeTab = 'visibility'" 
-          class="flex-1 py-2 px-4 text-sm font-medium" 
-          :class="activeTab === 'visibility' ? 'text-neutral-800 border-b-2 border-neutral-800' : 'text-neutral-500'"
-        >
-          Visibility
-        </button>
-      </div> -->
+    <div class="flex flex-col space-y-4">
+      <!-- Top Section: Visibility Cards -->
+      <div class="flex flex-wrap gap-4">
+        <!-- Company Visibility Card -->
+        <div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0" class="flex-1">
+          <div 
+            v-for="org in organizationStore.visibilityMetrics.filter(o => !o.is_competitor)" 
+            :key="org.id" 
+            class="bg-neutral-100 p-4 rounded-lg shadow border-l-4 border-green-500"
+          >
+            <div class="flex justify-between items-start">
+              <h3 class="text-lg font-medium">{{ org.name || 'Your Organization' }}</h3>
+              <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your Organization</span>
+            </div>
+            
+            <div class="mt-4">
+              <div class="flex justify-between mb-1">
+                <span class="text-sm font-medium">Visibility</span>
+                <span class="text-sm font-medium">{{ org.visibility }}%</span>
+              </div>
+              <div class="w-full bg-neutral-200 rounded-full h-2">
+                <div 
+                  class="h-2 rounded-full bg-green-500" 
+                  :style="{width: `${org.visibility}%`}"
+                ></div>
+              </div>
+              <div class="mt-2 text-sm text-neutral-600">
+                <p>{{ org.total_mentions }} mentions in {{ org.total_responses }} responses</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Competitors Table -->
+        <div class="flex-1">
+          <div class="bg-white p-4 rounded-lg shadow border border-neutral-200">
+            <h3 class="text-lg font-medium mb-4">Competitors</h3>
+            
+            <div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-4">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-800"></div>
+            </div>
+            
+            <div v-else-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.filter(o => o.is_competitor).length > 0">
+              <table class="min-w-full divide-y divide-neutral-200">
+                <thead>
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Name</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visibility</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mentions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-200">
+                  <tr v-for="org in organizationStore.visibilityMetrics.filter(o => o.is_competitor)" :key="org.id">
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.name || 'Unnamed Competitor' }}</td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">
+                      <div class="flex items-center">
+                        <div class="w-16 bg-neutral-200 rounded-full h-2 mr-2">
+                          <div class="h-2 rounded-full bg-red-500" :style="{width: `${org.visibility}%`}"></div>
+                        </div>
+                        <span>{{ org.visibility }}%</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div v-else class="text-center py-4 text-neutral-500 text-sm">
+              No competitor data available
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content -->
+      <div class="flex flex-col md:flex-row h-[calc(100vh-16rem)] overflow-hidden">
 
       <!-- Prompts column -->
       <div class="w-full px-4 py-4 overflow-y-auto">
@@ -307,93 +366,7 @@ const showPromptDetails = async (prompt) => {
           </div>
         </div>
       </div>
-      
-      <!-- Organization Visibility Section -->
-      <div class="w-full px-4 py-4 overflow-y-auto">
-        <div class="mb-4">
-          <div class="flex justify-between items-center">
-            <h2 class="text-xl md:text-2xl font-semibold">Organization Visibility</h2>
-            <div class="flex space-x-2">
-              <button 
-                @click="organizationStore.fetchVisibilityMetrics()" 
-                class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Loading state -->
-        <div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-        </div>
-        
-        <!-- Error state -->
-        <div v-else-if="organizationStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {{ organizationStore.error }}
-        </div>
-        
-        <!-- Results -->
-        <div v-else-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0">
-          <!-- Visibility metrics cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div 
-              v-for="org in organizationStore.visibilityMetrics" 
-              :key="org.id" 
-              class="bg-neutral-100 p-4 rounded-lg shadow"
-              :class="{'border-l-4 border-green-500': !org.is_competitor, 'border-l-4 border-red-500': org.is_competitor}"
-            >
-              <div class="flex justify-between items-start">
-                <h3 class="text-lg font-medium">{{ org.name || 'Unnamed Organization' }}</h3>
-                <span 
-                  :class="org.is_competitor ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'" 
-                  class="text-xs px-2 py-1 rounded"
-                >
-                  {{ org.is_competitor ? 'Competitor' : 'Your Organization' }}
-                </span>
-              </div>
-              
-              <div class="mt-4">
-                <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium">Visibility</span>
-                  <span class="text-sm font-medium">{{ org.visibility }}%</span>
-                </div>
-                <div class="w-full bg-neutral-200 rounded-full h-2">
-                  <div 
-                    class="h-2 rounded-full" 
-                    :class="org.is_competitor ? 'bg-red-500' : 'bg-green-500'" 
-                    :style="{width: `${org.visibility}%`}"
-                  ></div>
-                </div>
-                <div class="mt-2 text-sm text-neutral-600">
-                  <p>{{ org.total_mentions }} mentions in {{ org.total_responses }} responses</p>
-                </div>
-              </div>
-              
-              <!-- Top keywords -->
-              <div class="mt-4" v-if="org.keyword_mentions && org.keyword_mentions.length > 0">
-                <h4 class="text-sm font-medium mb-2">Top Keywords</h4>
-                <ul class="space-y-1">
-                  <li 
-                    v-for="(keyword, index) in org.keyword_mentions.slice(0, 3)" 
-                    :key="index"
-                    class="text-sm flex justify-between"
-                  >
-                    <span>{{ keyword.name }}</span>
-                    <span class="text-neutral-500">{{ keyword.count }} mentions</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- No data -->
-        <div v-else class="text-center py-8 text-neutral-500">
-          No visibility data available. Run prompts to generate mentions.
-        </div>
-      </div>
+    </div>
     </div>
   </DefaultLayout>
 
