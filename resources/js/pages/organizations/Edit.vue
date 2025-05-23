@@ -192,7 +192,7 @@ const cancelEdit = () => {
                   <div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
                 </div>
                 <button 
-                  @click.stop="keywordStore.deleteKeyword(keyword.id)" 
+                  @click.stop="keywordStore.deleteKeyword(route.params.id, keyword.id)" 
                   class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

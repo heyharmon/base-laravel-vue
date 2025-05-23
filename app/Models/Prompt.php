@@ -15,7 +15,6 @@ class Prompt extends Model
 
     protected $fillable = [
         'team_id',
-        'organization_id',
         'name',
         'content',
         'description',
@@ -55,14 +54,6 @@ class Prompt extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
-    }
-    
-    /**
-     * Get the organization that owns the prompt.
-     */
-    public function organization(): BelongsTo
-    {
-        return $this->belongsTo(Organization::class);
     }
     
     /**

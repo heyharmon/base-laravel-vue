@@ -39,12 +39,4 @@ class Organization extends Model
     {
         return $this->hasMany(Keyword::class);
     }
-
-    /**
-     * Get the prompts that belong to the organization.
-     */
-    public function prompts(): HasMany
-    {
-        return $this->hasMany(Prompt::class);
-    }
 }

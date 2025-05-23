@@ -4,11 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Team;
 use App\Models\Keyword;
-use App\Models\Prompt;
 use App\Models\Organization;
 use Illuminate\Database\Seeder;
 
-class AssignKeywordsAndPromptsToOrganizationsSeeder extends Seeder
+class AssignKeywordsToOrganizationsSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -32,11 +31,6 @@ class AssignKeywordsAndPromptsToOrganizationsSeeder extends Seeder
             
             // Assign all keywords for this team to the owned organization
             Keyword::where('team_id', $team->id)
-                ->whereNull('organization_id')
-                ->update(['organization_id' => $ownedOrg->id]);
-            
-            // Assign all prompts for this team to the owned organization
-            Prompt::where('team_id', $team->id)
                 ->whereNull('organization_id')
                 ->update(['organization_id' => $ownedOrg->id]);
         }

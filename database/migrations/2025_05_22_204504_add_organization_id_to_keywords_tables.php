@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('prompts', function (Blueprint $table) {
-            $table->foreignId('organization_id')->nullable()->after('team_id')->constrained()->nullOnDelete();
-        });
-
         Schema::table('keywords', function (Blueprint $table) {
-            $table->foreignId('organization_id')->nullable()->after('team_id')->constrained()->nullOnDelete();
+            $table->foreignId('organization_id')->nullable()->after('id')->constrained()->nullOnDelete();
         });
     }
 
@@ -25,11 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('prompts', function (Blueprint $table) {
-            $table->dropForeign(['organization_id']);
-            $table->dropColumn('organization_id');
-        });
-
         Schema::table('keywords', function (Blueprint $table) {
             $table->dropForeign(['organization_id']);
             $table->dropColumn('organization_id');

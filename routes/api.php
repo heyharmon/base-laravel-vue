@@ -47,10 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Core resources
     Route::middleware(EnsureHasTeam::class)->group(function () {
         Route::resource('organizations', OrganizationController::class);
-        Route::resource('keywords', KeywordController::class);
+        Route::resource('organizations/{organization}/keywords', KeywordController::class);
+        Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']); // TODO: Test
+        
+
         Route::resource('prompts', PromptController::class);
-        Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']);
-        Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']);
+        Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']); // TODO: Test
     });
 
     // Keyword responses
