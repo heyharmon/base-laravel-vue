@@ -199,10 +199,10 @@ const showPromptDetails = async (prompt) => {
 		</div>
 
 		<!-- Main Content -->
-		<div class="flex flex-col md:flex-row h-[calc(100vh-16rem)] overflow-hidden">
+		<div class="flex flex-col">
 
 			<!-- Prompts column -->
-			<div class="w-full py-4 overflow-y-auto">
+			<div class="w-full py-4">
 				<div class="mb-4">
 				<div class="flex justify-between items-center">
 					<h2 class="text-xl md:text-2xl font-medium">Prompts</h2>
