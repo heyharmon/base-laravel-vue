@@ -231,24 +231,24 @@ const showPromptDetails = async (prompt) => {
 						</button>
 						<div
 						v-if="isRunAllMenuOpen"
-						class="absolute right-0 mt-1 w-32 bg-white border border-neutral-300 rounded-md shadow-lg z-10"
+						class="absolute right-0 mt-1 w-36 bg-white border border-neutral-300 rounded-md shadow-lg z-10 overflow-hidden"
 						@click.stop
 						>
 						<button
 							@click.stop="runAllPrompts(1); closeRunAllMenu()"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+							class="w-full px-3 py-2.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
 						>
 							Run all prompts 1x
 						</button>
 						<button
 							@click.stop="runAllPrompts(3); closeRunAllMenu()"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+							class="w-full px-3 py-2.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
 						>
 							Run all prompts 3x
 						</button>
 						<button
 							@click.stop="runAllPrompts(5); closeRunAllMenu()"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+							class="w-full px-3 py-2.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
 						>
 							Run all prompts 5x
 						</button>
@@ -288,35 +288,35 @@ const showPromptDetails = async (prompt) => {
 						</div>
 					</div>
 					<div class="flex justify-end space-x-2">
-					<div class="relative">
+					<div class="relative flex items-center">
 						<button
 						@click.stop="toggleRunMenu(prompt.id)"
-						class="px-3 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
+						class="px-3 py-1 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center min-w-[40px]"
 						:disabled="promptStore.loadingPromptIds.includes(prompt.id)"
 						>
-						<div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
-						<span v-else>Run</span>
+							<div v-if="promptStore.loadingPromptIds.includes(prompt.id)" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full"></div>
+							<span v-else>Run</span>
 						</button>
 						<div
 						v-if="openRunMenuId === prompt.id"
-						class="absolute right-0 mt-1 w-20 bg-white border border-neutral-300 rounded-md shadow-lg z-10"
+						class="absolute right-0 mt-1 w-20 bg-white border border-neutral-300 rounded-md shadow-lg z-10 overflow-hidden"
 						@click.stop
 						>
 						<button
 							@click.stop="runPrompt(prompt.id, 1); closeRunMenu()"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
 						>
 							Run 1x
 						</button>
 						<button
 							@click.stop="runPrompt(prompt.id, 3); closeRunMenu()"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
 						>
 							Run 3x
 						</button>
 						<button
 							@click.stop="runPrompt(prompt.id, 5); closeRunMenu()"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer"
 						>
 							Run 5x
 						</button>
