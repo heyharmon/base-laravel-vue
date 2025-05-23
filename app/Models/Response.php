@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Response extends Model
 {
@@ -46,5 +47,13 @@ class Response extends Model
     {
         return $this->belongsToMany(Keyword::class)
             ->withTimestamps();
+    }
+    
+    /**
+     * Get the mentions for this response.
+     */
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(Mention::class);
     }
 }

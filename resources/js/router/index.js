@@ -10,6 +10,8 @@ import ForgotPassword from '@/pages/auth/ForgotPassword.vue';
 import ResetPassword from '@/pages/auth/ResetPassword.vue';
 import TeamsIndex from '@/pages/teams/Index.vue';
 import TeamShow from '@/pages/teams/Show.vue';
+import OrganizationsIndex from '@/pages/organizations/Index.vue';
+import OrganizationEdit from '@/pages/organizations/Edit.vue';
 
 const routes = [
   {
@@ -62,6 +64,18 @@ const routes = [
     path: '/teams/:id',
     name: 'teams.show',
     component: TeamShow,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/organizations',
+    name: 'organizations.index',
+    component: OrganizationsIndex,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/organizations/:id/edit',
+    name: 'organizations.edit',
+    component: OrganizationEdit,
     meta: { requiresAuth: true }
   },
 ];

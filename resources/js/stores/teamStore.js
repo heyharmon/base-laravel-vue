@@ -12,12 +12,13 @@ export const useTeamStore = defineStore('team', {
     isLoading: false,
     error: null
   }),
-  
+
   actions: {
     async fetchTeams() {
+	  console.log('Fetching teams...')
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.get('/teams');
         this.ownedTeams = response.ownedTeams;
@@ -30,11 +31,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async fetchTeam(teamId) {
+	  console.log('Fetching team details for team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.get(`/teams/${teamId}`);
         this.currentTeam = response.team;
@@ -48,11 +50,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async createTeam(teamData) {
+	  console.log('Creating team...')
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.post('/teams', teamData);
         await this.fetchTeams();
@@ -65,11 +68,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async updateTeam(teamId, teamData) {
+	  console.log('Updating team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.put(`/teams/${teamId}`, teamData);
         if (this.currentTeam && this.currentTeam.id === teamId) {
@@ -85,11 +89,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async inviteUser(teamId, userData) {
+	  console.log('Inviting user to team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.post(`/teams/${teamId}/invite`, userData);
         await this.fetchTeam(teamId);
@@ -102,11 +107,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async acceptInvitation(teamId) {
+	  console.log('Accepting invitation for team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.post(`/teams/${teamId}/accept-invitation`);
         await this.fetchTeams();
@@ -119,11 +125,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async declineInvitation(teamId) {
+	  console.log('Declining invitation for team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.post(`/teams/${teamId}/decline-invitation`);
         await this.fetchTeams();
@@ -136,11 +143,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async removeMember(teamId, userId) {
+	  console.log('Removing member from team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.delete(`/teams/${teamId}/members/${userId}`);
         await this.fetchTeam(teamId);
@@ -153,11 +161,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async updateMemberRole(teamId, userId, roleData) {
+	  console.log('Updating member role for team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.put(`/teams/${teamId}/members/${userId}/role`, roleData);
         await this.fetchTeam(teamId);
@@ -170,11 +179,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     async switchTeam(teamId) {
+	  console.log('Switching to team ID:', teamId)
       this.isLoading = true;
       this.error = null;
-      
+
       try {
         const response = await api.post(`/teams/${teamId}/switch`);
         if (response.team && response.message) {
@@ -195,12 +205,12 @@ export const useTeamStore = defineStore('team', {
         this.isLoading = false;
       }
     },
-    
+
     getCurrentTeam(teams, user) {
       if (!teams || !user || !user.current_team_id) return null;
-      
+
       // Find the current team from the list of teams
-      return teams.ownedTeams.find(team => team.id === user.current_team_id) || 
+      return teams.ownedTeams.find(team => team.id === user.current_team_id) ||
              teams.joinedTeams.find(team => team.id === user.current_team_id) ||
              null;
     }

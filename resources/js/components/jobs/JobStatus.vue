@@ -1,27 +1,22 @@
 <template>
     <div>
-        <h3 class="flex items-center gap-2 text-lg font-medium mb-2" v-if="title">
-            {{ title }}
-            <div v-if="loading" class="spinner"></div>
-        </h3>
-        
-        <div v-else-if="error" class="bg-red-100 p-3 rounded text-red-700">
+        <div v-if="error" class="bg-red-100 p-3 rounded text-red-700">
             {{ error }}
         </div>
-        
+
         <div>
             <!-- No jobs -->
             <div v-if="jobs.length === 0" class="py-4 text-center text-neutral-500">
                 No jobs found.
             </div>
-            
+
             <!-- Job list grouped by batch -->
             <div v-else>
                 <!-- Batched Jobs -->
                 <div v-if="processedBatches.length > 0" class="space-y-4 mb-4">
-                    <div 
-                        v-for="batch in processedBatches" 
-                        :key="batch.id" 
+                    <div
+                        v-for="batch in processedBatches"
+                        :key="batch.id"
                         class="border-2 border-neutral-300 rounded-lg overflow-hidden bg-neutral-50"
                     >
                         <div class="px-4 py-3 flex items-center justify-between bg-neutral-100 border-b">
@@ -33,45 +28,41 @@
                                 {{ getBatchStatus(batch) }}
                             </div>
                         </div>
-                        
+
                         <div class="divide-y divide-neutral-200">
-                            <div 
-                                v-for="job in batch.jobs" 
-                                :key="job.job_id" 
+                            <div
+                                v-for="job in batch.jobs"
+                                :key="job.job_id"
                                 class="px-4 py-3"
                             >
                                 <div class="flex items-center justify-between mb-2">
-                                    <div class="flex items-center">
+                                    <div class="flex items-center gap-2">
                                         <span class="font-medium text-sm">{{ getJobName(job) }}</span>
-                                        <span 
-                                            class="ml-2 px-2 py-0.5 text-xs rounded-full"
-                                            :class="getStatusClass(job.status)"
-                                        >
-                                            {{ job.status }}
-                                        </span>
+                                        <span class="px-2 py-0.5 text-xs rounded-full" :class="getStatusClass(job.status)">{{ job.status }}</span>
                                     </div>
-                                    <div class="text-xs text-neutral-500">
-                                        {{ formatTime(job.created_at) }}
+                                    <div class="flex items-center gap-2 text-xs text-neutral-500">
+										<div v-if="job.status === 'processing'" class="spinner"></div>
+                                        <span v-else>{{ formatTime(job.created_at) }}</span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Progress bar -->
-                                <div v-if="job.status === 'pending' || job.status === 'processing'" class="mb-2">
+                                <div v-if="job.status === 'processing'">
                                     <div class="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
-                                        <div 
+                                        <div
                                             class="h-1.5 bg-blue-500 transition-all duration-500"
                                             :style="{ width: job.progress + '%' }"
                                         ></div>
                                     </div>
                                     <div class="mt-1 text-xs text-right">{{ job.progress }}%</div>
                                 </div>
-                                
+
                                 <!-- Output or error message -->
-                                <div v-if="job.output" class="text-xs mt-1">
+                                <div v-if="job.output" class="text-xs">
                                     <div class="font-medium mb-0.5">Output:</div>
                                     <div class="text-neutral-600">{{ job.output }}</div>
                                 </div>
-                                
+
                                 <div v-if="job.error" class="text-xs mt-1">
                                     <div class="font-medium mb-0.5 text-red-700">Error:</div>
                                     <div class="text-red-600">{{ job.error }}</div>
@@ -80,21 +71,21 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Non-batched Jobs -->
                 <div v-if="nonBatchedJobs.length > 0" class="space-y-3">
                     <div v-if="processedBatches.length > 0" class="text-sm font-medium text-neutral-500 mt-4 mb-2">
-                        Individual Jobs
+                        Individual Runs
                     </div>
-                    <div 
-                        v-for="job in nonBatchedJobs" 
-                        :key="job.job_id" 
+                    <div
+                        v-for="job in nonBatchedJobs"
+                        :key="job.job_id"
                         class="border rounded-lg overflow-hidden bg-neutral-50"
                     >
                         <div class="px-4 py-3 flex items-center justify-between border-b">
                             <div>
                                 <span class="font-medium">{{ getJobName(job) }}</span>
-                                <span 
+                                <span
                                     class="ml-2 px-2 py-1 text-xs rounded-full"
                                     :class="getStatusClass(job.status)"
                                 >
@@ -105,25 +96,25 @@
                                 {{ formatDate(job.created_at) }}
                             </div>
                         </div>
-                        
+
                         <div class="px-4 py-3">
                             <!-- Progress bar -->
                             <div v-if="job.status === 'pending' || job.status === 'processing'" class="mb-3">
                                 <div class="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                                    <div 
+                                    <div
                                         class="h-2 bg-blue-500 transition-all duration-500"
                                         :style="{ width: job.progress + '%' }"
                                     ></div>
                                 </div>
                                 <div class="mt-1 text-xs text-right">{{ job.progress }}%</div>
                             </div>
-                            
+
                             <!-- Output or error message -->
                             <div v-if="job.output" class="text-sm">
                                 <div class="font-medium mb-1">Output:</div>
                                 <div class="text-neutral-600">{{ job.output }}</div>
                             </div>
-                            
+
                             <div v-if="job.error" class="text-sm mt-2">
                                 <div class="font-medium mb-1 text-red-700">Error:</div>
                                 <div class="text-red-600">{{ job.error }}</div>
@@ -142,10 +133,6 @@ import { useJobStatusStore } from '@/stores/jobStatusStore';
 
 // Define props with the defineProps macro
 const props = defineProps({
-  title: {
-    type: String,
-    default: 'Recent Jobs'
-  },
   autoRefresh: {
     type: Boolean,
     default: true
@@ -166,7 +153,7 @@ const error = computed(() => jobStatusStore.error);
 const processedBatches = computed(() => {
   const batches = [];
   const grouped = {};
-  
+
   // Group jobs by batch ID
   jobs.value.forEach(job => {
     if (job.job_batch_id && job.job_batch_id !== 'null') {
@@ -176,7 +163,7 @@ const processedBatches = computed(() => {
       grouped[job.job_batch_id].push(job);
     }
   });
-  
+
   // Convert to array of batch objects
   Object.keys(grouped).forEach(batchId => {
     if (batchId !== 'null') {
@@ -188,7 +175,7 @@ const processedBatches = computed(() => {
       });
     }
   });
-  
+
   // Sort batches by created_at, newest first
   return batches.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
@@ -251,7 +238,7 @@ function getBatchName(job) {
 function getBatchStatus(batch) {
   // Calculate batch status based on jobs
   const statuses = batch.jobs.map(job => job.status);
-  
+
   if (statuses.includes('failed')) {
     return 'Failed';
   } else if (statuses.includes('processing')) {
@@ -270,9 +257,9 @@ function getBatchStatus(batch) {
 .spinner {
     border: 2px solid #f3f3f3;
     border-radius: 50%;
-    border-top: 2px solid #3498db;
-    width: 20px;
-    height: 20px;
+    border-top: 2px solid #1E90FF;
+    width: 15px;
+    height: 15px;
     animation: spin 1s linear infinite;
 }
 

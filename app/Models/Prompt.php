@@ -14,7 +14,7 @@ class Prompt extends Model
     use HasFactory, HasJobStatus;
 
     protected $fillable = [
-        'team_id', // TODO: Change this if adding projects model
+        'team_id',
         'name',
         'content',
         'description',
@@ -41,7 +41,7 @@ class Prompt extends Model
     }
 
     /**
-     * The responses of this prompt.
+     * The responses to this prompt.
      */
     public function responses(): HasMany
     {
@@ -51,10 +51,17 @@ class Prompt extends Model
     /**
      * Get the team that owns the prompt.
      */
-    // TODO: Change this if adding projects model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
+    }
+    
+    /**
+     * Get the mentions for this prompt.
+     */
+    public function mentions(): HasMany
+    {
+        return $this->hasMany(Mention::class);
     }
     
     /**
@@ -68,8 +75,8 @@ class Prompt extends Model
             return 0;
         }
         
-        $mentionedResponses = $this->responses()->where('mentioned', true)->count();
+        $mentions = $this->responses()->where('mentioned', true)->count();
         
-        return round(($mentionedResponses / $totalResponses) * 100);
+        return round(($mentions / $totalResponses) * 100);
     }
 }

@@ -42,12 +42,10 @@ onUnmounted(() => {
   <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
     <!-- Backdrop overlay -->
     <div class="fixed inset-0 bg-neutral-300/50 transition-opacity" @click="closeModal"></div>
-    
-    <div class="flex items-center justify-center min-h-screen px-4 text-center">
-      <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-      <div 
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all p-6 sm:my-8 sm:align-middle relative z-10"
+    <div class="flex justify-center pt-16 px-4 text-center">
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all p-6 relative z-10"
         :class="{
           'sm:max-w-lg sm:w-full': props.width === 'default',
           'sm:max-w-2xl sm:w-full': props.width === 'wide',

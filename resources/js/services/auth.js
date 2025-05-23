@@ -2,6 +2,7 @@ import api from './api';
 
 const auth = {
   async login(credentials) {
+	console.log('Logging in...')
     const response = await api.post('/login', credentials);
     if (response.token) {
       localStorage.setItem('token', response.token);
@@ -12,6 +13,7 @@ const auth = {
   },
 
   async register(userData) {
+	console.log('Registering...')
     const response = await api.post('/register', userData);
     if (response.token) {
       localStorage.setItem('token', response.token);
@@ -22,6 +24,7 @@ const auth = {
   },
 
   async logout() {
+	console.log('Logging out...')
     try {
       await api.post('/logout');
     } catch (error) {

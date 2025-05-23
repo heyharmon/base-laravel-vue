@@ -31,17 +31,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Sheet 
-    :is-open="isOpen" 
+  <Sheet
+    :is-open="isOpen"
     @close="closeSheet"
     position="right"
-    title="Job Status"
+    title="Runs"
   >
     <div class="w-full xl:w-[800px] md:p-4">
-      <JobStatus 
-        title="Recent Jobs" 
-        :autoRefresh="true" 
-        :refreshInterval="5000"
+      <JobStatus
+        :autoRefresh="true"
+        :refreshInterval="1000"
       />
     </div>
   </Sheet>
