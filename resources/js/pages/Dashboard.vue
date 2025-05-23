@@ -146,15 +146,15 @@ const showPromptDetails = async (prompt) => {
 
 <template>
   <DefaultLayout>
-    <div class="flex flex-col space-y-4">
+    <div class="flex flex-col space-y-4 mt-6">
       <!-- Top Section: Visibility Cards -->
       <div class="flex flex-wrap gap-4">
         <!-- Company Visibility Card -->
-        <div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0" class="flex-1">
+        <div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0" class="flex-1 flex">
           <div 
             v-for="org in organizationStore.visibilityMetrics.filter(o => !o.is_competitor)" 
             :key="org.id" 
-            class="bg-neutral-100 p-4 rounded-lg shadow border-l-4 border-green-500"
+            class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col"
           >
             <div class="flex justify-between items-start">
               <h3 class="text-lg font-medium">{{ org.name || 'Your Organization' }}</h3>
@@ -175,13 +175,20 @@ const showPromptDetails = async (prompt) => {
               <div class="mt-2 text-sm text-neutral-600">
                 <p>{{ org.total_mentions }} mentions in {{ org.total_responses }} responses</p>
               </div>
+
+              <button 
+                @click="organizationStore.fetchVisibilityMetrics()" 
+                class="mt-6 px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center"
+              >
+                Refresh
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Competitors Table -->
-        <div class="flex-1">
-          <div class="bg-white p-4 rounded-lg shadow border border-neutral-200">
+        <div class="flex-1 flex">
+          <div class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col">
             <h3 class="text-lg font-medium mb-4">Competitors</h3>
             
             <div v-if="organizationStore.isLoadingVisibility" class="flex justify-center py-4">
