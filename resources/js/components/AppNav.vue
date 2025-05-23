@@ -5,7 +5,6 @@ import auth from '@/services/auth';
 import { useTeamStore } from '@/stores/teamStore';
 import { useJobStatusStore } from '@/stores/jobStatusStore';
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui';
-import GeneratePromptsModal from '@/components/GeneratePromptsModal.vue';
 import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue';
 
 const router = useRouter();
@@ -17,7 +16,6 @@ const teams = ref(null);
 const currentTeam = ref(null);
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false);
-const isGenerateModalOpen = ref(false);
 const isJobStatusSheetOpen = ref(false);
 
 // Computed property to count pending or processing jobs
@@ -94,15 +92,6 @@ onUnmounted(() => {
       <div class="flex items-center space-x-4">
         <router-link to="/" class="text-xl font-bold">Paraloom</router-link>
         <div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
-          <button
-            @click="isGenerateModalOpen = true"
-            class="flex items-center space-x-1 px-2 py-1 rounded bg-white text-neutral-800 hover:bg-neutral-100 text-sm cursor-pointer"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-            </svg>
-            <span>Generate</span>
-          </button>
           <router-link to="/" class="text-sm hover:text-neutral-300">Prompts</router-link>
           <router-link to="/organizations" class="text-sm hover:text-neutral-300">Keywords</router-link>
         </div>
@@ -196,6 +185,5 @@ onUnmounted(() => {
       </div>
     </div>
   </nav>
-  <GeneratePromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
   <JobStatusSheet :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

@@ -5,6 +5,7 @@ import { useJobStatusStore } from '@/stores/jobStatusStore';
 import { useOrganizationStore } from '@/stores/organizationStore';
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue';
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue';
+import GeneratePromptsModal from '@/components/GeneratePromptsModal.vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 
 const promptStore = usePromptStore();
@@ -13,6 +14,7 @@ const organizationStore = useOrganizationStore();
 
 const isPromptCreateModalOpen = ref(false);
 const isPromptDetailSheetOpen = ref(false);
+const isGenerateModalOpen = ref(false);
 
 const selectedPrompt = ref(null);
 const selectedPromptId = ref(null);
@@ -274,11 +276,24 @@ const showPromptDetails = async (prompt) => {
 						</button>
 						</div>
 					</div>
+
+					<!-- Add single prompt -->
 					<button
 						@click="isPromptCreateModalOpen = true"
-						class="px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
+						class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
 					>
-						Add prompt
+						Add a prompt
+					</button>
+
+					<!-- Generate prompts -->
+					<button
+						@click="isGenerateModalOpen = true"
+						class="flex items-center space-x-1 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+							<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+						</svg>
+						<span>Generate prompts</span>
 					</button>
 					</div>
 				</div>
@@ -361,6 +376,9 @@ const showPromptDetails = async (prompt) => {
 		</div>
     </div>
   </DefaultLayout>
+
+  <!-- Generate Modal -->
+  <GeneratePromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
 
   <!-- Prompt Modal -->
   <PromptCreateModal
