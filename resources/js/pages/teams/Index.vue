@@ -145,13 +145,13 @@ const declineInvitation = async (teamId) => {
               <div class="mt-4 flex space-x-2">
                 <Button
                   @click="acceptInvitation(team.id)"
-                  class="bg-green-600 hover:bg-green-700 text-white"
+                  variant="success"
                 >
                   Accept
                 </Button>
                 <Button
                   @click="declineInvitation(team.id)"
-                  class="bg-neutral-600 hover:bg-neutral-700 text-white"
+                  variant="muted"
                 >
                   Decline
                 </Button>
@@ -177,14 +177,14 @@ const declineInvitation = async (teamId) => {
           <div class="flex justify-end space-x-2">
             <Button
               @click="showCreateModal = false"
-              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
+              variant="neutral"
             >
               Cancel
             </Button>
             <Button
               @click="createTeam"
               :disabled="isSubmitting || !newTeamName"
-              class="bg-neutral-800 hover:bg-neutral-700 text-white"
+              variant="dark"
             >
               {{ isSubmitting ? 'Creating...' : 'Create Team' }}
             </Button>

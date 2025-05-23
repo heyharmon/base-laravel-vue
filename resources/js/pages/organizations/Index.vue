@@ -211,14 +211,14 @@ const deleteOrganization = async (organizationId) => {
           <div class="flex justify-end space-x-2 mt-6">
             <Button
               @click="showCreateModal = false"
-              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
+              variant="neutral"
             >
               Cancel
             </Button>
             <Button
               @click="createOrganization"
               :disabled="isSubmitting || !newOrganization.name"
-              class="bg-neutral-800 hover:bg-neutral-700 text-white"
+              variant="dark"
             >
               {{ isSubmitting ? 'Creating...' : 'Add Organization' }}
             </Button>

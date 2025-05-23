@@ -113,14 +113,14 @@ const updateRole = async (userId, role) => {
             <Button
               v-if="isOwner || isAdmin"
               @click="showEditModal = true"
-              class="bg-neutral-200 hover:bg-neutral-300 text-neutral-800"
+              variant="neutral"
             >
               Edit Team
             </Button>
             <Button
               v-if="isOwner || isAdmin"
               @click="showInviteModal = true"
-              class="bg-blue-600 hover:bg-blue-700 text-white"
+              variant="primary"
             >
               Invite Member
             </Button>
@@ -235,14 +235,14 @@ const updateRole = async (userId, role) => {
           <div class="flex justify-end space-x-2">
             <Button
               @click="showEditModal = false"
-              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
+              variant="neutral"
             >
               Cancel
             </Button>
             <Button
               @click="updateTeam"
               :disabled="isSubmitting || !editTeamName"
-              class="bg-neutral-800 hover:bg-neutral-700 text-white"
+              variant="dark"
             >
               {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
             </Button>
@@ -276,14 +276,14 @@ const updateRole = async (userId, role) => {
           <div class="flex justify-end space-x-2">
             <Button
               @click="showInviteModal = false"
-              class="bg-neutral-200 hover:bg-neutral-100 text-neutral-800"
+              variant="neutral"
             >
               Cancel
             </Button>
             <Button
               @click="inviteUser"
               :disabled="isSubmitting || !inviteEmail"
-              class="bg-neutral-800 hover:bg-neutral-700 text-white"
+              variant="dark"
             >
               {{ isSubmitting ? 'Sending Invitation...' : 'Send Invitation' }}
             </Button>
