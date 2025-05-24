@@ -30,7 +30,7 @@ const deleteOrganization = async (organizationId) => {
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Keywords</h1>
-        <Button @click="router.push({ name: 'organizations.create' })">Add organization</Button>
+        <Button @click="router.push({ name: 'organizations.create' })">Add competitor</Button>
       </div>
 
       <!-- Loading state -->

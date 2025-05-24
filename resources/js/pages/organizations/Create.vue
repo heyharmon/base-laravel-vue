@@ -33,18 +33,18 @@ const createOrganization = async () => {
   <DefaultLayout>
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
-        <h1 class="text-2xl font-bold">Add Organization</h1>
+        <h1 class="text-2xl font-bold">Add Competitor</h1>
       </div>
 
       <div class="bg-neutral-100 p-6 rounded-lg shadow max-w-2xl mx-auto">
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Organization name</label>
+            <label class="block text-sm font-medium text-neutral-700 mb-1">Competitor name</label>
             <input
               v-model="organization.name"
               type="text"
               class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter organization name"
+              placeholder="Enter competitor name"
             />
           </div>
           <div>
@@ -56,17 +56,7 @@ const createOrganization = async () => {
               placeholder="Enter website URL"
             />
           </div>
-          <div class="flex items-center">
-            <input
-              id="is-competitor"
-              v-model="organization.is_competitor"
-              type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-neutral-300 rounded"
-            />
-            <label for="is-competitor" class="ml-2 block text-sm text-neutral-700">
-              This is a competitor organization
-            </label>
-          </div>
+          <!-- Competitor checkbox removed as this page always creates competitors -->
         </div>
 
         <div class="mt-6 flex justify-end space-x-2">
@@ -81,7 +71,7 @@ const createOrganization = async () => {
             :disabled="isSubmitting || !organization.name"
             variant="dark"
           >
-            {{ isSubmitting ? 'Creating...' : 'Add organization' }}
+            {{ isSubmitting ? 'Creating...' : 'Add competitor' }}
           </Button>
         </div>
       </div>

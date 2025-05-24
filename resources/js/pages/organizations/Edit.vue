@@ -88,7 +88,10 @@ const cancelEdit = () => {
   <DefaultLayout>
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
-        <h1 class="text-2xl font-bold">Edit Organization</h1>
+        <div class="flex items-center gap-3">
+			<h1 class="text-2xl font-bold">{{ organization.name }}</h1>
+			<span v-if="organization.is_competitor" class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded">Competitor</span>
+		</div>
         <Button @click="cancelEdit" variant="neutral">
           Back
         </Button>
@@ -212,19 +215,6 @@ const cancelEdit = () => {
               <option value="501-1000">501-1000</option>
               <option value="1000+">1000+</option>
             </select>
-          </div> -->
-
-          <!-- <div v-if="organization.is_competitor" class="flex items-center">
-            <input
-              id="is-competitor"
-              v-model="organization.is_competitor"
-              type="checkbox"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-neutral-300 rounded"
-              :disabled="!organization.is_competitor"
-            />
-            <label for="is-competitor" class="ml-2 block text-sm text-neutral-700">
-              This is a competitor organization
-            </label>
           </div> -->
 
           <div class="pt-4">
