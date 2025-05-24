@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('mentions', function (Blueprint $table) {
             // First drop the unique constraint
-            $table->dropUnique(['keyword_id', 'response_id']);
+			$table->dropIndex('mentions_keyword_id_response_id_unique');
 
             // Then drop the foreign key and column in one step
             $table->dropConstrainedForeignId('keyword_id');
