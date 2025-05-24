@@ -12,9 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mentions', function (Blueprint $table) {
-            // Drop the foreign key constraint and column
-            $table->dropForeign(['keyword_id']);
-            $table->dropColumn('keyword_id');
+            // First drop the unique constraint
+            $table->dropUnique(['keyword_id', 'response_id']);
+
+            // Then drop the foreign key and column in one step
+            $table->dropConstrainedForeignId('keyword_id');
         });
     }
 
