@@ -13,15 +13,11 @@ return new class extends Migration
     {
         Schema::create('mentions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('keyword_id')->constrained()->cascadeOnDelete();
             $table->foreignId('response_id')->constrained()->cascadeOnDelete();
             $table->foreignId('prompt_id')->constrained()->cascadeOnDelete();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
-            
-            // Create a unique constraint to prevent duplicate mentions
-            $table->unique(['keyword_id', 'response_id']);
         });
     }
 
