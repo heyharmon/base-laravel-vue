@@ -55,9 +55,6 @@ const updateCurrentTeam = () => {
 const switchTeam = async (teamId) => {
   try {
     await teamStore.switchTeam(teamId);
-    await loadTeams();
-    isTeamDropdownOpen.value = false;
-    // Refresh the page after switching teams
     window.location.reload();
   } catch (error) {
     console.error('Error switching team:', error);

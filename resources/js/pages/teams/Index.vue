@@ -19,9 +19,9 @@ const createTeam = async () => {
 
   isSubmitting.value = true;
   try {
-    await teamStore.createTeam({ name: newTeamName.value });
-    newTeamName.value = '';
-    showCreateModal.value = false;
+    const response = await teamStore.createTeam({ name: newTeamName.value });
+    await teamStore.switchTeam(response.id);
+	window.location.reload();
   } catch (error) {
     console.error('Error creating team:', error);
   } finally {
