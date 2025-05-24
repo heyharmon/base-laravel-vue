@@ -30,7 +30,7 @@ class AssignKeywordsToOrganizationsSeeder extends Seeder
             }
 
             // Assign all keywords for this team to the owned organization
-            Keyword::whereNull('organization_id')
+            Keyword::where('team_id', $team->id)
                 ->update(['organization_id' => $ownedOrg->id]);
         }
     }
