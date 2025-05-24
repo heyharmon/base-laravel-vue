@@ -11,20 +11,11 @@ class Mention extends Model
     use HasFactory;
 
     protected $fillable = [
-        'keyword_id',
         'response_id',
         'prompt_id',
         'organization_id',
         'team_id',
     ];
-
-    /**
-     * Get the keyword associated with this mention.
-     */
-    public function keyword(): BelongsTo
-    {
-        return $this->belongsTo(Keyword::class);
-    }
 
     /**
      * Get the response associated with this mention.

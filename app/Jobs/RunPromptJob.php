@@ -32,7 +32,7 @@ class RunPromptJob extends TrackableJob
    * @var \App\Models\Prompt
    */
   protected $prompt;
-  
+
   /**
    * The model to use for job tracking.
    *
@@ -46,7 +46,7 @@ class RunPromptJob extends TrackableJob
    * @var array
    */
   protected $providers;
-  
+
   /**
    * The team ID.
    *
@@ -93,7 +93,7 @@ class RunPromptJob extends TrackableJob
     try {
       // Mark the job as started
       $this->markJobAsStarted();
-      
+
       // Update progress
       $this->updateJobProgress(10, 'Fetching keywords');
 
@@ -103,29 +103,29 @@ class RunPromptJob extends TrackableJob
       }
 
       $responses = [];
-      
+
       $this->updateJobProgress(20, 'Preparing to send prompts to LLMs');
 
       // Run the prompt with each provider
       $totalProviders = count($this->providers);
       $currentProvider = 0;
-      
+
       foreach ($this->providers as $providerName) {
         $currentProvider++;
         $progress = 20 + (60 * ($currentProvider / $totalProviders));
-        
+
         // Setup the LLM provider
-        if (!isset($this->availableProviders[$providerName])) { 
-          continue; 
+        if (!isset($this->availableProviders[$providerName])) {
+          continue;
         }
         [$model, $provider] = $this->availableProviders[$providerName];
-        
+
         $this->updateJobProgress((int)$progress, "Sending prompt to {$providerName}");
-        
+
         try {
           // Get response from the LLM
           $llm = $this->getLlmResponse($this->prompt->content, $model, $provider);
-          
+
           // Store the LLM's response
           $response = $this->prompt->responses()->create([
             'provider' => $providerName,
@@ -152,12 +152,12 @@ class RunPromptJob extends TrackableJob
           Log::error('Error running prompt: ' . $e);
         }
       }
-      
+
       $this->updateJobProgress(90, 'Processing LLM responses');
-      
+
       // Mark the job as completed
       $this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt #' . $this->prompt->id);
-      
+
     } catch (Throwable $exception) {
       Log::error('Prompt run failed: ' . $exception->getMessage());
       $this->markJobAsFailed($exception);
@@ -184,7 +184,7 @@ class RunPromptJob extends TrackableJob
       ->withTools([$searchApiTool])
       ->withToolChoice(ToolChoice::Auto)
       ->asText();
-    
+
     return $response;
   }
 
@@ -202,7 +202,7 @@ class RunPromptJob extends TrackableJob
     foreach ($steps as $step) {
       foreach ($step->toolResults as $tool) {
         if ($tool->toolName == 'search_api') {
-          $searchQueries[] = $tool->args['query']; 
+          $searchQueries[] = $tool->args['query'];
         }
       }
     }
@@ -231,15 +231,15 @@ class RunPromptJob extends TrackableJob
 
     foreach ($keywords as $keyword) {
       $keywordName = strtolower($keyword->name);
-        
+
       // Check if the keyword exists in the response
       if (str_contains($responseText, $keywordName)) {
         $foundKeywords[] = $keyword->id;
         $mentioned = true;
-          
+
         // Update the pivot table for keyword-prompt relationship
         $pivot = $prompt->keywords()->syncWithoutDetaching([$keyword->id]);
-          
+
         // If this is a new relationship, initialize the count
         if (isset($pivot[$keyword->id]) && $pivot[$keyword->id]['created']) {
           $prompt->keywords()->updateExistingPivot($keyword->id, [
@@ -255,25 +255,29 @@ class RunPromptJob extends TrackableJob
         }
       }
     }
-    
-    // Attach found keywords to the response
+
+    // Attach found keywords to the response and record a mention
     if (!empty($foundKeywords)) {
       $response->keywords()->syncWithoutDetaching($foundKeywords);
       
-      // Create mention records for each found keyword
-      foreach ($foundKeywords as $keywordId) {
-        $keyword = Keyword::find($keywordId);
-        
+      // Get unique organization IDs from the found keywords
+      $organizationIds = Keyword::whereIn('id', $foundKeywords)
+        ->select('organization_id')
+        ->distinct()
+        ->pluck('organization_id')
+        ->toArray();
+      
+      // Create one mention per organization that had keywords found
+      foreach ($organizationIds as $organizationId) {
         Mention::create([
-          'keyword_id' => $keywordId,
           'response_id' => $response->id,
           'prompt_id' => $prompt->id,
-          'organization_id' => $keyword->organization_id,
+          'organization_id' => $organizationId,
           'team_id' => $this->teamId,
         ]);
       }
     }
-    
+
     // Update the response with the mentioned flag
     $response->update(['mentioned' => $mentioned]);
   }

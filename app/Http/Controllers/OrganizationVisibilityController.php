@@ -60,26 +60,6 @@ class OrganizationVisibilityController extends Controller
             // Calculate visibility
             $visibility = $totalResponses > 0 ? round(($totalMentions / $totalResponses) * 100, 2) : 0;
             
-            // Get keyword mentions breakdown
-            $keywordMentions = DB::table('mentions')
-                ->join('keywords', 'mentions.keyword_id', '=', 'keywords.id')
-                ->select('keywords.name', DB::raw('count(*) as count'))
-                ->where('mentions.organization_id', $organization->id)
-                ->where('mentions.team_id', $teamId);
-                
-            // Apply date filters if provided
-            if ($startDate) {
-                $keywordMentions->where('mentions.created_at', '>=', $startDate);
-            }
-            
-            if ($endDate) {
-                $keywordMentions->where('mentions.created_at', '<=', $endDate);
-            }
-            
-            $keywordMentions = $keywordMentions->groupBy('keywords.name')
-                ->orderBy('count', 'desc')
-                ->get();
-            
             $results[] = [
                 'id' => $organization->id,
                 'name' => $organization->name,
@@ -87,7 +67,6 @@ class OrganizationVisibilityController extends Controller
                 'total_mentions' => $totalMentions,
                 'total_responses' => $totalResponses,
                 'visibility' => $visibility,
-                'keyword_mentions' => $keywordMentions,
             ];
         }
         
