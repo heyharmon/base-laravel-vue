@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useTeamStore } from '@/stores/teamStore';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import Button from '@/components/ui/Button.vue';
 import Modal from '@/components/ui/Modal.vue';
 
+const router = useRouter();
 const teamStore = useTeamStore();
 const showCreateModal = ref(false);
 const newTeamName = ref('');
@@ -19,9 +21,8 @@ const createTeam = async () => {
 
   isSubmitting.value = true;
   try {
-    const response = await teamStore.createTeam({ name: newTeamName.value });
-    await teamStore.switchTeam(response.id);
-	window.location.reload();
+    await teamStore.createTeam({ name: newTeamName.value });
+    router.push({ name: 'organizations.create' });
   } catch (error) {
     console.error('Error creating team:', error);
   } finally {

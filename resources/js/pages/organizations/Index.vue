@@ -1,45 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useOrganizationStore } from '@/stores/organizationStore';
+import { useRouter } from 'vue-router';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import Button from '@/components/ui/Button.vue';
-import Modal from '@/components/ui/Modal.vue';
 
 const organizationStore = useOrganizationStore();
-const showCreateModal = ref(false);
-const newOrganization = ref({
-  name: '',
-  website: '',
-  is_competitor: true
-});
-const isSubmitting = ref(false);
+const router = useRouter();
 
 onMounted(async () => {
   await organizationStore.fetchOrganizations();
 });
-
-const createOrganization = async () => {
-  if (!newOrganization.value.name) return;
-
-  isSubmitting.value = true;
-  try {
-    await organizationStore.createOrganization(newOrganization.value);
-    resetNewOrganization();
-    showCreateModal.value = false;
-  } catch (error) {
-    console.error('Error creating organization:', error);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const resetNewOrganization = () => {
-  newOrganization.value = {
-    name: '',
-    website: '',
-    is_competitor: true
-  };
-};
 
 const deleteOrganization = async (organizationId) => {
   if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
@@ -59,7 +30,7 @@ const deleteOrganization = async (organizationId) => {
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Keywords</h1>
-        <Button @click="showCreateModal = true">Add organization</Button>
+        <Button @click="router.push({ name: 'organizations.create' })">Add organization</Button>
       </div>
 
       <!-- Loading state -->
@@ -146,60 +117,7 @@ const deleteOrganization = async (organizationId) => {
         </div>
       </div>
 
-      <Modal
-        :isOpen="showCreateModal"
-        title="Add organization"
-        @close="showCreateModal = false"
-      >
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Organization name</label>
-            <input
-              v-model="newOrganization.name"
-              type="text"
-              class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter organization name"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Website</label>
-            <input
-              v-model="newOrganization.website"
-              type="text"
-              class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter website URL"
-            />
-          </div>
-		  <div class="flex items-center">
-              <input
-                id="is-competitor"
-                v-model="newOrganization.is_competitor"
-                type="checkbox"
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-neutral-300 rounded"
-              />
-              <label for="is-competitor" class="ml-2 block text-sm text-neutral-700">
-                This is a competitor organization
-              </label>
-            </div>
-        </div>
 
-        <template #footer>
-		<Button
-            @click="createOrganization"
-            :disabled="isSubmitting || !newOrganization.name"
-            variant="dark"
-			class="ml-2"
-          >
-            {{ isSubmitting ? 'Creating...' : 'Add organization' }}
-          </Button>
-          <Button
-            @click="showCreateModal = false"
-            variant="neutral"
-          >
-            Cancel
-          </Button>
-        </template>
-      </Modal>
     </div>
   </DefaultLayout>
 </template>
