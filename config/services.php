@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'pdl' => [
+        'api_key' => env('PEOPLE_DATA_LABS_API_KEY'),
+    ],
+
 ];
