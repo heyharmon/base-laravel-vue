@@ -112,7 +112,7 @@ export const useOrganizationStore = defineStore('organization', () => {
   }
 
   async function fetchVisibilityMetrics(params = {}) {
-	console.log('Fetching visibility metrics...')
+        console.log('Fetching visibility metrics...')
     isLoadingVisibility.value = true;
     error.value = null;
 
@@ -135,6 +135,15 @@ export const useOrganizationStore = defineStore('organization', () => {
     }
   }
 
+  async function searchExternalOrganizations(query, size = 10) {
+    try {
+      return await api.get('/organization-search', { params: { query, size } });
+    } catch (err) {
+      console.error('Error searching organizations:', err);
+      return [];
+    }
+  }
+
   return {
     // State
     organizations,
@@ -154,6 +163,7 @@ export const useOrganizationStore = defineStore('organization', () => {
     createOrganization,
     updateOrganization,
     deleteOrganization,
-    fetchVisibilityMetrics
+    fetchVisibilityMetrics,
+    searchExternalOrganizations
   };
 });

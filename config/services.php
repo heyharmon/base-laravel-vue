@@ -46,4 +46,8 @@ return [
     'searchapi' => [
         'api_key' => env('SEARCHAPIIO_API_KEY'),
     ],
+
+    'peopledatalabs' => [
+        'api_key' => env('PEOPLEDATALABS_API_KEY'),
+    ],
 ];

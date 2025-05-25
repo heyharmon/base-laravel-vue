@@ -21,6 +21,7 @@ use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationVisibilityController;
+use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
@@ -48,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Core resources
     Route::middleware(EnsureHasTeam::class)->group(function () {
         Route::resource('organizations', OrganizationController::class);
+        Route::get('organization-search', OrganizationSearchController::class);
         Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
         Route::resource('organizations/{organization}/keywords', KeywordController::class);
         Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']); // TODO: Test
