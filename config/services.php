@@ -46,4 +46,8 @@ return [
     'searchapi' => [
         'api_key' => env('SEARCHAPIIO_API_KEY'),
     ],
+
+    'brandfetch' => [
+        'api_key' => env('BRANDFETCH_API_KEY'),
+    ],
 ];
