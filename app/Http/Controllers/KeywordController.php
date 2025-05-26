@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\CheckKeywordInPastResponsesJob;
 use App\Models\Keyword;
 use App\Models\Organization;
 use Illuminate\Http\Request;
@@ -62,7 +63,12 @@ class KeywordController extends Controller
           return response()->json(['message' => 'Organization not found'], 404);
         }
 
+        // Create keyword with both organization_id and team_id
+        $validated['team_id'] = $teamId;
         $keyword = $organization->keywords()->create($validated);
+        
+        // Dispatch job to check for this keyword in past responses
+        CheckKeywordInPastResponsesJob::dispatch($keyword);
         
         return response()->json($keyword, 201);
     }
