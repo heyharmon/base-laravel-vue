@@ -22,7 +22,7 @@ use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
-use App\Http\Controllers\KeywordProcessController;
+use App\Http\Controllers\KeywordCheckInPastResponsesController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
@@ -54,8 +54,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('organization-search', [OrganizationSearchController::class, 'search']);
         Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']);
         Route::resource('organizations/{organization}/keywords', KeywordController::class);
-        Route::post('keywords/{keyword}/process', [KeywordProcessController::class, 'processNewKeyword']);
-        Route::post('organizations/{organization}/process-keywords', [KeywordProcessController::class, 'processOrganizationKeywords']);
+        Route::post('keywords/{keyword}/process', [KeywordCheckInPastResponsesController::class, 'processNewKeyword']);
+        // Route::post('organizations/{organization}/process-keywords', [KeywordCheckInPastResponsesController::class, 'processOrganizationKeywords']);
         Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']); // TODO: Test
 
         Route::resource('prompts', PromptController::class);
