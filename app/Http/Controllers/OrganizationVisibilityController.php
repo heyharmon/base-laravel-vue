@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Keyword;
 use App\Models\Organization;
-use App\Models\Mention;
 use App\Models\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,30 +32,52 @@ class OrganizationVisibilityController extends Controller
 
         $results = [];
 
+        // Build query for all responses
+        $responsesQuery = Response::whereHas('prompt', function ($query) use ($teamId) {
+            $query->where('team_id', $teamId);
+        });
+
+        // Apply date filters to responses if provided
+        if ($startDate) {
+            $responsesQuery->where('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $responsesQuery->where('created_at', '<=', $endDate);
+        }
+
+        // Get total responses count
+        $totalResponses = $responsesQuery->count();
+
         foreach ($organizations as $organization) {
-            // Build query for mentions
-            $mentionsQuery = Mention::where('team_id', $teamId)
-                ->where('organization_id', $organization->id);
+            // Get all keywords for this organization
+            $keywordIds = Keyword::where('organization_id', $organization->id)
+                ->pluck('id')
+                ->toArray();
 
-            // Build query for responses
-            $responsesQuery = Response::whereHas('prompt', function ($query) use ($teamId) {
-                $query->where('team_id', $teamId);
-            });
+            // If organization has no keywords, set counts to 0
+            if (empty($keywordIds)) {
+                $totalMentions = 0;
+            } else {
+                // Find responses that contain at least one keyword from this organization
+                $responseQuery = Response::whereHas('prompt', function ($query) use ($teamId) {
+                    $query->where('team_id', $teamId);
+                })->whereHas('keywords', function ($query) use ($keywordIds) {
+                    $query->whereIn('keywords.id', $keywordIds);
+                });
 
-            // Apply date filters if provided
-            if ($startDate) {
-                $mentionsQuery->where('created_at', '>=', $startDate);
-                $responsesQuery->where('created_at', '>=', $startDate);
+                // Apply date filters to responses if provided
+                if ($startDate) {
+                    $responseQuery->where('responses.created_at', '>=', $startDate);
+                }
+
+                if ($endDate) {
+                    $responseQuery->where('responses.created_at', '<=', $endDate);
+                }
+
+                // Count responses with keywords from this organization
+                $totalMentions = $responseQuery->count();
             }
-
-            if ($endDate) {
-                $mentionsQuery->where('created_at', '<=', $endDate);
-                $responsesQuery->where('created_at', '<=', $endDate);
-            }
-
-            // Count mentions and responses
-            $totalMentions = $mentionsQuery->count();
-            $totalResponses = $responsesQuery->count();
 
             // Calculate visibility
             $visibility = $totalResponses > 0 ? round(($totalMentions / $totalResponses) * 100, 2) : 0;

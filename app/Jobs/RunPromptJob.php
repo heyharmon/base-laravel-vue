@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Keyword;
-use App\Models\Mention;
 use App\Models\Prompt;
 use App\Models\Response;
 use App\Tools\SearchApiTool;
@@ -142,9 +141,6 @@ class RunPromptJob extends TrackableJob
           $this->saveSearchToolResults($llm->steps, $response);
 
           // Check for keywords in the response
-          // $keywords = Keyword::whereHas('organization', function ($query) {
-          //     $query->where('team_id', $this->teamId);
-          // })->get();
           $this->checkForKeywords($response, $this->prompt);
 
         } catch (\Exception $e) {
@@ -259,23 +255,6 @@ class RunPromptJob extends TrackableJob
     // Attach found keywords to the response and record a mention
     if (!empty($foundKeywords)) {
       $response->keywords()->syncWithoutDetaching($foundKeywords);
-      
-      // Get unique organization IDs from the found keywords
-      $organizationIds = Keyword::whereIn('id', $foundKeywords)
-        ->select('organization_id')
-        ->distinct()
-        ->pluck('organization_id')
-        ->toArray();
-      
-      // Create one mention per organization that had keywords found
-      foreach ($organizationIds as $organizationId) {
-        Mention::create([
-          'response_id' => $response->id,
-          'prompt_id' => $prompt->id,
-          'organization_id' => $organizationId,
-          'team_id' => $this->teamId,
-        ]);
-      }
     }
 
     // Update the response with the mentioned flag
