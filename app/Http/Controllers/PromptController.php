@@ -14,10 +14,18 @@ class PromptController extends Controller
         // TODO: Change this if adding projects model
         $teamId = Auth::user()->current_team_id;
         $prompts = Prompt::where('team_id', $teamId)
-            ->withCount(['keywords', 'responses'])
+            ->withCount([
+				// Count keywords that are not competitor keywords
+                'keywords' => function($query) use ($teamId) {
+                    $query->whereHas('organization', function($q) {
+                        $q->where('is_competitor', false);
+                    });
+                },
+                'responses'
+            ])
             ->latest()
             ->get();
-        
+
         return response()->json($prompts);
     }
 
@@ -30,7 +38,7 @@ class PromptController extends Controller
         }
 
         $prompt->load('keywords');
-        
+
         return response()->json($prompt);
     }
 
@@ -41,13 +49,13 @@ class PromptController extends Controller
             'content' => 'required|string',
             'description' => 'nullable|string',
         ]);
-        
+
         // Add the team_id to the validated data
         // TODO: Change this if adding projects model
         $validated['team_id'] = Auth::user()->current_team_id;
 
         $prompt = Prompt::create($validated);
-        
+
         return response()->json($prompt, 201);
     }
 
@@ -58,7 +66,7 @@ class PromptController extends Controller
         if ($prompt->team_id !== Auth::user()->current_team_id) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        
+
         $validated = $request->validate([
             'name' => 'nullable|string',
             'content' => 'required|string',
@@ -66,7 +74,7 @@ class PromptController extends Controller
         ]);
 
         $prompt->update($validated);
-        
+
         return response()->json($prompt);
     }
 
@@ -77,9 +85,9 @@ class PromptController extends Controller
         if ($prompt->team_id !== Auth::user()->current_team_id) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        
+
         $prompt->delete();
-        
+
         return response()->json(null, 204);
     }
 }
