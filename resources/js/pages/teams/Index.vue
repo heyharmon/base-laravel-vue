@@ -1,36 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTeamStore } from '@/stores/teamStore';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import Button from '@/components/ui/Button.vue';
-import Modal from '@/components/ui/Modal.vue';
 
 const router = useRouter();
 const teamStore = useTeamStore();
-const showCreateModal = ref(false);
-const newTeamName = ref('');
-const isSubmitting = ref(false);
 
 onMounted(async () => {
   await teamStore.fetchTeams();
 });
 
-const createTeam = async () => {
-  if (!newTeamName.value) return;
 
-  isSubmitting.value = true;
-  try {
-    let team = await teamStore.createTeam({ name: newTeamName.value });
-	console.log('Team created:', team)
-	await teamStore.switchTeam(team.id);
-    router.push({ name: 'organizations.create' });
-  } catch (error) {
-    console.error('Error creating team:', error);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
 
 const acceptInvitation = async (teamId) => {
   try {
@@ -54,7 +36,7 @@ const declineInvitation = async (teamId) => {
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Teams</h1>
-        <Button @click="showCreateModal = true">Create Team</Button>
+        <Button @click="router.push({ name: 'teams.create' })">Create Team</Button>
       </div>
 
       <!-- Loading state -->
@@ -165,39 +147,7 @@ const declineInvitation = async (teamId) => {
         </div>
       </div>
 
-      <!-- Create Team Modal -->
-      <Modal
-        :isOpen="showCreateModal"
-        title="Create New Team"
-        @close="showCreateModal = false"
-      >
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-neutral-700 mb-1">Team Name</label>
-          <input
-            v-model="newTeamName"
-            type="text"
-            class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter team name"
-          />
-        </div>
 
-        <template #footer>
-			<Button
-            @click="createTeam"
-            :disabled="isSubmitting || !newTeamName"
-            variant="dark"
-			class="ml-2"
-          >
-            {{ isSubmitting ? 'Creating...' : 'Create Team' }}
-          </Button>
-          <Button
-            @click="showCreateModal = false"
-            variant="neutral"
-          >
-            Cancel
-          </Button>
-        </template>
-      </Modal>
     </div>
   </DefaultLayout>
 </template>
