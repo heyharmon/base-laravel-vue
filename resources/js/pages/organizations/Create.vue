@@ -11,13 +11,21 @@ const router = useRouter();
 const organizationStore = useOrganizationStore();
 const isSubmitting = ref(false);
 const isSearching = ref(false);
+const isLoadingDetails = ref(false);
 const searchQuery = ref('');
 const searchResults = ref([]);
 const searchTimeout = ref(null);
 const organization = ref({
   name: '',
   website: '',
-  is_competitor: true
+  is_competitor: true,
+  founded: null,
+  employee_count: null,
+  location: '',
+  description: '',
+  logo: '',
+  industry: '',
+  hasDetails: false
 });
 
 // Check if the search query is a valid domain
@@ -53,10 +61,77 @@ watch(searchQuery, (newQuery) => {
 
 // Select an organization from search results
 const selectOrganization = (result) => {
+  console.log('Selected organization...', result);
   organization.value.name = result.name || '';
   organization.value.website = result.domain || '';
+  organization.value.logo = result.icon || '';
   searchQuery.value = '';
   searchResults.value = [];
+
+  // Fetch brand details for the selected organization
+//   if (result.domain) {
+//     fetchBrandDetails(result.domain);
+//   }
+};
+
+// Fetch brand details from the API
+const fetchBrandDetails = async (domain) => {
+  if (!domain) return;
+
+  isLoadingDetails.value = true;
+  // Reset details fields
+  organization.value.description = '';
+  organization.value.logo = '';
+  organization.value.industry = '';
+  organization.value.hasDetails = false;
+
+  try {
+    const response = await api.get('/brand-details', {
+      params: { identifier: domain }
+    });
+    const details = response.details;
+
+    // Update organization with additional details if available
+    if (details) {
+      if (details.name) {
+        organization.value.name = details.name;
+      }
+      if (details.description) {
+        organization.value.description = details.description;
+      }
+      if (details.company?.foundedYear) {
+        organization.value.founded = details.company.foundedYear;
+      }
+      if (details.company?.employees) {
+        organization.value.employee_count = details.company.employees;
+      }
+
+      // Add location information if available
+      if (details.company?.location) {
+        const location = details.company.location;
+        const locationParts = [location.city, location.state, location.country].filter(Boolean);
+        if (locationParts.length > 0) {
+          organization.value.location = locationParts.join(', ');
+        }
+      }
+
+      // Add logo if available
+      if (details.logos && details.logos.length > 0 && details.logos[0]?.formats?.length > 0) {
+        organization.value.logo = details.logos[0].formats[0].src;
+      }
+
+      // Add industry if available
+      if (details.company?.industries && details.company.industries.length > 0) {
+        organization.value.industry = details.company.industries[0].name;
+      }
+
+      organization.value.hasDetails = true;
+    }
+  } catch (error) {
+    console.error('Error fetching brand details:', error);
+  } finally {
+    isLoadingDetails.value = false;
+  }
 };
 
 // Create organization from domain
@@ -71,6 +146,9 @@ const createFromDomain = () => {
     }
     searchQuery.value = '';
     searchResults.value = [];
+
+    // Fetch brand details for the domain
+    fetchBrandDetails(organization.value.website);
   }
 };
 
@@ -79,7 +157,8 @@ const createOrganization = async () => {
 
   isSubmitting.value = true;
   try {
-    await organizationStore.createOrganization(organization.value);
+    let response = await organizationStore.createOrganization(organization.value);
+    console.log(response);
     router.push({ name: 'organizations.index' });
   } catch (error) {
     console.error('Error creating organization:', error);
@@ -158,7 +237,60 @@ const createOrganization = async () => {
               </ul>
             </div>
           </div>
-          <!-- Competitor name and website fields removed, but properties still exist in the organization ref -->
+
+          <!-- Organization Preview Card -->
+          <div v-if="organization.website">
+            <div v-if="isLoadingDetails" class="flex justify-center py-8">
+              <Spinner class="h-8 w-8" />
+            </div>
+
+            <div v-else-if="organization.hasDetails" class="p-6 mt-4 border rounded-md">
+              <div class="flex items-start gap-6">
+                <!-- Logo -->
+                <div v-if="organization.logo" class="flex-shrink-0">
+                  <img
+                    :src="organization.logo"
+                    :alt="organization.name + ' logo'"
+                    class="h-16 w-16 object-contain bg-white rounded-md border border-neutral-200"
+                  />
+                </div>
+
+                <!-- Organization Details -->
+                <div class="flex-grow">
+                  <h3 class="text-xl font-semibold text-neutral-900">{{ organization.name }}</h3>
+                  <p class="text-sm text-neutral-500 mt-1">{{ organization.website }}</p>
+
+                  <p v-if="organization.description" class="mt-3 text-neutral-700">
+                    {{ organization.description }}
+                  </p>
+
+                  <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div v-if="organization.founded" class="flex items-center gap-2">
+                      <span class="font-medium">Founded:</span> {{ organization.founded }}
+                    </div>
+
+                    <div v-if="organization.industry" class="flex items-center gap-2">
+                      <span class="font-medium">Industry:</span> {{ organization.industry }}
+                    </div>
+
+                    <div v-if="organization.location" class="flex items-center gap-2 col-span-2">
+                      <span class="font-medium">Location:</span> {{ organization.location }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="mt-4">
+              <div class="flex items-center gap-4 p-6 border border-neutral-200 rounded-md bg-neutral-50">
+				<img v-if="organization.logo" :src="organization.logo" :alt="organization.name + ' logo'" class="h-16 w-16 object-contain bg-white rounded-md border border-neutral-200"/>
+                <div>
+					<h3 class="text-md font-medium">{{ organization.name }}</h3>
+                	<p class="text-sm text-neutral-500">{{ organization.website }}</p>
+				</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="mt-6 flex justify-end space-x-2">

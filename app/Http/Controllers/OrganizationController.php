@@ -14,7 +14,7 @@ class OrganizationController extends Controller
     public function index(): JsonResponse
     {
         $organizations = request()->user()->currentTeam->organizations;
-        
+
         return response()->json($organizations);
     }
 
@@ -26,13 +26,21 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'website' => 'nullable|string|max:255',
+            'logo' => 'nullable|string|max:1000',
+            'color' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:255',
+            'long_description' => 'nullable|string|max:65535',
+            'industry' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
             'founded' => 'nullable|string|max:255',
             'employee_count' => 'nullable|string|max:255',
             'is_competitor' => 'boolean',
         ]);
-        
+
         $organization = request()->user()->currentTeam->organizations()->create($validated);
-        
+
         return response()->json($organization, 201);
     }
 
@@ -45,7 +53,7 @@ class OrganizationController extends Controller
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         return response()->json($organization);
     }
 
@@ -58,17 +66,25 @@ class OrganizationController extends Controller
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         $validated = $request->validate([
             'name' => 'sometimes|nullable|string|max:255',
             'website' => 'sometimes|nullable|string|max:255',
+            'logo' => 'sometimes|nullable|string|max:1000',
+            'color' => 'sometimes|nullable|string|max:255',
+            'description' => 'sometimes|nullable|string|max:255',
+            'long_description' => 'sometimes|nullable|string|max:65535',
+            'industry' => 'sometimes|nullable|string|max:255',
+            'city' => 'sometimes|nullable|string|max:255',
+            'state' => 'sometimes|nullable|string|max:255',
+            'country' => 'sometimes|nullable|string|max:255',
             'founded' => 'sometimes|nullable|string|max:255',
             'employee_count' => 'sometimes|nullable|string|max:255',
             'is_competitor' => 'sometimes|boolean',
         ]);
-        
+
         $organization->update($validated);
-        
+
         return response()->json($organization);
     }
 
@@ -81,14 +97,14 @@ class OrganizationController extends Controller
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         // Prevent deleting the default organization (non-competitor)
         if (!$organization->is_competitor) {
             return response()->json(['message' => 'Cannot delete the default organization'], 422);
         }
-        
+
         $organization->delete();
-        
+
         return response()->json(null, 204);
     }
 }

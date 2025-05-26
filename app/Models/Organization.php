@@ -18,6 +18,7 @@ class Organization extends Model
         'website',
         'founded',
         'employee_count',
+        'location',
         'is_competitor',
     ];
 
