@@ -38,10 +38,10 @@ const createTeamAndOrganization = async () => {
 	isSubmitting.value = true
 	try {
 		let team = await teamStore.createTeam({ name: organization.value.name })
-		let organization = await organizationStore.createOrganization(organization.value)
+		await organizationStore.createOrganization(organization.value)
 
 		await teamStore.switchTeam(team.id)
-		router.push({ name: 'dashboard' })
+		router.push({ name: 'organizations.index' })
 	} catch (error) {
 		console.error('Error creating team and organization:', error)
 	} finally {
