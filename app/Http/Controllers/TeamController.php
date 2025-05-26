@@ -79,10 +79,10 @@ class TeamController extends Controller
         $this->switchTeam($team);
 
         // Create a default organization for the team
-        $team->organizations()->create([
-            'name' => $team->name,
-            'is_competitor' => false,
-        ]);
+        // $team->organizations()->create([
+        //     'name' => $team->name,
+        //     'is_competitor' => false,
+        // ]);
 
         return response()->json($team, 201);
     }

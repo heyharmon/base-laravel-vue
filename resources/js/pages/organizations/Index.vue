@@ -30,7 +30,9 @@ const deleteOrganization = async (organizationId) => {
     <div class="container mx-auto py-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Keywords</h1>
-        <Button @click="router.push({ name: 'organizations.create' })">Add competitor</Button>
+        <Button @click="router.push({ name: 'organizations.create' })">
+			{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
+		</Button>
       </div>
 
       <!-- Loading state -->
@@ -58,7 +60,12 @@ const deleteOrganization = async (organizationId) => {
             >
               <div class="flex justify-between items-start">
                 <h3 class="text-lg font-medium">{{ org.name || 'Unnamed Organization' }}</h3>
-                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your organization</span>
+				<img
+                    :src="org.logo"
+                    :alt="org.name + ' logo'"
+                    class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
+                  />
+                <!-- <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your organization</span> -->
               </div>
               <div class="mt-2 text-sm text-neutral-600">
                 <div v-if="org.website">Website: {{ org.website }}</div>
@@ -91,7 +98,12 @@ const deleteOrganization = async (organizationId) => {
             >
               <div class="flex justify-between items-start">
                 <h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
-                <span class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded">Competitor</span>
+				<img
+                    :src="org.logo"
+                    :alt="org.name + ' logo'"
+                    class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
+                  />
+                <!-- <span class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded">Competitor</span> -->
               </div>
               <div class="mt-2 text-sm text-neutral-600">
                 <div v-if="org.website">Website: {{ org.website }}</div>

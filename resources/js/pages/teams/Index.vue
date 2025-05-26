@@ -21,7 +21,9 @@ const createTeam = async () => {
 
   isSubmitting.value = true;
   try {
-    await teamStore.createTeam({ name: newTeamName.value });
+    let team = await teamStore.createTeam({ name: newTeamName.value });
+	console.log('Team created:', team)
+	await teamStore.switchTeam(team.id);
     router.push({ name: 'organizations.create' });
   } catch (error) {
     console.error('Error creating team:', error);

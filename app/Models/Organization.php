@@ -12,20 +12,14 @@ class Organization extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'team_id',
-        'name',
-        'website',
-        'founded',
-        'employee_count',
-        'location',
-        'is_competitor',
-    ];
+	protected $guarded = [
+		'id', 'team_id'
+	];
 
     protected $casts = [
         'is_competitor' => 'boolean',
     ];
-    
+
     protected $appends = [
         'visibility',
     ];
@@ -45,7 +39,7 @@ class Organization extends Model
     {
         return $this->hasMany(Keyword::class);
     }
-    
+
     /**
      * Get the mentions that belong to the organization.
      */
@@ -53,7 +47,7 @@ class Organization extends Model
     {
         return $this->hasMany(Mention::class);
     }
-    
+
     /**
      * Calculate the visibility percentage for this organization.
      * Visibility is defined as the total mentions divided by total responses.
@@ -62,19 +56,19 @@ class Organization extends Model
     {
         // Get the team_id for this organization
         $teamId = $this->team_id;
-        
+
         // Count total responses for this team
         $totalResponses = Response::whereHas('prompt', function ($query) use ($teamId) {
             $query->where('team_id', $teamId);
         })->count();
-        
+
         if ($totalResponses === 0) {
             return 0;
         }
-        
+
         // Count total mentions for this organization
         $totalMentions = $this->mentions()->count();
-        
+
         return round(($totalMentions / $totalResponses) * 100, 2);
     }
 }
