@@ -50,4 +50,30 @@ class BrandFetchService
             throw $e;
         }
     }
+
+    /**
+     * Get detailed information about a specific brand
+     *
+     * @param string $identifier Domain identifier (e.g. google.com)
+     * @return array
+     * @throws RequestException
+     */
+    public function getBrandDetails(string $identifier): array
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+            ])->get($this->baseUrl . '/brands/' . $identifier);
+
+            return $response->json();
+
+        } catch (\Exception $e) {
+            Log::error('BrandFetch API error', [
+                'message' => $e->getMessage(),
+                'identifier' => $identifier,
+                'api_key_length' => strlen($this->apiKey),
+            ]);
+            throw $e;
+        }
+    }
 }

@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::resource('organizations', OrganizationController::class);
         Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
         Route::get('organization-search', [OrganizationSearchController::class, 'search']);
+        Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']);
         Route::resource('organizations/{organization}/keywords', KeywordController::class);
         Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']); // TODO: Test
 
