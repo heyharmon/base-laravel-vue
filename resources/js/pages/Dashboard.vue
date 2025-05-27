@@ -229,8 +229,7 @@ onMounted(async () => {
 									>
 										<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 											<img
-												v-if="org.logo"
-												:src="org.logo"
+												:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
 												class="size-6 object-contain bg-white rounded-md border border-neutral-200"
 											/>
 											<span>{{
