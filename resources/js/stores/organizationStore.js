@@ -62,7 +62,7 @@ export const useOrganizationStore = defineStore('organization', () => {
     try {
       const response = await api.post('/organizations', organizationData);
       await fetchOrganizations();
-      return response.data;
+      return response; // API interceptor already extracts response.data
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to create organization';
       console.error('Error creating organization:', err);

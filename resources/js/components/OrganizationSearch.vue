@@ -10,7 +10,7 @@ const props = defineProps({
 	},
 	placeholder: {
 		type: String,
-		default: 'Search for a company...'
+		default: 'Enter the website domain'
 	}
 })
 
@@ -124,11 +124,25 @@ const createFromDomain = () => {
 		</div>
 
 		<!-- Search results -->
-		<div
-			v-if="searchQuery.length >= 2 && !isSearching"
-			class="mt-1 bg-white border border-neutral-300 rounded-md shadow-sm max-h-60 overflow-y-auto"
-		>
+		<div v-if="searchQuery.length >= 2 && !isSearching" class="mt-1 bg-white border border-neutral-300 rounded-md shadow-sm max-h-60 overflow-y-auto">
 			<ul>
+				<li
+					v-if="isDomain"
+					@click="createFromDomain"
+					@keydown.enter="createFromDomain"
+					class="px-3 py-2 bg-neutral-100 hover:bg-neutral-200/60 cursor-pointer border-b border-neutral-200 last:border-t-0"
+				>
+					<div class="flex items-center justify-between">
+						<div>
+							<div class="font-medium text-neutral-700">Create new competitor</div>
+							<div class="text-sm text-neutral-500">Create from "{{ searchQuery }}"</div>
+						</div>
+						<div class="flex items-center gap-2 bg-white hover:bg-neutral-100/50 border border-neutral-900 px-2 rounded text-sm text-neutral-900">
+							<span class="pt-1">↵</span> Press enter
+						</div>
+					</div>
+				</li>
+
 				<li
 					v-for="result in searchResults"
 					:key="result.domain"
@@ -146,29 +160,33 @@ const createFromDomain = () => {
 					</div>
 				</li>
 
-				<!-- Empty state with domain detection -->
-				<li
-					v-if="searchResults.length === 0"
+				<!-- Empty state when no results -->
+				<li v-if="searchResults.length === 0 && !isDomain" class="px-3 py-2 border-b border-neutral-200 last:border-b-0">
+					<div class="flex items-center justify-between">
+						<div>
+							<div class="font-medium text-neutral-700">No organization found</div>
+							<div class="text-sm text-neutral-500">Try searching with a domain name</div>
+						</div>
+					</div>
+				</li>
+
+				<!-- Domain detection option (always shown when valid domain is typed) -->
+				<!-- <li
+					v-if="isDomain"
 					@click="createFromDomain"
 					@keydown.enter="createFromDomain"
 					class="px-3 py-2 hover:bg-neutral-100 cursor-pointer border-b border-neutral-200 last:border-b-0"
 				>
 					<div class="flex items-center justify-between">
 						<div>
-							<div class="font-medium text-neutral-700">No organization found</div>
-							<div v-if="isDomain" class="text-sm text-neutral-500">
-								Create new competitor from "{{ searchQuery }}"
-							</div>
-							<div v-else class="text-sm text-neutral-500">Try searching with a domain name</div>
+							<div class="font-medium text-neutral-700">Create new competitor</div>
+							<div class="text-sm text-neutral-500">Create from "{{ searchQuery }}"</div>
 						</div>
-						<div
-							v-if="isDomain"
-							class="flex items-center gap-2 border px-2 rounded text-sm text-neutral-500"
-						>
+						<div class="flex items-center gap-2 border border-neutral-900 px-2 rounded text-sm text-neutral-900">
 							<span class="pt-1">↵</span> Press enter
 						</div>
 					</div>
-				</li>
+				</li> -->
 			</ul>
 		</div>
 	</div>
