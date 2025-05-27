@@ -81,6 +81,19 @@ const updateOrganization = async () => {
 	}
 }
 
+const deleteOrganization = async () => {
+	if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
+		return
+	}
+
+	try {
+		await organizationStore.deleteOrganization(route.params.id)
+		router.push({ name: 'organizations.index' })
+	} catch (error) {
+		console.error('Error deleting organization:', error)
+	}
+}
+
 const cancelEdit = () => {
 	router.push({ name: 'organizations.index' })
 }
@@ -94,6 +107,7 @@ const cancelEdit = () => {
 					<div class="flex items-center gap-2">
 						<img
 							:src="`https://cdn.brandfetch.io/${organization.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
+							:alt="organization.name + ' logo'"
 							class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 						/>
 						<h1 class="text-2xl font-bold">{{ organization.name }}</h1>
@@ -105,7 +119,16 @@ const cancelEdit = () => {
 						Competitor
 					</span>
 				</div>
-				<Button @click="cancelEdit" variant="neutral"> Back </Button>
+				<div class="flex gap-4">
+					<button
+						v-if="organization.is_competitor"
+						@click="deleteOrganization"
+						class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+					>
+						Delete
+					</button>
+					<Button @click="cancelEdit" variant="neutral"> Back </Button>
+				</div>
 			</div>
 
 			<!-- Loading state -->

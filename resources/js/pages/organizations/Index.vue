@@ -56,15 +56,18 @@ const deleteOrganization = async (organizationId) => {
 						You don't have an organization yet.
 					</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<div
+						<router-link
 							v-for="org in organizationStore.ownedOrganizations"
 							:key="org.id"
-							class="bg-neutral-100 p-4 rounded-lg shadow"
+							:to="{ name: 'organizations.edit', params: { id: org.id } }"
+							class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 						>
 							<div class="flex justify-between items-start">
 								<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Organization' }}</h3>
 								<img
+									v-if="org.website"
 									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
+									:alt="org.name + ' logo'"
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
 								<!-- <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your organization</span> -->
@@ -75,14 +78,11 @@ const deleteOrganization = async (organizationId) => {
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
-								<router-link
-									:to="{ name: 'organizations.edit', params: { id: org.id } }"
-									class="text-blue-600 hover:text-blue-800 text-sm font-medium"
-								>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
 									Edit
-								</router-link>
+								</button>
 							</div>
-						</div>
+						</router-link>
 					</div>
 				</div>
 
@@ -93,15 +93,17 @@ const deleteOrganization = async (organizationId) => {
 						You haven't added any competitors yet.
 					</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<div
+						<router-link
 							v-for="org in organizationStore.competitorOrganizations"
 							:key="org.id"
-							class="bg-neutral-100 p-4 rounded-lg shadow"
+							:to="{ name: 'organizations.edit', params: { id: org.id } }"
+							class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 						>
 							<div class="flex justify-between items-start">
 								<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
 								<img
-									:src="org.logo"
+									v-if="org.website"
+									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
 									:alt="org.name + ' logo'"
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
@@ -113,20 +115,11 @@ const deleteOrganization = async (organizationId) => {
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
-								<router-link
-									:to="{ name: 'organizations.edit', params: { id: org.id } }"
-									class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-2"
-								>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
 									Edit
-								</router-link>
-								<button
-									@click="deleteOrganization(org.id)"
-									class="text-red-600 hover:text-red-800 text-sm font-medium"
-								>
-									Delete
 								</button>
 							</div>
-						</div>
+						</router-link>
 					</div>
 				</div>
 			</div>
