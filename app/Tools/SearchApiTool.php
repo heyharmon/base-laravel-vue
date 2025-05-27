@@ -35,8 +35,8 @@ class SearchApiTool extends Tool
                 'link' => $result['url'] ?? '',
                 'snippet' => $result['snippet'] ?? '',
             ];
-        })->take(4);
-        
+        })->take(10);
+
         return view('prompts.search-tool-results', [
             'results' => $results,
         ])->render();
