@@ -83,12 +83,8 @@ const createTeamAndOrganization = async () => {
 				</div>
 
 				<div class="mt-6 flex justify-end space-x-2">
-					<Button @click="router.push({ name: 'teams.index' })" variant="neutral"> Cancel </Button>
-					<Button
-						@click="createTeamAndOrganization"
-						:disabled="isSubmitting || !organization.name"
-						variant="dark"
-					>
+					<!-- <Button @click="router.push({ name: 'teams.index' })" variant="neutral"> Cancel </Button> -->
+					<Button @click="createTeamAndOrganization" :disabled="isSubmitting || !organization.name" variant="dark">
 						{{ isSubmitting ? 'Creating...' : 'Create Team' }}
 					</Button>
 				</div>

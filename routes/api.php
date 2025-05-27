@@ -22,7 +22,6 @@ use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
-use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
