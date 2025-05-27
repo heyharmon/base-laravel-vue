@@ -94,6 +94,7 @@ const cancelEdit = () => {
 					<div class="flex items-center gap-2">
 						<img
 							:src="`https://cdn.brandfetch.io/${organization.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
+							:alt="organization.name + ' logo'"
 							class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 						/>
 						<h1 class="text-2xl font-bold">{{ organization.name }}</h1>
