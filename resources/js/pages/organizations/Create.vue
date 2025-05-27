@@ -2,7 +2,9 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useKeywordStore } from '@/stores/keywordStore'
 import api from '@/services/api'
+import KeywordSuggestions from '@/components/keywords/KeywordSuggestions.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import Spinner from '@/components/ui/Spinner.vue'
@@ -24,6 +26,7 @@ const organization = ref({
 	industry: '',
 	hasDetails: false
 })
+const keywords = ref([])
 
 // Handle organization selection from search component
 const handleSelectOrganization = (org) => {
@@ -36,7 +39,18 @@ const createOrganization = async () => {
 
 	isSubmitting.value = true
 	try {
-		let response = await organizationStore.createOrganization(organization.value)
+		// Create the organization
+		const newOrg = await organizationStore.createOrganization(organization.value)
+		
+		// Create keywords if any were generated
+		if (keywords.value.length > 0 && newOrg && newOrg.id) {
+			const keywordStore = useKeywordStore()
+			const promises = keywords.value.map((keyword) => 
+				keywordStore.createKeyword(newOrg.id, { name: keyword })
+			)
+			await Promise.all(promises)
+		}
+		
 		router.push({ name: 'organizations.index' })
 	} catch (error) {
 		console.error('Error creating organization:', error)
@@ -54,15 +68,11 @@ const createOrganization = async () => {
 			</div>
 
 			<div class="space-y-4">
-				<OrganizationSearch
-					label="Search for competitor"
-					placeholder="Search the competitor name or domain..."
-					@select-organization="handleSelectOrganization"
-				/>
+				<OrganizationSearch label="Search" placeholder="Enter competitor's website domain" @select-organization="handleSelectOrganization" />
 
 				<!-- Organization Preview -->
 				<div v-if="organization.name || organization.website" class="mt-4">
-					<h3 class="text-sm font-medium text-neutral-700 mb-2">Competitor Preview</h3>
+					<h3 class="text-sm font-medium text-neutral-700 mb-2">Competitor</h3>
 					<div class="flex items-center gap-4 p-6 border border-neutral-200 rounded-md bg-neutral-50">
 						<img
 							v-if="organization.logo"
@@ -80,15 +90,17 @@ const createOrganization = async () => {
 						</div>
 					</div>
 				</div>
+
+				<!-- Keyword Suggestions -->
+				<div v-if="organization.website" class="mt-6">
+					<!-- <h3 class="text-sm font-medium text-neutral-700 mb-2">Keyword suggestions for {{ organization.name }}</h3> -->
+					<KeywordSuggestions :domain="organization.website" @update:keywords="keywords = $event" />
+				</div>
 			</div>
 
 			<div class="mt-6 flex justify-end space-x-2">
 				<Button @click="router.push({ name: 'organizations.index' })" variant="neutral"> Cancel </Button>
-				<Button
-					@click="createOrganization"
-					:disabled="isSubmitting || !organization.name || !organization.website"
-					variant="dark"
-				>
+				<Button @click="createOrganization" :disabled="isSubmitting || !organization.name || !organization.website" variant="dark">
 					{{ isSubmitting ? 'Creating...' : 'Add competitor' }}
 				</Button>
 			</div>

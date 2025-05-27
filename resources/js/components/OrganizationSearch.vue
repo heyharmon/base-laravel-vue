@@ -10,7 +10,7 @@ const props = defineProps({
 	},
 	placeholder: {
 		type: String,
-		default: 'Search for a company...'
+		default: 'Enter the website domain'
 	}
 })
 
@@ -124,10 +124,7 @@ const createFromDomain = () => {
 		</div>
 
 		<!-- Search results -->
-		<div
-			v-if="searchQuery.length >= 2 && !isSearching"
-			class="mt-1 bg-white border border-neutral-300 rounded-md shadow-sm max-h-60 overflow-y-auto"
-		>
+		<div v-if="searchQuery.length >= 2 && !isSearching" class="mt-1 bg-white border border-neutral-300 rounded-md shadow-sm max-h-60 overflow-y-auto">
 			<ul>
 				<li
 					v-for="result in searchResults"
@@ -156,15 +153,10 @@ const createFromDomain = () => {
 					<div class="flex items-center justify-between">
 						<div>
 							<div class="font-medium text-neutral-700">No organization found</div>
-							<div v-if="isDomain" class="text-sm text-neutral-500">
-								Create new competitor from "{{ searchQuery }}"
-							</div>
+							<div v-if="isDomain" class="text-sm text-neutral-500">Create new competitor from "{{ searchQuery }}"</div>
 							<div v-else class="text-sm text-neutral-500">Try searching with a domain name</div>
 						</div>
-						<div
-							v-if="isDomain"
-							class="flex items-center gap-2 border px-2 rounded text-sm text-neutral-500"
-						>
+						<div v-if="isDomain" class="flex items-center gap-2 border px-2 rounded text-sm text-neutral-500">
 							<span class="pt-1">↵</span> Press enter
 						</div>
 					</div>

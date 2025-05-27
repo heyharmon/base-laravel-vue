@@ -61,7 +61,7 @@ const createTeamAndOrganization = async () => {
 				<!-- Organization Search -->
 				<OrganizationSearch
 					label="Search for your organization"
-					placeholder="Search the organization name or domain..."
+					placeholder="Enter your website domain"
 					@select-organization="handleSelectOrganization"
 				/>
 
