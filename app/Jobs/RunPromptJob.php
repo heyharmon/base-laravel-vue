@@ -224,7 +224,7 @@ class RunPromptJob extends TrackableJob
 
     $responseText = strtolower($response->content);
     $foundKeywords = [];
-    $mentioned = false;
+    // $mentioned = false;
 
     foreach ($keywords as $keyword) {
       $keywordName = strtolower($keyword->name);
@@ -232,7 +232,7 @@ class RunPromptJob extends TrackableJob
       // Check if the keyword exists in the response
       if (str_contains($responseText, $keywordName)) {
         $foundKeywords[] = $keyword->id;
-        $mentioned = true;
+        // $mentioned = true;
 
         // Update the pivot table for keyword-prompt relationship
         $pivot = $prompt->keywords()->syncWithoutDetaching([$keyword->id]);
@@ -259,6 +259,6 @@ class RunPromptJob extends TrackableJob
     }
 
     // Update the response with the mentioned flag
-    $response->update(['mentioned' => $mentioned]);
+    // $response->update(['mentioned' => $mentioned]);
   }
 }
