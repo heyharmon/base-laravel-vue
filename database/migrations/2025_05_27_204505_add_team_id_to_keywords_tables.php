@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('keywords', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->timestamps();
+        Schema::table('keywords', function (Blueprint $table) {
+            $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
         });
     }
 
@@ -24,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('keywords');
+        Schema::table('keywords', function (Blueprint $table) {
+            $table->dropForeign(['team_id']);
+            $table->dropColumn('team_id');
+        });
     }
 };
