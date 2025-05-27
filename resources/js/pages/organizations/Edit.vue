@@ -34,6 +34,7 @@ const isGenerateKeywordsModalOpen = ref(false)
 const isKeywordDetailSheetOpen = ref(false)
 const selectedKeyword = ref(null)
 const selectedKeywordId = ref(null)
+const deletedKeywordMessage = ref(null)
 
 onMounted(async () => {
 	try {
@@ -97,6 +98,14 @@ const deleteOrganization = async () => {
 const cancelEdit = () => {
 	router.push({ name: 'organizations.index' })
 }
+
+const handleDeleteKeyword = (keywordId, keywordName) => {
+	deletedKeywordMessage.value = `The keyword "${keywordName}" and its history has been deleted.`
+	keywordStore.deleteKeyword(route.params.id, keywordId)
+	setTimeout(() => {
+		deletedKeywordMessage.value = null
+	}, 10000)
+}
 </script>
 
 <template>
@@ -112,12 +121,7 @@ const cancelEdit = () => {
 						/>
 						<h1 class="text-2xl font-bold">{{ organization.name }}</h1>
 					</div>
-					<span
-						v-if="organization.is_competitor"
-						class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded"
-					>
-						Competitor
-					</span>
+					<span v-if="organization.is_competitor" class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded"> Competitor </span>
 				</div>
 				<div class="flex gap-4">
 					<button
@@ -137,10 +141,7 @@ const cancelEdit = () => {
 			</div>
 
 			<!-- Error state -->
-			<div
-				v-else-if="organizationStore.error"
-				class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
-			>
+			<div v-else-if="organizationStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
 				{{ organizationStore.error }}
 			</div>
 
@@ -155,19 +156,8 @@ const cancelEdit = () => {
 								@click="isGenerateKeywordsModalOpen = true"
 								class="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="size-4"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"
-									/>
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+									<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
 								</svg>
 								<span>Generate keywords</span>
 							</button>
@@ -184,14 +174,17 @@ const cancelEdit = () => {
 						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 					</div>
 
-					<div
-						v-else-if="keywordStore.keywords.length === 0"
-						class="text-center py-12 border border-neutral-200 rounded-xl"
-					>
+					<div v-else-if="keywordStore.keywords.length === 0" class="text-center py-12 border border-neutral-200 rounded-xl">
 						<div class="text-neutral-400 text-sm">No keywords yet</div>
 					</div>
 
 					<div v-else class="space-y-3">
+						<div v-if="deletedKeywordMessage" class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+							</svg>
+							<span>{{ deletedKeywordMessage }}</span>
+						</div>
 						<div
 							v-for="keyword in keywordStore.keywords"
 							:key="keyword.id"
@@ -209,15 +202,10 @@ const cancelEdit = () => {
 									<div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
 								</div>
 								<button
-									@click.stop="keywordStore.deleteKeyword(route.params.id, keyword.id)"
+									@click.stop="handleDeleteKeyword(keyword.id, keyword.name)"
 									class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
 								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-									>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
 										<path
 											fill-rule="evenodd"
 											d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -232,9 +220,7 @@ const cancelEdit = () => {
 
 				<!-- Right column - Organization details -->
 				<div class="w-full md:w-1/3">
-					<h2 class="text-xl font-semibold mb-2">
-						Edit {{ organization.is_competitor ? 'competitor' : 'your organization' }}
-					</h2>
+					<h2 class="text-xl font-semibold mb-2">Edit {{ organization.is_competitor ? 'competitor' : 'your organization' }}</h2>
 					<form @submit.prevent="updateOrganization" class="space-y-3">
 						<div>
 							<label class="block text-sm font-medium text-neutral-700 mb-1">Name</label>
@@ -294,11 +280,7 @@ const cancelEdit = () => {
 	</DefaultLayout>
 
 	<!-- Keyword Modal -->
-	<KeywordCreateModal
-		:is-open="isKeywordCreateModalOpen"
-		@close="isKeywordCreateModalOpen = false"
-		@create="addKeyword"
-	/>
+	<KeywordCreateModal :is-open="isKeywordCreateModalOpen" @close="isKeywordCreateModalOpen = false" @create="addKeyword" />
 
 	<!-- Generate Keywords Modal -->
 	<GenerateKeywordsModal :is-open="isGenerateKeywordsModalOpen" @close="isGenerateKeywordsModalOpen = false" />
