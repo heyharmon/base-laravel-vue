@@ -46,24 +46,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('conversations', ConversationController::class);
     Route::resource('conversations/{conversation}/chats', ChatController::class);
 
-    // Core resources
-    Route::middleware(EnsureHasTeam::class)->group(function () {
-        Route::resource('organizations', OrganizationController::class);
-        Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
-        Route::get('organization-search', [OrganizationSearchController::class, 'search']);
-        Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']);
-        Route::resource('organizations/{organization}/keywords', KeywordController::class);
-        Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']); // TODO: Test
+	// Organizations
+	Route::resource('organizations', OrganizationController::class);
+	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
+	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
+	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']);
 
-        Route::resource('prompts', PromptController::class);
-        Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']); // TODO: Test
-    });
+	// Keywords
+	Route::resource('organizations/{organization}/keywords', KeywordController::class);
+	Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']);
+	Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
 
-    // Keyword responses
-    Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
-
-    // Prompt responses
+    // Prompts
+	Route::resource('prompts', PromptController::class);
     Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
+	Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']);
 
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
