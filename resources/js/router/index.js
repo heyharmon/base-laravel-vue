@@ -10,7 +10,9 @@ import ForgotPassword from '@/pages/auth/ForgotPassword.vue';
 import ResetPassword from '@/pages/auth/ResetPassword.vue';
 import TeamsIndex from '@/pages/teams/Index.vue';
 import TeamShow from '@/pages/teams/Show.vue';
+import TeamCreate from '@/pages/teams/Create.vue';
 import OrganizationsIndex from '@/pages/organizations/Index.vue';
+import OrganizationCreate from '@/pages/organizations/Create.vue';
 import OrganizationEdit from '@/pages/organizations/Edit.vue';
 
 const routes = [
@@ -67,9 +69,21 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/teams/create',
+    name: 'teams.create',
+    component: TeamCreate,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/organizations',
     name: 'organizations.index',
     component: OrganizationsIndex,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/organizations/create',
+    name: 'organizations.create',
+    component: OrganizationCreate,
     meta: { requiresAuth: true }
   },
   {

@@ -20,7 +20,9 @@ use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
+use App\Http\Controllers\KeywordCheckInPastResponsesController;
 use App\Http\Middleware\EnsureHasTeam;
 
 // Public routes
@@ -35,12 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
-    
+
     // Analytics endpoints
     Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
     Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
     Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
-    
+
     // Conversations
     Route::resource('conversations', ConversationController::class);
     Route::resource('conversations/{conversation}/chats', ChatController::class);
@@ -49,16 +51,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(EnsureHasTeam::class)->group(function () {
         Route::resource('organizations', OrganizationController::class);
         Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
+        Route::get('organization-search', [OrganizationSearchController::class, 'search']);
+        Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']);
         Route::resource('organizations/{organization}/keywords', KeywordController::class);
+        Route::post('keywords/{keyword}/process', [KeywordCheckInPastResponsesController::class, 'processNewKeyword']);
+        // Route::post('organizations/{organization}/process-keywords', [KeywordCheckInPastResponsesController::class, 'processOrganizationKeywords']);
         Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']); // TODO: Test
-        
+
         Route::resource('prompts', PromptController::class);
         Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']); // TODO: Test
     });
 
     // Keyword responses
     Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
-    
+
     // Prompt responses
     Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 
@@ -68,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Prompt responses (detailed)
     Route::resource('prompts/{prompt}/responses', ResponseController::class);
-    
+
     // Team routes
     Route::resource('teams', TeamController::class);
     Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
@@ -77,7 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
-    
+
     // Job status routes
     Route::get('/job-statuses', [JobStatusController::class, 'getModelJobStatuses']);
     Route::get('/job-status/{jobId}', [JobStatusController::class, 'getJobStatus']);
