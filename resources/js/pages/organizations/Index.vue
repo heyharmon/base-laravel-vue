@@ -78,12 +78,9 @@ const deleteOrganization = async (organizationId) => {
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
-								<router-link
-									:to="{ name: 'organizations.edit', params: { id: org.id } }"
-									class="text-blue-600 hover:text-blue-800 text-sm font-medium"
-								>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
 									Edit
-								</router-link>
+								</button>
 							</div>
 						</router-link>
 					</div>
@@ -118,17 +115,8 @@ const deleteOrganization = async (organizationId) => {
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
-								<router-link
-									:to="{ name: 'organizations.edit', params: { id: org.id } }"
-									class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-2"
-								>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
 									Edit
-								</router-link>
-								<button
-									@click.stop="deleteOrganization(org.id)"
-									class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
-								>
-									Delete
 								</button>
 							</div>
 						</router-link>

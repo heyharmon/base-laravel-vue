@@ -81,6 +81,19 @@ const updateOrganization = async () => {
 	}
 }
 
+const deleteOrganization = async () => {
+	if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
+		return
+	}
+
+	try {
+		await organizationStore.deleteOrganization(route.params.id)
+		router.push({ name: 'organizations.index' })
+	} catch (error) {
+		console.error('Error deleting organization:', error)
+	}
+}
+
 const cancelEdit = () => {
 	router.push({ name: 'organizations.index' })
 }
@@ -106,7 +119,16 @@ const cancelEdit = () => {
 						Competitor
 					</span>
 				</div>
-				<Button @click="cancelEdit" variant="neutral"> Back </Button>
+				<div class="flex gap-4">
+					<button
+						v-if="organization.is_competitor"
+						@click="deleteOrganization"
+						class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+					>
+						Delete
+					</button>
+					<Button @click="cancelEdit" variant="neutral"> Back </Button>
+				</div>
 			</div>
 
 			<!-- Loading state -->
