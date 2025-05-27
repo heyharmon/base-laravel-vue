@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\HasJobStatus;
 
 class Keyword extends Model
 {
-    use HasFactory;
+    use HasFactory, HasJobStatus;
 
     protected $fillable = [
         'team_id',
@@ -37,7 +38,7 @@ class Keyword extends Model
         return $this->belongsToMany(Response::class)
             ->withTimestamps();
     }
-    
+
     /**
      * Get the team that owns the keyword.
      */
@@ -45,7 +46,7 @@ class Keyword extends Model
     {
         return $this->belongsTo(Team::class);
     }
-    
+
     /**
      * Get the organization that owns the keyword.
      */
@@ -53,7 +54,7 @@ class Keyword extends Model
     {
         return $this->belongsTo(Organization::class);
     }
-    
+
     /**
      * Get the mentions for this keyword.
      */

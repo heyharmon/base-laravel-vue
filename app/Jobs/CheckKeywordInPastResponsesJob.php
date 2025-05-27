@@ -2,19 +2,16 @@
 
 namespace App\Jobs;
 
-use App\Models\Keyword;
-use App\Models\Response;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
+use Throwable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Bus\Batchable;
+use App\Models\Response;
+use App\Models\Keyword;
 
-class CheckKeywordInPastResponsesJob implements ShouldQueue
+class CheckKeywordInPastResponsesJob extends TrackableJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+	use Batchable;
 
     /**
      * The number of times the job may be attempted.
@@ -31,13 +28,29 @@ class CheckKeywordInPastResponsesJob implements ShouldQueue
     protected $keyword;
 
     /**
+     * The model to use for job tracking.
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    public $model;
+
+	/**
+	 * The team ID.
+	 *
+	 * @var int
+	 */
+	protected $teamId;
+
+    /**
      * Create a new job instance.
      *
      * @param  \App\Models\Keyword  $keyword
      * @return void
      */
-    public function __construct(Keyword $keyword)
+    public function __construct(Keyword $keyword, ?int $teamId = null)
     {
+		$this->model = $keyword;
+		$this->teamId = $teamId;
         $this->keyword = $keyword;
     }
 
@@ -49,7 +62,16 @@ class CheckKeywordInPastResponsesJob implements ShouldQueue
     public function handle()
     {
         try {
+            // Mark the job as started
+            $this->markJobAsStarted();
+
+			// wait for 3 seconds
+            sleep(3);
+
             Log::info('Starting CheckKeywordInPastResponsesJob for keyword: ' . $this->keyword->name);
+
+            // Update progress
+            $this->updateJobProgress(10, 'Fetching responses');
 
             // Get all responses for prompts in the same team
             $responses = Response::whereHas('prompt', function ($query) {
@@ -57,6 +79,8 @@ class CheckKeywordInPastResponsesJob implements ShouldQueue
                     $teamQuery->where('id', $this->keyword->team_id);
                 });
             })->get();
+
+            $this->updateJobProgress(30, 'Analyzing responses');
 
             $keywordName = strtolower($this->keyword->name);
             $foundInResponses = 0;
@@ -96,11 +120,18 @@ class CheckKeywordInPastResponsesJob implements ShouldQueue
                 }
             }
 
-            Log::info("Completed CheckKeywordInPastResponsesJob for keyword '{$this->keyword->name}'. Found in {$foundInResponses} responses across " . count($foundInPrompts) . " prompts.");
+            $this->updateJobProgress(90, 'Finalizing results');
 
-        } catch (\Exception $e) {
-            Log::error('Error in CheckKeywordInPastResponsesJob: ' . $e->getMessage());
-            throw $e;
+            $message = "Completed analysis for keyword '{$this->keyword->name}'. Found in {$foundInResponses} responses across " . count($foundInPrompts) . " prompts.";
+            Log::info($message);
+
+            // Mark the job as completed
+            $this->markJobAsCompleted($message);
+
+        } catch (Throwable $exception) {
+            Log::error('Error in CheckKeywordInPastResponsesJob: ' . $exception->getMessage());
+            $this->markJobAsFailed($exception);
+            throw $exception;
         }
     }
 }

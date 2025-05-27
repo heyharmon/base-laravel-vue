@@ -27,10 +27,7 @@ const dateRange = ref({
 
 // Track if we have active jobs
 const hasActiveJobs = computed(() => {
-	return (
-		jobStatusStore.jobs &&
-		jobStatusStore.jobs.some((job) => job.status === 'pending' || job.status === 'processing')
-	)
+	return jobStatusStore.jobs && jobStatusStore.jobs.some((job) => job.status === 'pending' || job.status === 'processing')
 })
 
 // Track completed jobs to detect when individual jobs complete
@@ -63,7 +60,6 @@ const closeRunAllMenu = () => {
 const runPrompt = async (id, count = 1) => {
 	await promptStore.runPrompt(id, count)
 	await jobStatusStore.fetchTeamJobs()
-
 	jobStatusStore.startAutoRefresh(1000)
 }
 
@@ -183,65 +179,30 @@ onMounted(async () => {
 					<div class="bg-white p-4 rounded-lg shadow border border-neutral-200 w-full flex flex-col">
 						<div class="flex items-center gap-2 mb-4">
 							<h3 class="text-lg font-medium">Visibility</h3>
-							<div
-								v-if="organizationStore.isLoadingVisibility"
-								class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"
-							></div>
+							<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 						</div>
 
-						<div
-							v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0"
-						>
+						<div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0">
 							<table class="min-w-full divide-y divide-neutral-200">
 								<thead>
 									<tr>
-										<th
-											class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/10"
-										>
-											Org
-										</th>
-										<th
-											class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3"
-										>
-											Visibility
-										</th>
-										<th
-											class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"
-										></th>
-										<th
-											class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"
-										>
-											Mentions
-										</th>
-										<th
-											class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"
-										>
-											Responses
-										</th>
+										<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/10">Org</th>
+										<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Visibility</th>
+										<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"></th>
+										<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Mentions</th>
+										<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Responses</th>
 									</tr>
 								</thead>
 								<tbody class="bg-white divide-y divide-neutral-200">
-									<tr
-										v-for="org in organizationStore.visibilityMetrics.sort(
-											(a, b) => b.visibility - a.visibility
-										)"
-										:key="org.id"
-									>
+									<tr v-for="org in organizationStore.visibilityMetrics.sort((a, b) => b.visibility - a.visibility)" :key="org.id">
 										<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 											<img
 												:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
 												:alt="org.name + ' logo'"
 												class="size-6 object-contain bg-white rounded-md border border-neutral-200"
 											/>
-											<span>{{
-												org.name ||
-												(org.is_competitor ? 'Unnamed Competitor' : 'Your Organization')
-											}}</span>
-											<span
-												v-if="!org.is_competitor"
-												class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-md"
-												>You</span
-											>
+											<span>{{ org.name || (org.is_competitor ? 'Unnamed Competitor' : 'Your Organization') }}</span>
+											<span v-if="!org.is_competitor" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-md">You</span>
 										</td>
 										<td class="pl-3 pr-4 py-2 whitespace-nowrap text-sm">
 											<div class="w-full bg-neutral-200 rounded-full h-2 mr-2">
@@ -260,9 +221,7 @@ onMounted(async () => {
 							</table>
 						</div>
 
-						<div v-else class="text-center py-4 text-neutral-500 text-sm">
-							No organization data available
-						</div>
+						<div v-else class="text-center py-4 text-neutral-500 text-sm">No organization data available</div>
 					</div>
 				</div>
 			</div>
@@ -275,10 +234,7 @@ onMounted(async () => {
 						<div class="flex justify-between items-center">
 							<div class="flex items-center gap-3">
 								<h2 class="text-xl md:text-xl font-medium">Prompts</h2>
-								<div
-									v-if="promptStore.isLoading"
-									class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"
-								></div>
+								<div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 							</div>
 
 							<div class="flex space-x-2">
@@ -292,15 +248,8 @@ onMounted(async () => {
 										<option value="mentions-desc">Mentions (high to low)</option>
 										<option value="mentions-asc">Mentions (low to high)</option>
 									</select>
-									<div
-										class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-700"
-									>
-										<svg
-											class="h-4 w-4"
-											xmlns="http://www.w3.org/2000/svg"
-											viewBox="0 0 20 20"
-											fill="currentColor"
-										>
+									<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-700">
+										<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
 											<path
 												fill-rule="evenodd"
 												d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -313,16 +262,9 @@ onMounted(async () => {
 									<button
 										@click.stop="isRunAllMenuOpen = !isRunAllMenuOpen"
 										class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center"
-										:disabled="
-											promptStore.isLoading ||
-											promptStore.loadingPromptIds.length > 0 ||
-											promptStore.isRunningAll
-										"
+										:disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0 || promptStore.isRunningAll"
 									>
-										<div
-											v-if="promptStore.isRunningAll"
-											class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full mr-1"
-										></div>
+										<div v-if="promptStore.isRunningAll" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full mr-1"></div>
 										<span>Run all prompts</span>
 									</button>
 									<div
@@ -372,11 +314,7 @@ onMounted(async () => {
 										stroke="currentColor"
 										class="size-4"
 									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"
-										/>
+										<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
 									</svg>
 									<span>Generate prompts</span>
 								</button>
@@ -394,10 +332,7 @@ onMounted(async () => {
 						>
 							<div>
 								<p class="text-neutral-800 text-lg">{{ prompt.content }}</p>
-								<div
-									v-if="prompt.keywords_count >= 0"
-									class="flex items-center gap-2 text-sm text-neutral-500 mt-1"
-								>
+								<div v-if="prompt.keywords_count >= 0" class="flex items-center gap-2 text-sm text-neutral-500 mt-1">
 									<p v-if="prompt.mentions_percentage !== undefined">
 										Mentioned {{ prompt.mentions_percentage }}% of the time out of
 										{{ prompt.responses_count }}
@@ -415,16 +350,12 @@ onMounted(async () => {
 								<div
 									v-if="
 										jobStatusStore.jobs?.some(
-											(job) =>
-												job.trackable_id === prompt.id &&
-												(job.status === 'pending' || job.status === 'processing')
+											(job) => job.trackable_id === prompt.id && (job.status === 'pending' || job.status === 'processing')
 										)
 									"
 									class="mt-2 flex items-center text-sm text-blue-600"
 								>
-									<div
-										class="animate-spin h-3 w-3 border-b-2 border-blue-600 rounded-full mr-2"
-									></div>
+									<div class="animate-spin h-3 w-3 border-b-2 border-blue-600 rounded-full mr-2"></div>
 									<span>Processing...</span>
 								</div>
 							</div>
@@ -471,12 +402,7 @@ onMounted(async () => {
 									class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
 									aria-label="Delete prompt"
 								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-									>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
 										<path
 											fill-rule="evenodd"
 											d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -513,16 +439,10 @@ onMounted(async () => {
 	/>
 
 	<!-- Delete Confirmation Modal -->
-	<div
-		v-if="showDeleteConfirmation"
-		class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50"
-		@click="cancelDelete"
-	>
+	<div v-if="showDeleteConfirmation" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50" @click="cancelDelete">
 		<div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" @click.stop>
 			<h3 class="text-lg font-medium text-neutral-900 mb-4">Delete Prompt</h3>
-			<p class="text-sm text-neutral-600 mb-6">
-				Are you sure you want to delete this prompt? This action cannot be undone.
-			</p>
+			<p class="text-sm text-neutral-600 mb-6">Are you sure you want to delete this prompt? This action cannot be undone.</p>
 			<div class="flex justify-end space-x-3">
 				<button
 					@click="cancelDelete"

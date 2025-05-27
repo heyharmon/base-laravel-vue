@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
 import api from '@/services/api'
 
 export const useKeywordStore = defineStore('keywords', () => {
@@ -10,6 +11,9 @@ export const useKeywordStore = defineStore('keywords', () => {
 	const isLoadingKeywordResponses = ref(false)
 	const selectedKeywordDetails = ref(null)
 	const selectedKeywordResponses = ref([])
+
+	// Other stores
+	const jobStatusStore = useJobStatusStore()
 
 	// Actions
 	async function fetchKeywords(organizationId) {
@@ -45,6 +49,10 @@ export const useKeywordStore = defineStore('keywords', () => {
 		try {
 			const newKeyword = await api.post(`organizations/${organizationId}/keywords`, data)
 			keywords.value.unshift(newKeyword)
+
+			await jobStatusStore.fetchTeamJobs()
+			jobStatusStore.startAutoRefresh(1000)
+
 			return newKeyword
 		} catch (error) {
 			console.error('Error creating keyword:', error)

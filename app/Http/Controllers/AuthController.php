@@ -18,7 +18,7 @@ class AuthController extends Controller
         if ($request->has('token')) {
             return $this->registerWithInvitation($request);
         }
-        
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -32,21 +32,21 @@ class AuthController extends Controller
         ]);
 
         // Create a team for the user
-        $team = Team::create([
-            'name' => $user->name . '\'s Team',
-            'owner_id' => $user->id,
-        ]);
+        // $team = Team::create([
+        //     'name' => $user->name . '\'s Team',
+        //     'owner_id' => $user->id,
+        // ]);
 
-        // Add user to their team as admin
-        $team->users()->attach($user->id, [
-            'role' => 'admin',
-            'invitation_accepted' => true,
-            'joined_at' => now(),
-        ]);
-        
+        // // Add user to their team as admin
+        // $team->users()->attach($user->id, [
+        //     'role' => 'admin',
+        //     'invitation_accepted' => true,
+        //     'joined_at' => now(),
+        // ]);
+
         // Set the user's current team
-        $user->current_team_id = $team->id;
-        $user->save();
+        // $user->current_team_id = $team->id;
+        // $user->save();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -73,19 +73,19 @@ class AuthController extends Controller
 
         // Revoke all existing tokens
         $user->tokens()->delete();
-        
+
         // Set current team if not already set
         if (!$user->current_team_id) {
             // Try to find a team where the user is an owner
             $ownedTeam = Team::where('owner_id', $user->id)->first();
-            
+
             if ($ownedTeam) {
                 $user->current_team_id = $ownedTeam->id;
                 $user->save();
             } else {
                 // Try to find a team where the user is a member
                 $memberTeam = $user->joinedTeams()->first();
-                
+
                 if ($memberTeam) {
                     $user->current_team_id = $memberTeam->id;
                     $user->save();
@@ -112,7 +112,7 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
-    
+
     /**
      * Register a new user with an invitation token.
      */
@@ -124,29 +124,29 @@ class AuthController extends Controller
             'token' => 'required|string',
             'email' => 'required|string|email|max:255',
         ]);
-        
+
         // Find the invitation token
         $invitationToken = InvitationToken::where('token', $request->token)
             ->where('email', $request->email)
             ->where('expires_at', '>', now())
             ->first();
-            
+
         if (!$invitationToken) {
             return response()->json(['message' => 'Invalid or expired invitation token'], 422);
         }
-        
+
         // Find the user (should exist as it was created during invitation)
         $user = User::where('email', $request->email)->first();
-        
+
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
-        
+
         // Update user details
         $user->name = $request->name;
         $user->password = Hash::make($request->password);
         $user->save();
-        
+
         // Accept the team invitation
         DB::table('team_user')
             ->where('team_id', $invitationToken->team_id)
@@ -155,17 +155,17 @@ class AuthController extends Controller
                 'invitation_accepted' => true,
                 'joined_at' => now(),
             ]);
-            
+
         // Delete the used token
         $invitationToken->delete();
-        
+
         // Set the user's current team to the invited team
         $user->current_team_id = $invitationToken->team_id;
         $user->save();
-        
+
         // Generate auth token
         $token = $user->createToken('auth_token')->plainTextToken;
-        
+
         return response()->json([
             'user' => $user,
             'token' => $token
