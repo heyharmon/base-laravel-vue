@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\HasJobStatus;
+use App\Models\Organization;
 
 class Prompt extends Model
 {
@@ -75,7 +76,28 @@ class Prompt extends Model
             return 0;
         }
         
-        $mentions = $this->responses()->where('mentioned', true)->count();
+        // Get the organization that belongs to the team and is not a competitor
+        $organization = Organization::where('team_id', $this->team_id)
+            ->where('is_competitor', false)
+            ->first();
+            
+        if (!$organization) {
+            return 0;
+        }
+        
+        // Get all keywords for this organization
+        $keywordIds = $organization->keywords()->pluck('id')->toArray();
+        
+        if (empty($keywordIds)) {
+            return 0;
+        }
+        
+        // Count responses that contain at least one keyword from the team's organization
+        $mentions = $this->responses()
+            ->whereHas('keywords', function ($query) use ($keywordIds) {
+                $query->whereIn('keywords.id', $keywordIds);
+            })
+            ->count();
         
         return round(($mentions / $totalResponses) * 100);
     }

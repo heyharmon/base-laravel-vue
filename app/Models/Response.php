@@ -16,7 +16,7 @@ class Response extends Model
         'prompt_id',
         'provider',
         'model',
-        'mentioned',
+        // 'mentioned',
         'content',
         'metadata',
         'search',
@@ -31,7 +31,7 @@ class Response extends Model
     ];
 
     // Run relationship removed
-    
+
     /**
      * The prompt that this response belongs to.
      */
@@ -39,7 +39,7 @@ class Response extends Model
     {
         return $this->belongsTo(Prompt::class);
     }
-    
+
     /**
      * The keywords found in this response.
      */
@@ -48,7 +48,7 @@ class Response extends Model
         return $this->belongsToMany(Keyword::class)
             ->withTimestamps();
     }
-    
+
     /**
      * Get the mentions for this response.
      */
