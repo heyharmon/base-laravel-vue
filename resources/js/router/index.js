@@ -104,41 +104,46 @@ const router = createRouter({
 // Navigation guard for authentication and team check
 router.beforeEach(async (to, from, next) => {
 	const token = localStorage.getItem('token')
-
-	if (to.matched.some((record) => record.meta.requiresAuth)) {
-		if (!token) {
-			next({ name: 'login' })
-		} else {
-			// Check if the route requires a team and is not the teams.create route
-			if (to.name !== 'teams.create') {
-				const teamStore = useTeamStore()
-				
-				// Only fetch teams if we haven't already loaded them
-				if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-					try {
-						await teamStore.fetchTeams()
-					} catch (error) {
-						console.error('Error fetching teams in router guard:', error)
-					}
-				}
-				
-				// If user has no teams, redirect to teams.create
-				if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-					next({ name: 'teams.create' })
-					return
-				}
-			}
-			next()
-		}
-	} else if (to.matched.some((record) => record.meta.guest)) {
-		if (token) {
-			next({ name: 'home' })
-		} else {
-			next()
-		}
-	} else {
-		next()
+	
+	// Handle guest routes
+	if (to.matched.some((record) => record.meta.guest)) {
+		return token ? next({ name: 'home' }) : next()
 	}
+	
+	// Handle non-auth routes
+	if (!to.matched.some((record) => record.meta.requiresAuth)) {
+		return next()
+	}
+	
+	// Handle auth routes when not logged in
+	if (!token) {
+		return next({ name: 'login' })
+	}
+	
+	// Skip team check for teams.create route
+	if (to.name === 'teams.create') {
+		return next()
+	}
+	
+	// Check if user has teams
+	const teamStore = useTeamStore()
+	
+	// Load teams if not already loaded
+	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
+		try {
+			await teamStore.fetchTeams()
+		} catch (error) {
+			console.error('Error fetching teams in router guard:', error)
+		}
+	}
+	
+	// Redirect to teams.create if user has no teams
+	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
+		return next({ name: 'teams.create' })
+	}
+	
+	// Allow navigation
+	next()
 })
 
 export default router
