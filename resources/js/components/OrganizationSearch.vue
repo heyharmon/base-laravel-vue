@@ -169,24 +169,6 @@ const createFromDomain = () => {
 						</div>
 					</div>
 				</li>
-
-				<!-- Domain detection option (always shown when valid domain is typed) -->
-				<!-- <li
-					v-if="isDomain"
-					@click="createFromDomain"
-					@keydown.enter="createFromDomain"
-					class="px-3 py-2 hover:bg-neutral-100 cursor-pointer border-b border-neutral-200 last:border-b-0"
-				>
-					<div class="flex items-center justify-between">
-						<div>
-							<div class="font-medium text-neutral-700">Create new competitor</div>
-							<div class="text-sm text-neutral-500">Create from "{{ searchQuery }}"</div>
-						</div>
-						<div class="flex items-center gap-2 border border-neutral-900 px-2 rounded text-sm text-neutral-900">
-							<span class="pt-1">↵</span> Press enter
-						</div>
-					</div>
-				</li> -->
 			</ul>
 		</div>
 	</div>

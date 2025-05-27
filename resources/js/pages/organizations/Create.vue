@@ -5,6 +5,7 @@ import { useOrganizationStore } from '@/stores/organizationStore'
 import { useKeywordStore } from '@/stores/keywordStore'
 import api from '@/services/api'
 import KeywordSuggestions from '@/components/keywords/KeywordSuggestions.vue'
+import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import Spinner from '@/components/ui/Spinner.vue'
@@ -74,12 +75,7 @@ const createOrganization = async () => {
 				<div v-if="organization.name || organization.website" class="mt-4">
 					<h3 class="text-sm font-medium text-neutral-700 mb-2">Competitor</h3>
 					<div class="flex items-center gap-4 p-6 border border-neutral-200 rounded-md bg-neutral-50">
-						<img
-							v-if="organization.logo"
-							:src="organization.logo"
-							:alt="organization.name + ' logo'"
-							class="h-16 w-16 object-contain bg-white rounded-md border border-neutral-200"
-						/>
+						<OrganizationLogo :organization="organization" />
 						<div>
 							<h3 class="text-md font-medium">
 								{{ organization.name }}
