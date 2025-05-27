@@ -18,6 +18,7 @@ use Throwable;
 class RunPromptJob extends TrackableJob
 {
   use Batchable;
+
   /**
    * The number of times the job may be attempted.
    *
@@ -76,10 +77,10 @@ class RunPromptJob extends TrackableJob
    */
   public function __construct(Prompt $prompt, array $providers = [], ?int $teamId = null)
   {
+	  $this->model = $prompt;
+	  $this->teamId = $teamId;
       $this->prompt = $prompt;
       $this->providers = $providers;
-      $this->teamId = $teamId;
-      $this->model = $prompt;
   }
 
   /**
