@@ -146,7 +146,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		error.value = null
 
 		try {
-			const response = await api.post('/generate-competitor-recommendations')
+			const response = await api.post('/competitor-recommendations-generate')
 
 			await jobStatusStore.pollTeamJobs()
 

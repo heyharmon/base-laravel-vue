@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasJobStatus;
 
 class Keyword extends Model
@@ -18,7 +19,24 @@ class Keyword extends Model
         'organization_id',
         'name',
         'description',
+        'is_recommended',
     ];
+    
+    protected $casts = [
+        'is_recommended' => 'boolean',
+    ];
+    
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope('without-recommended', function (Builder $builder) {
+            $builder->where('is_recommended', false);
+        });
+    }
 
     /**
      * The prompts that are associated with this keyword.
@@ -61,5 +79,16 @@ class Keyword extends Model
     public function mentions(): HasMany
     {
         return $this->hasMany(Mention::class);
+    }
+    
+    /**
+     * Scope a query to include recommended keywords.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWithRecommended($query)
+    {
+        return $query->withoutGlobalScope('without-recommended');
     }
 }
