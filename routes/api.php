@@ -22,7 +22,8 @@ use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
-use App\Http\Controllers\FindCompetitorsController;
+use App\Http\Controllers\CompetitorRecommendationsController;
+use App\Http\Controllers\KeywordRecommendationsController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -52,13 +53,21 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
 	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
 
-	// Competitors
-	Route::post('find-competitors', [FindCompetitorsController::class, 'store']);
+	// Organization Competitor Recommendations
+	Route::get('competitor-recommendations', [CompetitorRecommendationsController::class, 'index']);
+	Route::put('competitor-recommendations/{id}/accept', [CompetitorRecommendationsController::class, 'accept']);
+	Route::delete('competitor-recommendations/{id}/deny', [CompetitorRecommendationsController::class, 'deny']);
+	Route::post('competitor-recommendations-generate', [CompetitorRecommendationsController::class, 'generate']);
 
 	// Keywords
 	Route::resource('organizations/{organization}/keywords', KeywordController::class);
 	Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']);
 	Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
+
+	// Keyword Recommendations
+	Route::get('organizations/{organization}/keyword-recommendations', [KeywordRecommendationsController::class, 'index']);
+	Route::put('organizations/{organization}/keyword-recommendations/{id}/accept', [KeywordRecommendationsController::class, 'accept']);
+	Route::delete('organizations/{organization}/keyword-recommendations/{id}/deny', [KeywordRecommendationsController::class, 'deny']);
 
     // Prompts
 	Route::resource('prompts', PromptController::class);

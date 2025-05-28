@@ -6,7 +6,9 @@ import api from '@/services/api'
 export const useKeywordStore = defineStore('keywords', () => {
 	// State
 	const keywords = ref([])
+	const recommendedKeywords = ref([])
 	const isLoading = ref(false)
+	const isLoadingRecommended = ref(false)
 	const isLoadingDetails = ref(false)
 	const isLoadingKeywordResponses = ref(false)
 	const selectedKeywordDetails = ref(null)
@@ -19,8 +21,10 @@ export const useKeywordStore = defineStore('keywords', () => {
 	async function fetchKeywords(organizationId) {
 		console.log('Fetching keywords for organization ID:', organizationId)
 		isLoading.value = true
+
 		try {
 			keywords.value = await api.get(`organizations/${organizationId}/keywords`)
+			recommendedKeywords.value = await api.get(`organizations/${organizationId}/keyword-recommendations`)
 		} catch (error) {
 			console.error('Error fetching keywords:', error)
 		} finally {
@@ -47,9 +51,6 @@ export const useKeywordStore = defineStore('keywords', () => {
 		try {
 			const newKeyword = await api.post(`organizations/${organizationId}/keywords`, data)
 			keywords.value.unshift(newKeyword)
-
-			await jobStatusStore.pollTeamJobs()
-
 			return newKeyword
 		} catch (error) {
 			console.error('Error creating keyword:', error)
@@ -87,10 +88,40 @@ export const useKeywordStore = defineStore('keywords', () => {
 		}
 	}
 
+	async function acceptRecommendedKeyword(organizationId, id) {
+		console.log('Accepting recommended keyword ID:', id, 'for organization ID:', organizationId)
+		try {
+			const keyword = await api.put(`organizations/${organizationId}/keyword-recommendations/${id}/accept`)
+			// Remove from recommended list
+			recommendedKeywords.value = recommendedKeywords.value.filter((k) => k.id !== id)
+			// Add to regular keywords list
+			keywords.value.unshift(keyword)
+
+			return keyword
+		} catch (error) {
+			console.error('Error accepting recommended keyword:', error)
+			throw error
+		}
+	}
+
+	async function denyRecommendedKeyword(organizationId, id) {
+		console.log('Denying recommended keyword ID:', id, 'for organization ID:', organizationId)
+		try {
+			await api.delete(`organizations/${organizationId}/keyword-recommendations/${id}/deny`)
+			// Remove from recommended list
+			recommendedKeywords.value = recommendedKeywords.value.filter((k) => k.id !== id)
+		} catch (error) {
+			console.error('Error denying recommended keyword:', error)
+			throw error
+		}
+	}
+
 	return {
 		// State
 		keywords: computed(() => keywords.value),
+		recommendedKeywords: computed(() => recommendedKeywords.value),
 		isLoading,
+		isLoadingRecommended,
 		isLoadingDetails,
 		isLoadingKeywordResponses,
 		selectedKeywordDetails: computed(() => selectedKeywordDetails.value),
@@ -98,6 +129,8 @@ export const useKeywordStore = defineStore('keywords', () => {
 
 		// Actions
 		fetchKeywords,
+		acceptRecommendedKeyword,
+		denyRecommendedKeyword,
 		showKeyword,
 		createKeyword,
 		deleteKeyword,

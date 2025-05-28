@@ -58,7 +58,7 @@ const selectOrganization = (result) => {
 	const organization = {
 		name: result.name || '',
 		website: result.domain || '',
-		logo: '',
+		logo: result.icon || '',
 		is_competitor: true,
 		founded: null,
 		employee_count: null,

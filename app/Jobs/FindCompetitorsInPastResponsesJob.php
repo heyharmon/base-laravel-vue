@@ -2,17 +2,21 @@
 
 namespace App\Jobs;
 
-use App\Models\Organization;
-use App\Models\Prompt;
-use App\Models\Response;
-use Illuminate\Bus\Batchable;
-use Illuminate\Support\Facades\Log;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\Provider;
-use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Schema\ObjectSchema;
-use Prism\Prism\Schema\StringSchema;
 use Throwable;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\Schema\ObjectSchema;
+use Prism\Prism\Schema\ArraySchema;
+use Prism\Prism\Prism;
+use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\Enums\Provider;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Bus\Batchable;
+use App\Tools\SearchApiTool;
+use App\Models\Response;
+use App\Models\Prompt;
+use App\Models\Organization;
+use App\Models\Keyword;
 
 class FindCompetitorsInPastResponsesJob extends TrackableJob
 {
@@ -24,13 +28,6 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
      * @var int
      */
     public $tries = 3;
-
-    /**
-     * The prompt instance.
-     *
-     * @var \App\Models\Prompt
-     */
-    // protected $prompt;
 
     /**
      * The response instance.
@@ -121,6 +118,20 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
      */
     private function findCompetitorsWithLlm(string $responseContent, Organization $ownedOrganization): array
     {
+		$searchApiTool = new SearchApiTool();
+
+		// Get a text response containing recommended competitors
+        $textResponse = Prism::text()
+            ->using(Provider::OpenAI, 'gpt-4o')
+            ->withMaxSteps(10)
+			->withMessages([
+				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
+				new UserMessage('Find mentions of my potential competitors in the prompt. Include their name and website. Only use the search tool to find a competitors website if you do not already know the website from your own knowledge.')
+			])
+            ->withTools([$searchApiTool])
+			->withToolChoice(ToolChoice::Auto)
+			->asText();
+
         // Define the schema for structured output
         $schema = new ObjectSchema(
             name: 'competitor_suggestions',
@@ -153,7 +164,7 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
         $response = Prism::structured()
             ->using(Provider::OpenAI, 'gpt-4o')
             ->withSchema($schema)
-            ->withPrompt('Here is a prompt response about my organization ' . $ownedOrganization->name . ', please find mentions of my potential competitors (do not include potential competitors not mentioned in the prompt response) and return them as an array including the competitor\'s name and website root domain (if website is found in the response): ' . $responseContent)
+            ->withPrompt('Look at text about my competitors and return them as a structured array including the competitor\'s name and website root domain: "' . $textResponse->text . '"')
             ->asStructured();
 
         $result = $response->structured;
@@ -172,8 +183,8 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
         $createdCount = 0;
 
         foreach ($competitors as $competitor) {
-            // Skip if name is empty
-            if (empty($competitor['name'])) {
+            // Skip if name or website is empty
+            if (empty($competitor['name']) || empty($competitor['website'])) {
                 continue;
             }
 
@@ -183,12 +194,7 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
 				->withRecommended()
                 ->first();
 
-            if ($existingOrganization) {
-                // Ensure it's marked as a competitor
-                if (!$existingOrganization->is_competitor) {
-                    $existingOrganization->update(['is_competitor' => true]);
-                }
-            } else {
+            if (!$existingOrganization) {
                 // Create new competitor organization
                 Organization::create([
 					'team_id' => $this->teamId,

@@ -1,17 +1,42 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
+import { useKeywordStore } from '@/stores/keywordStore'
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const organizationStore = useOrganizationStore()
+const jobStatusStore = useJobStatusStore()
+const keywordStore = useKeywordStore()
 const router = useRouter()
 const isGeneratingCompetitors = ref(false)
-const competitorsMessage = ref(null)
+
+const activeCompetitorJobs = computed(() => {
+	return jobStatusStore.jobs.filter(
+		(job) => job.job_class.includes('FindCompetitorsInPastResponsesJob') && (job.status === 'pending' || job.status === 'processing')
+	)
+})
+
+watch(
+	activeCompetitorJobs,
+	(newJobs, oldJobs) => {
+		if (newJobs.length > 0) {
+			// Jobs are running
+			isGeneratingCompetitors.value = true
+		} else if (oldJobs.length > 0 && newJobs.length === 0) {
+			// Jobs were running but now they're done
+			isGeneratingCompetitors.value = false
+			organizationStore.fetchOrganizations()
+		}
+	},
+	{ deep: true }
+)
 
 onMounted(async () => {
 	await organizationStore.fetchOrganizations()
+	await jobStatusStore.pollTeamJobs()
 })
 
 const deleteOrganization = async (organizationId) => {
@@ -26,30 +51,24 @@ const deleteOrganization = async (organizationId) => {
 	}
 }
 
+// TODO: Create a controller dedicated to accepting recommended competitors
 const acceptRecommendedCompetitor = async (organizationId) => {
 	try {
-		await organizationStore.updateOrganization(organizationId, { is_recommended: false })
+		let organization = await organizationStore.acceptRecommendedCompetitor(organizationId)
+
+		// Use the keyword store to create two keywords for the organization name and website
+		// TODO: Do this in the controller, then call acceptRecommendedCompetitor from the store directly
+		if (organization.name) {
+			await keywordStore.createKeyword(organizationId, { name: organization.name })
+		}
+		if (organization.website) {
+			await keywordStore.createKeyword(organizationId, { name: organization.website })
+		}
+
+		organizationStore.fetchOrganizations()
 	} catch (error) {
 		console.error('Error accepting recommended competitor:', error)
 	}
-}
-
-const denyRecommendedCompetitor = async (organizationId) => {
-	try {
-		await organizationStore.deleteOrganization(organizationId)
-	} catch (error) {
-		console.error('Error denying recommended competitor:', error)
-	}
-}
-
-const generateCompetitors = async () => {
-	isGeneratingCompetitors.value = true
-	competitorsMessage.value = 'Competitor generation jobs are now running. Refresh the page when queued runs are complete.'
-
-	await organizationStore.generateCompetitors()
-
-	setTimeout(() => (isGeneratingCompetitors.value = false), 1000)
-	setTimeout(() => (competitorsMessage.value = null), 10000)
 }
 </script>
 
@@ -61,15 +80,11 @@ const generateCompetitors = async () => {
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
-						@click="generateCompetitors"
+						@click="organizationStore.generateRecommendedCompetitors()"
 						:disabled="isGeneratingCompetitors"
 						variant="outline"
 					>
-						<span v-if="isGeneratingCompetitors" class="flex items-center">
-							<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-900 rounded-full"></span>
-							Generating...
-						</span>
-						<span v-else>Generate competitors</span>
+						{{ isGeneratingCompetitors ? 'Generating...' : 'Generate competitors' }}
 					</Button>
 					<Button @click="router.push({ name: 'organizations.create' })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
@@ -79,17 +94,14 @@ const generateCompetitors = async () => {
 
 			<!-- Competitors generation message -->
 			<div
-				v-if="!organizationStore.error && competitorsMessage"
+				v-if="!organizationStore.error && isGeneratingCompetitors"
 				class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-					<path
-						fill-rule="evenodd"
-						d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-						clip-rule="evenodd"
-					/>
-				</svg>
-				<span>{{ competitorsMessage }}</span>
+				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+				<span
+					>Competitor generation jobs are now running. Checking {{ activeCompetitorJobs.length }} prompt
+					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.</span
+				>
 			</div>
 
 			<!-- Loading state -->
@@ -122,12 +134,15 @@ const generateCompetitors = async () => {
 									:alt="org.name + ' logo'"
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
-								<!-- <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your organization</span> -->
 							</div>
-							<div class="mt-2 text-sm text-neutral-600">
+							<div class="text-sm text-neutral-600">
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
+								<div class="mt-1 flex items-center">
+									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+								</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
 								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
@@ -155,12 +170,15 @@ const generateCompetitors = async () => {
 									:alt="org.name + ' logo'"
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
-								<!-- <span class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded">Competitor</span> -->
 							</div>
-							<div class="mt-2 text-sm text-neutral-600">
+							<div class="text-sm text-neutral-600">
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
+								<div class="mt-1 flex items-center">
+									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+								</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
 								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
@@ -171,7 +189,7 @@ const generateCompetitors = async () => {
 
 				<!-- Recommended Competitors -->
 				<div v-if="organizationStore.recommendedCompetitors.length > 0">
-					<h2 class="text-xl font-semibold mb-4">Recommended Competitors</h2>
+					<h2 class="text-xl font-semibold mb-4">Recommended competitors</h2>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<div
 							v-for="org in organizationStore.recommendedCompetitors"
@@ -187,7 +205,7 @@ const generateCompetitors = async () => {
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
 							</div>
-							<div class="mt-2 text-sm text-neutral-600">
+							<div class="text-sm text-neutral-600">
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
@@ -200,7 +218,7 @@ const generateCompetitors = async () => {
 									Accept
 								</button>
 								<button
-									@click="denyRecommendedCompetitor(org.id)"
+									@click="organizationStore.denyRecommendedCompetitor(org.id)"
 									class="bg-red-100 hover:bg-red-200 text-red-800 text-sm px-3 py-1 rounded transition-colors cursor-pointer"
 								>
 									Deny

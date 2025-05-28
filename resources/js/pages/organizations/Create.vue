@@ -42,16 +42,14 @@ const createOrganization = async () => {
 	try {
 		// Create the organization
 		const newOrg = await organizationStore.createOrganization(organization.value)
-		
+
 		// Create keywords if any were generated
 		if (keywords.value.length > 0 && newOrg && newOrg.id) {
 			const keywordStore = useKeywordStore()
-			const promises = keywords.value.map((keyword) => 
-				keywordStore.createKeyword(newOrg.id, { name: keyword })
-			)
+			const promises = keywords.value.map((keyword) => keywordStore.createKeyword(newOrg.id, { name: keyword }))
 			await Promise.all(promises)
 		}
-		
+
 		router.push({ name: 'organizations.index' })
 	} catch (error) {
 		console.error('Error creating organization:', error)
@@ -69,7 +67,11 @@ const createOrganization = async () => {
 			</div>
 
 			<div class="space-y-4">
-				<OrganizationSearch label="Search" placeholder="Enter competitor's website domain" @select-organization="handleSelectOrganization" />
+				<OrganizationSearch
+					label="Search for a website domain"
+					placeholder="Enter competitor's website domain"
+					@select-organization="handleSelectOrganization"
+				/>
 
 				<!-- Organization Preview -->
 				<div v-if="organization.name || organization.website" class="mt-4">

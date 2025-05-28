@@ -106,11 +106,36 @@ const handleDeleteKeyword = (keywordId, keywordName) => {
 		deletedKeywordMessage.value = null
 	}, 10000)
 }
+
+const acceptRecommendedKeyword = async (keywordId) => {
+	try {
+		await keywordStore.acceptRecommendedKeyword(route.params.id, keywordId)
+		deletedKeywordMessage.value = 'Keyword added to your organization.'
+		setTimeout(() => {
+			deletedKeywordMessage.value = null
+		}, 10000)
+	} catch (error) {
+		console.error('Error accepting recommended keyword:', error)
+	}
+}
+
+const denyRecommendedKeyword = async (keywordId, keywordName) => {
+	try {
+		await keywordStore.denyRecommendedKeyword(route.params.id, keywordId)
+		deletedKeywordMessage.value = `The keyword "${keywordName}" recommendation has been removed.`
+		setTimeout(() => {
+			deletedKeywordMessage.value = null
+		}, 10000)
+	} catch (error) {
+		console.error('Error denying recommended keyword:', error)
+	}
+}
 </script>
 
 <template>
 	<DefaultLayout>
 		<div class="container mx-auto py-8">
+			<!-- Top bar -->
 			<div class="flex justify-between items-center mb-8">
 				<div class="flex items-center gap-3">
 					<div class="flex items-center gap-2">
@@ -148,6 +173,7 @@ const handleDeleteKeyword = (keywordId, keywordName) => {
 			<div v-else class="flex flex-col md:flex-row gap-12">
 				<!-- Left column - Keywords section -->
 				<div class="w-full md:w-2/3">
+					<!-- Keywords header -->
 					<div class="flex justify-between items-center mb-4">
 						<h2 class="text-xl font-semibold">Keywords</h2>
 
@@ -170,49 +196,111 @@ const handleDeleteKeyword = (keywordId, keywordName) => {
 						</div>
 					</div>
 
+					<!-- Loading state for keywords -->
 					<div v-if="keywordStore.isLoading" class="flex justify-center py-8">
 						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 					</div>
 
-					<div v-else-if="keywordStore.keywords.length === 0" class="text-center py-12 border border-neutral-200 rounded-xl">
-						<div class="text-neutral-400 text-sm">No keywords yet</div>
-					</div>
-
-					<div v-else class="space-y-3">
-						<div v-if="deletedKeywordMessage" class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-							</svg>
-							<span>{{ deletedKeywordMessage }}</span>
+					<!-- Keywords section -->
+					<div v-else>
+						<!-- No keywords message -->
+						<div v-if="keywordStore.keywords.length === 0" class="text-center py-12 border border-neutral-200 rounded-xl mb-8">
+							<div class="text-neutral-400 text-sm">No keywords yet</div>
 						</div>
-						<div
-							v-for="keyword in keywordStore.keywords"
-							:key="keyword.id"
-							class="p-4 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 rounded-lg cursor-pointer"
-							:class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
-							@click="showKeywordDetails(keyword)"
-						>
-							<div class="flex justify-between items-center">
-								<div>
-									<span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-									<div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">
-										Found in {{ keyword.prompts_count }}
-										{{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}
+
+						<!-- Existing keywords list -->
+						<div v-else class="space-y-3 mb-8">
+							<div
+								v-if="deletedKeywordMessage"
+								class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+									<path
+										fill-rule="evenodd"
+										d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+								{{ deletedKeywordMessage }}
+							</div>
+
+							<div
+								v-for="keyword in keywordStore.keywords"
+								:key="keyword.id"
+								class="p-4 border border-neutral-200 rounded-lg hover:border-neutral-300 transition-colors cursor-pointer"
+								:class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
+								@click="showKeywordDetails(keyword)"
+							>
+								<div class="flex justify-between items-center">
+									<div>
+										<span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
+										<div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">
+											Found in {{ keyword.prompts_count }}
+											{{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}
+										</div>
+										<div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
 									</div>
-									<div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
+									<button
+										@click.stop="handleDeleteKeyword(keyword.id, keyword.name)"
+										class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+											<path
+												fill-rule="evenodd"
+												d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+												clip-rule="evenodd"
+											/>
+										</svg>
+									</button>
 								</div>
-								<button
-									@click.stop="handleDeleteKeyword(keyword.id, keyword.name)"
-									class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
-								>
-									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-										<path
-											fill-rule="evenodd"
-											d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-											clip-rule="evenodd"
-										/>
-									</svg>
-								</button>
+							</div>
+						</div>
+
+						<!-- Recommended Keywords Section -->
+						<div v-if="keywordStore.recommendedKeywords.length > 0">
+							<h3 class="text-lg font-semibold mb-4">Recommended keywords</h3>
+							<div v-if="keywordStore.isLoadingRecommended" class="flex justify-center py-8">
+								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
+							</div>
+							<div v-else class="space-y-3">
+								<div v-for="keyword in keywordStore.recommendedKeywords" :key="keyword.id" class="p-4 border border-neutral-200 rounded-lg">
+									<div class="flex justify-between items-center">
+										<div>
+											<span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
+											<div v-if="keyword.description" class="text-sm text-neutral-500 mt-1">
+												{{ keyword.description }}
+											</div>
+										</div>
+										<div class="flex gap-2">
+											<button
+												@click="acceptRecommendedKeyword(keyword.id)"
+												class="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
+												title="Accept this keyword"
+											>
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+													<path
+														fill-rule="evenodd"
+														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+											</button>
+											<button
+												@click="denyRecommendedKeyword(keyword.id, keyword.name)"
+												class="text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+												title="Deny this keyword"
+											>
+												<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+													<path
+														fill-rule="evenodd"
+														d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+											</button>
+										</div>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -241,32 +329,6 @@ const handleDeleteKeyword = (keywordId, keywordName) => {
 								placeholder="Enter website URL"
 							/>
 						</div>
-
-						<!-- <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Founded</label>
-            <input
-              v-model="organization.founded"
-              type="text"
-              class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter founding year"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Employee Count</label>
-            <select
-              v-model="organization.employee_count"
-              class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select employee count</option>
-              <option value="1-10">1-10</option>
-              <option value="11-50">11-50</option>
-              <option value="51-200">51-200</option>
-              <option value="201-500">201-500</option>
-              <option value="501-1000">501-1000</option>
-              <option value="1000+">1000+</option>
-            </select>
-          </div> -->
 
 						<div class="pt-4">
 							<Button v-if="hasChanges" type="submit" :disabled="isSubmitting" variant="dark">

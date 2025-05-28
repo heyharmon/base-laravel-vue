@@ -100,7 +100,7 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
                     // If this is a new relationship, initialize the count
                     if (isset($pivot[$this->keyword->id]) && $pivot[$this->keyword->id]['created']) {
                         $prompt->keywords()->updateExistingPivot($this->keyword->id, [
-                            'count' => 1,
+                            'count' => 1, // TODO: Remove the count column, I don't think we use it anymore
                             'last_found_at' => now(),
                         ]);
                         $foundInPrompts[$prompt->id] = 1;

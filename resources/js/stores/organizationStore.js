@@ -27,8 +27,10 @@ export const useOrganizationStore = defineStore('organization', () => {
 		error.value = null
 
 		try {
-			const response = await api.get('/organizations')
-			organizations.value = response
+			const [orgsResponse, recommendedResponse] = await Promise.all([api.get('/organizations'), api.get('/competitor-recommendations')])
+
+			// Combine regular organizations with recommended ones
+			organizations.value = [...orgsResponse, ...recommendedResponse]
 		} catch (err) {
 			error.value = err.response?.data?.message || 'Failed to fetch organizations'
 			console.error('Error fetching organizations:', err)
@@ -79,11 +81,14 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 		try {
 			const response = await api.put(`/organizations/${organizationId}`, organizationData)
+			console.log('response', response)
+
+			// Update current organization if matches
 			if (currentOrganization.value && currentOrganization.value.id === organizationId) {
 				currentOrganization.value = { ...currentOrganization.value, ...organizationData }
 			}
-			await fetchOrganizations()
-			return response.data
+
+			return response
 		} catch (err) {
 			error.value = err.response?.data?.message || 'Failed to update organization'
 			console.error('Error updating organization:', err)
@@ -135,13 +140,13 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function generateCompetitors() {
+	async function generateRecommendedCompetitors() {
 		console.log('Generating competitors from past responses...')
 		isLoading.value = true
 		error.value = null
 
 		try {
-			const response = await api.post('/find-competitors')
+			const response = await api.post('/competitor-recommendations-generate')
 
 			await jobStatusStore.pollTeamJobs()
 
@@ -149,6 +154,41 @@ export const useOrganizationStore = defineStore('organization', () => {
 		} catch (err) {
 			error.value = err.response?.data?.message || 'Failed to generate competitors. Make sure you have prompt responses.'
 			console.error('Error generating competitors:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
+
+	async function acceptRecommendedCompetitor(organizationId) {
+		console.log('Accepting recommended competitor ID:', organizationId)
+		isLoading.value = true
+		error.value = null
+
+		try {
+			const response = await api.put(`/competitor-recommendations/${organizationId}/accept`)
+			return response
+		} catch (err) {
+			error.value = err.response?.data?.message || 'Failed to accept recommended competitor'
+			console.error('Error accepting recommended competitor:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
+
+	async function denyRecommendedCompetitor(organizationId) {
+		console.log('Denying recommended organization ID:', organizationId)
+		isLoading.value = true
+		error.value = null
+
+		try {
+			const response = await api.delete(`/competitor-recommendations/${organizationId}/deny`)
+			await fetchOrganizations()
+			return response
+		} catch (err) {
+			error.value = err.response?.data?.message || 'Failed to deny recommended organization'
+			console.error('Error denying recommended organization:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -176,6 +216,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
-		generateCompetitors
+		generateRecommendedCompetitors,
+		acceptRecommendedCompetitor,
+		denyRecommendedCompetitor
 	}
 })
