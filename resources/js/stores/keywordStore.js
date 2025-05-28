@@ -32,9 +32,7 @@ export const useKeywordStore = defineStore('keywords', () => {
 		console.log('Fetching details for keyword ID:', id)
 		isLoadingDetails.value = true
 		try {
-			selectedKeywordDetails.value = await api.get(
-				`organizations/${organizationId}/keywords/${id}?include=prompts`
-			)
+			selectedKeywordDetails.value = await api.get(`organizations/${organizationId}/keywords/${id}?include=prompts`)
 		} catch (error) {
 			console.error('Error fetching keyword details:', error)
 			throw error
@@ -50,8 +48,7 @@ export const useKeywordStore = defineStore('keywords', () => {
 			const newKeyword = await api.post(`organizations/${organizationId}/keywords`, data)
 			keywords.value.unshift(newKeyword)
 
-			await jobStatusStore.fetchTeamJobs()
-			jobStatusStore.startAutoRefresh(1000)
+			await jobStatusStore.pollTeamJobs()
 
 			return newKeyword
 		} catch (error) {

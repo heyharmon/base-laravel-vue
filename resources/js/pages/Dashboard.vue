@@ -59,15 +59,13 @@ const closeRunAllMenu = () => {
 
 const runPrompt = async (id, count = 1) => {
 	await promptStore.runPrompt(id, count)
-	await jobStatusStore.fetchTeamJobs()
-	jobStatusStore.startAutoRefresh(1000)
+	await jobStatusStore.pollTeamJobs()
 }
 
 const runAllPrompts = async (count = 1) => {
 	try {
 		await promptStore.runAllPrompts(count)
-		await jobStatusStore.fetchTeamJobs()
-		jobStatusStore.startAutoRefresh(1000)
+		await jobStatusStore.pollTeamJobs()
 	} catch (error) {
 		console.error('Error running all prompts:', error)
 	}
@@ -163,7 +161,6 @@ watch(
 )
 
 onMounted(async () => {
-	await organizationStore.fetchOrganizations()
 	await organizationStore.fetchVisibilityMetrics()
 	await promptStore.fetchPrompts()
 })

@@ -22,6 +22,7 @@ use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
+use App\Http\Controllers\FindCompetitorsController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -49,7 +50,10 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::resource('organizations', OrganizationController::class);
 	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
-	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']);
+	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
+
+	// Competitors
+	Route::post('find-competitors', [FindCompetitorsController::class, 'store']);
 
 	// Keywords
 	Route::resource('organizations/{organization}/keywords', KeywordController::class);
@@ -78,9 +82,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
     // Job status routes
-    Route::get('/job-statuses', [JobStatusController::class, 'getModelJobStatuses']);
-    Route::get('/job-status/{jobId}', [JobStatusController::class, 'getJobStatus']);
-    Route::get('/active-jobs', [JobStatusController::class, 'getActiveJobs']);
     Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
-    Route::get('/job-batch/{batchId}', [JobStatusController::class, 'getBatchInfo']);
 });

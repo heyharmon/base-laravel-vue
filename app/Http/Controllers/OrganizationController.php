@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Organization;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\Organization;
 
 class OrganizationController extends Controller
 {
@@ -13,7 +14,9 @@ class OrganizationController extends Controller
      */
     public function index(): JsonResponse
     {
-        $organizations = request()->user()->currentTeam->organizations;
+		$teamId = Auth::user()->current_team_id;
+
+        $organizations = Organization::where('team_id', $teamId)->withRecommended()->get();
 
         return response()->json($organizations);
     }
@@ -60,8 +63,11 @@ class OrganizationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Organization $organization): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
+        // Find organization with the withRecommended scope to include recommended organizations
+        $organization = Organization::withRecommended()->findOrFail($id);
+
         // Ensure the organization belongs to the current team
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -81,6 +87,7 @@ class OrganizationController extends Controller
             'founded' => 'sometimes|nullable|string|max:255',
             'employee_count' => 'sometimes|nullable|string|max:255',
             'is_competitor' => 'sometimes|boolean',
+            'is_recommended' => 'sometimes|boolean',
         ]);
 
         $organization->update($validated);
@@ -91,8 +98,11 @@ class OrganizationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Organization $organization): JsonResponse
+    public function destroy($id): JsonResponse
     {
+        // Find organization with the withRecommended scope to include recommended organizations
+        $organization = Organization::withRecommended()->findOrFail($id);
+
         // Ensure the organization belongs to the current team
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);

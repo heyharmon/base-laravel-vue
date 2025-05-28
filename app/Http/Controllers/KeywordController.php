@@ -76,7 +76,7 @@ class KeywordController extends Controller
         $keyword = $organization->keywords()->create($validated);
 
 		// Dispatch a job to check past responses for this keyword
-        $job = new CheckKeywordInPastResponsesJob($keyword);
+        $job = new CheckKeywordInPastResponsesJob($keyword, $teamId);
         $jobStatus = $this->jobDispatcher->dispatch($keyword, $job);
 
         return response()->json($keyword, 201);

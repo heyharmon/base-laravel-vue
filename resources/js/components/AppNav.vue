@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import auth from '@/services/auth'
 import { useTeamStore } from '@/stores/teamStore'
@@ -14,6 +14,7 @@ const isAuthenticated = computed(() => auth.isAuthenticated())
 const user = computed(() => auth.getUser())
 const teams = ref(null)
 const currentTeam = ref(null)
+
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
@@ -59,29 +60,10 @@ const switchTeam = async (teamId) => {
 	}
 }
 
-// const loadActiveJobs = async () => {
-// 	if (!teams.value?.ownedTeams?.length > 0) {
-// 		return
-// 	}
-
-// 	if (isAuthenticated.value) {
-// 		try {
-// 			await jobStatusStore.fetchActiveJobs()
-// 		} catch (error) {
-// 			console.error('Error loading active jobs:', error)
-// 		}
-// 	}
-// }
-
 onMounted(() => {
 	loadTeams()
-	// loadActiveJobs()
+	jobStatusStore.pollTeamJobs()
 	isTeamDropdownOpen.value = false
-})
-
-// Clean up interval when component is unmounted
-onUnmounted(() => {
-	jobStatusStore.stopAutoRefresh()
 })
 </script>
 
