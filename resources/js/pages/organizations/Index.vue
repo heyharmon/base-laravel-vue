@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button.vue'
 const organizationStore = useOrganizationStore()
 const router = useRouter()
 const isGeneratingCompetitors = ref(false)
+const competitorsMessage = ref(null)
 
 onMounted(async () => {
 	await organizationStore.fetchOrganizations()
@@ -27,22 +28,26 @@ const deleteOrganization = async (organizationId) => {
 
 const generateCompetitors = async () => {
 	isGeneratingCompetitors.value = true
+	competitorsMessage.value = 'Competitor generation jobs are now running. Refresh the page when queued runs are complete.'
+
 	await organizationStore.generateCompetitors()
-	isGeneratingCompetitors.value = false
+
+	setTimeout(() => (isGeneratingCompetitors.value = false), 1000)
+	setTimeout(() => (competitorsMessage.value = null), 10000)
 }
 </script>
 
 <template>
 	<DefaultLayout>
 		<div class="container mx-auto py-8">
-			<div class="flex justify-between items-center mb-8">
+			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
 						@click="generateCompetitors"
 						:disabled="isGeneratingCompetitors"
-						variant="secondary"
+						variant="outline"
 					>
 						<span v-if="isGeneratingCompetitors" class="flex items-center">
 							<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-900 rounded-full"></span>
@@ -54,6 +59,18 @@ const generateCompetitors = async () => {
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
+			</div>
+
+			<!-- Competitors generation message -->
+			<div v-if="competitorsMessage" class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+					<path
+						fill-rule="evenodd"
+						d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+						clip-rule="evenodd"
+					/>
+				</svg>
+				<span>{{ competitorsMessage }}</span>
 			</div>
 
 			<!-- Loading state -->
@@ -68,7 +85,7 @@ const generateCompetitors = async () => {
 
 			<div v-else>
 				<!-- Your Organization -->
-				<div class="mb-8">
+				<div class="mt-8 mb-8">
 					<h2 class="text-xl font-semibold mb-4">Your organization</h2>
 					<div v-if="organizationStore.ownedOrganizations.length === 0" class="text-neutral-500">You don't have an organization yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
