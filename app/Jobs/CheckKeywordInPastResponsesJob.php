@@ -47,7 +47,7 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
      * @param  \App\Models\Keyword  $keyword
      * @return void
      */
-    public function __construct(Keyword $keyword, ?int $teamId = null)
+    public function __construct(Keyword $keyword, int $teamId)
     {
 		$this->model = $keyword;
 		$this->teamId = $teamId;
@@ -65,10 +65,8 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
             // Mark the job as started
             $this->markJobAsStarted();
 
-			// wait for 3 seconds
+			// Wait for 3 seconds
             sleep(3);
-
-            Log::info('Starting CheckKeywordInPastResponsesJob for keyword: ' . $this->keyword->name);
 
             // Update progress
             $this->updateJobProgress(10, 'Fetching responses');

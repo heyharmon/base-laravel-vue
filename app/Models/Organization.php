@@ -13,7 +13,7 @@ class Organization extends Model
     use HasFactory;
 
 	protected $guarded = [
-		'id', 'team_id'
+		'id'
 	];
 
     protected $casts = [

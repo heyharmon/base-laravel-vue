@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button.vue'
 
 const organizationStore = useOrganizationStore()
 const router = useRouter()
+const isGeneratingCompetitors = ref(false)
 
 onMounted(async () => {
 	await organizationStore.fetchOrganizations()
@@ -23,6 +24,12 @@ const deleteOrganization = async (organizationId) => {
 		console.error('Error deleting organization:', error)
 	}
 }
+
+const generateCompetitors = async () => {
+	isGeneratingCompetitors.value = true
+	await organizationStore.generateCompetitors()
+	isGeneratingCompetitors.value = false
+}
 </script>
 
 <template>
@@ -30,9 +37,23 @@ const deleteOrganization = async (organizationId) => {
 		<div class="container mx-auto py-8">
 			<div class="flex justify-between items-center mb-8">
 				<h1 class="text-2xl font-bold">Keywords</h1>
-				<Button @click="router.push({ name: 'organizations.create' })">
-					{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
-				</Button>
+				<div class="flex space-x-2">
+					<Button
+						v-if="organizationStore.ownedOrganizations.length > 0"
+						@click="generateCompetitors"
+						:disabled="isGeneratingCompetitors"
+						variant="secondary"
+					>
+						<span v-if="isGeneratingCompetitors" class="flex items-center">
+							<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-900 rounded-full"></span>
+							Generating...
+						</span>
+						<span v-else>Generate competitors</span>
+					</Button>
+					<Button @click="router.push({ name: 'organizations.create' })">
+						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
+					</Button>
+				</div>
 			</div>
 
 			<!-- Loading state -->
@@ -41,10 +62,7 @@ const deleteOrganization = async (organizationId) => {
 			</div>
 
 			<!-- Error state -->
-			<div
-				v-else-if="organizationStore.error"
-				class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
-			>
+			<div v-else-if="organizationStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
 				{{ organizationStore.error }}
 			</div>
 
@@ -52,9 +70,7 @@ const deleteOrganization = async (organizationId) => {
 				<!-- Your Organization -->
 				<div class="mb-8">
 					<h2 class="text-xl font-semibold mb-4">Your organization</h2>
-					<div v-if="organizationStore.ownedOrganizations.length === 0" class="text-neutral-500">
-						You don't have an organization yet.
-					</div>
+					<div v-if="organizationStore.ownedOrganizations.length === 0" class="text-neutral-500">You don't have an organization yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<router-link
 							v-for="org in organizationStore.ownedOrganizations"
@@ -73,14 +89,12 @@ const deleteOrganization = async (organizationId) => {
 								<!-- <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your organization</span> -->
 							</div>
 							<div class="mt-2 text-sm text-neutral-600">
-								<div v-if="org.website">Website: {{ org.website }}</div>
+								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
-								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
-									Edit
-								</button>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
 							</div>
 						</router-link>
 					</div>
@@ -89,9 +103,7 @@ const deleteOrganization = async (organizationId) => {
 				<!-- Competitor Organizations -->
 				<div>
 					<h2 class="text-xl font-semibold mb-4">Competitors</h2>
-					<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">
-						You haven't added any competitors yet.
-					</div>
+					<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">You haven't added any competitors yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<router-link
 							v-for="org in organizationStore.competitorOrganizations"
@@ -110,14 +122,12 @@ const deleteOrganization = async (organizationId) => {
 								<!-- <span class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded">Competitor</span> -->
 							</div>
 							<div class="mt-2 text-sm text-neutral-600">
-								<div v-if="org.website">Website: {{ org.website }}</div>
+								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
-								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
-									Edit
-								</button>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
 							</div>
 						</router-link>
 					</div>
