@@ -82,9 +82,6 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
             // Update progress
             $this->updateJobProgress(10, 'Finding competitors in response');
 
-			// Wait for 3 seconds
-            sleep(3);
-
             // Get the owned organization for this team
             $ownedOrganization = Organization::where('team_id', $this->teamId)
                 ->where('is_competitor', false)

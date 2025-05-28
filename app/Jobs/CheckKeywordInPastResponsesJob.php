@@ -65,9 +65,6 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
             // Mark the job as started
             $this->markJobAsStarted();
 
-			// Wait for 3 seconds
-            sleep(3);
-
             // Update progress
             $this->updateJobProgress(10, 'Fetching responses');
 
