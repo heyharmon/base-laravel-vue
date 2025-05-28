@@ -9,6 +9,15 @@ use Illuminate\Support\Str;
 trait HasJobStatus
 {
     /**
+     * Boot the trait.
+     */
+    public static function bootHasJobStatus()
+    {
+        static::deleting(function ($model) {
+            $model->jobStatuses()->delete();
+        });
+    }
+    /**
      * Get all job statuses for this model.
      */
     public function jobStatuses()
