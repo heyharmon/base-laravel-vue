@@ -2,12 +2,14 @@
 import { onMounted, ref, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import { useKeywordStore } from '@/stores/keywordStore'
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
+const keywordStore = useKeywordStore()
 const router = useRouter()
 const isGeneratingCompetitors = ref(false)
 
@@ -49,9 +51,20 @@ const deleteOrganization = async (organizationId) => {
 	}
 }
 
+// TODO: Create a controller dedicated to accepting recommended competitors
 const acceptRecommendedCompetitor = async (organizationId) => {
 	try {
-		await organizationStore.updateOrganization(organizationId, { is_recommended: false })
+		let organization = await organizationStore.updateOrganization(organizationId, { is_recommended: false })
+
+		// Use the keyword store to create two keywords for the organization name and website
+		if (organization.name) {
+			await keywordStore.createKeyword(organizationId, { name: organization.name })
+		}
+		if (organization.website) {
+			await keywordStore.createKeyword(organizationId, { name: organization.website })
+		}
+
+		organizationStore.fetchOrganizations()
 	} catch (error) {
 		console.error('Error accepting recommended competitor:', error)
 	}
@@ -137,6 +150,10 @@ const generateCompetitors = async () => {
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
+								<div class="mt-1 flex items-center">
+									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+								</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
 								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
@@ -169,6 +186,10 @@ const generateCompetitors = async () => {
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
+								<div class="mt-1 flex items-center">
+									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+								</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
 								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>

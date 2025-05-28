@@ -16,7 +16,10 @@ class OrganizationController extends Controller
     {
 		$teamId = Auth::user()->current_team_id;
 
-        $organizations = Organization::where('team_id', $teamId)->withRecommended()->get();
+        $organizations = Organization::where('team_id', $teamId)
+            ->withRecommended()
+            ->withCount('keywords')
+            ->get();
 
         return response()->json($organizations);
     }
@@ -113,6 +116,7 @@ class OrganizationController extends Controller
             return response()->json(['message' => 'Cannot delete the default organization'], 422);
         }
 
+        // Delete the organization
         $organization->delete();
 
         return response()->json(null, 204);

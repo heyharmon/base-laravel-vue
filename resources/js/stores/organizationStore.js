@@ -79,11 +79,14 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 		try {
 			const response = await api.put(`/organizations/${organizationId}`, organizationData)
+			console.log('response', response)
+
+			// Update current organization if matches
 			if (currentOrganization.value && currentOrganization.value.id === organizationId) {
 				currentOrganization.value = { ...currentOrganization.value, ...organizationData }
 			}
-			await fetchOrganizations()
-			return response.data
+
+			return response
 		} catch (err) {
 			error.value = err.response?.data?.message || 'Failed to update organization'
 			console.error('Error updating organization:', err)

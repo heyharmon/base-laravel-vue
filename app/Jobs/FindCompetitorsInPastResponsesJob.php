@@ -16,6 +16,7 @@ use App\Tools\SearchApiTool;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Organization;
+use App\Models\Keyword;
 
 class FindCompetitorsInPastResponsesJob extends TrackableJob
 {
@@ -27,13 +28,6 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
      * @var int
      */
     public $tries = 3;
-
-    /**
-     * The prompt instance.
-     *
-     * @var \App\Models\Prompt
-     */
-    // protected $prompt;
 
     /**
      * The response instance.
