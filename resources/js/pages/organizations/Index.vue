@@ -26,6 +26,22 @@ const deleteOrganization = async (organizationId) => {
 	}
 }
 
+const acceptRecommendedCompetitor = async (organizationId) => {
+	try {
+		await organizationStore.updateOrganization(organizationId, { is_recommended: false })
+	} catch (error) {
+		console.error('Error accepting recommended competitor:', error)
+	}
+}
+
+const denyRecommendedCompetitor = async (organizationId) => {
+	try {
+		await organizationStore.deleteOrganization(organizationId)
+	} catch (error) {
+		console.error('Error denying recommended competitor:', error)
+	}
+}
+
 const generateCompetitors = async () => {
 	isGeneratingCompetitors.value = true
 	competitorsMessage.value = 'Competitor generation jobs are now running. Refresh the page when queued runs are complete.'
@@ -62,7 +78,10 @@ const generateCompetitors = async () => {
 			</div>
 
 			<!-- Competitors generation message -->
-			<div v-if="competitorsMessage" class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
+			<div
+				v-if="!organizationStore.error && competitorsMessage"
+				class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
 					<path
 						fill-rule="evenodd"
@@ -118,7 +137,7 @@ const generateCompetitors = async () => {
 				</div>
 
 				<!-- Competitor Organizations -->
-				<div>
+				<div class="mb-8">
 					<h2 class="text-xl font-semibold mb-4">Competitors</h2>
 					<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">You haven't added any competitors yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -147,6 +166,47 @@ const generateCompetitors = async () => {
 								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
 							</div>
 						</router-link>
+					</div>
+				</div>
+
+				<!-- Recommended Competitors -->
+				<div v-if="organizationStore.recommendedCompetitors.length > 0">
+					<h2 class="text-xl font-semibold mb-4">Recommended Competitors</h2>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						<div
+							v-for="org in organizationStore.recommendedCompetitors"
+							:key="org.id"
+							class="bg-white border border-neutral-200 p-4 rounded-lg shadow"
+						>
+							<div class="flex justify-between items-start">
+								<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
+								<img
+									v-if="org.website"
+									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
+									:alt="org.name + ' logo'"
+									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
+								/>
+							</div>
+							<div class="mt-2 text-sm text-neutral-600">
+								<div v-if="org.website">{{ org.website }}</div>
+								<div v-if="org.founded">Founded: {{ org.founded }}</div>
+								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
+							</div>
+							<div class="mt-4 flex space-x-2">
+								<button
+									@click="acceptRecommendedCompetitor(org.id)"
+									class="bg-green-100 hover:bg-green-200 text-green-800 text-sm px-3 py-1 rounded transition-colors cursor-pointer"
+								>
+									Accept
+								</button>
+								<button
+									@click="denyRecommendedCompetitor(org.id)"
+									class="bg-red-100 hover:bg-red-200 text-red-800 text-sm px-3 py-1 rounded transition-colors cursor-pointer"
+								>
+									Deny
+								</button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

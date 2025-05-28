@@ -17,7 +17,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 	// Getters
 	const ownedOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => !org.is_competitor) : []))
-	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor) : []))
+	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor && !org.is_recommended) : []))
+	const recommendedCompetitors = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor && org.is_recommended) : []))
 
 	// Actions
 	async function fetchOrganizations() {
@@ -146,7 +147,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 			return response
 		} catch (err) {
-			error.value = err.response?.data?.message || 'Failed to generate competitors'
+			error.value = err.response?.data?.message || 'Failed to generate competitors. Make sure you have prompt responses.'
 			console.error('Error generating competitors:', err)
 			throw err
 		} finally {
@@ -166,6 +167,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		// Getters
 		ownedOrganizations,
 		competitorOrganizations,
+		recommendedCompetitors,
 
 		// Actions
 		fetchOrganizations,

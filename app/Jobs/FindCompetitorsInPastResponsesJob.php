@@ -179,15 +179,11 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
 
             // Check if this competitor already exists
             $existingOrganization = Organization::where('team_id', $this->teamId)
-                ->where('name', $competitor['name'])
+                ->where('website', $competitor['website'])
+				->withRecommended()
                 ->first();
 
             if ($existingOrganization) {
-                // Update website if it's provided and not already set
-                if (!empty($competitor['website']) && empty($existingOrganization->website)) {
-                    $existingOrganization->update(['website' => $competitor['website']]);
-                }
-
                 // Ensure it's marked as a competitor
                 if (!$existingOrganization->is_competitor) {
                     $existingOrganization->update(['is_competitor' => true]);
@@ -199,6 +195,7 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
 					'name' => $competitor['name'],
 					'website' => $competitor['website'] ?? null,
 					'is_competitor' => true,
+					'is_recommended' => true,
 				]);
 
 				$createdCount++;

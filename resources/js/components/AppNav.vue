@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import auth from '@/services/auth'
 import { useTeamStore } from '@/stores/teamStore'
@@ -62,12 +62,8 @@ const switchTeam = async (teamId) => {
 
 onMounted(() => {
 	loadTeams()
+	jobStatusStore.pollTeamJobs()
 	isTeamDropdownOpen.value = false
-})
-
-// Clean up interval when component is unmounted
-onUnmounted(() => {
-	jobStatusStore.stopAutoRefresh()
 })
 </script>
 
