@@ -54,9 +54,10 @@ const deleteOrganization = async (organizationId) => {
 // TODO: Create a controller dedicated to accepting recommended competitors
 const acceptRecommendedCompetitor = async (organizationId) => {
 	try {
-		let organization = await organizationStore.updateOrganization(organizationId, { is_recommended: false })
+		let organization = await organizationStore.acceptRecommendedCompetitor(organizationId)
 
 		// Use the keyword store to create two keywords for the organization name and website
+		// TODO: Do this in the controller, then call acceptRecommendedCompetitor from the store directly
 		if (organization.name) {
 			await keywordStore.createKeyword(organizationId, { name: organization.name })
 		}
@@ -69,18 +70,6 @@ const acceptRecommendedCompetitor = async (organizationId) => {
 		console.error('Error accepting recommended competitor:', error)
 	}
 }
-
-const denyRecommendedCompetitor = async (organizationId) => {
-	try {
-		await organizationStore.deleteRecommendedOrganization(organizationId)
-	} catch (error) {
-		console.error('Error denying recommended competitor:', error)
-	}
-}
-
-const generateCompetitors = async () => {
-	await organizationStore.generateCompetitors()
-}
 </script>
 
 <template>
@@ -91,7 +80,7 @@ const generateCompetitors = async () => {
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
-						@click="generateCompetitors"
+						@click="organizationStore.generateRecommendedCompetitors()"
 						:disabled="isGeneratingCompetitors"
 						variant="outline"
 					>
@@ -229,7 +218,7 @@ const generateCompetitors = async () => {
 									Accept
 								</button>
 								<button
-									@click="denyRecommendedCompetitor(org.id)"
+									@click="organizationStore.denyRecommendedCompetitor(org.id)"
 									class="bg-red-100 hover:bg-red-200 text-red-800 text-sm px-3 py-1 rounded transition-colors cursor-pointer"
 								>
 									Deny

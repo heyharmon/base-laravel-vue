@@ -85,10 +85,29 @@ class CompetitorRecommendationsController extends Controller
         return response()->json($organizations);
     }
 
+	/**
+     * Update the specified resource in storage.
+     */
+    public function accept(Request $request, $id): JsonResponse
+    {
+		$organization = Organization::withRecommended()->findOrFail($id);
+
+        // Ensure the organization belongs to the current team
+        if ($organization->team_id !== request()->user()->currentTeam->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $organization->update([
+            'is_recommended' => false,
+        ]);
+
+        return response()->json($organization);
+    }
+
     /**
      * Remove the specified recommended organization from storage.
      */
-    public function destroy($id): JsonResponse
+    public function deny($id): JsonResponse
     {
         // Find organization with the withRecommended scope to include recommended organizations
         $organization = Organization::withRecommended()->findOrFail($id);

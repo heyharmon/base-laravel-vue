@@ -116,24 +116,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function deleteRecommendedOrganization(organizationId) {
-		console.log('Deleting recommended organization ID:', organizationId)
-		isLoading.value = true
-		error.value = null
-
-		try {
-			const response = await api.delete(`/competitor-recommendations/${organizationId}`)
-			await fetchOrganizations()
-			return response.data
-		} catch (err) {
-			error.value = err.response?.data?.message || 'Failed to delete recommended organization'
-			console.error('Error deleting recommended organization:', err)
-			throw err
-		} finally {
-			isLoading.value = false
-		}
-	}
-
 	async function fetchVisibilityMetrics(params = {}) {
 		console.log('Fetching visibility metrics...')
 		isLoadingVisibility.value = true
@@ -158,7 +140,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function generateCompetitors() {
+	async function generateRecommendedCompetitors() {
 		console.log('Generating competitors from past responses...')
 		isLoading.value = true
 		error.value = null
@@ -172,6 +154,41 @@ export const useOrganizationStore = defineStore('organization', () => {
 		} catch (err) {
 			error.value = err.response?.data?.message || 'Failed to generate competitors. Make sure you have prompt responses.'
 			console.error('Error generating competitors:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
+
+	async function acceptRecommendedCompetitor(organizationId) {
+		console.log('Accepting recommended competitor ID:', organizationId)
+		isLoading.value = true
+		error.value = null
+
+		try {
+			const response = await api.put(`/competitor-recommendations/${organizationId}/accept`)
+			return response
+		} catch (err) {
+			error.value = err.response?.data?.message || 'Failed to accept recommended competitor'
+			console.error('Error accepting recommended competitor:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
+
+	async function denyRecommendedCompetitor(organizationId) {
+		console.log('Denying recommended organization ID:', organizationId)
+		isLoading.value = true
+		error.value = null
+
+		try {
+			const response = await api.delete(`/competitor-recommendations/${organizationId}/deny`)
+			await fetchOrganizations()
+			return response
+		} catch (err) {
+			error.value = err.response?.data?.message || 'Failed to deny recommended organization'
+			console.error('Error denying recommended organization:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -198,8 +215,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 		createOrganization,
 		updateOrganization,
 		deleteOrganization,
-		deleteRecommendedOrganization,
 		fetchVisibilityMetrics,
-		generateCompetitors
+		generateRecommendedCompetitors,
+		acceptRecommendedCompetitor,
+		denyRecommendedCompetitor
 	}
 })

@@ -65,10 +65,8 @@ class OrganizationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id): JsonResponse
+    public function update(Request $request, Organization $organization): JsonResponse
     {
-        $organization = Organization::findOrFail($id);
-
         // Ensure the organization belongs to the current team
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -87,8 +85,6 @@ class OrganizationController extends Controller
             'country' => 'sometimes|nullable|string|max:255',
             'founded' => 'sometimes|nullable|string|max:255',
             'employee_count' => 'sometimes|nullable|string|max:255',
-            'is_competitor' => 'sometimes|boolean',
-            'is_recommended' => 'sometimes|boolean',
         ]);
 
         $organization->update($validated);
@@ -99,10 +95,8 @@ class OrganizationController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id): JsonResponse
+    public function destroy(Organization $organization): JsonResponse
     {
-        $organization = Organization::findOrFail($id);
-
         // Ensure the organization belongs to the current team
         if ($organization->team_id !== request()->user()->currentTeam->id) {
             return response()->json(['message' => 'Unauthorized'], 403);

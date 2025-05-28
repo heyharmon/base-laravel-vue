@@ -55,7 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Organization Competitor Recommendations
 	Route::post('generate-competitor-recommendations', [CompetitorRecommendationsController::class, 'generate']);
 	Route::get('competitor-recommendations', [CompetitorRecommendationsController::class, 'index']);
-	Route::delete('competitor-recommendations/{id}', [CompetitorRecommendationsController::class, 'destroy']);
+	Route::put('competitor-recommendations/{id}/accept', [CompetitorRecommendationsController::class, 'accept']);
+	Route::delete('competitor-recommendations/{id}/deny', [CompetitorRecommendationsController::class, 'deny']);
 
 	// Keywords
 	Route::resource('organizations/{organization}/keywords', KeywordController::class);
