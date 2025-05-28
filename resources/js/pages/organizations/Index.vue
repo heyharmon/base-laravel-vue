@@ -1,17 +1,40 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const organizationStore = useOrganizationStore()
+const jobStatusStore = useJobStatusStore()
 const router = useRouter()
 const isGeneratingCompetitors = ref(false)
-const competitorsMessage = ref(null)
+
+const activeCompetitorJobs = computed(() => {
+	return jobStatusStore.jobs.filter(
+		(job) => job.job_class.includes('FindCompetitorsInPastResponsesJob') && (job.status === 'pending' || job.status === 'processing')
+	)
+})
+
+watch(
+	activeCompetitorJobs,
+	(newJobs, oldJobs) => {
+		if (newJobs.length > 0) {
+			// Jobs are running
+			isGeneratingCompetitors.value = true
+		} else if (oldJobs.length > 0 && newJobs.length === 0) {
+			// Jobs were running but now they're done
+			isGeneratingCompetitors.value = false
+			organizationStore.fetchOrganizations()
+		}
+	},
+	{ deep: true }
+)
 
 onMounted(async () => {
 	await organizationStore.fetchOrganizations()
+	await jobStatusStore.pollTeamJobs()
 })
 
 const deleteOrganization = async (organizationId) => {
@@ -43,13 +66,7 @@ const denyRecommendedCompetitor = async (organizationId) => {
 }
 
 const generateCompetitors = async () => {
-	isGeneratingCompetitors.value = true
-	competitorsMessage.value = 'Competitor generation jobs are now running. Refresh the page when queued runs are complete.'
-
 	await organizationStore.generateCompetitors()
-
-	setTimeout(() => (isGeneratingCompetitors.value = false), 1000)
-	setTimeout(() => (competitorsMessage.value = null), 10000)
 }
 </script>
 
@@ -65,11 +82,7 @@ const generateCompetitors = async () => {
 						:disabled="isGeneratingCompetitors"
 						variant="outline"
 					>
-						<span v-if="isGeneratingCompetitors" class="flex items-center">
-							<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-900 rounded-full"></span>
-							Generating...
-						</span>
-						<span v-else>Generate competitors</span>
+						{{ isGeneratingCompetitors ? 'Generating...' : 'Generate competitors' }}
 					</Button>
 					<Button @click="router.push({ name: 'organizations.create' })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
@@ -79,17 +92,14 @@ const generateCompetitors = async () => {
 
 			<!-- Competitors generation message -->
 			<div
-				v-if="!organizationStore.error && competitorsMessage"
+				v-if="!organizationStore.error && isGeneratingCompetitors"
 				class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-					<path
-						fill-rule="evenodd"
-						d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-						clip-rule="evenodd"
-					/>
-				</svg>
-				<span>{{ competitorsMessage }}</span>
+				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+				<span
+					>Competitor generation jobs are now running. Checking {{ activeCompetitorJobs.length }} prompt
+					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.</span
+				>
 			</div>
 
 			<!-- Loading state -->
@@ -122,9 +132,8 @@ const generateCompetitors = async () => {
 									:alt="org.name + ' logo'"
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
-								<!-- <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Your organization</span> -->
 							</div>
-							<div class="mt-2 text-sm text-neutral-600">
+							<div class="text-sm text-neutral-600">
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
@@ -155,9 +164,8 @@ const generateCompetitors = async () => {
 									:alt="org.name + ' logo'"
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
-								<!-- <span class="bg-neutral-200 text-neutral-800 text-xs px-2 py-1 rounded">Competitor</span> -->
 							</div>
-							<div class="mt-2 text-sm text-neutral-600">
+							<div class="text-sm text-neutral-600">
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
@@ -171,7 +179,7 @@ const generateCompetitors = async () => {
 
 				<!-- Recommended Competitors -->
 				<div v-if="organizationStore.recommendedCompetitors.length > 0">
-					<h2 class="text-xl font-semibold mb-4">Recommended Competitors</h2>
+					<h2 class="text-xl font-semibold mb-4">Recommended competitors</h2>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<div
 							v-for="org in organizationStore.recommendedCompetitors"
@@ -187,7 +195,7 @@ const generateCompetitors = async () => {
 									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
 								/>
 							</div>
-							<div class="mt-2 text-sm text-neutral-600">
+							<div class="text-sm text-neutral-600">
 								<div v-if="org.website">{{ org.website }}</div>
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
