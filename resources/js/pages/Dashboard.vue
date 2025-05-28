@@ -161,7 +161,6 @@ watch(
 )
 
 onMounted(async () => {
-	await organizationStore.fetchOrganizations()
 	await organizationStore.fetchVisibilityMetrics()
 	await promptStore.fetchPrompts()
 })
