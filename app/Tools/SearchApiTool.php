@@ -11,7 +11,7 @@ class SearchApiTool extends Tool
     {
         $this
             ->as('search_api')
-            ->for('useful when you need to search for current information, news, or facts on Google')
+            ->for('useful when you need to search for current information, companies, or facts on Google. If you need to search for information for a given year, use the current year (' . date('Y') . ') in the query.')
             ->withStringParameter('query', 'Detailed search query. Best to search one topic at a time.')
             ->using($this);
     }
