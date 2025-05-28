@@ -72,7 +72,7 @@ const acceptRecommendedCompetitor = async (organizationId) => {
 
 const denyRecommendedCompetitor = async (organizationId) => {
 	try {
-		await organizationStore.deleteOrganization(organizationId)
+		await organizationStore.deleteRecommendedOrganization(organizationId)
 	} catch (error) {
 		console.error('Error denying recommended competitor:', error)
 	}

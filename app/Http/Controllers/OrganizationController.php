@@ -17,7 +17,6 @@ class OrganizationController extends Controller
 		$teamId = Auth::user()->current_team_id;
 
         $organizations = Organization::where('team_id', $teamId)
-            ->withRecommended()
             ->withCount('keywords')
             ->get();
 
@@ -68,8 +67,7 @@ class OrganizationController extends Controller
      */
     public function update(Request $request, $id): JsonResponse
     {
-        // Find organization with the withRecommended scope to include recommended organizations
-        $organization = Organization::withRecommended()->findOrFail($id);
+        $organization = Organization::findOrFail($id);
 
         // Ensure the organization belongs to the current team
         if ($organization->team_id !== request()->user()->currentTeam->id) {
@@ -103,8 +101,7 @@ class OrganizationController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        // Find organization with the withRecommended scope to include recommended organizations
-        $organization = Organization::withRecommended()->findOrFail($id);
+        $organization = Organization::findOrFail($id);
 
         // Ensure the organization belongs to the current team
         if ($organization->team_id !== request()->user()->currentTeam->id) {

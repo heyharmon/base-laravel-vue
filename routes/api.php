@@ -22,7 +22,7 @@ use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
-use App\Http\Controllers\FindCompetitorsController;
+use App\Http\Controllers\CompetitorRecommendationsController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -52,8 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
 	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
 
-	// Competitors
-	Route::post('find-competitors', [FindCompetitorsController::class, 'store']);
+	// Organization Competitor Recommendations
+	Route::post('generate-competitor-recommendations', [CompetitorRecommendationsController::class, 'generate']);
+	Route::get('competitor-recommendations', [CompetitorRecommendationsController::class, 'index']);
+	Route::delete('competitor-recommendations/{id}', [CompetitorRecommendationsController::class, 'destroy']);
 
 	// Keywords
 	Route::resource('organizations/{organization}/keywords', KeywordController::class);

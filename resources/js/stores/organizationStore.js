@@ -27,8 +27,10 @@ export const useOrganizationStore = defineStore('organization', () => {
 		error.value = null
 
 		try {
-			const response = await api.get('/organizations')
-			organizations.value = response
+			const [orgsResponse, recommendedResponse] = await Promise.all([api.get('/organizations'), api.get('/competitor-recommendations')])
+
+			// Combine regular organizations with recommended ones
+			organizations.value = [...orgsResponse, ...recommendedResponse]
 		} catch (err) {
 			error.value = err.response?.data?.message || 'Failed to fetch organizations'
 			console.error('Error fetching organizations:', err)
@@ -114,6 +116,24 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
+	async function deleteRecommendedOrganization(organizationId) {
+		console.log('Deleting recommended organization ID:', organizationId)
+		isLoading.value = true
+		error.value = null
+
+		try {
+			const response = await api.delete(`/competitor-recommendations/${organizationId}`)
+			await fetchOrganizations()
+			return response.data
+		} catch (err) {
+			error.value = err.response?.data?.message || 'Failed to delete recommended organization'
+			console.error('Error deleting recommended organization:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
+
 	async function fetchVisibilityMetrics(params = {}) {
 		console.log('Fetching visibility metrics...')
 		isLoadingVisibility.value = true
@@ -144,7 +164,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		error.value = null
 
 		try {
-			const response = await api.post('/find-competitors')
+			const response = await api.post('/generate-competitor-recommendations')
 
 			await jobStatusStore.pollTeamJobs()
 
@@ -178,6 +198,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		createOrganization,
 		updateOrganization,
 		deleteOrganization,
+		deleteRecommendedOrganization,
 		fetchVisibilityMetrics,
 		generateCompetitors
 	}

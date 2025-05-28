@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\FindCompetitorsInPastResponsesJob;
-use App\Models\Prompt;
-use App\Models\Response;
-use App\Services\JobDispatcherService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Services\JobDispatcherService;
+use App\Models\Prompt;
+use App\Models\Organization;
+use App\Jobs\FindCompetitorsInPastResponsesJob;
 
-class FindCompetitorsController extends Controller
+class CompetitorRecommendationsController extends Controller
 {
-    protected $jobDispatcher;
+	protected $jobDispatcher;
 
     public function __construct(JobDispatcherService $jobDispatcher)
     {
         $this->jobDispatcher = $jobDispatcher;
     }
 
-    public function store(Request $request): JsonResponse
+	public function generate(Request $request): JsonResponse
     {
         $teamId = Auth::user()->current_team_id;
 
@@ -67,5 +67,40 @@ class FindCompetitorsController extends Controller
             'prompts_count' => count($promptsWithResponses),
             'total_jobs' => count($jobs)
         ]);
+    }
+
+    /**
+     * Display a listing of the recommended organizations.
+     */
+    public function index(): JsonResponse
+    {
+        $teamId = Auth::user()->current_team_id;
+
+        $organizations = Organization::where('team_id', $teamId)
+            ->withRecommended()
+            ->where('is_recommended', true)
+            ->withCount('keywords')
+            ->get();
+
+        return response()->json($organizations);
+    }
+
+    /**
+     * Remove the specified recommended organization from storage.
+     */
+    public function destroy($id): JsonResponse
+    {
+        // Find organization with the withRecommended scope to include recommended organizations
+        $organization = Organization::withRecommended()->findOrFail($id);
+
+        // Ensure the organization belongs to the current team
+        if ($organization->team_id !== request()->user()->currentTeam->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Delete the organization
+        $organization->delete();
+
+        return response()->json(null, 204);
     }
 }
