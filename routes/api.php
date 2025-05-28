@@ -82,9 +82,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
     // Job status routes
-    Route::get('/job-statuses', [JobStatusController::class, 'getModelJobStatuses']);
-    Route::get('/job-status/{jobId}', [JobStatusController::class, 'getJobStatus']);
-    Route::get('/active-jobs', [JobStatusController::class, 'getActiveJobs']);
     Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
-    Route::get('/job-batch/{batchId}', [JobStatusController::class, 'getBatchInfo']);
 });

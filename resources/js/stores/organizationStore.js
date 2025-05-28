@@ -142,8 +142,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		try {
 			const response = await api.post('/find-competitors')
 
-			await jobStatusStore.fetchTeamJobs()
-			jobStatusStore.startAutoRefresh(1000)
+			await jobStatusStore.pollTeamJobs()
 
 			return response
 		} catch (err) {

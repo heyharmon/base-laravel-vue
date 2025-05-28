@@ -153,7 +153,7 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
         $response = Prism::structured()
             ->using(Provider::OpenAI, 'gpt-4o')
             ->withSchema($schema)
-            ->withPrompt('Here is a prompt response about my organization ' . $ownedOrganization->name . ', please find mentions of my potential competitors and return them as an array including the competitors name and website domain (if website is found in the response): ' . $responseContent)
+            ->withPrompt('Here is a prompt response about my organization ' . $ownedOrganization->name . ', please find mentions of my potential competitors (do not include potential competitors not mentioned in the prompt response) and return them as an array including the competitor\'s name and website root domain (if website is found in the response): ' . $responseContent)
             ->asStructured();
 
         $result = $response->structured;
