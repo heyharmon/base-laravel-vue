@@ -42,13 +42,7 @@ class Organization extends Model
         return $this->hasMany(Keyword::class);
     }
 
-    /**
-     * Get the mentions that belong to the organization.
-     */
-    public function mentions(): HasMany
-    {
-        return $this->hasMany(Mention::class);
-    }
+
 
     /**
      * Calculate the visibility percentage for this organization.
@@ -68,8 +62,17 @@ class Organization extends Model
             return 0;
         }
 
-        // Count total mentions for this organization
-        $totalMentions = $this->mentions()->count();
+        // Count responses that contain at least one keyword from this organization
+        $keywordIds = $this->keywords()->pluck('id')->toArray();
+        
+        $totalMentions = 0;
+        if (!empty($keywordIds)) {
+            $totalMentions = Response::whereHas('prompt', function ($query) use ($teamId) {
+                $query->where('team_id', $teamId);
+            })->whereHas('keywords', function ($query) use ($keywordIds) {
+                $query->whereIn('keywords.id', $keywordIds);
+            })->count();
+        }
 
         return round(($totalMentions / $totalResponses) * 100, 2);
     }

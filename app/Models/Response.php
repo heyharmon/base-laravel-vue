@@ -43,11 +43,5 @@ class Response extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Get the mentions for this response.
-     */
-    public function mentions(): HasMany
-    {
-        return $this->hasMany(Mention::class);
-    }
+
 }
