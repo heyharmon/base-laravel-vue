@@ -142,32 +142,28 @@ onMounted(async () => {
 			<div class="flex flex-col">
 				<!-- Prompts column -->
 				<div class="w-full">
-                                        <div class="mb-4">
-                                                <PromptToolbar
-                                                        :sort-option="sortOption"
-                                                        :is-loading="promptStore.isLoading"
-                                                        :is-running-all="promptStore.isRunningAll"
-                                                        :disable-run-all="promptStore.isLoading || promptStore.loadingPromptIds.length > 0 || promptStore.isRunningAll"
-                                                        @update:sort-option="(v) => (sortOption = v)"
-                                                        @run-all="runAllPrompts"
-                                                        @add="isPromptCreateModalOpen = true"
-                                                        @generate="isGenerateModalOpen = true"
-                                                />
-                                        </div>
+					<div class="mb-4">
+						<PromptToolbar
+							:sort-option="sortOption"
+							@update:sort-option="(v) => (sortOption = v)"
+							@run-all="runAllPrompts"
+							@add="isPromptCreateModalOpen = true"
+							@generate="isGenerateModalOpen = true"
+						/>
+					</div>
 
-                                        <div v-if="sortedPrompts.length" class="space-y-4">
-                                                <PromptListItem
-                                                        v-for="prompt in sortedPrompts"
-                                                        :key="prompt.id"
-                                                        :prompt="prompt"
-                                                        :is-selected="selectedPromptId === prompt.id"
-                                                        :loading-prompt-ids="promptStore.loadingPromptIds"
-                                                        :jobs="jobStatusStore.jobs || []"
-                                                        @select="showPromptDetails"
-                                                        @run="(id, count) => runPrompt(id, count)"
-                                                        @delete="confirmDeletePrompt"
-                                                />
-                                        </div>
+					<div v-if="sortedPrompts.length" class="space-y-4">
+						<PromptListItem
+							v-for="prompt in sortedPrompts"
+							:key="prompt.id"
+							:prompt="prompt"
+							:is-selected="selectedPromptId === prompt.id"
+							:jobs="jobStatusStore.jobs || []"
+							@select="showPromptDetails"
+							@run="(id, count) => runPrompt(id, count)"
+							@delete="confirmDeletePrompt"
+						/>
+					</div>
 					<div v-else class="text-center py-4 text-neutral-500 text-sm">No prompts data available</div>
 				</div>
 			</div>
@@ -193,10 +189,6 @@ onMounted(async () => {
 		"
 	/>
 
-        <!-- Delete Confirmation Modal -->
-        <DeletePromptModal
-                :is-open="showDeleteConfirmation"
-                @cancel="cancelDelete"
-                @confirm="deletePrompt"
-        />
+	<!-- Delete Confirmation Modal -->
+	<DeletePromptModal :is-open="showDeleteConfirmation" @cancel="cancelDelete" @confirm="deletePrompt" />
 </template>

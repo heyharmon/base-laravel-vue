@@ -43,10 +43,7 @@ const declineInvitation = async (teamId) => {
 			</div>
 
 			<!-- Error state -->
-			<div
-				v-else-if="teamStore.error"
-				class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
-			>
+			<div v-else-if="teamStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
 				{{ teamStore.error }}
 			</div>
 
@@ -54,9 +51,7 @@ const declineInvitation = async (teamId) => {
 				<!-- Teams you own -->
 				<div class="mb-8">
 					<h2 class="text-xl font-semibold mb-4">Teams You Own</h2>
-					<div v-if="teamStore.ownedTeams.length === 0" class="text-neutral-500">
-						You don't own any teams yet.
-					</div>
+					<div v-if="teamStore.ownedTeams.length === 0" class="text-neutral-500">You don't own any teams yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<router-link
 							v-for="team in teamStore.ownedTeams"
@@ -70,14 +65,10 @@ const declineInvitation = async (teamId) => {
 							</div>
 							<div class="mt-2 text-sm text-neutral-600">
 								<div>{{ team.members_count }} members</div>
-								<div v-if="team.pending_invitations_count > 0">
-									{{ team.pending_invitations_count }} pending invitations
-								</div>
+								<div v-if="team.pending_invitations_count > 0">{{ team.pending_invitations_count }} pending invitations</div>
 							</div>
 							<div class="mt-4">
-								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
-									View Team
-								</button>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">View Team</button>
 							</div>
 						</router-link>
 					</div>
@@ -86,9 +77,7 @@ const declineInvitation = async (teamId) => {
 				<!-- Teams you're a member of -->
 				<div class="mb-8">
 					<h2 class="text-xl font-semibold mb-4">Teams You've Joined</h2>
-					<div v-if="teamStore.joinedTeams.length === 0" class="text-neutral-500">
-						You haven't joined any teams yet.
-					</div>
+					<div v-if="teamStore.joinedTeams.length === 0" class="text-neutral-500">You haven't joined any teams yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<router-link
 							v-for="team in teamStore.joinedTeams"
@@ -104,9 +93,7 @@ const declineInvitation = async (teamId) => {
 								<div>{{ team.members_count }} members</div>
 							</div>
 							<div class="mt-4">
-								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">
-									View Team
-								</button>
+								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">View Team</button>
 							</div>
 						</router-link>
 					</div>
@@ -115,9 +102,7 @@ const declineInvitation = async (teamId) => {
 				<!-- Pending invitations -->
 				<div>
 					<h2 class="text-xl font-semibold mb-4">Pending Invitations</h2>
-					<div v-if="teamStore.pendingInvitations.length === 0" class="text-neutral-500">
-						You don't have any pending invitations.
-					</div>
+					<div v-if="teamStore.pendingInvitations.length === 0" class="text-neutral-500">You don't have any pending invitations.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<div
 							v-for="team in teamStore.pendingInvitations"
