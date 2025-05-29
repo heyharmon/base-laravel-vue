@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -40,6 +40,12 @@ watch(
 	{ deep: true }
 )
 
+// Computed property for the owned organization
+const ownedOrg = computed(() => {
+	if (!organizationStore.visibilityMetrics.length) return null
+	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+})
+
 onMounted(async () => {
 	await organizationStore.fetchVisibilityMetrics()
 })
@@ -47,6 +53,29 @@ onMounted(async () => {
 
 <template>
 	<DefaultLayout>
+		<!-- Visibility -->
+		<div v-if="ownedOrg" class="mb-8 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+			<div class="flex items-center justify-between">
+				<div>
+					<h2 class="text-lg font-semibold text-neutral-700">Your Organization Visibility</h2>
+					<p class="text-sm text-neutral-500">{{ ownedOrg?.name || 'Your Organization' }}</p>
+				</div>
+				<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-5 border-b-2 border-neutral-800"></div>
+			</div>
+
+			<div class="mt-4">
+				<div class="flex items-center gap-4">
+					<div class="text-5xl font-bold text-green-600">{{ ownedOrg?.visibility || 0 }}%</div>
+					<div class="flex-1">
+						<div class="w-full bg-neutral-200 rounded-full h-4">
+							<div class="h-4 rounded-full bg-green-500" :style="{ width: `${ownedOrg?.visibility || 0}%` }"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Rankings -->
 		<div class="mt-6">
 			<div class="flex items-center gap-2 mb-4">
 				<h1 class="text-2xl font-bold">Rankings</h1>
