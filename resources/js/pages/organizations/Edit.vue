@@ -8,6 +8,10 @@ import Button from '@/components/ui/Button.vue'
 import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue'
 import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue'
 import GenerateKeywordsModal from '@/components/GenerateKeywordsModal.vue'
+import KeywordNotification from '@/components/keywords/KeywordNotification.vue'
+import KeywordListItem from '@/components/keywords/KeywordListItem.vue'
+import RecommendedKeywordItem from '@/components/keywords/RecommendedKeywordItem.vue'
+import OrganizationForm from '@/components/organizations/OrganizationForm.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -208,135 +212,46 @@ const denyRecommendedKeyword = async (keywordId, keywordName) => {
 							<div class="text-neutral-400 text-sm">No keywords yet</div>
 						</div>
 
-						<!-- Existing keywords list -->
-						<div v-else class="space-y-3 mb-8">
-							<div
-								v-if="deletedKeywordMessage"
-								class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-									<path
-										fill-rule="evenodd"
-										d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-								{{ deletedKeywordMessage }}
-							</div>
+                                                <!-- Existing keywords list -->
+                                                <div v-else class="space-y-3 mb-8">
+                                                        <KeywordNotification :message="deletedKeywordMessage" />
 
-							<div
-								v-for="keyword in keywordStore.keywords"
-								:key="keyword.id"
-								class="p-4 border border-neutral-200 rounded-lg hover:border-neutral-300 transition-colors cursor-pointer"
-								:class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedKeywordId === keyword.id }"
-								@click="showKeywordDetails(keyword)"
-							>
-								<div class="flex justify-between items-center">
-									<div>
-										<span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-										<div v-if="keyword.prompts_count >= 0" class="text-sm text-neutral-500 mt-1">
-											Found in {{ keyword.prompts_count }}
-											{{ keyword.prompts_count === 1 ? 'prompt' : 'prompts' }}
-										</div>
-										<div v-else class="text-sm text-neutral-500 mt-1">New keyword</div>
-									</div>
-									<button
-										@click.stop="handleDeleteKeyword(keyword.id, keyword.name)"
-										class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-											<path
-												fill-rule="evenodd"
-												d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									</button>
-								</div>
-							</div>
-						</div>
+                                                        <KeywordListItem
+                                                                v-for="keyword in keywordStore.keywords"
+                                                                :key="keyword.id"
+                                                                :keyword="keyword"
+                                                                :is-selected="selectedKeywordId === keyword.id"
+                                                                @select="showKeywordDetails"
+                                                                @delete="(kw) => handleDeleteKeyword(kw.id, kw.name)"
+                                                        />
+                                                </div>
 
-						<!-- Recommended Keywords Section -->
-						<div v-if="keywordStore.recommendedKeywords.length > 0">
-							<h3 class="text-lg font-semibold mb-4">Recommended keywords</h3>
-							<div v-if="keywordStore.isLoadingRecommended" class="flex justify-center py-8">
-								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-							</div>
-							<div v-else class="space-y-3">
-								<div v-for="keyword in keywordStore.recommendedKeywords" :key="keyword.id" class="p-4 border border-neutral-200 rounded-lg">
-									<div class="flex justify-between items-center">
-										<div>
-											<span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-											<div v-if="keyword.description" class="text-sm text-neutral-500 mt-1">
-												{{ keyword.description }}
-											</div>
-										</div>
-										<div class="flex gap-2">
-											<button
-												@click="acceptRecommendedKeyword(keyword.id)"
-												class="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
-												title="Accept this keyword"
-											>
-												<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-													<path
-														fill-rule="evenodd"
-														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-														clip-rule="evenodd"
-													/>
-												</svg>
-											</button>
-											<button
-												@click="denyRecommendedKeyword(keyword.id, keyword.name)"
-												class="text-red-600 hover:text-red-800 transition-colors cursor-pointer"
-												title="Deny this keyword"
-											>
-												<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-													<path
-														fill-rule="evenodd"
-														d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-														clip-rule="evenodd"
-													/>
-												</svg>
-											</button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
+                                                <!-- Recommended Keywords Section -->
+                                                <div v-if="keywordStore.recommendedKeywords.length > 0">
+                                                        <h3 class="text-lg font-semibold mb-4">Recommended keywords</h3>
+                                                        <div v-if="keywordStore.isLoadingRecommended" class="flex justify-center py-8">
+                                                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
+                                                        </div>
+                                                        <div v-else class="space-y-3">
+                                                                <RecommendedKeywordItem
+                                                                        v-for="keyword in keywordStore.recommendedKeywords"
+                                                                        :key="keyword.id"
+                                                                        :keyword="keyword"
+                                                                        @accept="(kw) => acceptRecommendedKeyword(kw.id)"
+                                                                        @deny="(kw) => denyRecommendedKeyword(kw.id, kw.name)"
+                                                                />
+                                                        </div>
+                                                </div>
 					</div>
 				</div>
 
-				<!-- Right column - Organization details -->
-				<div class="w-full md:w-1/3">
-					<h2 class="text-xl font-semibold mb-2">Edit {{ organization.is_competitor ? 'competitor' : 'your organization' }}</h2>
-					<form @submit.prevent="updateOrganization" class="space-y-3">
-						<div>
-							<label class="block text-sm font-medium text-neutral-700 mb-1">Name</label>
-							<input
-								v-model="organization.name"
-								type="text"
-								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="Enter organization name"
-							/>
-						</div>
-
-						<div>
-							<label class="block text-sm font-medium text-neutral-700 mb-1">Website</label>
-							<input
-								v-model="organization.website"
-								type="text"
-								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="Enter website URL"
-							/>
-						</div>
-
-						<div class="pt-4">
-							<Button v-if="hasChanges" type="submit" :disabled="isSubmitting" variant="dark">
-								{{ isSubmitting ? 'Saving...' : 'Save Changes' }}
-							</Button>
-						</div>
-					</form>
-				</div>
+                                <!-- Right column - Organization details -->
+                                <OrganizationForm
+                                        :organization="organization"
+                                        :has-changes="hasChanges"
+                                        :is-submitting="isSubmitting"
+                                        @update="updateOrganization"
+                                />
 			</div>
 		</div>
 	</DefaultLayout>
