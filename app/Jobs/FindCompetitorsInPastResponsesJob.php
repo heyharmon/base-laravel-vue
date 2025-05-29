@@ -192,7 +192,6 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
             // Check if this competitor already exists
             $existingOrganization = Organization::where('team_id', $this->teamId)
                 ->where('website', $competitor['website'])
-				->withRecommended()
                 ->first();
 
             if (!$existingOrganization) {
