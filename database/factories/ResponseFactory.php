@@ -19,7 +19,6 @@ class ResponseFactory extends Factory
             'prompt_id' => Prompt::factory(),
             'provider' => $this->faker->randomElement(['openai', 'anthropic']),
             'model' => $this->faker->word(),
-            // 'mentioned' => $this->faker->boolean(),
             'content' => $this->faker->paragraph(),
             'metadata' => null,
             'search' => null,

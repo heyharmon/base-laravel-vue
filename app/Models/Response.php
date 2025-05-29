@@ -16,21 +16,15 @@ class Response extends Model
         'prompt_id',
         'provider',
         'model',
-        // 'mentioned',
         'content',
         'metadata',
         'search',
-        // 'error',
     ];
 
     protected $casts = [
-        // 'tokens' => 'integer',
-        // 'latency' => 'float',
         'metadata' => 'array',
         'search' => 'array',
     ];
-
-    // Run relationship removed
 
     /**
      * The prompt that this response belongs to.
