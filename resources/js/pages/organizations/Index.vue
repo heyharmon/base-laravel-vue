@@ -3,6 +3,7 @@ import { onMounted, ref, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useRouter } from 'vue-router'
+import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
@@ -16,6 +17,12 @@ const activeCompetitorJobs = computed(() => {
 		(job) => job.job_class.includes('FindCompetitorsInPastResponsesJob') && (job.status === 'pending' || job.status === 'processing')
 	)
 })
+
+// Check if organization was created within the last 24 hours
+const isNewOrganization = (createdAt) => {
+	if (!createdAt) return false
+	return moment().diff(moment(createdAt), 'hours') <= 24
+}
 
 watch(
 	activeCompetitorJobs,
@@ -129,7 +136,14 @@ onMounted(async () => {
 							class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 						>
 							<div class="flex justify-between items-start">
-								<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
+								<div>
+									<div v-if="isNewOrganization(org.created_at)" class="mb-1">
+										<span class="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+											Created {{ moment(org.created_at).fromNow() }}
+										</span>
+									</div>
+									<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
+								</div>
 								<img
 									v-if="org.website"
 									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
