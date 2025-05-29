@@ -41,19 +41,19 @@ trait HasJobStatus
     {
         // Generate a UUID for this job
         $jobId = (string) Str::uuid();
-        
+
         // Get the current team ID
-        $teamId = Auth::user()->current_team_id;
-        
+        // $teamId = Auth::user()->current_team_id;
+
         // Create a job status record
         $status = $this->jobStatuses()->create([
             'job_id' => $jobId,
             'job_class' => get_class($job),
             'job_batch_id' => $batchId,
             'status' => 'pending',
-            'team_id' => $teamId,
+            'team_id' => $this->team_id,
         ]);
-        
+
         return $status;
     }
 

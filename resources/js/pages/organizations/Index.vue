@@ -2,14 +2,12 @@
 import { onMounted, ref, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import { useKeywordStore } from '@/stores/keywordStore'
 import { useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
-const keywordStore = useKeywordStore()
 const router = useRouter()
 const isGeneratingCompetitors = ref(false)
 
@@ -38,38 +36,6 @@ onMounted(async () => {
 	await organizationStore.fetchOrganizations()
 	await jobStatusStore.pollTeamJobs()
 })
-
-const deleteOrganization = async (organizationId) => {
-	if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
-		return
-	}
-
-	try {
-		await organizationStore.deleteOrganization(organizationId)
-	} catch (error) {
-		console.error('Error deleting organization:', error)
-	}
-}
-
-// TODO: Create a controller dedicated to accepting recommended competitors
-const acceptRecommendedCompetitor = async (organizationId) => {
-	try {
-		let organization = await organizationStore.acceptRecommendedCompetitor(organizationId)
-
-		// Use the keyword store to create two keywords for the organization name and website
-		// TODO: Do this in the controller, then call acceptRecommendedCompetitor from the store directly
-		if (organization.name) {
-			await keywordStore.createKeyword(organizationId, { name: organization.name })
-		}
-		if (organization.website) {
-			await keywordStore.createKeyword(organizationId, { name: organization.website })
-		}
-
-		organizationStore.fetchOrganizations()
-	} catch (error) {
-		console.error('Error accepting recommended competitor:', error)
-	}
-}
 </script>
 
 <template>
@@ -80,7 +46,7 @@ const acceptRecommendedCompetitor = async (organizationId) => {
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
-						@click="organizationStore.generateRecommendedCompetitors()"
+						@click="organizationStore.generateCompetitors()"
 						:disabled="isGeneratingCompetitors"
 						variant="outline"
 					>
@@ -184,47 +150,6 @@ const acceptRecommendedCompetitor = async (organizationId) => {
 								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
 							</div>
 						</router-link>
-					</div>
-				</div>
-
-				<!-- Recommended Competitors -->
-				<div v-if="organizationStore.recommendedCompetitors.length > 0">
-					<h2 class="text-xl font-semibold mb-4">Recommended competitors</h2>
-					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<div
-							v-for="org in organizationStore.recommendedCompetitors"
-							:key="org.id"
-							class="bg-white border border-neutral-200 p-4 rounded-lg shadow"
-						>
-							<div class="flex justify-between items-start">
-								<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
-								<img
-									v-if="org.website"
-									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
-									:alt="org.name + ' logo'"
-									class="h-10 w-10 object-contain bg-white rounded-md border border-neutral-200"
-								/>
-							</div>
-							<div class="text-sm text-neutral-600">
-								<div v-if="org.website">{{ org.website }}</div>
-								<div v-if="org.founded">Founded: {{ org.founded }}</div>
-								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
-							</div>
-							<div class="mt-4 flex space-x-2">
-								<button
-									@click="acceptRecommendedCompetitor(org.id)"
-									class="bg-green-100 hover:bg-green-200 text-green-800 text-sm px-3 py-1 rounded transition-colors cursor-pointer"
-								>
-									Accept
-								</button>
-								<button
-									@click="organizationStore.denyRecommendedCompetitor(org.id)"
-									class="bg-red-100 hover:bg-red-200 text-red-800 text-sm px-3 py-1 rounded transition-colors cursor-pointer"
-								>
-									Deny
-								</button>
-							</div>
-						</div>
 					</div>
 				</div>
 			</div>

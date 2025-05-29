@@ -13,6 +13,7 @@ use Prism\Prism\Enums\Provider;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
+use App\Services\JobDispatcherService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Organization;
@@ -196,13 +197,33 @@ class FindCompetitorsInPastResponsesJob extends TrackableJob
 
             if (!$existingOrganization) {
                 // Create new competitor organization
-                Organization::create([
+                $competitorOrg = Organization::create([
 					'team_id' => $this->teamId,
 					'name' => $competitor['name'],
 					'website' => $competitor['website'] ?? null,
 					'is_competitor' => true,
-					'is_recommended' => true,
 				]);
+
+				// Create a keyword for the competitor name
+				$nameKeyword = Keyword::create([
+					'team_id' => $this->teamId,
+					'organization_id' => $competitorOrg->id,
+					'name' => $competitor['name'],
+				]);
+
+				// Create a keyword for the competitor website
+				$websiteKeyword = Keyword::create([
+					'team_id' => $this->teamId,
+					'organization_id' => $competitorOrg->id,
+					'name' => $competitor['website'],
+				]);
+
+				// Dispatch a job to check past responses for this keyword
+				$jobDispatcher = app(JobDispatcherService::class);
+				foreach([$nameKeyword, $websiteKeyword] as $keyword) {
+					$job = new CheckKeywordInPastResponsesJob($keyword, $this->teamId);
+					$jobDispatcher->dispatch($keyword, $job);
+				}
 
 				$createdCount++;
             }

@@ -22,7 +22,7 @@ use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationVisibilityController;
-use App\Http\Controllers\CompetitorRecommendationsController;
+use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\KeywordRecommendationsController;
 
 // Public routes
@@ -49,15 +49,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Organizations
 	Route::resource('organizations', OrganizationController::class);
+
+	// Organization Competitors
+	Route::post('organizations-generate-competitors', [OrganizationCompetitorController::class, 'generate']);
+
+	// Organization Visibility
 	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
+
+	// Organization Search
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
 	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
 
-	// Organization Competitor Recommendations
-	Route::get('competitor-recommendations', [CompetitorRecommendationsController::class, 'index']);
-	Route::put('competitor-recommendations/{id}/accept', [CompetitorRecommendationsController::class, 'accept']);
-	Route::delete('competitor-recommendations/{id}/deny', [CompetitorRecommendationsController::class, 'deny']);
-	Route::post('competitor-recommendations-generate', [CompetitorRecommendationsController::class, 'generate']);
 
 	// Keywords
 	Route::resource('organizations/{organization}/keywords', KeywordController::class);
