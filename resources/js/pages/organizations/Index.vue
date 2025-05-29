@@ -47,7 +47,7 @@ onMounted(async () => {
 
 <template>
 	<DefaultLayout>
-		<div class="container mx-auto py-8">
+		<div class="container mx-auto py-6">
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
