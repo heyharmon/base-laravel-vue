@@ -212,46 +212,41 @@ const denyRecommendedKeyword = async (keywordId, keywordName) => {
 							<div class="text-neutral-400 text-sm">No keywords yet</div>
 						</div>
 
-                                                <!-- Existing keywords list -->
-                                                <div v-else class="space-y-3 mb-8">
-                                                        <KeywordNotification :message="deletedKeywordMessage" />
+						<!-- Existing keywords list -->
+						<div v-else class="space-y-3 mb-8">
+							<KeywordNotification :message="deletedKeywordMessage" />
 
-                                                        <KeywordListItem
-                                                                v-for="keyword in keywordStore.keywords"
-                                                                :key="keyword.id"
-                                                                :keyword="keyword"
-                                                                :is-selected="selectedKeywordId === keyword.id"
-                                                                @select="showKeywordDetails"
-                                                                @delete="(kw) => handleDeleteKeyword(kw.id, kw.name)"
-                                                        />
-                                                </div>
+							<KeywordListItem
+								v-for="keyword in keywordStore.keywords"
+								:key="keyword.id"
+								:keyword="keyword"
+								:is-selected="selectedKeywordId === keyword.id"
+								@select="showKeywordDetails"
+								@delete="(kw) => handleDeleteKeyword(kw.id, kw.name)"
+							/>
+						</div>
 
-                                                <!-- Recommended Keywords Section -->
-                                                <div v-if="keywordStore.recommendedKeywords.length > 0">
-                                                        <h3 class="text-lg font-semibold mb-4">Recommended keywords</h3>
-                                                        <div v-if="keywordStore.isLoadingRecommended" class="flex justify-center py-8">
-                                                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-                                                        </div>
-                                                        <div v-else class="space-y-3">
-                                                                <RecommendedKeywordItem
-                                                                        v-for="keyword in keywordStore.recommendedKeywords"
-                                                                        :key="keyword.id"
-                                                                        :keyword="keyword"
-                                                                        @accept="(kw) => acceptRecommendedKeyword(kw.id)"
-                                                                        @deny="(kw) => denyRecommendedKeyword(kw.id, kw.name)"
-                                                                />
-                                                        </div>
-                                                </div>
+						<!-- Recommended Keywords Section -->
+						<div v-if="keywordStore.recommendedKeywords.length > 0">
+							<h3 class="text-lg font-semibold mb-4">Recommended keywords</h3>
+							<div v-if="keywordStore.isLoadingRecommended" class="flex justify-center py-8">
+								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
+							</div>
+							<div v-else class="space-y-3">
+								<RecommendedKeywordItem
+									v-for="keyword in keywordStore.recommendedKeywords"
+									:key="keyword.id"
+									:keyword="keyword"
+									@accept="(kw) => acceptRecommendedKeyword(kw.id)"
+									@deny="(kw) => denyRecommendedKeyword(kw.id, kw.name)"
+								/>
+							</div>
+						</div>
 					</div>
 				</div>
 
-                                <!-- Right column - Organization details -->
-                                <OrganizationForm
-                                        :organization="organization"
-                                        :has-changes="hasChanges"
-                                        :is-submitting="isSubmitting"
-                                        @update="updateOrganization"
-                                />
+				<!-- Right column - Organization details -->
+				<OrganizationForm :organization="organization" :has-changes="hasChanges" :is-submitting="isSubmitting" @update="updateOrganization" />
 			</div>
 		</div>
 	</DefaultLayout>
