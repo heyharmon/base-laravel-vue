@@ -7,70 +7,15 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Prompt;
-use App\Models\Organization;
 use App\Jobs\FindCompetitorsInPastResponsesJob;
 
-class CompetitorRecommendationsController extends Controller
+class OrganizationCompetitorController extends Controller
 {
 	protected $jobDispatcher;
 
     public function __construct(JobDispatcherService $jobDispatcher)
     {
         $this->jobDispatcher = $jobDispatcher;
-    }
-
-    /**
-     * Display a listing of the recommended organizations.
-     */
-    public function index(): JsonResponse
-    {
-        $teamId = Auth::user()->current_team_id;
-
-        $organizations = Organization::where('team_id', $teamId)
-            ->withRecommended()
-            ->where('is_recommended', true)
-            ->withCount('keywords')
-            ->get();
-
-        return response()->json($organizations);
-    }
-
-	/**
-     * Update the specified resource in storage.
-     */
-    public function accept(Request $request, $id): JsonResponse
-    {
-		$organization = Organization::withRecommended()->findOrFail($id);
-
-        // Ensure the organization belongs to the current team
-        if ($organization->team_id !== request()->user()->currentTeam->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $organization->update([
-            'is_recommended' => false,
-        ]);
-
-        return response()->json($organization);
-    }
-
-    /**
-     * Remove the specified recommended organization from storage.
-     */
-    public function deny($id): JsonResponse
-    {
-        // Find organization with the withRecommended scope to include recommended organizations
-        $organization = Organization::withRecommended()->findOrFail($id);
-
-        // Ensure the organization belongs to the current team
-        if ($organization->team_id !== request()->user()->currentTeam->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        // Delete the organization
-        $organization->delete();
-
-        return response()->json(null, 204);
     }
 
 	public function generate(Request $request): JsonResponse
