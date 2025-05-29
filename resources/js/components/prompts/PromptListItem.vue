@@ -1,17 +1,19 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { usePromptStore } from '@/stores/promptStore'
+
+const promptStore = usePromptStore()
 
 const props = defineProps({
   prompt: { type: Object, required: true },
   isSelected: { type: Boolean, default: false },
-  loadingPromptIds: { type: Array, default: () => [] },
   jobs: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['select', 'run', 'delete'])
 const isRunMenuOpen = ref(false)
 
-const isLoading = computed(() => props.loadingPromptIds.includes(props.prompt.id))
+const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 const hasActiveJob = computed(() => props.jobs.some(job => job.trackable_id === props.prompt.id && (job.status === 'pending' || job.status === 'processing')))
 
 const toggleRunMenu = () => {

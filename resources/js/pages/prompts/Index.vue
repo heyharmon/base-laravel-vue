@@ -145,9 +145,6 @@ onMounted(async () => {
                                         <div class="mb-4">
                                                 <PromptToolbar
                                                         :sort-option="sortOption"
-                                                        :is-loading="promptStore.isLoading"
-                                                        :is-running-all="promptStore.isRunningAll"
-                                                        :disable-run-all="promptStore.isLoading || promptStore.loadingPromptIds.length > 0 || promptStore.isRunningAll"
                                                         @update:sort-option="(v) => (sortOption = v)"
                                                         @run-all="runAllPrompts"
                                                         @add="isPromptCreateModalOpen = true"
@@ -161,7 +158,6 @@ onMounted(async () => {
                                                         :key="prompt.id"
                                                         :prompt="prompt"
                                                         :is-selected="selectedPromptId === prompt.id"
-                                                        :loading-prompt-ids="promptStore.loadingPromptIds"
                                                         :jobs="jobStatusStore.jobs || []"
                                                         @select="showPromptDetails"
                                                         @run="(id, count) => runPrompt(id, count)"

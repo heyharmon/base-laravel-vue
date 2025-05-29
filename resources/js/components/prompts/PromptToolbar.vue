@@ -1,11 +1,11 @@
 <script setup>
 import { ref } from 'vue'
+import { usePromptStore } from '@/stores/promptStore'
+
+const promptStore = usePromptStore()
 
 const props = defineProps({
-  sortOption: { type: String, default: 'default' },
-  isLoading: { type: Boolean, default: false },
-  isRunningAll: { type: Boolean, default: false },
-  disableRunAll: { type: Boolean, default: false }
+  sortOption: { type: String, default: 'default' }
 })
 
 const emit = defineEmits(['update:sortOption', 'run-all', 'add', 'generate'])
@@ -28,7 +28,7 @@ const runAll = (count) => {
   <div class="flex justify-between items-center">
     <div class="flex items-center gap-3">
       <h1 class="text-2xl font-bold">Prompts</h1>
-      <div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+      <div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
     </div>
 
     <div class="flex space-x-2">
@@ -53,9 +53,9 @@ const runAll = (count) => {
         <button
           @click.stop="toggleRunAllMenu"
           class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer flex items-center justify-center"
-          :disabled="disableRunAll"
+          :disabled="promptStore.isLoading || promptStore.loadingPromptIds.length > 0 || promptStore.isRunningAll"
         >
-          <div v-if="isRunningAll" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full mr-1"></div>
+          <div v-if="promptStore.isRunningAll" class="animate-spin h-3 w-3 border-b-2 border-neutral-800 rounded-full mr-1"></div>
           <span>Run all prompts</span>
         </button>
         <div
