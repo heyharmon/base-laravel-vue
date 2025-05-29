@@ -17,7 +17,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 	// Getters
 	const ownedOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => !org.is_competitor) : []))
-	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor && !org.is_recommended) : []))
+	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor) : []))
 
 	// Actions
 	async function fetchOrganizations() {
@@ -177,6 +177,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
-		generateCompetitors,
+		generateCompetitors
 	}
 })

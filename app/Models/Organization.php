@@ -13,18 +13,6 @@ use Illuminate\Support\Facades\DB;
 class Organization extends Model
 {
     use HasFactory;
-    
-    /**
-     * The "booted" method of the model.
-     *
-     * @return void
-     */
-    protected static function booted()
-    {
-        static::addGlobalScope('without-recommended', function (Builder $builder) {
-            $builder->where('is_recommended', false);
-        });
-    }
 
 	protected $guarded = [
 		'id'
@@ -32,7 +20,6 @@ class Organization extends Model
 
     protected $casts = [
         'is_competitor' => 'boolean',
-        'is_recommended' => 'boolean',
     ];
 
     protected $appends = [
@@ -85,16 +72,5 @@ class Organization extends Model
         $totalMentions = $this->mentions()->count();
 
         return round(($totalMentions / $totalResponses) * 100, 2);
-    }
-    
-    /**
-     * Scope a query to include recommended organizations.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeWithRecommended($query)
-    {
-        return $query->withoutGlobalScope('without-recommended');
     }
 }
