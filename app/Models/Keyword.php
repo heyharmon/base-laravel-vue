@@ -73,13 +73,7 @@ class Keyword extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    /**
-     * Get the mentions for this keyword.
-     */
-    public function mentions(): HasMany
-    {
-        return $this->hasMany(Mention::class);
-    }
+
     
     /**
      * Scope a query to include recommended keywords.

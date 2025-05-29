@@ -57,13 +57,7 @@ class Prompt extends Model
         return $this->belongsTo(Team::class);
     }
     
-    /**
-     * Get the mentions for this prompt.
-     */
-    public function mentions(): HasMany
-    {
-        return $this->hasMany(Mention::class);
-    }
+
     
     /**
      * Get the mentions percentage for this prompt.
