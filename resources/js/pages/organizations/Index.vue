@@ -139,7 +139,7 @@ onMounted(async () => {
 								<div>
 									<div v-if="isNewOrganization(org.created_at)" class="mb-1">
 										<span class="inline-block px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-											Created {{ moment(org.created_at).fromNow() }}
+											Added {{ moment(org.created_at).fromNow() }}
 										</span>
 									</div>
 									<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
