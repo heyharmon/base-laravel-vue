@@ -130,7 +130,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			->withMaxSteps(10)
 			->withMessages([
 				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
-				new UserMessage('Find mentions of my potential competitors in the prompt. Include their name and website. Only use the search tool to find a competitors website if you do not already know the website from your own knowledge.')
+				new UserMessage('Find other organizations mentioned in the prompt response. Include their name and website. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
 			])
 			->withTools([$searchApiTool])
 			->withToolChoice(ToolChoice::Auto)
@@ -139,22 +139,22 @@ class FindCompetitorsInResponseJob extends TrackableJob
 		// Define the schema for structured output
 		$schema = new ObjectSchema(
 			name: 'competitor_suggestions',
-			description: 'Competitor suggestions related to an organization',
+			description: 'Organiazion mentions',
 			properties: [
 				new ArraySchema(
 					name: 'competitors',
-					description: 'List of competitor suggestions',
+					description: 'List of organizations',
 					items: new ObjectSchema(
 						name: 'competitor',
-						description: 'A suggested competitor',
+						description: 'An organization',
 						properties: [
 							new StringSchema(
 								name: 'name',
-								description: 'The name of the competitor'
+								description: 'The name of the organization'
 							),
 							new StringSchema(
 								name: 'website',
-								description: 'The root domain of the competitor (e.g. google.com) without scheme, subdomain or path'
+								description: 'The root domain of the organization (e.g. google.com) without scheme, subdomain or path'
 							),
 						],
 						requiredFields: ['name']
