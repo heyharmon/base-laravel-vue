@@ -72,12 +72,11 @@ onMounted(async () => {
 			<!-- Active jobs message -->
 			<div
 				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
-				class="p-4 mb-4 -mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+				class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
 				<span>
-					Looking for new competitors. Checking {{ activeCompetitorJobs.length }} prompt
-					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
+					Looking for new competitors in {{ activeCompetitorJobs.length }} prompt {{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
 				</span>
 			</div>
 
@@ -93,7 +92,7 @@ onMounted(async () => {
 
 			<div v-else>
 				<!-- Your Organization -->
-				<div class="mt-8 mb-8">
+				<div class="mt-6 mb-6">
 					<h2 class="text-xl font-semibold mb-4">Your organization</h2>
 					<div v-if="organizationStore.ownedOrganizations.length === 0" class="text-neutral-500">You don't have an organization yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

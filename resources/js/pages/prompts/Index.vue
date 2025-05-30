@@ -27,7 +27,7 @@ const sortOption = ref('default') // Default sort option
 // })
 
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['RunPromptJob']
+	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
 	return jobStatusStore.jobs.filter((job) => {
 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
 	})
@@ -176,7 +176,9 @@ onMounted(async () => {
 						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 					>
 						<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-						<span> Running {{ activePromptJobs.length }} {{ activePromptJobs.length === 1 ? 'prompt' : 'prompts' }}. </span>
+						<span>
+							{{ activePromptJobs.length }} {{ activePromptJobs.length === 1 ? 'job' : 'jobs' }} are running prompts and looking for competitors.
+						</span>
 					</div>
 
 					<div v-if="sortedPrompts.length" class="space-y-4">
