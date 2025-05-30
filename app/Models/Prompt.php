@@ -12,87 +12,85 @@ use App\Models\Organization;
 
 class Prompt extends Model
 {
-    use HasFactory, HasJobStatus;
+	use HasFactory, HasJobStatus;
 
-    protected $fillable = [
-        'team_id',
-        'name',
-        'content',
-        'description',
-        'is_active',
-        'frequency',
-    ];
+	protected $fillable = [
+		'team_id',
+		'name',
+		'content',
+		'description',
+		'is_active',
+		'frequency',
+	];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-    
-    protected $appends = [
-        'mentions_percentage',
-    ];
+	protected $casts = [
+		'is_active' => 'boolean',
+	];
 
-    /**
-     * The keywords that are associated with this prompt.
-     */
-    public function keywords(): BelongsToMany
-    {
-        return $this->belongsToMany(Keyword::class)
-            ->withPivot('count', 'last_found_at')
-            ->withTimestamps();
-    }
+	protected $appends = [
+		'mentions_percentage',
+	];
 
-    /**
-     * The responses to this prompt.
-     */
-    public function responses(): HasMany
-    {
-        return $this->hasMany(Response::class);
-    }
-    
-    /**
-     * Get the team that owns the prompt.
-     */
-    public function team(): BelongsTo
-    {
-        return $this->belongsTo(Team::class);
-    }
-    
+	/**
+	 * The keywords that are associated with this prompt.
+	 */
+	public function keywords(): BelongsToMany
+	{
+		return $this->belongsToMany(Keyword::class)
+			->withPivot('count', 'last_found_at')
+			->withTimestamps();
+	}
 
-    
-    /**
-     * Get the mentions percentage for this prompt.
-     */
-    public function getMentionsPercentageAttribute(): int
-    {
-        $totalResponses = $this->responses()->count();
-        
-        if ($totalResponses === 0) {
-            return 0;
-        }
-        
-        // Get the organization that belongs to the team and is not a competitor
-        $organization = Organization::where('team_id', $this->team_id)
-            ->where('is_competitor', false)
-            ->first();
-            
-        if (!$organization) {
-            return 0;
-        }
-        
-        // Get all keywords for this organization
-        $keywordIds = $organization->keywords()->pluck('id')->toArray();
-        
-        if (empty($keywordIds)) {
-            return 0;
-        }
-        
-        // Count responses that contain at least one keyword from the team's organization
-        $mentions = $this->responses()
-            ->whereHas('keywords', function ($query) use ($keywordIds) {
-                $query->whereIn('keywords.id', $keywordIds);
-            })
-            ->count();
-        
-        return round(($mentions / $totalResponses) * 100);
-    }
+	/**
+	 * The responses to this prompt.
+	 */
+	public function responses(): HasMany
+	{
+		return $this->hasMany(Response::class);
+	}
+
+	/**
+	 * Get the team that owns the prompt.
+	 */
+	public function team(): BelongsTo
+	{
+		return $this->belongsTo(Team::class);
+	}
+
+	/**
+	 * Get the mentions percentage for this prompt.
+	 */
+	public function getMentionsPercentageAttribute(): int
+	{
+		$totalResponses = $this->responses()->count();
+
+		if ($totalResponses === 0) {
+			return 0;
+		}
+
+		// Get the organization that belongs to the team and is not a competitor
+		$organization = Organization::where('team_id', $this->team_id)
+			->where('is_competitor', false)
+			->first();
+
+		if (!$organization) {
+			return 0;
+		}
+
+		// Get all keywords for this organization
+		$keywordIds = $organization->keywords()->pluck('id')->toArray();
+
+		if (empty($keywordIds)) {
+			return 0;
+		}
+
+		// Count responses that contain at least one keyword from the team's organization
+		$mentions = $this->responses()
+			->whereHas('keywords', function ($query) use ($keywordIds) {
+				$query->whereIn('keywords.id', $keywordIds);
+			})
+			->count();
+
+		return round(($mentions / $totalResponses) * 100);
+	}
 }
