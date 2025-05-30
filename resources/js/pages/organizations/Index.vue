@@ -20,14 +20,8 @@ const activeCompetitorJobs = computed(() => {
 watch(
 	activeCompetitorJobs,
 	(newJobs, oldJobs) => {
-		// Check if any job has completed by comparing old and new jobs
-		if (oldJobs.length > newJobs.length) {
-			// At least one job completed, fetch organizations
-			organizationStore.fetchOrganizations()
-		}
-
-		// Also fetch when all jobs complete
-		if (oldJobs.length > 0 && newJobs.length === 0) {
+		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
+			// At least one job completed or all jobs are done
 			organizationStore.fetchOrganizations()
 		}
 	},
@@ -49,6 +43,18 @@ onMounted(async () => {
 <template>
 	<DefaultLayout>
 		<div class="container mx-auto py-6">
+			<!-- Active jobs message -->
+			<div
+				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
+				class="p-4 mb-4 -mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+			>
+				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+				<span>
+					Looking for new competitors. Checking {{ activeCompetitorJobs.length }} prompt
+					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
+				</span>
+			</div>
+
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
@@ -64,18 +70,6 @@ onMounted(async () => {
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
-			</div>
-
-			<!-- Competitors generation message -->
-			<div
-				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
-				class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
-			>
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span
-					>Competitor generation jobs are now running. Checking {{ activeCompetitorJobs.length }} prompt
-					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.</span
-				>
 			</div>
 
 			<!-- Loading state -->

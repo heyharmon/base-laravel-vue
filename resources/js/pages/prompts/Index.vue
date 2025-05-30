@@ -22,9 +22,27 @@ const selectedPromptId = ref(null)
 const sortOption = ref('default') // Default sort option
 
 // Track if we have active jobs
-const hasActiveJobs = computed(() => {
-	return jobStatusStore.jobs && jobStatusStore.jobs.some((job) => job.status === 'pending' || job.status === 'processing')
+// const hasActiveJobs = computed(() => {
+// 	return jobStatusStore.jobs && jobStatusStore.jobs.some((job) => job.status === 'pending' || job.status === 'processing')
+// })
+
+const activePromptJobs = computed(() => {
+	const promptJobClasses = ['GeneratePhrases', 'GeneratePrompt', 'RunPromptJob', 'FindCompetitorsInResponseJob', 'CheckKeywordInPastResponsesJob']
+	return jobStatusStore.jobs.filter((job) => {
+		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
+	})
 })
+
+watch(
+	activePromptJobs,
+	(newJobs, oldJobs) => {
+		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
+			// At least one job completed, or all jobs are done
+			promptStore.fetchPrompts()
+		}
+	},
+	{ deep: true }
+)
 
 // Track completed jobs to detect when individual jobs complete
 const completedJobIds = ref(new Set())
@@ -94,41 +112,41 @@ const showPromptDetails = async (prompt) => {
 }
 
 // Watch for changes in job statuses
-watch(
-	() => jobStatusStore.jobs,
-	async (currentJobs, previousJobs) => {
-		if (!previousJobs || !currentJobs) return
+// watch(
+// 	() => jobStatusStore.jobs,
+// 	async (currentJobs, previousJobs) => {
+// 		if (!previousJobs || !currentJobs) return
 
-		// Check for newly completed jobs
-		let shouldRefresh = false
+// 		// Check for newly completed jobs
+// 		let shouldRefresh = false
 
-		currentJobs.forEach((job) => {
-			// If the job is completed or failed and we haven't processed it yet
-			if (
-				(job.status === 'completed' || job.status === 'failed') &&
-				!completedJobIds.value.has(job.job_id) &&
-				job.trackable_type === 'App\\Models\\Prompt'
-			) {
-				// Mark this job as processed
-				completedJobIds.value.add(job.job_id)
-				shouldRefresh = true
-			}
-		})
+// 		currentJobs.forEach((job) => {
+// 			// If the job is completed or failed and we haven't processed it yet
+// 			if (
+// 				(job.status === 'completed' || job.status === 'failed') &&
+// 				!completedJobIds.value.has(job.job_id) &&
+// 				job.trackable_type === 'App\\Models\\Prompt'
+// 			) {
+// 				// Mark this job as processed
+// 				completedJobIds.value.add(job.job_id)
+// 				shouldRefresh = true
+// 			}
+// 		})
 
-		if (shouldRefresh) {
-			await promptStore.fetchPrompts()
-		}
+// 		if (shouldRefresh) {
+// 			await promptStore.fetchPrompts()
+// 		}
 
-		// Check if we've gone from having active jobs to no active jobs
-		const previousHasActiveJobs = previousJobs.some((job) => job.status === 'pending' || job.status === 'processing')
-		const currentHasActiveJobs = currentJobs.some((job) => job.status === 'pending' || job.status === 'processing')
+// 		// Check if we've gone from having active jobs to no active jobs
+// 		const previousHasActiveJobs = previousJobs.some((job) => job.status === 'pending' || job.status === 'processing')
+// 		const currentHasActiveJobs = currentJobs.some((job) => job.status === 'pending' || job.status === 'processing')
 
-		if (previousHasActiveJobs && !currentHasActiveJobs) {
-			await promptStore.fetchPrompts()
-		}
-	},
-	{ immediate: false }
-)
+// 		if (previousHasActiveJobs && !currentHasActiveJobs) {
+// 			await promptStore.fetchPrompts()
+// 		}
+// 	},
+// 	{ immediate: false }
+// )
 
 onMounted(async () => {
 	await promptStore.fetchPrompts()
@@ -150,6 +168,15 @@ onMounted(async () => {
 							@add="isPromptCreateModalOpen = true"
 							@generate="isGenerateModalOpen = true"
 						/>
+					</div>
+
+					<!-- Active jobs message -->
+					<div
+						v-if="activePromptJobs.length > 0"
+						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+					>
+						<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+						<span> Running {{ activePromptJobs.length }} {{ activePromptJobs.length === 1 ? 'prompt' : 'prompts' }}. </span>
 					</div>
 
 					<div v-if="sortedPrompts.length" class="space-y-4">

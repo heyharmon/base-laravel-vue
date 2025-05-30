@@ -19,9 +19,15 @@ const currentTeam = ref(null)
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
 
-// Computed property to count pending or processing jobs
-const activeJobsCount = computed(() => {
-	return jobStatusStore.jobs?.filter((job) => job.status === 'pending' || job.status === 'processing')?.length || 0
+// Get the most recently completed job
+const mostRecentCompletedJob = computed(() => {
+	if (jobStatusStore.jobs.length === 0) return null
+
+	// Filter for completed jobs (status === 'completed')
+	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
+	if (completedJobs.length === 0) return null
+
+	return completedJobs[0]
 })
 
 const logout = async () => {
@@ -82,7 +88,7 @@ onMounted(() => {
 			<div class="flex items-center space-x-3">
 				<template v-if="isAuthenticated">
 					<button
-						v-if="activeJobsCount > 0"
+						v-if="jobStatusStore.activeJobs.length > 0"
 						@click="isJobStatusSheetOpen = true"
 						class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded hover:bg-neutral-800"
 					>
@@ -103,7 +109,7 @@ onMounted(() => {
 								></circle>
 							</svg>
 							<div class="absolute inset-0 flex items-center justify-center">
-								<span class="text-xs font-bold">{{ activeJobsCount }}</span>
+								<span class="text-xs font-bold">{{ jobStatusStore.activeJobs.length }}</span>
 							</div>
 						</div>
 						<span class="text-sm font-medium">Runs</span>
@@ -167,13 +173,6 @@ onMounted(() => {
 							</PopoverContent>
 						</PopoverPortal>
 					</PopoverRoot>
-
-					<!-- <button
-            @click="logout"
-            class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm cursor-pointer"
-          >
-            Logout
-          </button> -->
 				</template>
 				<template v-else>
 					<router-link to="/login" class="px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-sm"> Login </router-link>
@@ -182,6 +181,35 @@ onMounted(() => {
 			</div>
 		</div>
 	</nav>
+
+	<!-- Sub navigation for completed job status -->
+	<div v-if="isAuthenticated && jobStatusStore.activeJobs.length && mostRecentCompletedJob" class="bg-neutral-100 border-b border-neutral-200">
+		<div class="container mx-auto px-4 py-2">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center space-x-3">
+					<div class="relative size-4">
+						<svg
+							class="text-green-500"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+							<polyline points="22 4 12 14.01 9 11.01"></polyline>
+						</svg>
+					</div>
+					<div class="flex flex-col">
+						<div class="flex items-center space-x-2">
+							<span class="text-xs font-medium">{{ mostRecentCompletedJob.output }}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<JobStatusSheet v-if="teams?.ownedTeams.length" :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

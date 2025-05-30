@@ -192,6 +192,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		fetchOrganizations,
 		fetchOrganization,
 		createOrganization,
+		createAndOnboardOrganization,
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,

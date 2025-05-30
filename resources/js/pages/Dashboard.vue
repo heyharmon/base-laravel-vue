@@ -7,12 +7,23 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
+// Get the most recently completed job
+const mostRecentCompletedJobs = computed(() => {
+	if (jobStatusStore.jobs.length === 0) return null
+
+	// Filter for completed jobs (status === 'completed')
+	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
+	if (completedJobs.length === 0) return null
+
+	// return the 3 most recent
+	return completedJobs.slice(0, 3)
+})
+
 watch(
 	() => jobStatusStore.activeJobs,
 	(newJobs, oldJobs) => {
-		// Check if any job has completed by comparing old and new jobs
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
-			// At least one job completed, fetch organizations
+			// At least one job completed, or all jobs are done
 			organizationStore.fetchVisibilityMetrics()
 		}
 	},
@@ -61,7 +72,7 @@ onMounted(async () => {
 				<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
-			<div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length > 0">
+			<div v-if="organizationStore.visibilityMetrics && organizationStore.visibilityMetrics.length">
 				<table class="min-w-full divide-y divide-neutral-200">
 					<thead>
 						<tr>
@@ -102,5 +113,34 @@ onMounted(async () => {
 
 			<div v-else class="text-center py-4 text-neutral-500 text-sm">No organization data available</div>
 		</div>
+
+		<!-- No competitors yet, show a nice large empty state -->
+		<!-- <div v-else class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+			<div v-if="jobStatusStore.activeJobs.length > 0 && mostRecentCompletedJobs" class="container mx-auto px-4 py-2">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center space-x-3">
+						<div class="relative size-4">
+							<svg
+								class="text-green-500"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+								<polyline points="22 4 12 14.01 9 11.01"></polyline>
+							</svg>
+						</div>
+						<div class="flex flex-col">
+							<div class="flex items-center space-x-2">
+								<span class="text-xs font-medium">{{ mostRecentCompletedJob.output }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div> -->
 	</DefaultLayout>
 </template>
