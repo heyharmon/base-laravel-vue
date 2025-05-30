@@ -77,8 +77,8 @@ class GeneratePrompt extends TrackableJob
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withMaxSteps(10)
 				->withMessages([new UserMessage("Here is a keyword term: \"" . $this->term . "\". Your job is to turn the term into a statement, question, or prompt that a person would likely put into ChatGPT.
-You also need to incorporate the end-user's location \"" . $this->model->state ? $this->model->state : 'N/A Please determine state' . "\" in the prompt.
 The prompt should elicit a response that mentions specific brands. So, let's pretend you are given the keyword term, \"car loan\" and the location is Colorado. In that case, an example of an acceptable prompt is, \"Where in Colorado can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that's likely to elicit a response that gives general information rather than recommending specific companies.
+You also need to incorporate the brand's location \"" . $this->model->state . "\" in the prompt when necessary.
 Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the keyword.
 Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")])
 				->withTools([$searchApiTool])
