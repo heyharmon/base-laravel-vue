@@ -2,13 +2,13 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organizationStore'
-import { useKeywordStore } from '@/stores/keywordStore'
-import api from '@/services/api'
-import KeywordSuggestions from '@/components/keywords/KeywordSuggestions.vue'
+// import { useKeywordStore } from '@/stores/keywordStore'
+// import api from '@/services/api'
+// import KeywordSuggestions from '@/components/keywords/KeywordSuggestions.vue'
 import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import Spinner from '@/components/ui/Spinner.vue'
+// import Spinner from '@/components/ui/Spinner.vue'
 import OrganizationSearch from '@/components/OrganizationSearch.vue'
 
 const router = useRouter()
@@ -27,7 +27,7 @@ const organization = ref({
 	industry: '',
 	hasDetails: false
 })
-const keywords = ref([])
+// const keywords = ref([])
 
 // Handle organization selection from search component
 const handleSelectOrganization = (org) => {
@@ -44,11 +44,11 @@ const createOrganization = async () => {
 		const newOrg = await organizationStore.createOrganization(organization.value)
 
 		// Create keywords if any were generated
-		if (keywords.value.length > 0 && newOrg && newOrg.id) {
-			const keywordStore = useKeywordStore()
-			const promises = keywords.value.map((keyword) => keywordStore.createKeyword(newOrg.id, { name: keyword }))
-			await Promise.all(promises)
-		}
+		// if (keywords.value.length > 0 && newOrg && newOrg.id) {
+		// 	const keywordStore = useKeywordStore()
+		// 	const promises = keywords.value.map((keyword) => keywordStore.createKeyword(newOrg.id, { name: keyword }))
+		// 	await Promise.all(promises)
+		// }
 
 		router.push({ name: 'organizations.index' })
 	} catch (error) {
@@ -90,10 +90,10 @@ const createOrganization = async () => {
 				</div>
 
 				<!-- Keyword Suggestions -->
-				<div v-if="organization.website" class="mt-6">
-					<!-- <h3 class="text-sm font-medium text-neutral-700 mb-2">Keyword suggestions for {{ organization.name }}</h3> -->
-					<KeywordSuggestions :domain="organization.website" @update:keywords="keywords = $event" />
-				</div>
+				<!-- <div v-if="organization.website" class="mt-6"> -->
+				<!-- <h3 class="text-sm font-medium text-neutral-700 mb-2">Keyword suggestions for {{ organization.name }}</h3> -->
+				<!-- <KeywordSuggestions :domain="organization.website" @update:keywords="keywords = $event" /> -->
+				<!-- </div> -->
 			</div>
 
 			<div class="mt-6 flex justify-end space-x-2">

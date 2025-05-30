@@ -10,6 +10,9 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	const error = ref(null)
 	let refreshTimer = ref(null)
 
+	// Getters
+	const activeJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'pending' || job.status === 'processing') : []))
+
 	// Actions
 	async function pollTeamJobs() {
 		await fetchTeamJobs()
@@ -71,6 +74,9 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		batch: computed(() => batch.value),
 		loading,
 		error,
+
+		// Getters
+		activeJobs,
 
 		// Actions
 		pollTeamJobs,

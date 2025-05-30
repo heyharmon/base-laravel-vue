@@ -14,12 +14,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
+use App\Services\JobDispatcherService;
 use App\Models\Team;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Keyword;
 
-class GeneratePromptJob extends TrackableJob
+class GeneratePrompt extends TrackableJob
 {
 	use Batchable;
 
@@ -79,7 +80,7 @@ class GeneratePromptJob extends TrackableJob
 	 *
 	 * @return void
 	 */
-	public function handle()
+	public function handle(JobDispatcherService $jobDispatcher)
 	{
 		try {
 			// Mark the job as started
@@ -102,38 +103,15 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 				->withToolChoice(ToolChoice::Auto)
 				->asText();
 
-			$this->updateJobProgress(20, 'Formatting prompts');
+			$this->updateJobProgress(50, 'Creating prompts');
 
-			// $schema = new ObjectSchema(
-			// 	name: 'prompts_suggestions',
-			// 	description: 'LLM prompt suggestions.',
-			// 	properties: [
-			// 		new ArraySchema(
-			// 			name: 'prompts',
-			// 			description: 'List of prompts.',
-			// 			items: new StringSchema(
-			// 				name: 'prompt',
-			// 				description: 'A suggested AI prompt'
-			// 			)
-			// 		)
-			// 	],
-			// 	requiredFields: ['prompts']
-			// );
-
-			// $response = Prism::structured()
-			// 	->using(Provider::OpenAI, 'gpt-4o')
-			// 	->withSchema($schema)
-			// 	->withPrompt('Here is a list of prompts for my brand, please return them as an array: ' . $textResponse->text)
-			// 	->asStructured();
-
-			// $result = $response->structured;
-
-			$this->updateJobProgress(90, 'Creating prompts');
-
-			Prompt::create([
+			$prompt = Prompt::create([
 				'team_id' => $this->teamId,
 				'content' => $textResponse->text
 			]);
+
+			// Run the prompt
+			$jobDispatcher->dispatch($prompt, new RunPromptJob($prompt, ['openai'], $prompt->team_id));
 
 			// Mark the job as completed
 			$this->markJobAsCompleted('Successfully created prompt');

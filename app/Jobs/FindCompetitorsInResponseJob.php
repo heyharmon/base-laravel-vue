@@ -71,6 +71,14 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			// Update progress
 			$this->updateJobProgress(10, 'Finding competitors in response');
 
+			// Skip if team already has 30 competitors
+			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
+
+			if ($competitorCount >= 30) {
+				$this->markJobAsCompleted('Team already has 30 competitors');
+				return;
+			}
+
 			// Get the owned organization for this team
 			$ownedOrganization = Organization::where('team_id', $this->teamId)
 				->where('is_competitor', false)
@@ -96,7 +104,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
 			$this->updateJobProgress(70, 'Creating competitor organizations');
 
-			// Create or update competitor organizations
+			// Create competitor
 			$createdCount = $this->createCompetitorOrganizations($competitors);
 
 			// Mark the job as completed
@@ -218,8 +226,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				// Dispatch a job to check past responses for this keyword
 				$jobDispatcher = app(JobDispatcherService::class);
 				foreach ([$nameKeyword, $websiteKeyword] as $keyword) {
-					$job = new CheckKeywordInPastResponsesJob($keyword, $this->teamId);
-					$jobDispatcher->dispatch($keyword, $job);
+					$jobDispatcher->dispatch($keyword, new CheckKeywordInPastResponsesJob($keyword, $this->teamId));
 				}
 
 				$createdCount++;

@@ -49,13 +49,6 @@ class RunAllPromptsJob extends TrackableJob
 	protected $count;
 
 	/**
-	 * Whether to find competitors in the prompt responses.
-	 *
-	 * @var bool
-	 */
-	protected $findCompetitors;
-
-	/**
 	 * Create a new job instance.
 	 *
 	 * @param  \Illuminate\Database\Eloquent\Model  $model
@@ -64,13 +57,12 @@ class RunAllPromptsJob extends TrackableJob
 	 * @param  int  $count
 	 * @return void
 	 */
-	public function __construct($model, int $teamId, array $providers = ['openai'], int $count = 1, $findCompetitors = false)
+	public function __construct($model, int $teamId, array $providers = ['openai'], int $count = 1)
 	{
 		$this->model = $model;
 		$this->teamId = $teamId;
 		$this->providers = $providers;
 		$this->count = $count;
-		$this->findCompetitors = $findCompetitors;
 	}
 
 	/**
@@ -104,10 +96,6 @@ class RunAllPromptsJob extends TrackableJob
 				for ($i = 0; $i < $this->count; $i++) {
 					$jobs[] = new RunPromptJob($prompt, $this->providers, $this->teamId);
 				}
-			}
-
-			if ($this->findCompetitors) {
-				$jobs[] = new FindCompetitorsInAllPromptsJob($prompts->first(), $this->teamId);
 			}
 
 			$this->updateJobProgress(50, 'Dispatching batch of prompt jobs');

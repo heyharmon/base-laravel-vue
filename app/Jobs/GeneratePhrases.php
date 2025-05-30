@@ -16,7 +16,7 @@ use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
 
-class GeneratePhrasesJob extends TrackableJob
+class GeneratePhrases extends TrackableJob
 {
 	use Batchable;
 
@@ -117,8 +117,10 @@ Output keywords as a plain text list.")])
 			// Mark the job as completed
 			$this->markJobAsCompleted('Successfully created prompt');
 
-			// Dispatch next job
-			$jobDispatcher->dispatch($this->model, new GeneratePromptsForTermsJob($this->model, $this->model->team_id));
+			// Generate prompts for phrases
+			foreach ($this->model->terms as $term) {
+				$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $term, 'Utah'));
+			}
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

@@ -10,7 +10,6 @@ import Button from '@/components/ui/Button.vue'
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
 const router = useRouter()
-const isGeneratingCompetitors = ref(false)
 
 const activeCompetitorJobs = computed(() => {
 	return jobStatusStore.jobs.filter(
@@ -18,26 +17,28 @@ const activeCompetitorJobs = computed(() => {
 	)
 })
 
-// Check if organization was created within the last 24 hours
-const isNewOrganization = (createdAt) => {
-	if (!createdAt) return false
-	return moment().diff(moment(createdAt), 'hours') <= 24
-}
-
 watch(
 	activeCompetitorJobs,
 	(newJobs, oldJobs) => {
-		if (newJobs.length > 0) {
-			// Jobs are running
-			isGeneratingCompetitors.value = true
-		} else if (oldJobs.length > 0 && newJobs.length === 0) {
-			// Jobs were running but now they're done
-			isGeneratingCompetitors.value = false
+		// Check if any job has completed by comparing old and new jobs
+		if (oldJobs.length > newJobs.length) {
+			// At least one job completed, fetch organizations
+			organizationStore.fetchOrganizations()
+		}
+
+		// Also fetch when all jobs complete
+		if (oldJobs.length > 0 && newJobs.length === 0) {
 			organizationStore.fetchOrganizations()
 		}
 	},
 	{ deep: true }
 )
+
+// Check if organization was created within the last 24 hours
+const isNewOrganization = (createdAt) => {
+	if (!createdAt) return false
+	return moment().diff(moment(createdAt), 'hours') <= 24
+}
 
 onMounted(async () => {
 	await organizationStore.fetchOrganizations()
@@ -51,14 +52,14 @@ onMounted(async () => {
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
-					<Button
+					<!-- <Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
 						@click="organizationStore.generateCompetitors()"
-						:disabled="isGeneratingCompetitors"
+						:disabled="activeCompetitorJobs.length > 0"
 						variant="outline"
 					>
-						{{ isGeneratingCompetitors ? 'Generating...' : 'Generate competitors' }}
-					</Button>
+						{{ activeCompetitorJobs.length > 0 ? 'Generating...' : 'Generate competitors' }}
+					</Button> -->
 					<Button @click="router.push({ name: 'organizations.create' })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
@@ -67,7 +68,7 @@ onMounted(async () => {
 
 			<!-- Competitors generation message -->
 			<div
-				v-if="!organizationStore.error && isGeneratingCompetitors"
+				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
 				class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>

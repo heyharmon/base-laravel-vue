@@ -39,7 +39,7 @@ const createTeamAndOrganization = async () => {
 	isSubmitting.value = true
 	try {
 		let team = await teamStore.createTeam({ name: organization.value.name })
-		await organizationStore.createOrganization(organization.value)
+		await organizationStore.createAndOnboardOrganization(organization.value)
 
 		await teamStore.switchTeam(team.id)
 		router.push({ name: 'organizations.index' })

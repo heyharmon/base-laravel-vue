@@ -7,34 +7,13 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
-// Track completed jobs to detect when individual jobs complete
-const completedJobIds = ref(new Set())
-
-// Watch for changes in job statuses
 watch(
-	() => jobStatusStore.jobs,
-	async (currentJobs, previousJobs) => {
-		if (!previousJobs || !currentJobs) return
-
-		// Check for newly completed jobs
-		let shouldRefresh = false
-
-		currentJobs.forEach((job) => {
-			// If the job is completed or failed and we haven't processed it yet
-			if (
-				(job.status === 'completed' || job.status === 'failed') &&
-				!completedJobIds.value.has(job.job_id) &&
-				job.trackable_type === 'App\\Models\\Prompt'
-			) {
-				// Mark this job as processed
-				completedJobIds.value.add(job.job_id)
-				shouldRefresh = true
-			}
-		})
-
-		// Refresh prompts if we found newly completed jobs
-		if (shouldRefresh) {
-			await organizationStore.fetchVisibilityMetrics()
+	() => jobStatusStore.activeJobs,
+	(newJobs, oldJobs) => {
+		// Check if any job has completed by comparing old and new jobs
+		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
+			// At least one job completed, fetch organizations
+			organizationStore.fetchVisibilityMetrics()
 		}
 	},
 	{ deep: true }
@@ -71,7 +50,7 @@ onMounted(async () => {
 					{{ ownedOrg?.visibility || 0 }}
 					<span class="text-2xl">%</span>
 				</div>
-				<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-5 border-b-2 border-neutral-800"></div>
+				<!-- <div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-5 border-b-2 border-neutral-800"></div> -->
 			</div>
 		</div>
 

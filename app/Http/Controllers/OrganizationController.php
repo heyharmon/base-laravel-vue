@@ -8,13 +8,7 @@ use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
 use App\Models\Keyword;
-use App\Jobs\RunPromptJob;
-use App\Jobs\RunAllPromptsJob;
-use App\Jobs\GeneratePromptJob;
-use App\Jobs\GeneratePhrasesJob;
-use App\Jobs\GeneratePromptsForTermsJob;
-use App\Jobs\FindCompetitorsInResponseJob;
-use App\Jobs\FindCompetitorsInAllPromptsJob;
+use App\Jobs\CheckKeywordInPastResponsesJob;
 
 class OrganizationController extends Controller
 {
@@ -64,39 +58,22 @@ class OrganizationController extends Controller
 		$organization = request()->user()->currentTeam->organizations()->create($validated);
 
 		// Create a keyword for the competitor name
-		Keyword::create([
+		$nameKeyword = Keyword::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->name,
 		]);
 
 		// Create a keyword for the competitor website
-		Keyword::create([
+		$websiteKeyword = Keyword::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->website,
 		]);
 
-		$this->jobDispatcher->dispatch($organization, new GeneratePhrasesJob($organization, $organization->team_id));
-
-		// Start a job batch
-		// $jobs = [];
-
-		// $jobs[] = new GeneratePhrasesJob($organization, $organization->team_id, $this->jobDispatcher);
-
-		// Generate prompts for all organization terms in a batch
-		// $jobs[] = new GeneratePromptsForTermsJob($organization, $organization->team_id);
-
-		// Run all prompts
-		// $jobs[] = new RunAllPromptsJob($organization, $organization->team_id, ['openai'], 1, true);
-
-		// Find competitors in past prompt responses
-		// $jobs[] = new FindCompetitorsInAllPromptsJob($organization, $organization->team_id);
-
-		// $this->jobDispatcher->dispatchBatch($organization, $jobs, [
-		// 	'name' => "Generate prompts and competitors for {$organization->team->name}",
-		// 	'allowFailures' => true
-		// ]);
+		foreach ([$nameKeyword, $websiteKeyword] as $keyword) {
+			$this->jobDispatcher->dispatch($keyword, new CheckKeywordInPastResponsesJob($keyword, request()->user()->currentTeam->id));
+		}
 
 		return response()->json($organization, 201);
 	}
