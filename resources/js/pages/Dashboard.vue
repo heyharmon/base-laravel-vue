@@ -54,7 +54,7 @@ onMounted(async () => {
 <template>
 	<DefaultLayout>
 		<!-- Visibility -->
-		<div v-if="ownedOrg" class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+		<div v-if="ownedOrg" class="mt-6 w-1/3 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
 					<img
@@ -67,14 +67,11 @@ onMounted(async () => {
 						<p class="text-neutral-500">{{ ownedOrg?.name || 'Your Organization' }}</p>
 					</div>
 				</div>
-				<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-5 border-b-2 border-neutral-800"></div>
-			</div>
-
-			<div class="mt-6">
 				<div class="text-6xl font-medium text-green-600 flex items-start gap-1">
 					{{ ownedOrg?.visibility || 0 }}
-					<span class="text-3xl">%</span>
+					<span class="text-2xl">%</span>
 				</div>
+				<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-5 border-b-2 border-neutral-800"></div>
 			</div>
 		</div>
 
