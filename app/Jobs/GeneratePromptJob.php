@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Jobs;
+
+use Throwable;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\Schema\ObjectSchema;
+use Prism\Prism\Schema\ArraySchema;
+use Prism\Prism\Prism;
+use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\Enums\Provider;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Bus\Batchable;
+use App\Tools\SearchApiTool;
+use App\Models\Team;
+use App\Models\Response;
+use App\Models\Prompt;
+use App\Models\Keyword;
+
+class GeneratePromptJob extends TrackableJob
+{
+	use Batchable;
+
+	/**
+	 * The number of times the job may be attempted.
+	 *
+	 * @var int
+	 */
+	public $tries = 3;
+
+	/**
+	 * The model to use for job tracking.
+	 *
+	 * @var \Illuminate\Database\Eloquent\Model
+	 */
+	public $model;
+
+	/**
+	 * The team ID.
+	 *
+	 * @var int
+	 */
+	protected $teamId;
+
+	/**
+	 * The term to generate a prompt for.
+	 *
+	 * @var string
+	 */
+	protected $term;
+
+	/**
+	 * The location to be used in prompts.
+	 *
+	 * @var string
+	 */
+	protected $location;
+
+	/**
+	 * Create a new job instance.
+	 *
+	 * @param  \App\Models\Prompt  $prompt
+	 * @param  array  $providers
+	 * @param  int  $teamId
+	 * @return void
+	 */
+	public function __construct($model, int $teamId, string $term, string $location)
+	{
+		$this->model = $model;
+		$this->teamId = $teamId;
+		$this->term = $term;
+		$this->location = $location;
+	}
+
+	/**
+	 * Execute the job.
+	 *
+	 * @return void
+	 */
+	public function handle()
+	{
+		try {
+			// Mark the job as started
+			$this->markJobAsStarted();
+
+			// Update progress
+			$this->updateJobProgress(10, 'Requesting prompt suggestions');
+
+			$searchApiTool = new SearchApiTool();
+
+			$textResponse = Prism::text()
+				->using(Provider::OpenAI, 'gpt-4o')
+				->withMaxSteps(10)
+				->withMessages([new UserMessage("Here is a keyword term: \"" . $this->term . "\". Your job is to turn the term into a statement, question, or prompt that a person would likely put into ChatGPT.
+You also need to incorporate the end-user's location \"" . $this->location . "\" in the prompt.
+The prompt should elicit a response that mentions specific brands. So, let's pretend you are given the keyword term, \"car loan\" and the location is Colorado. In that case, an example of an acceptable prompt is, \"Where in Colorado can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that's likely to elicit a response that gives general information rather than recommending specific companies.
+Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the keyword.
+Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")])
+				->withTools([$searchApiTool])
+				->withToolChoice(ToolChoice::Auto)
+				->asText();
+
+			$this->updateJobProgress(20, 'Formatting prompts');
+
+			// $schema = new ObjectSchema(
+			// 	name: 'prompts_suggestions',
+			// 	description: 'LLM prompt suggestions.',
+			// 	properties: [
+			// 		new ArraySchema(
+			// 			name: 'prompts',
+			// 			description: 'List of prompts.',
+			// 			items: new StringSchema(
+			// 				name: 'prompt',
+			// 				description: 'A suggested AI prompt'
+			// 			)
+			// 		)
+			// 	],
+			// 	requiredFields: ['prompts']
+			// );
+
+			// $response = Prism::structured()
+			// 	->using(Provider::OpenAI, 'gpt-4o')
+			// 	->withSchema($schema)
+			// 	->withPrompt('Here is a list of prompts for my brand, please return them as an array: ' . $textResponse->text)
+			// 	->asStructured();
+
+			// $result = $response->structured;
+
+			$this->updateJobProgress(90, 'Creating prompts');
+
+			Prompt::create([
+				'team_id' => $this->teamId,
+				'content' => $textResponse->text
+			]);
+
+			// Mark the job as completed
+			$this->markJobAsCompleted('Successfully created prompt');
+		} catch (Throwable $exception) {
+			Log::error('Prompt generation job failed: ' . $exception->getMessage());
+			$this->markJobAsFailed($exception);
+			throw $exception;
+		}
+	}
+}
