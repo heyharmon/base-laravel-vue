@@ -74,7 +74,7 @@ class RunAllPromptsJob extends TrackableJob
 	{
 		try {
 			// Mark the job as started
-			$this->markJobAsStarted();
+			$this->markJobAsStarted('Running all prompts');
 
 			// Update progress
 			$this->updateJobProgress(10, 'Fetching prompts');

@@ -41,7 +41,7 @@ onMounted(async () => {
 			</div>
 			<div class="pl-6 space-y-1">
 				<div v-for="(jobs, jobClass) in activeJobsByClass" :key="jobClass" class="flex items-center justify-between">
-					<span>{{ jobClass }}:</span>
+					<!-- <span>{{ jobs[0].output }}</span> -->
 					<span class="font-medium">{{ jobs.length }} job{{ jobs.length !== 1 ? 's' : '' }}</span>
 				</div>
 			</div>

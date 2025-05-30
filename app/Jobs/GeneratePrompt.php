@@ -84,10 +84,7 @@ class GeneratePrompt extends TrackableJob
 	{
 		try {
 			// Mark the job as started
-			$this->markJobAsStarted();
-
-			// Update progress
-			$this->updateJobProgress(10, 'Requesting prompt suggestions');
+			$this->markJobAsStarted(`Generating prompt from term "{$this->term}"`);
 
 			$searchApiTool = new SearchApiTool();
 
@@ -103,18 +100,18 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 				->withToolChoice(ToolChoice::Auto)
 				->asText();
 
-			$this->updateJobProgress(50, 'Creating prompts');
+			$this->updateJobProgress(50, `Storing new prompt from term "{$this->term}"`);
 
 			$prompt = Prompt::create([
 				'team_id' => $this->teamId,
 				'content' => $textResponse->text
 			]);
 
+			// Mark the job as completed
+			$this->markJobAsCompleted('Running the new prompt');
+
 			// Run the prompt
 			$jobDispatcher->dispatch($prompt, new RunPromptJob($prompt, ['openai'], $prompt->team_id));
-
-			// Mark the job as completed
-			$this->markJobAsCompleted('Successfully created prompt');
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

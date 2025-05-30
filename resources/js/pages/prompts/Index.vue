@@ -21,11 +21,6 @@ const selectedPrompt = ref(null)
 const selectedPromptId = ref(null)
 const sortOption = ref('default') // Default sort option
 
-// Track if we have active jobs
-// const hasActiveJobs = computed(() => {
-// 	return jobStatusStore.jobs && jobStatusStore.jobs.some((job) => job.status === 'pending' || job.status === 'processing')
-// })
-
 const activePromptJobs = computed(() => {
 	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
 	return jobStatusStore.jobs.filter((job) => {
@@ -43,9 +38,6 @@ watch(
 	},
 	{ deep: true }
 )
-
-// Track completed jobs to detect when individual jobs complete
-const completedJobIds = ref(new Set())
 
 // Track prompt deletion
 const promptToDelete = ref(null)
@@ -110,43 +102,6 @@ const showPromptDetails = async (prompt) => {
 	selectedPromptId.value = prompt.id
 	isPromptDetailSheetOpen.value = true
 }
-
-// Watch for changes in job statuses
-// watch(
-// 	() => jobStatusStore.jobs,
-// 	async (currentJobs, previousJobs) => {
-// 		if (!previousJobs || !currentJobs) return
-
-// 		// Check for newly completed jobs
-// 		let shouldRefresh = false
-
-// 		currentJobs.forEach((job) => {
-// 			// If the job is completed or failed and we haven't processed it yet
-// 			if (
-// 				(job.status === 'completed' || job.status === 'failed') &&
-// 				!completedJobIds.value.has(job.job_id) &&
-// 				job.trackable_type === 'App\\Models\\Prompt'
-// 			) {
-// 				// Mark this job as processed
-// 				completedJobIds.value.add(job.job_id)
-// 				shouldRefresh = true
-// 			}
-// 		})
-
-// 		if (shouldRefresh) {
-// 			await promptStore.fetchPrompts()
-// 		}
-
-// 		// Check if we've gone from having active jobs to no active jobs
-// 		const previousHasActiveJobs = previousJobs.some((job) => job.status === 'pending' || job.status === 'processing')
-// 		const currentHasActiveJobs = currentJobs.some((job) => job.status === 'pending' || job.status === 'processing')
-
-// 		if (previousHasActiveJobs && !currentHasActiveJobs) {
-// 			await promptStore.fetchPrompts()
-// 		}
-// 	},
-// 	{ immediate: false }
-// )
 
 onMounted(async () => {
 	await promptStore.fetchPrompts()

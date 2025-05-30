@@ -66,7 +66,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 	{
 		try {
 			// Mark the job as started
-			$this->markJobAsStarted();
+			$this->markJobAsStarted('Finding competitors in response');
 
 			// Update progress
 			$this->updateJobProgress(10, 'Finding competitors in response');

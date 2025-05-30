@@ -93,10 +93,7 @@ class RunPromptJob extends TrackableJob
 	{
 		try {
 			// Mark the job as started
-			$this->markJobAsStarted();
-
-			// Update progress
-			$this->updateJobProgress(10, 'Fetching keywords');
+			$this->markJobAsStarted('Running a prompt');
 
 			// If no providers specified, use all
 			if (!$this->providers) {
@@ -105,7 +102,7 @@ class RunPromptJob extends TrackableJob
 
 			$responses = [];
 
-			$this->updateJobProgress(20, 'Preparing to send prompts to LLMs');
+			$this->updateJobProgress(20, 'Preparing to send prompt to LLMs');
 
 			// Run the prompt with each provider
 			$totalProviders = count($this->providers);
@@ -150,7 +147,7 @@ class RunPromptJob extends TrackableJob
 				}
 			}
 
-			$this->updateJobProgress(90, 'Processing LLM responses');
+			$this->updateJobProgress(90, 'Processing LLM response');
 
 			// Find competitors in response if this is the first response to this prompt
 			if ($this->prompt->responses()->count() == 1) {
@@ -158,7 +155,7 @@ class RunPromptJob extends TrackableJob
 			}
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt #' . $this->prompt->id);
+			$this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt');
 		} catch (Throwable $exception) {
 			Log::error('Prompt run failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);
