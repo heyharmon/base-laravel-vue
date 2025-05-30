@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Keyword;
-use App\Jobs\GeneratePhrases;
+
+use App\Jobs\GenerateOrganizationState;
 
 class OrganizationOnboardController extends Controller
 {
@@ -56,7 +57,7 @@ class OrganizationOnboardController extends Controller
 		]);
 
 		// TODO: This needs to happen in a controller specifically for onboarding a new team
-		$this->jobDispatcher->dispatch($organization, new GeneratePhrases($organization, $organization->team_id));
+		$this->jobDispatcher->dispatch($organization, new GenerateOrganizationState($organization, $organization->team_id));
 
 		return response()->json($organization, 201);
 	}
