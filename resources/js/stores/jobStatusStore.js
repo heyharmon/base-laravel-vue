@@ -13,6 +13,20 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	// Getters
 	const activeJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'pending' || job.status === 'processing') : []))
 
+	const activeJobsByClass = computed(() => {
+		const grouped = {}
+		if (activeJobs.value) {
+			activeJobs.value.forEach(job => {
+				const jobClass = job.job_class || 'unknown'
+				if (!grouped[jobClass]) {
+					grouped[jobClass] = []
+				}
+				grouped[jobClass].push(job)
+			})
+		}
+		return grouped
+	})
+
 	// Actions
 	async function pollTeamJobs() {
 		await fetchTeamJobs()
@@ -77,6 +91,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 
 		// Getters
 		activeJobs,
+		activeJobsByClass,
 
 		// Actions
 		pollTeamJobs,

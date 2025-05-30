@@ -11,6 +11,7 @@ const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
 const router = useRouter()
 
+// Get active jobs related to competitors
 const activeCompetitorJobs = computed(() => {
 	return jobStatusStore.jobs.filter(
 		(job) => job.job_class.includes('FindCompetitorsInResponseJob') && (job.status === 'pending' || job.status === 'processing')
@@ -18,10 +19,17 @@ const activeCompetitorJobs = computed(() => {
 })
 
 watch(
-	activeCompetitorJobs,
+	jobStatusStore.jobs,
 	(newJobs, oldJobs) => {
-		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
-			// At least one job completed or all jobs are done
+		// Check if any competitor job has just completed
+		const completedCompetitorJob = newJobs.some(
+			(job) =>
+				job.job_class.includes('FindCompetitorsInResponseJob') &&
+				job.status === 'completed' &&
+				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
+		)
+
+		if (completedCompetitorJob) {
 			organizationStore.fetchOrganizations()
 		}
 	},
@@ -43,18 +51,7 @@ onMounted(async () => {
 <template>
 	<DefaultLayout>
 		<div class="container mx-auto py-6">
-			<!-- Active jobs message -->
-			<div
-				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
-				class="p-4 mb-4 -mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
-			>
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span>
-					Looking for new competitors. Checking {{ activeCompetitorJobs.length }} prompt
-					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
-				</span>
-			</div>
-
+			<!-- Header -->
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
@@ -70,6 +67,18 @@ onMounted(async () => {
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
+			</div>
+
+			<!-- Active jobs message -->
+			<div
+				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
+				class="p-4 mb-4 -mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+			>
+				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+				<span>
+					Looking for new competitors. Checking {{ activeCompetitorJobs.length }} prompt
+					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
+				</span>
 			</div>
 
 			<!-- Loading state -->

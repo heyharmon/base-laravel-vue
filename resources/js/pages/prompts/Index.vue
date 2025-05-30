@@ -27,7 +27,7 @@ const sortOption = ref('default') // Default sort option
 // })
 
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['GeneratePhrases', 'GeneratePrompt', 'RunPromptJob', 'FindCompetitorsInResponseJob', 'CheckKeywordInPastResponsesJob']
+	const promptJobClasses = ['RunPromptJob']
 	return jobStatusStore.jobs.filter((job) => {
 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
 	})

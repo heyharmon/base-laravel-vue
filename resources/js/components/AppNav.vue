@@ -20,15 +20,15 @@ const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
 
 // Get the most recently completed job
-const mostRecentCompletedJob = computed(() => {
-	if (jobStatusStore.jobs.length === 0) return null
+// const mostRecentCompletedJob = computed(() => {
+// 	if (jobStatusStore.jobs.length === 0) return null
 
-	// Filter for completed jobs (status === 'completed')
-	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
-	if (completedJobs.length === 0) return null
+// 	// Filter for completed jobs (status === 'completed')
+// 	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
+// 	if (completedJobs.length === 0) return null
 
-	return completedJobs[0]
-})
+// 	return completedJobs[0]
+// })
 
 const logout = async () => {
 	await auth.logout()
@@ -183,7 +183,7 @@ onMounted(() => {
 	</nav>
 
 	<!-- Sub navigation for completed job status -->
-	<div v-if="isAuthenticated && jobStatusStore.activeJobs.length && mostRecentCompletedJob" class="bg-neutral-100 border-b border-neutral-200">
+	<!-- <div v-if="isAuthenticated && jobStatusStore.activeJobs.length && mostRecentCompletedJob" class="bg-neutral-100 border-b border-neutral-200">
 		<div class="container mx-auto px-4 py-2">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center space-x-3">
@@ -209,7 +209,7 @@ onMounted(() => {
 				</div>
 			</div>
 		</div>
-	</div>
+	</div> -->
 
 	<JobStatusSheet v-if="teams?.ownedTeams.length" :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

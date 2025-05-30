@@ -7,17 +7,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
-// Get the most recently completed job
-const mostRecentCompletedJobs = computed(() => {
-	if (jobStatusStore.jobs.length === 0) return null
-
-	// Filter for completed jobs (status === 'completed')
-	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
-	if (completedJobs.length === 0) return null
-
-	// return the 3 most recent
-	return completedJobs.slice(0, 3)
-})
+const activeJobsByClass = computed(() => jobStatusStore.activeJobsByClass)
 
 watch(
 	() => jobStatusStore.activeJobs,
@@ -43,6 +33,20 @@ onMounted(async () => {
 
 <template>
 	<DefaultLayout>
+		<!-- Active jobs message -->
+		<div v-if="Object.keys(activeJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+			<div class="flex items-center gap-2 mb-2">
+				<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+				<span class="font-medium">Active Jobs</span>
+			</div>
+			<div class="pl-6 space-y-1">
+				<div v-for="(jobs, jobClass) in activeJobsByClass" :key="jobClass" class="flex items-center justify-between">
+					<span>{{ jobClass }}:</span>
+					<span class="font-medium">{{ jobs.length }} job{{ jobs.length !== 1 ? 's' : '' }}</span>
+				</div>
+			</div>
+		</div>
+
 		<!-- Visibility -->
 		<div v-if="ownedOrg" class="mt-6 w-2/5 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
 			<div class="flex items-center justify-between">
@@ -113,34 +117,5 @@ onMounted(async () => {
 
 			<div v-else class="text-center py-4 text-neutral-500 text-sm">No organization data available</div>
 		</div>
-
-		<!-- No competitors yet, show a nice large empty state -->
-		<!-- <div v-else class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
-			<div v-if="jobStatusStore.activeJobs.length > 0 && mostRecentCompletedJobs" class="container mx-auto px-4 py-2">
-				<div class="flex items-center justify-between">
-					<div class="flex items-center space-x-3">
-						<div class="relative size-4">
-							<svg
-								class="text-green-500"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-								<polyline points="22 4 12 14.01 9 11.01"></polyline>
-							</svg>
-						</div>
-						<div class="flex flex-col">
-							<div class="flex items-center space-x-2">
-								<span class="text-xs font-medium">{{ mostRecentCompletedJob.output }}</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div> -->
 	</DefaultLayout>
 </template>
