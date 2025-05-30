@@ -77,13 +77,15 @@ class OrganizationController extends Controller
 			'name' => $organization->website,
 		]);
 
-		// Start a job batch
-		$jobs = [];
+		$this->jobDispatcher->dispatch($organization, new GeneratePhrasesJob($organization, $organization->team_id));
 
-		$jobs[] = new GeneratePhrasesJob($organization, $organization->team_id);
+		// Start a job batch
+		// $jobs = [];
+
+		// $jobs[] = new GeneratePhrasesJob($organization, $organization->team_id, $this->jobDispatcher);
 
 		// Generate prompts for all organization terms in a batch
-		$jobs[] = new GeneratePromptsForTermsJob($organization, $organization->team_id);
+		// $jobs[] = new GeneratePromptsForTermsJob($organization, $organization->team_id);
 
 		// Run all prompts
 		// $jobs[] = new RunAllPromptsJob($organization, $organization->team_id, ['openai'], 1, true);
@@ -91,10 +93,10 @@ class OrganizationController extends Controller
 		// Find competitors in past prompt responses
 		// $jobs[] = new FindCompetitorsInAllPromptsJob($organization, $organization->team_id);
 
-		$this->jobDispatcher->dispatchBatch($organization, $jobs, [
-			'name' => "Generate prompts and competitors for {$organization->team->name}",
-			'allowFailures' => true
-		]);
+		// $this->jobDispatcher->dispatchBatch($organization, $jobs, [
+		// 	'name' => "Generate prompts and competitors for {$organization->team->name}",
+		// 	'allowFailures' => true
+		// ]);
 
 		return response()->json($organization, 201);
 	}

@@ -11,14 +11,10 @@ use Prism\Prism\Prism;
 use Prism\Prism\Enums\ToolChoice;
 use Prism\Prism\Enums\Provider;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
-use App\Models\Team;
-use App\Models\Response;
-use App\Models\Prompt;
+use App\Services\JobDispatcherService;
 use App\Models\Organization;
-use App\Models\Keyword;
 
 class GeneratePhrasesJob extends TrackableJob
 {
@@ -62,9 +58,10 @@ class GeneratePhrasesJob extends TrackableJob
 	/**
 	 * Execute the job.
 	 *
+	 * @param JobDispatcherService $jobDispatcher
 	 * @return void
 	 */
-	public function handle()
+	public function handle(JobDispatcherService $jobDispatcher)
 	{
 		try {
 			// Mark the job as started
@@ -119,6 +116,9 @@ Output keywords as a plain text list.")])
 
 			// Mark the job as completed
 			$this->markJobAsCompleted('Successfully created prompt');
+
+			// Dispatch next job
+			$jobDispatcher->dispatch($this->model, new GeneratePromptsForTermsJob($this->model, $this->model->team_id));
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);
