@@ -42,7 +42,7 @@ const createTeamAndOrganization = async () => {
 		await organizationStore.createAndOnboardOrganization(organization.value)
 
 		await teamStore.switchTeam(team.id)
-		router.push({ name: 'organizations.index' })
+		router.push({ name: 'dashboard' })
 	} catch (error) {
 		console.error('Error creating team and organization:', error)
 	} finally {

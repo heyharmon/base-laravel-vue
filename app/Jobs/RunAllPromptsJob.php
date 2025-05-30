@@ -83,7 +83,6 @@ class RunAllPromptsJob extends TrackableJob
 			$prompts = Prompt::where('team_id', $this->teamId)->get();
 
 			if ($prompts->isEmpty()) {
-				$this->markJobAsCompleted('No prompts found to run');
 				return;
 			}
 

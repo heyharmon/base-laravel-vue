@@ -7,7 +7,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
-const activeJobsByClass = computed(() => jobStatusStore.activeJobsByClass)
+const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
 watch(
 	() => jobStatusStore.activeJobs,
@@ -33,16 +33,23 @@ onMounted(async () => {
 
 <template>
 	<DefaultLayout>
-		<!-- Active jobs message -->
-		<div v-if="Object.keys(activeJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-			<div class="flex items-center gap-2 mb-2">
+		<!-- Jobs currently processing message -->
+		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+			<div class="flex items-center gap-4 mb-2">
 				<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span class="font-medium">Active Jobs</span>
+				<span class="font-semibold">Setting up your team</span>
 			</div>
-			<div class="pl-6 space-y-1">
-				<div v-for="(jobs, jobClass) in activeJobsByClass" :key="jobClass" class="flex items-center justify-between">
-					<!-- <span>{{ jobs[0].output }}</span> -->
-					<span class="font-medium">{{ jobs.length }} job{{ jobs.length !== 1 ? 's' : '' }}</span>
+			<div class="pl-8 space-y-1">
+				<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
+					<div class="flex items-center justify-between">
+						<span>{{ jobs[0].output }}</span>
+					</div>
+					<div v-if="jobs.length > 1" class="flex items-center justify-between">
+						<span>{{ jobs[1].output }}</span>
+					</div>
+					<div v-if="jobs.length > 2" class="flex items-center justify-between">
+						<span>{{ jobs[2].output }}</span>
+					</div>
 				</div>
 			</div>
 		</div>

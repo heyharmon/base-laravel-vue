@@ -75,7 +75,6 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
 
 			if ($competitorCount >= 30) {
-				$this->markJobAsCompleted('Team already has 30 competitors');
 				return;
 			}
 
@@ -85,7 +84,6 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				->first();
 
 			if (!$ownedOrganization) {
-				$this->markJobAsCompleted('No owned organization found for this team');
 				return;
 			}
 
@@ -108,7 +106,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			$createdCount = $this->createCompetitorOrganizations($competitors);
 
 			// Mark the job as completed
-			$this->markJobAsCompleted("Successfully processed response and found {$createdCount} competitors");
+			$this->markJobAsCompleted('Successfully processed response and found ' . $createdCount . ' competitors');
 		} catch (Throwable $exception) {
 			Log::error('Find competitors job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

@@ -118,7 +118,7 @@ class RunPromptJob extends TrackableJob
 				}
 				[$model, $provider] = $this->availableProviders[$providerName];
 
-				$this->updateJobProgress((int)$progress, "Sending prompt to {$providerName}");
+				$this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);
 
 				try {
 					// Get response from the LLM

@@ -65,7 +65,7 @@ class GeneratePhrases extends TrackableJob
 	{
 		try {
 			// Mark the job as started
-			$this->markJobAsStarted(`Generating terms for {$this->model->name}`);
+			$this->markJobAsStarted('Generating keyword terms for ' . $this->model->name);
 
 			$searchApiTool = new SearchApiTool();
 
@@ -103,14 +103,14 @@ Output keywords as a plain text list.")])
 
 			$result = $response->structured;
 
-			$this->updateJobProgress(90, `Saving terms for {$this->model->name}`);
+			$this->updateJobProgress(90, 'Saving keywordterms for ' . $this->model->name);
 
 			$this->model->update([
 				'terms' => $result['terms']
 			]);
 
 			// Mark the job as completed
-			$this->markJobAsCompleted(`Generating prompts from terms for {$this->model->name}`);
+			$this->markJobAsCompleted('Saved keyword terms for ' . $this->model->name);
 
 			// Generate prompts for phrases
 			foreach ($this->model->terms as $term) {

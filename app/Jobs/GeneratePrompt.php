@@ -84,7 +84,7 @@ class GeneratePrompt extends TrackableJob
 	{
 		try {
 			// Mark the job as started
-			$this->markJobAsStarted(`Generating prompt from term "{$this->term}"`);
+			$this->markJobAsStarted('Generating prompt from term "' . $this->term . '"');
 
 			$searchApiTool = new SearchApiTool();
 
@@ -100,7 +100,7 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 				->withToolChoice(ToolChoice::Auto)
 				->asText();
 
-			$this->updateJobProgress(50, `Storing new prompt from term "{$this->term}"`);
+			$this->updateJobProgress(50, 'Storing new prompt from term "' . $this->term . '"');
 
 			$prompt = Prompt::create([
 				'team_id' => $this->teamId,
@@ -108,7 +108,7 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 			]);
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Running the new prompt');
+			$this->markJobAsCompleted('Created new prompt from term "' . $this->term . '"');
 
 			// Run the prompt
 			$jobDispatcher->dispatch($prompt, new RunPromptJob($prompt, ['openai'], $prompt->team_id));

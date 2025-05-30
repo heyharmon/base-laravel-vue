@@ -117,10 +117,8 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 
 			$this->updateJobProgress(90, 'Finalizing results');
 
-			$message = "Completed analysis for keyword '{$this->keyword->name}'. Found in {$foundInResponses} responses across " . count($foundInPrompts) . " prompts.";
-
 			// Mark the job as completed
-			$this->markJobAsCompleted($message);
+			$this->markJobAsCompleted('Found keyword "' . $this->keyword->name . '" in ' . $foundInResponses . ' responses');
 		} catch (Throwable $exception) {
 			Log::error('Error in CheckKeywordInPastResponsesJob: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);
