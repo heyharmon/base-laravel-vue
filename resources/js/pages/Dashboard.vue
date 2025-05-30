@@ -54,7 +54,7 @@ onMounted(async () => {
 <template>
 	<DefaultLayout>
 		<!-- Visibility -->
-		<div v-if="ownedOrg" class="mt-6 w-1/3 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+		<div v-if="ownedOrg" class="mt-6 w-2/5 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
 					<img

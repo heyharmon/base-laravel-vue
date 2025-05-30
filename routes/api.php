@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\WebsiteController;
-use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\PromptRunController;
 use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptController;
@@ -13,7 +11,6 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\KeywordGeneratorController;
 use App\Http\Controllers\PromptGeneratorController;
@@ -28,7 +25,6 @@ use App\Http\Controllers\KeywordRecommendationsController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/invitations/verify', [InvitationController::class, 'verify']);
 Route::post('/forgot-password', [AuthPasswordController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthPasswordController::class, 'resetPassword']);
 
@@ -36,7 +32,6 @@ Route::post('/reset-password', [AuthPasswordController::class, 'resetPassword'])
 Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/user', [AuthController::class, 'user']);
 
     // Analytics endpoints
     Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
@@ -79,9 +74,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
     Route::post('prompt-run-batch', [PromptRunBatchController::class, 'store']);
-
-    // Prompt responses (detailed)
-    Route::resource('prompts/{prompt}/responses', ResponseController::class);
 
     // Team routes
     Route::resource('teams', TeamController::class);
