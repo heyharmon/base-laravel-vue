@@ -72,7 +72,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	async function createAndOnboardOrganization(organizationData) {
-		console.log('Creating and onboarding organization...', organizationData)
+		console.log('Creating and onboarding organization...')
 		isLoading.value = true
 		error.value = null
 

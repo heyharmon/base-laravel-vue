@@ -116,6 +116,7 @@ class RunPromptJob extends TrackableJob
 				if (!isset($this->availableProviders[$providerName])) {
 					continue;
 				}
+
 				[$model, $provider] = $this->availableProviders[$providerName];
 
 				$this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);

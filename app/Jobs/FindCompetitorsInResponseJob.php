@@ -75,6 +75,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
 
 			if ($competitorCount >= 30) {
+				$this->markJobAsCompleted('Skipping prompt, max 30 competitors reached');
 				return;
 			}
 
@@ -84,6 +85,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				->first();
 
 			if (!$ownedOrganization) {
+				$this->markJobAsCompleted('Skipping prompt without owned organization');
 				return;
 			}
 
@@ -92,6 +94,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
 			// Skip prompts without responses
 			if (!$latestResponse) {
+				$this->markJobAsCompleted('Skippibng prompt without responses');
 				return;
 			}
 
