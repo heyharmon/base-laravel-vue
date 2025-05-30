@@ -65,9 +65,6 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 			// Mark the job as started
 			$this->markJobAsStarted('Checking keyword in past responses');
 
-			// Update progress
-			$this->updateJobProgress(10, 'Fetching responses');
-
 			// Get all responses for prompts in the same team
 			$responses = Response::whereHas('prompt', function ($query) {
 				$query->whereHas('team', function ($teamQuery) {
@@ -75,11 +72,12 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 				});
 			})->get();
 
-			$this->updateJobProgress(30, 'Analyzing responses');
-
 			$keywordName = strtolower($this->keyword->name);
 			$foundInResponses = 0;
 			$foundInPrompts = [];
+
+			// Update progress
+			$this->updateJobProgress(10, 'Checking for keyword "' . $this->keyword->name . '" in past responses');
 
 			foreach ($responses as $response) {
 				$responseText = strtolower($response->content);
@@ -114,8 +112,6 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 					}
 				}
 			}
-
-			$this->updateJobProgress(90, 'Finalizing results');
 
 			// Mark the job as completed
 			$this->markJobAsCompleted('Found keyword "' . $this->keyword->name . '" in ' . $foundInResponses . ' responses');

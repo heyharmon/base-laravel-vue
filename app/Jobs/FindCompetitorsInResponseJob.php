@@ -87,8 +87,6 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				return;
 			}
 
-			$this->updateJobProgress(30, 'Analyzing response content with LLM');
-
 			// Get the latest response for this prompt
 			$latestResponse = $this->model->responses()->latest()->first();
 
@@ -99,8 +97,6 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
 			// Get competitors from the LLM
 			$competitors = $this->findCompetitorsWithLlm($latestResponse->content, $ownedOrganization);
-
-			$this->updateJobProgress(70, 'Creating competitor organizations');
 
 			// Create competitor
 			$createdCount = $this->createCompetitorOrganizations($competitors);
