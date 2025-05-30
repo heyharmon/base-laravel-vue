@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Prompt;
-use App\Jobs\FindCompetitorsInPastResponsesJob;
+use App\Jobs\FindCompetitorsInResponseJob;
 
 class OrganizationCompetitorController extends Controller
 {
@@ -35,7 +35,7 @@ class OrganizationCompetitorController extends Controller
 		$jobs = [];
 
 		foreach ($prompts as $prompt) {
-			$jobs[] = new FindCompetitorsInPastResponsesJob($prompt, $teamId);
+			$jobs[] = new FindCompetitorsInResponseJob($prompt, $teamId);
 		}
 
 		if (empty($jobs)) {

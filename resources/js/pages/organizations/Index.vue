@@ -14,7 +14,7 @@ const isGeneratingCompetitors = ref(false)
 
 const activeCompetitorJobs = computed(() => {
 	return jobStatusStore.jobs.filter(
-		(job) => job.job_class.includes('FindCompetitorsInPastResponsesJob') && (job.status === 'pending' || job.status === 'processing')
+		(job) => job.job_class.includes('FindCompetitorsInResponseJob') && (job.status === 'pending' || job.status === 'processing')
 	)
 })
 

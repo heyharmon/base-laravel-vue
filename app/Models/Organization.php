@@ -21,6 +21,7 @@ class Organization extends Model
 
 	protected $casts = [
 		'is_competitor' => 'boolean',
+		'terms' => 'array',
 	];
 
 	protected $appends = [

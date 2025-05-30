@@ -45,11 +45,11 @@ class GeneratePromptJob extends TrackableJob
 	protected $teamId;
 
 	/**
-	 * The phrase to generate a prompt for.
+	 * The term to generate a prompt for.
 	 *
 	 * @var string
 	 */
-	protected $phrase;
+	protected $term;
 
 	/**
 	 * The location to be used in prompts.
@@ -66,11 +66,11 @@ class GeneratePromptJob extends TrackableJob
 	 * @param  int  $teamId
 	 * @return void
 	 */
-	public function __construct($model, int $teamId, string $phrase, string $location)
+	public function __construct($model, int $teamId, string $term, string $location)
 	{
 		$this->model = $model;
 		$this->teamId = $teamId;
-		$this->phrase = $phrase;
+		$this->term = $term;
 		$this->location = $location;
 	}
 
@@ -93,9 +93,9 @@ class GeneratePromptJob extends TrackableJob
 			$textResponse = Prism::text()
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withMaxSteps(10)
-				->withMessages([new UserMessage("Here is a keyword phrase: \"" . $this->phrase . "\". Your job is to turn the phrase into a statement, question, or prompt that a person would likely put into ChatGPT.
+				->withMessages([new UserMessage("Here is a keyword term: \"" . $this->term . "\". Your job is to turn the term into a statement, question, or prompt that a person would likely put into ChatGPT.
 You also need to incorporate the end-user's location \"" . $this->location . "\" in the prompt.
-The prompt should elicit a response that mentions specific brands. So, let's pretend you are given the keyword phrase, \"car loan\" and the location is Colorado. In that case, an example of an acceptable prompt is, \"Where in Colorado can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that's likely to elicit a response that gives general information rather than recommending specific companies.
+The prompt should elicit a response that mentions specific brands. So, let's pretend you are given the keyword term, \"car loan\" and the location is Colorado. In that case, an example of an acceptable prompt is, \"Where in Colorado can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that's likely to elicit a response that gives general information rather than recommending specific companies.
 Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the keyword.
 Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")])
 				->withTools([$searchApiTool])

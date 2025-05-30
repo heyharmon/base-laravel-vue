@@ -11,7 +11,10 @@ use App\Models\Keyword;
 use App\Jobs\RunPromptJob;
 use App\Jobs\RunAllPromptsJob;
 use App\Jobs\GeneratePromptJob;
-use App\Jobs\FindCompetitorsInPastResponsesJob;
+use App\Jobs\GeneratePhrasesJob;
+use App\Jobs\GeneratePromptsForTermsJob;
+use App\Jobs\FindCompetitorsInResponseJob;
+use App\Jobs\FindCompetitorsInAllPromptsJob;
 
 class OrganizationController extends Controller
 {
@@ -77,21 +80,16 @@ class OrganizationController extends Controller
 		// Start a job batch
 		$jobs = [];
 
-		// Genearate a prompt for each phrase
-		// foreach ($organization->phrases as $phrase) {
-		// 	$jobs[] = new GeneratePromptJob($organization->team, $phrase, $organization->location);
-		// }
-		foreach (['auto loan', 'home loan', 'personal loan', 'business loan'] as $phrase) {
-			$jobs[] = new GeneratePromptJob($organization, $organization->team_id, $phrase, 'Utah');
-		}
+		$jobs[] = new GeneratePhrasesJob($organization, $organization->team_id);
+
+		// Generate prompts for all organization terms in a batch
+		$jobs[] = new GeneratePromptsForTermsJob($organization, $organization->team_id);
 
 		// Run all prompts
-		$jobs[] = new RunAllPromptsJob($organization, $organization->team_id, ['openai'], 1);
+		// $jobs[] = new RunAllPromptsJob($organization, $organization->team_id, ['openai'], 1, true);
 
 		// Find competitors in past prompt responses
-		foreach ($organization->team->prompts as $prompt) {
-			$jobs[] = new FindCompetitorsInPastResponsesJob($prompt, $organization->team_id);
-		}
+		// $jobs[] = new FindCompetitorsInAllPromptsJob($organization, $organization->team_id);
 
 		$this->jobDispatcher->dispatchBatch($organization, $jobs, [
 			'name' => "Generate prompts and competitors for {$organization->team->name}",

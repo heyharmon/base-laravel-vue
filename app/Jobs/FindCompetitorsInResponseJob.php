@@ -19,7 +19,7 @@ use App\Models\Prompt;
 use App\Models\Organization;
 use App\Models\Keyword;
 
-class FindCompetitorsInPastResponsesJob extends TrackableJob
+class FindCompetitorsInResponseJob extends TrackableJob
 {
 	use Batchable;
 
