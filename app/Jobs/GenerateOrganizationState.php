@@ -74,13 +74,6 @@ class GenerateOrganizationState extends TrackableJob
 				->withToolChoice(ToolChoice::Auto)
 				->asText();
 
-			// // Log the complete response object for debugging
-			// Log::info('Organization state determination job completed', [
-			// 	'response' => $textResponse,
-			// 	'text' => $textResponse->text ?? 'No text found',
-			// 	'organization' => $this->model->name
-			// ]);
-
 			$schema = new ObjectSchema(
 				name: 'us_state',
 				description: 'A US state',
