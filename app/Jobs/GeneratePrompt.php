@@ -81,10 +81,10 @@ Also, remember to keep the prompts simple. Don't make assumptions about the inte
 Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")
 			];
 
-			// Add state message conditionally if available
-			if (isset($this->model->state) && !empty($this->model->state)) {
-				$messages[] = new UserMessage("You also need to incorporate the brand's location \"" . $this->model->state . "\" in the prompt when necessary.
-So, again let's pretend you are given the keyword term, \"car loan\" and the location is \"" . $this->model->state . "\". In that case, an example of an acceptable prompt is, \"Where in " . $this->model->state . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $this->model->state . " that can provide a loan.");
+			// Add location message conditionally if location is available
+			if (isset($this->model->location) && !empty($this->model->location)) {
+				$messages[] = new UserMessage("You also need to incorporate the brand's location \"" . $this->model->location . "\" in the prompt when necessary.
+So, again let's pretend you are given the keyword term, \"car loan\" and the location is \"" . $this->model->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $this->model->state . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $this->model->state . " that can provide a loan.");
 			}
 
 			$textResponse = Prism::text()
