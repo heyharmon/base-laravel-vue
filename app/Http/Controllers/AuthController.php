@@ -31,23 +31,6 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Create a team for the user
-        // $team = Team::create([
-        //     'name' => $user->name . '\'s Team',
-        //     'owner_id' => $user->id,
-        // ]);
-
-        // // Add user to their team as admin
-        // $team->users()->attach($user->id, [
-        //     'role' => 'admin',
-        //     'invitation_accepted' => true,
-        //     'joined_at' => now(),
-        // ]);
-
-        // Set the user's current team
-        // $user->current_team_id = $team->id;
-        // $user->save();
-
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -106,11 +89,6 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
-    }
-
-    public function user(Request $request)
-    {
-        return response()->json($request->user());
     }
 
     /**

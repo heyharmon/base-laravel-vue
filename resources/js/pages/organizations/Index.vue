@@ -10,34 +10,37 @@ import Button from '@/components/ui/Button.vue'
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
 const router = useRouter()
-const isGeneratingCompetitors = ref(false)
 
+// Get active jobs related to competitors
 const activeCompetitorJobs = computed(() => {
 	return jobStatusStore.jobs.filter(
-		(job) => job.job_class.includes('FindCompetitorsInPastResponsesJob') && (job.status === 'pending' || job.status === 'processing')
+		(job) => job.job_class.includes('FindCompetitorsInResponseJob') && (job.status === 'pending' || job.status === 'processing')
 	)
 })
+
+watch(
+	jobStatusStore.jobs,
+	(newJobs, oldJobs) => {
+		// Check if any competitor job has just completed
+		const completedCompetitorJob = newJobs.some(
+			(job) =>
+				job.job_class.includes('FindCompetitorsInResponseJob') &&
+				job.status === 'completed' &&
+				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
+		)
+
+		if (completedCompetitorJob) {
+			organizationStore.fetchOrganizations()
+		}
+	},
+	{ deep: true }
+)
 
 // Check if organization was created within the last 24 hours
 const isNewOrganization = (createdAt) => {
 	if (!createdAt) return false
 	return moment().diff(moment(createdAt), 'hours') <= 24
 }
-
-watch(
-	activeCompetitorJobs,
-	(newJobs, oldJobs) => {
-		if (newJobs.length > 0) {
-			// Jobs are running
-			isGeneratingCompetitors.value = true
-		} else if (oldJobs.length > 0 && newJobs.length === 0) {
-			// Jobs were running but now they're done
-			isGeneratingCompetitors.value = false
-			organizationStore.fetchOrganizations()
-		}
-	},
-	{ deep: true }
-)
 
 onMounted(async () => {
 	await organizationStore.fetchOrganizations()
@@ -47,34 +50,34 @@ onMounted(async () => {
 
 <template>
 	<DefaultLayout>
-		<div class="container mx-auto py-8">
+		<div class="container mx-auto py-6">
+			<!-- Header -->
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
-					<Button
+					<!-- <Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
 						@click="organizationStore.generateCompetitors()"
-						:disabled="isGeneratingCompetitors"
+						:disabled="activeCompetitorJobs.length > 0"
 						variant="outline"
 					>
-						{{ isGeneratingCompetitors ? 'Generating...' : 'Generate competitors' }}
-					</Button>
+						{{ activeCompetitorJobs.length > 0 ? 'Generating...' : 'Generate competitors' }}
+					</Button> -->
 					<Button @click="router.push({ name: 'organizations.create' })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
 			</div>
 
-			<!-- Competitors generation message -->
+			<!-- Active jobs message -->
 			<div
-				v-if="!organizationStore.error && isGeneratingCompetitors"
-				class="p-4 mb-3 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+				v-if="!organizationStore.error && activeCompetitorJobs.length > 0"
+				class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span
-					>Competitor generation jobs are now running. Checking {{ activeCompetitorJobs.length }} prompt
-					{{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.</span
-				>
+				<span>
+					Looking for new competitors in {{ activeCompetitorJobs.length }} prompt {{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
+				</span>
 			</div>
 
 			<!-- Loading state -->
@@ -89,7 +92,7 @@ onMounted(async () => {
 
 			<div v-else>
 				<!-- Your Organization -->
-				<div class="mt-8 mb-8">
+				<div class="mt-6 mb-6">
 					<h2 class="text-xl font-semibold mb-4">Your organization</h2>
 					<div v-if="organizationStore.ownedOrganizations.length === 0" class="text-neutral-500">You don't have an organization yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

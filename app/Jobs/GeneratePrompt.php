@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Jobs;
+
+use Throwable;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
+use Prism\Prism\Prism;
+use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\Enums\Provider;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Bus\Batchable;
+use App\Tools\SearchApiTool;
+use App\Services\JobDispatcherService;
+use App\Models\Prompt;
+
+class GeneratePrompt extends TrackableJob
+{
+	use Batchable;
+
+	/**
+	 * The number of times the job may be attempted.
+	 *
+	 * @var int
+	 */
+	public $tries = 3;
+
+	/**
+	 * The model to use for job tracking.
+	 *
+	 * @var \Illuminate\Database\Eloquent\Model
+	 */
+	public $model;
+
+	/**
+	 * The team ID.
+	 *
+	 * @var int
+	 */
+	protected $teamId;
+
+	/**
+	 * The term to generate a prompt for.
+	 *
+	 * @var string
+	 */
+	protected $term;
+
+	/**
+	 * Create a new job instance.
+	 *
+	 * @param  \App\Models\Prompt  $prompt
+	 * @param  array  $providers
+	 * @param  int  $teamId
+	 * @return void
+	 */
+	public function __construct($model, int $teamId, string $term)
+	{
+		$this->model = $model;
+		$this->teamId = $teamId;
+		$this->term = $term;
+	}
+
+	/**
+	 * Execute the job.
+	 *
+	 * @return void
+	 */
+	public function handle(JobDispatcherService $jobDispatcher)
+	{
+		try {
+			// Mark the job as started
+			$this->markJobAsStarted('Generating prompt from term "' . $this->term . '"');
+
+			$searchApiTool = new SearchApiTool();
+
+			// Create an array of messages
+			$messages = [
+				new UserMessage("Here is a keyword term: \"" . $this->term . "\". Your job is to turn the term into a statement, question, or prompt that a person would likely put into ChatGPT.
+The prompt should elicit a response that mentions specific brands. So, let's pretend you are given the keyword term, \"car loan\". In that case, an example of an acceptable prompt is, \"Where can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that's likely to elicit a response that gives general information rather than recommending specific companies.
+Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the keyword.
+Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")
+			];
+
+			// Add state message conditionally if available
+			if (isset($this->model->state) && !empty($this->model->state)) {
+				$messages[] = new UserMessage("You also need to incorporate the brand's location \"" . $this->model->state . "\" in the prompt when necessary.
+So, again let's pretend you are given the keyword term, \"car loan\" and the location is \"" . $this->model->state . "\". In that case, an example of an acceptable prompt is, \"Where in " . $this->model->state . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $this->model->state . " that can provide a loan.");
+			}
+
+			$textResponse = Prism::text()
+				->using(Provider::OpenAI, 'gpt-4o')
+				->withMaxSteps(10)
+				->withMessages($messages)
+				->withTools([$searchApiTool])
+				->withToolChoice(ToolChoice::Auto)
+				->asText();
+
+			$this->updateJobProgress(50, 'Storing new prompt from term "' . $this->term . '"');
+
+			$prompt = Prompt::create([
+				'team_id' => $this->teamId,
+				'content' => $textResponse->text
+			]);
+
+			// Mark the job as completed
+			$this->markJobAsCompleted('Created new prompt from term "' . $this->term . '"');
+
+			// Run the prompt
+			$jobDispatcher->dispatch($prompt, new RunPromptJob($prompt, ['openai'], $prompt->team_id));
+		} catch (Throwable $exception) {
+			Log::error('Prompt generation job failed: ' . $exception->getMessage());
+			$this->markJobAsFailed($exception);
+			throw $exception;
+		}
+	}
+}

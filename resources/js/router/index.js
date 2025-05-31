@@ -16,6 +16,7 @@ import TeamCreate from '@/pages/teams/Create.vue'
 import OrganizationsIndex from '@/pages/organizations/Index.vue'
 import OrganizationCreate from '@/pages/organizations/Create.vue'
 import OrganizationEdit from '@/pages/organizations/Edit.vue'
+import PromptsIndex from '@/pages/prompts/Index.vue'
 
 const routes = [
 	{
@@ -92,6 +93,12 @@ const routes = [
 		path: '/organizations/:id/edit',
 		name: 'organizations.edit',
 		component: OrganizationEdit,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/prompts',
+		name: 'prompts.index',
+		component: PromptsIndex,
 		meta: { requiresAuth: true }
 	}
 ]

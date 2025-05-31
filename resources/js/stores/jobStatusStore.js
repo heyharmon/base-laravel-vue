@@ -10,6 +10,39 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	const error = ref(null)
 	let refreshTimer = ref(null)
 
+	// Getters
+	const activeJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'pending' || job.status === 'processing') : []))
+	const processingJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'processing') : []))
+	const completedJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'completed') : []))
+
+	const processingJobsByClass = computed(() => {
+		const grouped = {}
+		if (processingJobs.value) {
+			processingJobs.value.forEach((job) => {
+				const jobClass = job.job_class || 'unknown'
+				if (!grouped[jobClass]) {
+					grouped[jobClass] = []
+				}
+				grouped[jobClass].push(job)
+			})
+		}
+		return grouped
+	})
+
+	const completedJobsByClass = computed(() => {
+		const grouped = {}
+		if (completedJobs.value) {
+			completedJobs.value.forEach((job) => {
+				const jobClass = job.job_class || 'unknown'
+				if (!grouped[jobClass]) {
+					grouped[jobClass] = []
+				}
+				grouped[jobClass].push(job)
+			})
+		}
+		return grouped
+	})
+
 	// Actions
 	async function pollTeamJobs() {
 		await fetchTeamJobs()
@@ -71,6 +104,13 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		batch: computed(() => batch.value),
 		loading,
 		error,
+
+		// Getters
+		activeJobs,
+		processingJobs,
+		completedJobs,
+		processingJobsByClass,
+		completedJobsByClass,
 
 		// Actions
 		pollTeamJobs,

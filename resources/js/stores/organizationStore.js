@@ -71,6 +71,24 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
+	async function createAndOnboardOrganization(organizationData) {
+		console.log('Creating and onboarding organization...')
+		isLoading.value = true
+		error.value = null
+
+		try {
+			const response = await api.post('/organizations-onboard', organizationData)
+			await fetchOrganizations()
+			return response // API interceptor already extracts response.data
+		} catch (err) {
+			error.value = err.response?.data?.message || 'Failed to create organization'
+			console.error('Error creating organization:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
+
 	async function updateOrganization(organizationId, organizationData) {
 		console.log('Updating organization ID:', organizationId)
 		isLoading.value = true
@@ -174,6 +192,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		fetchOrganizations,
 		fetchOrganization,
 		createOrganization,
+		createAndOnboardOrganization,
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
