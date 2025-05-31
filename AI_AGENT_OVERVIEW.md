@@ -1,71 +1,57 @@
-# AI Agent Development Guide
+# AI Agent Overview
 
-This document summarizes the key components of the **LLM Mention Tracker** application. It is intended for AI agents working on the project to quickly gain context and effectively implement new features.
+This document gives AI developers a concise view of the **LLM Mention Tracker** codebase. The app records how brands or keywords show up in LLM responses. The backend is Laravel 12 and the frontend is Vue 3 with Pinia stores.
 
-## Overview
+## Core Domain
 
-The application tracks how often specified keywords appear in the responses of various Large Language Models (LLMs). Users create organizations and keywords that are associated with those organizations. Users then define prompts relevant to all organizations, run them across different providers, and collect responses to analyze keyword mentions. The stack consists of a Laravel API backend and a Vue 3 frontend.
+### Teams and Users
+* **Team** – group of users. Teams own most resources.
+* **User** – authenticates via Laravel Sanctum. Users can belong to many teams and switch their current team. Team invitations are handled via tokens and email.
 
-## Core Concepts
+### Organizations & Keywords
+* **Organization** – represents a company/brand. Each team has one primary organization (not a competitor) and many competitor organizations. Organizations store website, logo, industry, location and other info. They also keep an array of suggested keyword terms (`terms`).
+* **Keyword** – word or phrase to track. Keywords belong to an organization and a team. A `is_recommended` flag marks suggested keywords waiting for user approval.
 
-### Models
-- **Team** – Group of users. Most resources belong to a team.
-- **Keyword** – Word or phrase to track in LLM responses.
-- **Prompt** – Text sent to LLMs. Associated with multiple keywords.
-- **Response** – Output from an LLM for a prompt. Linked to keywords found in the text.
-- **JobStatus** – Tracks queued jobs for running prompts. Implements job progress and batch information.
-- **Conversation/Chat** – Simple chat feature used by the `ChatService` to demonstrate AI conversations.
+### Prompts & Responses
+* **Prompt** – text sent to LLMs. Prompts belong to a team and have many keywords through the `keyword_prompt` table which stores `count` and `last_found_at`. A computed attribute `mentions_percentage` shows how often the team’s owned organization is mentioned in its responses.
+* **Response** – output returned from an LLM. Each response stores the provider, model, content, metadata and any search queries used. Responses belong to a prompt and relate to keywords via `keyword_response`.
 
-### Relationships
-- Prompts -> Team (many-to-one) (prompts belong to a team) 
-- Keywords -> Organization (many-to-one) (keywords belong to an organization) 
-- Prompts <-> Keywords (many‑to‑many with count & last_found_at fields).
-- Responses -> Prompt (one‑to‑many).
-- Responses <-> Keywords (many‑to‑many).
-- JobStatus uses a polymorphic `trackable` relation to associate job records with Prompts or other models.
+### Jobs & JobStatus
+* **JobStatus** – tracks queued jobs. Uses a polymorphic `trackable` relation so any model (prompt, keyword, organization, etc.) can own job status records. Fields include progress, status, batch id and error messages.
+* **TrackableJob** – base job class providing helpers to mark status updates.
+* **RunPromptJob** – sends a prompt to one or more LLM providers using Prism and optional search tools. It saves the response, records search queries, checks for keywords and triggers competitor discovery on a prompt’s first response.
+* **RunAllPromptsJob** – batch runs every prompt for a team.
+* **CheckKeywordInPastResponsesJob** – scans previous responses for a keyword and updates pivot tables.
+* **FindCompetitorsInResponseJob** – analyzes a prompt response to extract competitor organizations and creates them with associated keywords.
+* **GeneratePrompt** – turns a keyword term into a new prompt and immediately queues it for execution.
+* **GeneratePhrases** – generates keyword terms for an organization and then dispatches `GeneratePrompt` for each term.
 
-### Services
-- **ChatService** – Generates chat responses using Prism and stores conversation history.
-- **JobDispatcherService** – Wraps Laravel’s queue/batch system and records `JobStatus` entries for jobs.
+### Services & Tools
+* **JobDispatcherService** – wraps the queue/batch API and automatically creates `JobStatus` entries when dispatching or batching jobs.
+* **ChatService** – simple conversation service that stores chats and uses Prism to generate assistant replies.
+* **BrandFetchService** – wrapper around the BrandFetch API for looking up brand details.
+* **SearchApiTool**, **SearchTool**, **SearchToolFirecrawl** – Prism tools used by jobs to perform external web searches.
 
-### Jobs
-- **RunPromptJob** – Executes a prompt across configured LLM providers. It checks responses for keywords, saves search tool results, and updates `JobStatus` progress.
-- **TrackableJob** – Base class for jobs that handles status updates (pending, processing, completed, failed).
+## API Layer
+Key controllers provide JSON endpoints (see `routes/api.php`):
+* Authentication: `AuthController` and `AuthPasswordController`.
+* Team management and invitations: `TeamController`.
+* Organization CRUD, onboarding, competitor generation, visibility metrics and brand search.
+* Keyword CRUD plus generator and recommendations.
+* Prompt CRUD, generation, running individual prompts or all prompts in batch, and viewing prompt responses.
+* Analytics endpoints for keyword stats, prompt stats and time‑series data.
+* Job status retrieval (`JobStatusController`).
+* Conversation and chat endpoints for the demo chat feature.
 
-### Tools
-- **SearchApiTool** / **SearchTool** / **SearchToolFirecrawl** – Prism tools used by jobs to perform web searches when generating LLM responses.
+## Frontend Structure
+* Vue 3 with Pinia. Stores live in `resources/js/stores` (teams, prompts, keywords, organizations, jobs, chat, etc.).
+* Components are under `resources/js/components` and pages under `resources/js/pages`. Routing is configured in `resources/js/router/index.js`.
+* API calls are made through `resources/js/services/api.js` which attaches the auth token from local storage.
 
-### Controllers & API Routes
-Key controllers expose REST endpoints for managing resources:
-- `KeywordController`, `PromptController`, `ResponseController` – CRUD for core models.
-- `PromptRunController` and `PromptRunBatchController` – Queue jobs to run prompts individually or in batch.
-- `AnalyticsController` – Provides stats and time‑series data on keyword occurrences and prompt activity.
-- `JobStatusController` – Retrieve job and batch information.
-- `TeamController`, `AuthController`, `InvitationController` – Team management and authentication.
-- Generator endpoints: `KeywordGeneratorController` and `PromptGeneratorController` use Prism + search tools to suggest keywords and prompts for a domain.
+## Notable Changes from Older Versions
+* The separate `mentions` model has been removed. Keyword occurrences are now tracked through the `keyword_prompt` and `keyword_response` pivot tables.
+* The `mentioned` column was dropped from `responses`.
+* Organizations gained fields for `terms` and `location` and are used during onboarding to generate prompts and competitor data.
+* New jobs were added for generating prompts and keywords, running all prompts, and finding competitors in responses.
 
-Routes are defined in `routes/api.php` and grouped by authentication and team requirements.
-
-### Frontend Structure
-- Vue 3 with Pinia stores (`resources/js/stores`). Stores mirror API resources (keywords, prompts, jobs, teams, etc.).
-- Components organized under `resources/js/components` for prompts, keywords, jobs, chat, and generic UI elements.
-- Pages under `resources/js/pages` with router configuration in `resources/js/router/index.js`.
-
-### Authentication & Teams
-The API uses Laravel Sanctum. Users belong to a `Team`; most queries scope results by the authenticated user’s current team. Invitation tokens allow team invitations and registration.
-
-## Extending the App
-- New jobs should extend `TrackableJob` to automatically record progress.
-- When adding models that launch jobs, include the `HasJobStatus` trait to link to `JobStatus` records.
-- API responses expect JSON. Use the existing `api.js` service for Axios calls in the frontend.
-- For new analytics metrics, consider adding methods to `AnalyticsController` and corresponding Pinia stores/pages.
-- Frontend UI is built with basic Tailwind and custom Vue components; follow existing patterns in `resources/js/components/ui`.
-
-## Useful Files
-- `app/Models` – Eloquent models and relationships.
-- `app/Jobs` – Queue jobs including `RunPromptJob`.
-- `app/Services` – Service classes such as `JobDispatcherService`.
-- `routes/api.php` – REST API route definitions.
-- `resources/js` – Vue application (components, pages, stores, router).
-
-This overview aims to provide enough context for AI agents to understand how the application works and where to integrate additional functionality. Consult the source code and existing PRD documents (`README.md`, `PRD-job-statuses-and-dispatcher.md`) for detailed requirements.
+This overview should help you navigate the codebase and implement additional features confidently. Check the models, jobs and controllers referenced above for further detail.
