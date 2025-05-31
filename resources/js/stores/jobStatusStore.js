@@ -46,7 +46,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	// Actions
 	async function pollTeamJobs() {
 		await fetchTeamJobs()
-		startAutoRefresh(1000)
+		startAutoRefresh(1500)
 	}
 
 	async function fetchTeamJobs() {
@@ -70,7 +70,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		return jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
 	}
 
-	function startAutoRefresh(interval = 1000) {
+	function startAutoRefresh(interval = 2000) {
 		stopAutoRefresh()
 
 		refreshTimer.value = setInterval(() => {

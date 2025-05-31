@@ -9,11 +9,14 @@ const organizationStore = useOrganizationStore()
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
+// Watch for job status changes
 watch(
-	() => jobStatusStore.activeJobs,
-	(newJobs, oldJobs) => {
-		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
-			// At least one job completed, or all jobs are done
+	() => jobStatusStore.jobs,
+	() => {
+		// Check if there are any newly completed jobs
+		const hasCompletedJobs = jobStatusStore.completedJobs.length > 0
+		if (hasCompletedJobs) {
+			console.log('Jobs completed, refreshing visibility metrics')
 			organizationStore.fetchVisibilityMetrics()
 		}
 	},
