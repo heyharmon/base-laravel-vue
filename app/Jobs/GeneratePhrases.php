@@ -112,10 +112,12 @@ Output keywords as a plain text list.")])
 			// Mark the job as completed
 			$this->markJobAsCompleted('Saved keyword terms for ' . $this->model->name);
 
-			// Generate prompts for phrases
-			// foreach ($this->model->terms as $term) {
-			// 	$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $term, 'Utah'));
-			// }
+			// Generate prompts for phrases if this is the owned organization
+			if (!$this->model->is_competitor) {
+				foreach ($this->model->terms as $term) {
+					$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $term, 'Utah'));
+				}
+			}
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);
