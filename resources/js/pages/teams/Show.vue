@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const route = useRoute()
+const router = useRouter()
 const teamStore = useTeamStore()
 const teamId = computed(() => route.params.id)
 const currentUser = computed(() => auth.getUser())
@@ -83,6 +84,17 @@ const updateRole = async (userId, role) => {
 		console.error('Error updating role:', error)
 	}
 }
+
+const deleteTeam = async () => {
+	if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) return
+
+	try {
+		await teamStore.deleteTeam(teamId.value)
+		router.push('/teams')
+	} catch (error) {
+		console.error('Error deleting team:', error)
+	}
+}
 </script>
 
 <template>
@@ -107,6 +119,7 @@ const updateRole = async (userId, role) => {
 					<div class="flex space-x-2">
 						<Button v-if="isOwner || isAdmin" @click="showEditModal = true" variant="neutral"> Edit Team </Button>
 						<Button v-if="isOwner || isAdmin" @click="showInviteModal = true" variant="dark"> Invite Member </Button>
+						<Button v-if="isOwner" @click="deleteTeam" variant="destructive">Delete Team</Button>
 					</div>
 				</div>
 

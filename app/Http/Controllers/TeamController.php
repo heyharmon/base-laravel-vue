@@ -142,17 +142,25 @@ class TeamController extends Controller
 	/**
 	 * Remove the specified team from storage.
 	 */
-	public function destroy(Team $team)
-	{
-		// Only the owner can delete a team
-		if ($team->owner_id !== Auth::id()) {
-			return response()->json(['message' => 'Unauthorized'], 403);
-		}
+        public function destroy(Team $team)
+        {
+                // Only the owner can delete a team
+                if ($team->owner_id !== Auth::id()) {
+                        return response()->json(['message' => 'Unauthorized'], 403);
+                }
 
-		$team->delete();
+                $team->delete();
 
-		return response()->json(['message' => 'Team deleted successfully']);
-	}
+                return response()->json(['message' => 'Team deleted successfully']);
+        }
+
+        /**
+         * Alias for destroy to support DELETE /teams/{team} via "delete" route if needed.
+         */
+        public function delete(Team $team)
+        {
+                return $this->destroy($team);
+        }
 
 	/**
 	 * Invite a user to the team.
