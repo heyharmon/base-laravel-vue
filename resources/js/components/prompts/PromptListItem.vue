@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
+import moment from 'moment'
 
 const promptStore = usePromptStore()
 
@@ -15,6 +16,16 @@ const isRunMenuOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 const hasActiveJob = computed(() => props.jobs.some((job) => job.trackable_id === props.prompt.id && (job.status === 'pending' || job.status === 'processing')))
+
+const formattedCreatedAt = computed(() => {
+	if (!props.prompt.created_at) return ''
+	return moment(props.prompt.created_at).fromNow()
+})
+
+const isNewPrompt = computed(() => {
+	if (!props.prompt.created_at) return false
+	return moment().diff(moment(props.prompt.created_at), 'hours') <= 24
+})
 
 const toggleRunMenu = () => {
 	isRunMenuOpen.value = !isRunMenuOpen.value
@@ -50,6 +61,12 @@ const confirmDelete = () => emit('delete', props.prompt)
 				</p>
 			</div>
 			<div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
+
+			<div class="flex items-center gap-2 text-sm mt-1">
+				<span :class="{ 'bg-green-100 text-green-800 rounded-full px-2 py-0.5': isNewPrompt, 'text-neutral-500': !isNewPrompt }">
+					Created {{ formattedCreatedAt }}
+				</span>
+			</div>
 
 			<div v-if="hasActiveJob" class="mt-2 flex items-center text-sm text-blue-600">
 				<div class="animate-spin h-3 w-3 border-b-2 border-blue-600 rounded-full mr-2"></div>
