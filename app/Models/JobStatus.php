@@ -67,4 +67,12 @@ class JobStatus extends Model
     {
         return $query->where('status', 'failed');
     }
+
+    /**
+     * Scope a query to only include cancelled jobs.
+     */
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
+    }
 }

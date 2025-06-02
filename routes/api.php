@@ -86,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
 	Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
-	// Job status routes
-	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
+        // Job status routes
+        Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
+        Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 });

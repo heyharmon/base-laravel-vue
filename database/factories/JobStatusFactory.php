@@ -22,7 +22,7 @@ class JobStatusFactory extends Factory
             'job_id' => (string) Str::uuid(),
             'job_class' => 'App\\Jobs\\ExampleJob',
             'job_batch_id' => null,
-            'status' => $this->faker->randomElement(['pending', 'processing', 'completed', 'failed']),
+            'status' => $this->faker->randomElement(['pending', 'processing', 'completed', 'failed', 'cancelled']),
             'output' => null,
             'error' => null,
             'progress' => $this->faker->numberBetween(0, 100),

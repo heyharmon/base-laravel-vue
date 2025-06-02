@@ -28,4 +28,28 @@ class JobStatusController extends Controller
 
         return response()->json($jobStatuses);
     }
+
+    /**
+     * Cancel all pending jobs for the current team.
+     */
+    public function cancelTeamJobs(Request $request)
+    {
+        $teamId = Auth::user()->current_team_id;
+
+        $pendingJobs = JobStatus::where('team_id', $teamId)
+            ->where('status', 'pending')
+            ->get();
+
+        $batchIds = $pendingJobs->pluck('job_batch_id')->filter()->unique();
+
+        foreach ($batchIds as $batchId) {
+            Bus::findBatch($batchId)?->cancel();
+        }
+
+        JobStatus::where('team_id', $teamId)
+            ->where('status', 'pending')
+            ->update(['status' => 'cancelled']);
+
+        return response()->json(['message' => 'Jobs cancelled']);
+    }
 }

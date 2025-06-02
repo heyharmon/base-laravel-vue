@@ -62,11 +62,14 @@ class FindCompetitorsInResponseJob extends TrackableJob
 	 *
 	 * @return void
 	 */
-	public function handle()
-	{
-		try {
-			// Mark the job as started
-			$this->markJobAsStarted('Finding competitors in response');
+        public function handle()
+        {
+                try {
+                        if ($this->isCancelled()) {
+                                return;
+                        }
+                        // Mark the job as started
+                        $this->markJobAsStarted('Finding competitors in response');
 
 			// Update progress
 			$this->updateJobProgress(10, 'Finding competitors in response');

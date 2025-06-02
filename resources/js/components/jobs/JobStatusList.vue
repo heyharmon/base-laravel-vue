@@ -175,11 +175,13 @@ function getStatusClass(status) {
 			return 'bg-blue-100 text-blue-800'
 		case 'completed':
 			return 'bg-green-100 text-green-800'
-		case 'failed':
-			return 'bg-red-100 text-red-800'
-		default:
-			return 'bg-neutral-100 text-neutral-800'
-	}
+                case 'failed':
+                        return 'bg-red-100 text-red-800'
+                case 'cancelled':
+                        return 'bg-red-100 text-red-800'
+                default:
+                        return 'bg-neutral-100 text-neutral-800'
+        }
 }
 
 function formatDate(dateString) {
@@ -202,12 +204,14 @@ function getBatchStatus(batch) {
 	// Calculate batch status based on jobs
 	const statuses = batch.jobs.map((job) => job.status)
 
-	if (statuses.includes('failed')) {
-		return 'Failed'
-	} else if (statuses.includes('processing')) {
-		return 'Processing'
-	} else if (statuses.includes('pending')) {
-		return 'Pending'
+        if (statuses.includes('failed')) {
+                return 'Failed'
+        } else if (statuses.includes('cancelled')) {
+                return 'Cancelled'
+        } else if (statuses.includes('processing')) {
+                return 'Processing'
+        } else if (statuses.includes('pending')) {
+                return 'Pending'
 	} else if (statuses.every((status) => status === 'completed')) {
 		return 'Completed'
 	} else {
