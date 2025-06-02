@@ -30,6 +30,18 @@ const handleSelectOrganization = (org) => {
 	organization.value = { ...organization.value, ...org, is_competitor: false }
 }
 
+// Deselect organization and reset to empty state
+const deselectOrganization = () => {
+	organization.value = {
+		name: '',
+		website: '',
+		logo: '',
+		location: '',
+		is_competitor: false,
+		hasDetails: false
+	}
+}
+
 // Create team and organization
 const createTeamAndOrganization = async () => {
 	if (!organization.value.name) return
@@ -59,6 +71,7 @@ const createTeamAndOrganization = async () => {
 			<div class="space-y-6">
 				<!-- Organization Search -->
 				<OrganizationSearch
+					v-if="!organization.name && !organization.website"
 					label="Search for a website domain"
 					placeholder="Enter your website domain"
 					@select-organization="handleSelectOrganization"
@@ -66,7 +79,15 @@ const createTeamAndOrganization = async () => {
 
 				<!-- Organization Preview -->
 				<div v-if="organization.name || organization.website" class="mt-4">
-					<h3 class="text-sm font-medium text-neutral-700 mb-2">Organization Preview</h3>
+					<div class="flex justify-between items-center mb-2">
+						<h3 class="text-sm font-medium text-neutral-700">Organization Preview</h3>
+						<button 
+							@click="deselectOrganization" 
+							class="px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+						>
+							<span>Deselect</span>
+						</button>
+					</div>
 					<div class="p-6 border border-neutral-200 rounded-md bg-neutral-50">
 						<div class="flex items-center gap-4 mb-4">
 							<OrganizationLogo :organization="organization" />

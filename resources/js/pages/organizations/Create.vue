@@ -2,13 +2,9 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organizationStore'
-// import { useKeywordStore } from '@/stores/keywordStore'
-// import api from '@/services/api'
-// import KeywordSuggestions from '@/components/keywords/KeywordSuggestions.vue'
 import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
-// import Spinner from '@/components/ui/Spinner.vue'
 import OrganizationSearch from '@/components/OrganizationSearch.vue'
 
 const router = useRouter()
@@ -27,11 +23,26 @@ const organization = ref({
 	industry: '',
 	hasDetails: false
 })
-// const keywords = ref([])
 
 // Handle organization selection from search component
 const handleSelectOrganization = (org) => {
 	organization.value = { ...organization.value, ...org, is_competitor: true }
+}
+
+// Deselect organization and reset to empty state
+const deselectOrganization = () => {
+	organization.value = {
+		name: '',
+		website: '',
+		is_competitor: true,
+		founded: null,
+		employee_count: null,
+		location: '',
+		description: '',
+		logo: '',
+		industry: '',
+		hasDetails: false
+	}
 }
 
 // Create competitor organization
@@ -42,13 +53,6 @@ const createOrganization = async () => {
 	try {
 		// Create the organization
 		const newOrg = await organizationStore.createOrganization(organization.value)
-
-		// Create keywords if any were generated
-		// if (keywords.value.length > 0 && newOrg && newOrg.id) {
-		// 	const keywordStore = useKeywordStore()
-		// 	const promises = keywords.value.map((keyword) => keywordStore.createKeyword(newOrg.id, { name: keyword }))
-		// 	await Promise.all(promises)
-		// }
 
 		router.push({ name: 'organizations.index' })
 	} catch (error) {
@@ -68,6 +72,7 @@ const createOrganization = async () => {
 
 			<div class="space-y-4">
 				<OrganizationSearch
+					v-if="!organization.name && !organization.website"
 					label="Search for a website domain"
 					placeholder="Enter competitor's website domain"
 					@select-organization="handleSelectOrganization"
@@ -75,7 +80,15 @@ const createOrganization = async () => {
 
 				<!-- Organization Preview -->
 				<div v-if="organization.name || organization.website" class="mt-4">
-					<h3 class="text-sm font-medium text-neutral-700 mb-2">Competitor</h3>
+					<div class="flex justify-between items-center mb-2">
+						<h3 class="text-sm font-medium text-neutral-700">Competitor</h3>
+						<button 
+							@click="deselectOrganization" 
+							class="px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+						>
+							<span>Deselect</span>
+						</button>
+					</div>
 					<div class="flex items-center gap-4 p-6 border border-neutral-200 rounded-md bg-neutral-50">
 						<OrganizationLogo :organization="organization" />
 						<div>
@@ -88,12 +101,6 @@ const createOrganization = async () => {
 						</div>
 					</div>
 				</div>
-
-				<!-- Keyword Suggestions -->
-				<!-- <div v-if="organization.website" class="mt-6"> -->
-				<!-- <h3 class="text-sm font-medium text-neutral-700 mb-2">Keyword suggestions for {{ organization.name }}</h3> -->
-				<!-- <KeywordSuggestions :domain="organization.website" @update:keywords="keywords = $event" /> -->
-				<!-- </div> -->
 			</div>
 
 			<div class="mt-6 flex justify-end space-x-2">

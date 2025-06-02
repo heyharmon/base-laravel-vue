@@ -27,7 +27,7 @@ const runAll = (count) => {
 <template>
 	<div class="flex justify-between items-center">
 		<div class="flex items-center gap-3">
-			<h1 class="text-2xl font-bold">Prompts</h1>
+			<h1 class="text-xl font-bold">Prompts</h1>
 			<div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 		</div>
 
