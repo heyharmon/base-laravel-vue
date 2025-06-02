@@ -68,7 +68,7 @@ const deleteOrganization = async (organizationId) => {
 		</div>
 
 		<!-- Visibility score -->
-		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" width="w-2/5" />
+		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
 		<!-- Rankings -->
 		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
@@ -81,16 +81,17 @@ const deleteOrganization = async (organizationId) => {
 				<table class="min-w-full divide-y divide-neutral-200">
 					<thead>
 						<tr>
+							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Rank</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/10">Org</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Visibility</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"></th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Mentions</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Total responses</th>
-							<!-- <th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Actions</th> -->
 						</tr>
 					</thead>
 					<tbody class="bg-white divide-y divide-neutral-200">
-						<tr v-for="org in organizationStore.visibilityMetrics.sort((a, b) => b.visibility - a.visibility)" :key="org.id" class="group">
+						<tr v-for="org in organizationStore.visibilityMetrics" :key="org.id" class="group">
+							<td class="px-3 py-2 text-left whitespace-nowrap font-medium text-neutral-500">#{{ org.visibility_rank }}</td>
 							<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 								<img
 									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
