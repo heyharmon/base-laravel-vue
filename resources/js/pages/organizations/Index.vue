@@ -55,14 +55,14 @@ onMounted(async () => {
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Keywords</h1>
 				<div class="flex space-x-2">
-					<!-- <Button
+					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
-						@click="organizationStore.generateCompetitors()"
+						@click="organizationStore.findCompetitors()"
 						:disabled="activeCompetitorJobs.length > 0"
 						variant="outline"
 					>
-						{{ activeCompetitorJobs.length > 0 ? 'Generating...' : 'Generate competitors' }}
-					</Button> -->
+						{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
+					</Button>
 					<Button @click="router.push({ name: 'organizations.create' })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>

@@ -48,7 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('organizations-onboard', [OrganizationOnboardController::class, 'store']);
 
 	// Organization Competitors
-	Route::post('organizations-generate-competitors', [OrganizationCompetitorController::class, 'generate']);
+	Route::post('organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
 
 	// Organization Visibility
 	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
@@ -86,7 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
 	Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
-        // Job status routes
-        Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
-        Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+	// Job status routes
+	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
+	Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 });

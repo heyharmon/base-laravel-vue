@@ -159,20 +159,20 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function generateCompetitors() {
-		console.log('Generating competitors from past responses...')
+	async function findCompetitors() {
+		console.log('Finding competitors from past responses...')
 		isLoading.value = true
 		error.value = null
 
 		try {
-			const response = await api.post('/organizations-generate-competitors')
+			const response = await api.post('/organizations-find-competitors')
 
 			await jobStatusStore.pollTeamJobs()
 
 			return response
 		} catch (err) {
-			error.value = err.response?.data?.message || 'Failed to generate competitors. Make sure you have prompt responses.'
-			console.error('Error generating competitors:', err)
+			error.value = err.response?.data?.message || 'Failed to find competitors. Make sure you have prompt responses.'
+			console.error('Error finding competitors:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -200,6 +200,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
-		generateCompetitors
+		findCompetitors
 	}
 })
