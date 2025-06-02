@@ -114,6 +114,10 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	async function deleteOrganization(organizationId) {
+		if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
+			return
+		}
+
 		console.log('Deleting organization ID:', organizationId)
 		isLoading.value = true
 		error.value = null
