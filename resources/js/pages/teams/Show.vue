@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const route = useRoute()
+const router = useRouter()
 const teamStore = useTeamStore()
 const teamId = computed(() => route.params.id)
 const currentUser = computed(() => auth.getUser())
@@ -77,11 +78,22 @@ const removeMember = async (userId) => {
 }
 
 const updateRole = async (userId, role) => {
-	try {
-		await teamStore.updateMemberRole(teamId.value, userId, { role })
-	} catch (error) {
-		console.error('Error updating role:', error)
-	}
+        try {
+                await teamStore.updateMemberRole(teamId.value, userId, { role })
+        } catch (error) {
+                console.error('Error updating role:', error)
+        }
+}
+
+const deleteTeam = async () => {
+        if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) return
+
+        try {
+                await teamStore.deleteTeam(teamId.value)
+                router.push('/teams')
+        } catch (error) {
+                console.error('Error deleting team:', error)
+        }
 }
 </script>
 
@@ -104,11 +116,12 @@ const updateRole = async (userId, role) => {
 						<h1 class="text-2xl font-bold">{{ teamStore.currentTeam.name }}</h1>
 						<p class="text-neutral-600 mt-1">Owner: {{ teamStore.currentTeam.owner?.name || 'Unknown' }}</p>
 					</div>
-					<div class="flex space-x-2">
-						<Button v-if="isOwner || isAdmin" @click="showEditModal = true" variant="neutral"> Edit Team </Button>
-						<Button v-if="isOwner || isAdmin" @click="showInviteModal = true" variant="dark"> Invite Member </Button>
-					</div>
-				</div>
+                                        <div class="flex space-x-2">
+                                                <Button v-if="isOwner || isAdmin" @click="showEditModal = true" variant="neutral"> Edit Team </Button>
+                                                <Button v-if="isOwner || isAdmin" @click="showInviteModal = true" variant="dark"> Invite Member </Button>
+                                                <Button v-if="isOwner" @click="deleteTeam" variant="destructive"> Delete Team </Button>
+                                        </div>
+                                </div>
 
 				<!-- Team Members -->
 				<div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
