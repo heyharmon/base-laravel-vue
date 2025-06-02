@@ -59,11 +59,14 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 	 *
 	 * @return void
 	 */
-	public function handle()
-	{
-		try {
-			// Mark the job as started
-			$this->markJobAsStarted('Checking keyword in past responses');
+        public function handle()
+        {
+                try {
+                        if ($this->isCancelled()) {
+                                return;
+                        }
+                        // Mark the job as started
+                        $this->markJobAsStarted('Checking keyword in past responses');
 
 			// Get all responses for prompts in the same team
 			$responses = Response::whereHas('prompt', function ($query) {

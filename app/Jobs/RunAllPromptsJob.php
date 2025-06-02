@@ -70,11 +70,14 @@ class RunAllPromptsJob extends TrackableJob
 	 *
 	 * @return void
 	 */
-	public function handle(JobDispatcherService $jobDispatcher)
-	{
-		try {
-			// Mark the job as started
-			$this->markJobAsStarted('Running all prompts');
+        public function handle(JobDispatcherService $jobDispatcher)
+        {
+                try {
+                        if ($this->isCancelled()) {
+                                return;
+                        }
+                        // Mark the job as started
+                        $this->markJobAsStarted('Running all prompts');
 
 			// Update progress
 			$this->updateJobProgress(10, 'Fetching prompts');

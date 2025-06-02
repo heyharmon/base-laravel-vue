@@ -61,11 +61,14 @@ class GeneratePhrases extends TrackableJob
 	 * @param JobDispatcherService $jobDispatcher
 	 * @return void
 	 */
-	public function handle(JobDispatcherService $jobDispatcher)
-	{
-		try {
-			// Mark the job as started
-			$this->markJobAsStarted('Generating keyword terms for ' . $this->model->name);
+        public function handle(JobDispatcherService $jobDispatcher)
+        {
+                try {
+                        if ($this->isCancelled()) {
+                                return;
+                        }
+                        // Mark the job as started
+                        $this->markJobAsStarted('Generating keyword terms for ' . $this->model->name);
 
 			$searchApiTool = new SearchApiTool();
 
