@@ -58,7 +58,7 @@ class OrganizationOnboardController extends Controller
 			'name' => $organization->website,
 		]);
 
-		// TODO: This needs to happen in a controller specifically for onboarding a new team
+		// Dispatch a job to generate phrases for this organization
 		$this->jobDispatcher->dispatch($organization, new GeneratePhrases($organization, $organization->team_id));
 
 		return response()->json($organization, 201);
