@@ -113,9 +113,9 @@ Output keywords as a plain text list.")])
 			$this->markJobAsCompleted('Saved keyword terms for ' . $this->model->name);
 
 			// Generate prompts for phrases
-			foreach ($this->model->terms as $term) {
-				$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $term, 'Utah'));
-			}
+			// foreach ($this->model->terms as $term) {
+			// 	$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $term, 'Utah'));
+			// }
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

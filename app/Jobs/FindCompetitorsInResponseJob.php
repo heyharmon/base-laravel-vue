@@ -130,7 +130,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			->withMaxSteps(10)
 			->withMessages([
 				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
-				new UserMessage('Find other organizations mentioned in the prompt response. Include their name and website. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
+				new UserMessage('Find other organizations mentioned in the prompt response. Include their name, website and the term you found them by. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
 			])
 			->withTools([$searchApiTool])
 			->withToolChoice(ToolChoice::Auto)
@@ -156,6 +156,10 @@ class FindCompetitorsInResponseJob extends TrackableJob
 								name: 'website',
 								description: 'The root domain of the organization (e.g. google.com) without scheme, subdomain or path'
 							),
+							new StringSchema(
+								name: 'term',
+								description: 'The term in the prompt response content used to find the organization in the prompt response content'
+							),
 						],
 						requiredFields: ['name']
 					),
@@ -168,7 +172,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 		$response = Prism::structured()
 			->using(Provider::OpenAI, 'gpt-4o')
 			->withSchema($schema)
-			->withPrompt('Look at text about my competitors and return them as a structured array including the competitor\'s name and website root domain: "' . $textResponse->text . '"')
+			->withPrompt('Look at text about my competitors and return them as a structured array including the competitor\'s name, website root domain and the term you found them by: "' . $textResponse->text . '"')
 			->asStructured();
 
 		$result = $response->structured;
@@ -220,9 +224,16 @@ class FindCompetitorsInResponseJob extends TrackableJob
 					'name' => $competitor['website'],
 				]);
 
+				// Create a keyword for the term used to find the competitor
+				$termKeyword = Keyword::create([
+					'team_id' => $this->teamId,
+					'organization_id' => $competitorOrg->id,
+					'name' => $competitor['term'],
+				]);
+
 				// Dispatch a job to check past responses for this keyword
 				$jobDispatcher = app(JobDispatcherService::class);
-				foreach ([$nameKeyword, $websiteKeyword] as $keyword) {
+				foreach ([$nameKeyword, $websiteKeyword, $termKeyword] as $keyword) {
 					$jobDispatcher->dispatch($keyword, new CheckKeywordInPastResponsesJob($keyword, $this->teamId));
 				}
 
