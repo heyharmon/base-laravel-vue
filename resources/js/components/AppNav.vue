@@ -87,6 +87,7 @@ onMounted(() => {
 
 			<div class="flex items-center space-x-3">
 				<template v-if="isAuthenticated">
+					<!-- Jobs status button -->
 					<button
 						v-if="jobStatusStore.activeJobs.length > 0"
 						@click="isJobStatusSheetOpen = true"
@@ -115,6 +116,7 @@ onMounted(() => {
 						<span class="text-sm font-medium">Runs</span>
 					</button>
 
+					<!-- Teams dropdown -->
 					<PopoverRoot>
 						<PopoverTrigger as-child>
 							<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
@@ -145,7 +147,10 @@ onMounted(() => {
 								<div class="p-2">
 									<p class="text-xs font-medium text-neutral-300 mb-2">Your Teams</p>
 									<div v-if="teams" class="space-y-1">
-										<div v-if="teams.joinedTeams && teams.joinedTeams.length > 0" class="space-y-1.5">
+										<div
+											v-if="teams.joinedTeams && teams.joinedTeams.length > 0"
+											class="space-y-1.5 max-h-[calc(100vh-250px)] overflow-y-auto"
+										>
 											<PopoverClose as-child v-for="team in teams.joinedTeams" :key="team.id">
 												<div
 													@click="switchTeam(team.id)"
@@ -181,35 +186,6 @@ onMounted(() => {
 			</div>
 		</div>
 	</nav>
-
-	<!-- Sub navigation for completed job status -->
-	<!-- <div v-if="isAuthenticated && jobStatusStore.activeJobs.length && mostRecentCompletedJob" class="bg-neutral-100 border-b border-neutral-200">
-		<div class="container mx-auto px-4 py-2">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center space-x-3">
-					<div class="relative size-4">
-						<svg
-							class="text-green-500"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-							<polyline points="22 4 12 14.01 9 11.01"></polyline>
-						</svg>
-					</div>
-					<div class="flex flex-col">
-						<div class="flex items-center space-x-2">
-							<span class="text-xs font-medium">{{ mostRecentCompletedJob.output }}</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div> -->
 
 	<JobStatusSheet v-if="teams?.ownedTeams.length" :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>
