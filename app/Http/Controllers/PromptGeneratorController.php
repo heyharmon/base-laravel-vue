@@ -2,29 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use Prism\Prism\ValueObjects\Messages\UserMessage;
-use Prism\Prism\Schema\StringSchema;
-use Prism\Prism\Schema\ObjectSchema;
-use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\ToolChoice;
-use Prism\Prism\Enums\Provider;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use App\Models\Organization;
 use App\Tools\SearchApiTool;
+use Illuminate\Http\JsonResponse;
+use Prism\Prism\Prism;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Enums\ToolChoice;
+use Prism\Prism\Schema\ArraySchema;
+use Prism\Prism\Schema\ObjectSchema;
+use Prism\Prism\Schema\StringSchema;
+use Prism\Prism\ValueObjects\Messages\UserMessage;
 
 // TODO: Can probably remove this controller once the GeneratePromptsJob job is implemented
 // If we still need it, we can move the functionality into a shared action.
 class PromptGeneratorController extends Controller
 {
-	public function generate(Request $request): JsonResponse
+	public function generate(Organization $organization): JsonResponse
 	{
-		$validated = $request->validate([
-			'domain' => 'required|string',
-		]);
+		if (!$organization->website) {
+			return response()->json(['error' => 'Organization does not have a website domain.'], 422);
+		}
 
-		$domain = $validated['domain'];
+		$domain = $organization->website;
 
 		try {
 			$searchApiTool = new SearchApiTool();

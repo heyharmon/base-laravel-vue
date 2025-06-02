@@ -62,8 +62,8 @@ const generatePrompts = async () => {
   if (!selectedOrganizationId.value) return;
 
   const selectedOrg = organizations.value.find(org => org.id === selectedOrganizationId.value);
-  if (!selectedOrg || !selectedOrg.website) {
-    error.value = 'Selected organization must have a website domain.';
+  if (!selectedOrg) {
+    error.value = 'Please select an organization.';
     return;
   }
 
@@ -72,11 +72,15 @@ const generatePrompts = async () => {
   generatedPrompts.value = [];
 
   try {
-    const response = await api.post('/generate-prompts', { domain: selectedOrg.website });
+    const response = await api.post(`/organizations/${selectedOrganizationId.value}/generate-prompts`);
     generatedPrompts.value = response || [];
   } catch (err) {
     console.error('Error generating prompts:', err);
-    error.value = 'Failed to generate prompts. Please try again.';
+    if (err.response?.status === 422) {
+      error.value = 'The selected organization must have a website domain.';
+    } else {
+      error.value = 'Failed to generate prompts. Please try again.';
+    }
   } finally {
     isLoadingPrompts.value = false;
   }

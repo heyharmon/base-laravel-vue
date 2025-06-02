@@ -71,7 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Prompts
 	Route::resource('prompts', PromptController::class);
 	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
-	Route::post('generate-prompts', [PromptGeneratorController::class, 'generate']);
+	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
 
 	// Running prompts
 	Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
