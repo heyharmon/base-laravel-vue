@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\CheckKeywordInPastResponsesJob;
-use App\Models\Keyword;
+use App\Jobs\CheckTermInPastResponsesJob;
+use App\Models\Term;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Services\JobDispatcherService;
 
-class KeywordController extends Controller
+class TermController extends Controller
 {
 	protected $jobDispatcher;
 
@@ -28,15 +28,15 @@ class KeywordController extends Controller
           return response()->json(['message' => 'Organization not found'], 404);
         }
 
-        $keywords = $organization->keywords()
+        $terms = $organization->terms()
             ->withCount('prompts')
             ->latest()
             ->get();
 
-        return response()->json($keywords);
+        return response()->json($terms);
     }
 
-    public function show(Organization $organization, Keyword $keyword): JsonResponse
+    public function show(Organization $organization, Term $term): JsonResponse
     {
         $teamId = Auth::user()->current_team_id;
 
@@ -45,17 +45,17 @@ class KeywordController extends Controller
           return response()->json(['message' => 'Organization not found'], 404);
         }
 
-        // Check if keyword belongs to organization owned by user's current team
-        if ($keyword->organization->team_id !== $teamId) {
+        // Check if term belongs to organization owned by user's current team
+        if ($term->organization->team_id !== $teamId) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        // Load keyword prompts with pivot data
-        $keyword->load(['prompts' => function($query) {
+        // Load term prompts with pivot data
+        $term->load(['prompts' => function($query) {
             $query->withPivot('count', 'last_found_at');
         }]);
 
-        return response()->json($keyword);
+        return response()->json($term);
     }
 
     public function store(Organization $organization, Request $request): JsonResponse
@@ -71,18 +71,18 @@ class KeywordController extends Controller
           return response()->json(['message' => 'Organization not found'], 404);
         }
 
-        // Create keyword with both organization_id and team_id
+        // Create term with both organization_id and team_id
         $validated['team_id'] = $teamId;
-        $keyword = $organization->keywords()->create($validated);
+        $term = $organization->terms()->create($validated);
 
-		// Dispatch a job to check past responses for this keyword
-        $job = new CheckKeywordInPastResponsesJob($keyword, $teamId);
-        $jobStatus = $this->jobDispatcher->dispatch($keyword, $job);
+		// Dispatch a job to check past responses for this term
+        $job = new CheckTermInPastResponsesJob($term, $teamId);
+        $jobStatus = $this->jobDispatcher->dispatch($term, $job);
 
-        return response()->json($keyword, 201);
+        return response()->json($term, 201);
     }
 
-    public function destroy(Organization $organization, Keyword $keyword): JsonResponse
+    public function destroy(Organization $organization, Term $term): JsonResponse
     {
         $teamId = Auth::user()->current_team_id;
 
@@ -91,12 +91,12 @@ class KeywordController extends Controller
           return response()->json(['message' => 'Organization not found'], 404);
         }
 
-        // Check if keyword belongs to organization owned by user's current team
-        if ($keyword->organization->team_id !== $teamId) {
+        // Check if term belongs to organization owned by user's current team
+        if ($term->organization->team_id !== $teamId) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $keyword->delete();
+        $term->delete();
 
         return response()->json(null, 204);
     }

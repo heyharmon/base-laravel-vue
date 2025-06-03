@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Keyword;
+use App\Models\Term;
 use App\Models\Organization;
 use App\Models\Response;
 use Illuminate\Http\Request;
@@ -50,20 +50,20 @@ class OrganizationVisibilityController extends Controller
         $totalResponses = $responsesQuery->count();
 
         foreach ($organizations as $organization) {
-            // Get all keywords for this organization
-            $keywordIds = Keyword::where('organization_id', $organization->id)
+            // Get all terms for this organization
+            $termIds = Term::where('organization_id', $organization->id)
                 ->pluck('id')
                 ->toArray();
 
-            // If organization has no keywords, set counts to 0
-            if (empty($keywordIds)) {
+            // If organization has no terms, set counts to 0
+            if (empty($termIds)) {
                 $totalMentions = 0;
             } else {
-                // Find responses that contain at least one keyword from this organization
+                // Find responses that contain at least one term from this organization
                 $responseQuery = Response::whereHas('prompt', function ($query) use ($teamId) {
                     $query->where('team_id', $teamId);
-                })->whereHas('keywords', function ($query) use ($keywordIds) {
-                    $query->whereIn('keywords.id', $keywordIds);
+                })->whereHas('terms', function ($query) use ($termIds) {
+                    $query->whereIn('terms.id', $termIds);
                 });
 
                 // Apply date filters to responses if provided
@@ -75,7 +75,7 @@ class OrganizationVisibilityController extends Controller
                     $responseQuery->where('responses.created_at', '<=', $endDate);
                 }
 
-                // Count responses with keywords from this organization
+                // Count responses with terms from this organization
                 $totalMentions = $responseQuery->count();
             }
 

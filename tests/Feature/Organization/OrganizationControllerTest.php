@@ -3,7 +3,7 @@
 use App\Models\Organization;
 use App\Models\Team;
 use App\Models\User;
-use App\Models\Keyword;
+use App\Models\Term;
 use App\Models\JobStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -30,7 +30,7 @@ it('lists organizations for the current team', function () {
         ->assertJsonMissing(['id' => $otherOrg->id]);
 });
 
-it('creates an organization with keywords for name and website', function () {
+it('creates an organization with terms for name and website', function () {
     Bus::fake();
 
     $user = User::factory()->create();
@@ -53,8 +53,8 @@ it('creates an organization with keywords for name and website', function () {
     $organizationId = $response->json('id');
 
     expect(Organization::find($organizationId))->not->toBeNull();
-    expect(Keyword::where('organization_id', $organizationId)->count())->toBe(2);
-    expect(JobStatus::where('team_id', $team->id)->where('trackable_type', Keyword::class)->count())->toBe(2);
+    expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
+    expect(JobStatus::where('team_id', $team->id)->where('trackable_type', Term::class)->count())->toBe(2);
 });
 
 it('shows an organization belonging to the team', function () {

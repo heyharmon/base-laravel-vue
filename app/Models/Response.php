@@ -35,11 +35,11 @@ class Response extends Model
     }
 
     /**
-     * The keywords found in this response.
+     * The terms found in this response.
      */
-    public function keywords(): BelongsToMany
+    public function terms(): BelongsToMany
     {
-        return $this->belongsToMany(Keyword::class)
+        return $this->belongsToMany(Term::class)
             ->withTimestamps();
     }
 

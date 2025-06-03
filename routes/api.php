@@ -13,10 +13,10 @@ use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
-use App\Http\Controllers\KeywordResponsesController;
-use App\Http\Controllers\KeywordRecommendationsController;
+use App\Http\Controllers\TermResponsesController;
+use App\Http\Controllers\TermRecommendationsController;
 use App\Http\Controllers\KeywordGeneratorController;
-use App\Http\Controllers\KeywordController;
+use App\Http\Controllers\TermController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ChatController;
@@ -36,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('/logout', [AuthController::class, 'logout']);
 
 	// Analytics endpoints
-	Route::get('analytics/keywords', [AnalyticsController::class, 'keywordStats']);
+	Route::get('analytics/terms', [AnalyticsController::class, 'termStats']);
 	Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
 	Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
 
@@ -59,15 +59,15 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
 
 
-	// Keywords
-	Route::resource('organizations/{organization}/keywords', KeywordController::class);
-	Route::post('generate-keywords', [KeywordGeneratorController::class, 'generate']);
-	Route::get('keywords/{keyword}/prompts/{prompt}/responses', [KeywordResponsesController::class, 'index']);
+	// Terms
+	Route::resource('organizations/{organization}/terms', TermController::class);
+	Route::post('generate-terms', [KeywordGeneratorController::class, 'generate']);
+	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
-	// Keyword Recommendations
-	Route::get('organizations/{organization}/keyword-recommendations', [KeywordRecommendationsController::class, 'index']);
-	Route::put('organizations/{organization}/keyword-recommendations/{id}/accept', [KeywordRecommendationsController::class, 'accept']);
-	Route::delete('organizations/{organization}/keyword-recommendations/{id}/deny', [KeywordRecommendationsController::class, 'deny']);
+	// Term Recommendations
+	Route::get('organizations/{organization}/term-recommendations', [TermRecommendationsController::class, 'index']);
+	Route::put('organizations/{organization}/term-recommendations/{id}/accept', [TermRecommendationsController::class, 'accept']);
+	Route::delete('organizations/{organization}/term-recommendations/{id}/deny', [TermRecommendationsController::class, 'deny']);
 
 	// Prompts
 	Route::resource('prompts', PromptController::class);

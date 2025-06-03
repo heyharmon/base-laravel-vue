@@ -68,7 +68,7 @@ class GeneratePhrases extends TrackableJob
                                 return;
                         }
                         // Mark the job as started
-                        $this->markJobAsStarted('Generating keyword terms for ' . $this->model->name);
+                        $this->markJobAsStarted('Generating term terms for ' . $this->model->name);
 
 			$searchApiTool = new SearchApiTool();
 
@@ -90,9 +90,9 @@ class GeneratePhrases extends TrackableJob
 				$organizationContext .= ". Description: " . $this->model->description;
 			}
 			
-			$prompt = $organizationContext . ". Your job is to come up with a list of keyword terms relevent to this company.
-These are keywords people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with keywords like \"auto loan\", \"home loan\", \"checking account\", etc.
-Output keywords as a plain text list.";
+			$prompt = $organizationContext . ". Your job is to come up with a list of term terms relevent to this company.
+These are terms people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with terms like \"auto loan\", \"home loan\", \"checking account\", etc.
+Output terms as a plain text list.";
 
 			$textResponse = Prism::text()
 				->using(Provider::OpenAI, 'gpt-4o')
@@ -104,14 +104,14 @@ Output keywords as a plain text list.";
 
 			$schema = new ObjectSchema(
 				name: 'term_suggestions',
-				description: 'Keyword term suggestions.',
+				description: 'Term term suggestions.',
 				properties: [
 					new ArraySchema(
 						name: 'terms',
-						description: 'List of keyword terms.',
+						description: 'List of term terms.',
 						items: new StringSchema(
 							name: 'term',
-							description: 'A suggested keyword term'
+							description: 'A suggested term term'
 						)
 					)
 				],
@@ -121,19 +121,19 @@ Output keywords as a plain text list.";
 			$response = Prism::structured()
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withSchema($schema)
-				->withPrompt('Here is a list of keyword terms, please return them as an array: ' . $textResponse->text)
+				->withPrompt('Here is a list of term terms, please return them as an array: ' . $textResponse->text)
 				->asStructured();
 
 			$result = $response->structured;
 
-			$this->updateJobProgress(90, 'Saving keywordterms for ' . $this->model->name);
+			$this->updateJobProgress(90, 'Saving termterms for ' . $this->model->name);
 
 			$this->model->update([
 				'terms' => $result['terms']
 			]);
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Saved keyword terms for ' . $this->model->name);
+			$this->markJobAsCompleted('Saved term terms for ' . $this->model->name);
 
 			// Generate prompts for phrases if this is the owned organization
 			if (!$this->model->is_competitor) {

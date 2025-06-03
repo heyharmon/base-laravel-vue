@@ -17,7 +17,7 @@ use App\Services\JobDispatcherService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Organization;
-use App\Models\Keyword;
+use App\Models\Term;
 
 class FindCompetitorsInResponseJob extends TrackableJob
 {
@@ -214,22 +214,22 @@ class FindCompetitorsInResponseJob extends TrackableJob
 					'is_competitor' => true,
 				]);
 
-				// Create a keyword for the competitor name
-				$nameKeyword = Keyword::create([
+				// Create a term for the competitor name
+				$nameTerm = Term::create([
 					'team_id' => $this->teamId,
 					'organization_id' => $competitorOrg->id,
 					'name' => $competitor['name'],
 				]);
 
-				// Create a keyword for the competitor website
-				$websiteKeyword = Keyword::create([
+				// Create a term for the competitor website
+				$websiteTerm = Term::create([
 					'team_id' => $this->teamId,
 					'organization_id' => $competitorOrg->id,
 					'name' => $competitor['website'],
 				]);
 
-				// Create a keyword for the term found in response. Avoid duplicates.
-				$termKeyword = Keyword::firstOrCreate(
+				// Create a term for the term found in response. Avoid duplicates.
+				$termTerm = Term::firstOrCreate(
 					[
 						'team_id' => $this->teamId,
 						'name' => $competitor['term']
@@ -239,10 +239,10 @@ class FindCompetitorsInResponseJob extends TrackableJob
 					]
 				);
 
-				// Dispatch a job to check past responses for this keyword
+				// Dispatch a job to check past responses for this term
 				$jobDispatcher = app(JobDispatcherService::class);
-				foreach ([$nameKeyword, $websiteKeyword, $termKeyword] as $keyword) {
-					$jobDispatcher->dispatch($keyword, new CheckKeywordInPastResponsesJob($keyword, $this->teamId));
+				foreach ([$nameTerm, $websiteTerm, $termTerm] as $term) {
+					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId));
 				}
 
 				// Dispatch the GeneratePhrases job for this organization

@@ -48,7 +48,7 @@ const confirmDelete = () => emit('delete', props.prompt)
 	>
 		<div>
 			<p class="text-neutral-800 text-lg">{{ prompt.content }}</p>
-			<div v-if="prompt.keywords_count >= 0" class="flex items-center gap-2 text-sm text-neutral-500 mt-1">
+			<div v-if="prompt.terms_count >= 0" class="flex items-center gap-2 text-sm text-neutral-500 mt-1">
 				<p v-if="prompt.mentions_percentage !== undefined">
 					Mentioned {{ prompt.mentions_percentage }}% of the time out of
 					{{ prompt.responses_count }}
@@ -56,8 +56,8 @@ const confirmDelete = () => emit('delete', props.prompt)
 				</p>
 				<p>•</p>
 				<p>
-					{{ prompt.keywords_count }} keyword
-					{{ prompt.keywords_count === 1 ? 'occurrence' : 'occurrences' }}
+					{{ prompt.terms_count }} term
+					{{ prompt.terms_count === 1 ? 'occurrence' : 'occurrences' }}
 				</p>
 			</div>
 			<div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
