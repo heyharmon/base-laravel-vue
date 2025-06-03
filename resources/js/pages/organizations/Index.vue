@@ -132,10 +132,10 @@ onMounted(async () => {
 					<h2 class="text-xl font-semibold mb-4">Competitors</h2>
 					<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">You haven't added any competitors yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<router-link
+						<div
 							v-for="org in organizationStore.competitorOrganizations"
 							:key="org.id"
-							:to="{ name: 'organizations.edit', params: { id: org.id } }"
+							@click="router.push({ name: 'organizations.edit', params: { id: org.id } })"
 							class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 						>
 							<div class="flex justify-between items-start">
@@ -145,7 +145,9 @@ onMounted(async () => {
 											Added {{ moment(org.created_at).fromNow() }}
 										</span>
 									</div>
-									<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
+									<p class="text-lg font-medium hover:underline">
+										{{ org.name || 'Unnamed Competitor' }}
+									</p>
 								</div>
 								<img
 									v-if="org.website"
@@ -163,10 +165,21 @@ onMounted(async () => {
 									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
 								</div>
 							</div>
-							<div class="mt-4 flex space-x-2">
-								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
+							<div class="flex space-x-2 mt-4">
+								<router-link
+									:to="{ name: 'organizations.edit', params: { id: org.id } }"
+									class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+								>
+									Edit
+								</router-link>
+								<button
+									@click.stop="organizationStore.deleteOrganization(org.id)"
+									class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+								>
+									Remove
+								</button>
 							</div>
-						</router-link>
+						</div>
 					</div>
 				</div>
 			</div>

@@ -134,7 +134,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			->withMaxSteps(10)
 			->withMessages([
 				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
-				new UserMessage('Find other organizations mentioned in the prompt response. Include their name, website and the term you found them by in the response content. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
+				new UserMessage('Find other organizations mentioned in the prompt response that may be potential competitors. Include their name, website and the term you found them by in the response content. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE THAT MAY BE COMPETITORS!')
 			])
 			->withTools([$searchApiTool])
 			->withToolChoice(ToolChoice::Auto)
@@ -143,14 +143,14 @@ class FindCompetitorsInResponseJob extends TrackableJob
 		// Define the schema for structured output
 		$schema = new ObjectSchema(
 			name: 'competitor_suggestions',
-			description: 'Organiazion mentions',
+			description: 'Competitor suggestions',
 			properties: [
 				new ArraySchema(
 					name: 'competitors',
-					description: 'List of organizations',
+					description: 'List of organizations that may be competitors',
 					items: new ObjectSchema(
 						name: 'competitor',
-						description: 'An organization',
+						description: 'An organization that may be a competitor',
 						properties: [
 							new StringSchema(
 								name: 'name',
@@ -176,7 +176,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 		$response = Prism::structured()
 			->using(Provider::OpenAI, 'gpt-4o')
 			->withSchema($schema)
-			->withPrompt('Look at text about my competitors and return them as a structured array including the competitor\'s name, website root domain and the term you found them by: "' . $textResponse->text . '"')
+			->withPrompt('Look at this text about my competitors and return them as a structured array including the competitor\'s name, website root domain and the term they were found by: "' . $textResponse->text . '"')
 			->asStructured();
 
 		$result = $response->structured;

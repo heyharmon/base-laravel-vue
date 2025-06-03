@@ -89,14 +89,14 @@ class RunPromptJob extends TrackableJob
 	 *
 	 * @return void
 	 */
-        public function handle(JobDispatcherService $jobDispatcher)
-        {
-                try {
-                        if ($this->isCancelled()) {
-                                return;
-                        }
-                        // Mark the job as started
-                        $this->markJobAsStarted('Running a prompt');
+	public function handle(JobDispatcherService $jobDispatcher)
+	{
+		try {
+			if ($this->isCancelled()) {
+				return;
+			}
+			// Mark the job as started
+			$this->markJobAsStarted('Running a prompt');
 
 			// If no providers specified, use all
 			if (!$this->providers) {
@@ -154,6 +154,7 @@ class RunPromptJob extends TrackableJob
 			$this->updateJobProgress(90, 'Processing LLM response');
 
 			// Find competitors in response if this is the first response to this prompt
+			Log::info('Number of responses: ' . $this->prompt->responses()->count());
 			if ($this->prompt->responses()->count() == 1) {
 				$jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt, $this->prompt->team_id));
 			}

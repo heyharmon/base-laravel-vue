@@ -127,7 +127,13 @@ onMounted(async () => {
 			<div class="flex flex-col">
 				<!-- Prompts column -->
 				<div class="w-full">
-					<div class="mb-4">
+					<div class="mb-4 flex justify-between items-center">
+						<div class="flex items-center gap-3">
+							<h1 class="text-xl font-bold">
+								{{ sortedPrompts.length ? sortedPrompts.length : 'No' }} {{ sortedPrompts.length === 1 ? 'Prompt' : 'Prompts' }}
+							</h1>
+							<div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+						</div>
 						<PromptToolbar
 							:sort-option="sortOption"
 							@update:sort-option="(v) => (sortOption = v)"
