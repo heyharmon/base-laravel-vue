@@ -72,12 +72,32 @@ class GeneratePhrases extends TrackableJob
 
 			$searchApiTool = new SearchApiTool();
 
+			// Build organization context with available properties
+			$organizationContext = "Here is a company: \"" . $this->model->name . "\" (" . $this->model->website . ")";
+			
+			// Add location if available
+			if (!empty($this->model->location)) {
+				$organizationContext .= " located in " . $this->model->location;
+			}
+			
+			// Add industry if available
+			if (!empty($this->model->industry)) {
+				$organizationContext .= " in the " . $this->model->industry . " industry";
+			}
+			
+			// Add description if available
+			if (!empty($this->model->description)) {
+				$organizationContext .= ". Description: " . $this->model->description;
+			}
+			
+			$prompt = $organizationContext . ". Your job is to come up with a list of keyword terms relevent to this company.
+These are keywords people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with keywords like \"auto loan\", \"home loan\", \"checking account\", etc.
+Output keywords as a plain text list.";
+
 			$textResponse = Prism::text()
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withMaxSteps(10)
-				->withMessages([new UserMessage("Here is a company: \"" . $this->model->name . "\" (" . $this->model->website . "). Your job is to come up with a list of keyword terms relevent to this company.
-These are keywords people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with keywords like \"auto loan\", \"home loan\", \"checking account\", etc.
-Output keywords as a plain text list.")])
+				->withMessages([new UserMessage($prompt)])
 				->withTools([$searchApiTool])
 				->withToolChoice(ToolChoice::Auto)
 				->asText();

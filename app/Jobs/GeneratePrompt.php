@@ -65,14 +65,14 @@ class GeneratePrompt extends TrackableJob
 	 *
 	 * @return void
 	 */
-        public function handle(JobDispatcherService $jobDispatcher)
-        {
-                try {
-                        if ($this->isCancelled()) {
-                                return;
-                        }
-                        // Mark the job as started
-                        $this->markJobAsStarted('Generating prompt from term "' . $this->term . '"');
+	public function handle(JobDispatcherService $jobDispatcher)
+	{
+		try {
+			if ($this->isCancelled()) {
+				return;
+			}
+			// Mark the job as started
+			$this->markJobAsStarted('Generating prompt from term "' . $this->term . '"');
 
 			$searchApiTool = new SearchApiTool();
 
@@ -88,6 +88,18 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 			if (isset($this->model->location) && !empty($this->model->location)) {
 				$messages[] = new UserMessage("You also need to incorporate the brand location \"" . $this->model->location . "\" in the prompt when necessary.
 So, again pretend you are given the keyword term, \"car loan\" and the location is \"" . $this->model->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $this->model->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $this->model->location . " that can provide a loan.");
+			}
+			
+			// Add industry message conditionally if industry is available
+			if (isset($this->model->industry) && !empty($this->model->industry)) {
+				$messages[] = new UserMessage("You also need to incorporate the industry \"" . $this->model->industry . "\" in the prompt when it makes sense.
+For example, if the keyword term is related to the " . $this->model->industry . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
+			}
+			
+			// Add description message conditionally if description is available
+			if (isset($this->model->description) && !empty($this->model->description)) {
+				$messages[] = new UserMessage("Here is additional context about the organization that might help you create a more relevant prompt: \"" . $this->model->description . "\". 
+Use this information to better understand what the organization does and create a prompt that would elicit responses mentioning organizations in this specific line of business. However, don't make the prompt too specific or narrow that it would only return this single organization.");
 			}
 
 			$textResponse = Prism::text()
