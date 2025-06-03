@@ -1,7 +1,9 @@
 <script setup>
-import { computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted, ref } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
+import api from '@/services/api'
 import Sheet from '@/components/ui/Sheet.vue'
+import Button from '@/components/ui/Button.vue'
 
 const props = defineProps({
 	isOpen: {
@@ -26,6 +28,32 @@ const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
 })
 
+// Fetch and copy prompt to clipboard
+const isCopied = ref(false)
+const copyPromptToClipboard = async () => {
+	if (!promptDetails.value) return
+
+	try {
+		const data = await api.get(`prompts/${props.promptId}/optimize`)
+		navigator.clipboard.writeText(data.text)
+
+		isCopied.value = true
+		setTimeout(() => {
+			isCopied.value = false
+		}, 2000)
+	} catch (error) {
+		console.error('Error getting prompt:', error)
+	}
+}
+
+// Fetch prompt details when component mounts or promptId changes
+const fetchDetails = async () => {
+	if (props.promptId) {
+		await promptStore.showPrompt(props.promptId)
+		await promptStore.getPromptResponses(props.promptId)
+	}
+}
+
 // Method to highlight keywords in response content
 const highlightKeywords = (content) => {
 	if (!promptDetails.value?.keywords || !content) return content
@@ -43,14 +71,6 @@ const highlightKeywords = (content) => {
 
 const closeSheet = () => {
 	emit('close')
-}
-
-// Fetch prompt details when component mounts or promptId changes
-const fetchDetails = async () => {
-	if (props.promptId) {
-		await promptStore.showPrompt(props.promptId)
-		await promptStore.getPromptResponses(props.promptId)
-	}
 }
 
 onMounted(fetchDetails)
@@ -99,6 +119,47 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 				</div>
 				<div v-else class="text-neutral-500 italic">No keywords have been found in this prompt yet.</div>
+
+				<!-- Call to action for article generation -->
+				<div class="mt-6 bg-neutral-100 border border-neutral-200 p-6 rounded-lg">
+					<h3 class="text-xl font-medium text-neutral-800 mb-2">Optimize for this prompt</h3>
+					<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
+					<Button @click="copyPromptToClipboard" variant="primary" class="flex items-center gap-2">
+						<span v-if="isCopied">Copied to clipboard!</span>
+						<span v-else>Generate article</span>
+						<svg
+							v-if="!isCopied"
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-clipboard"
+						>
+							<rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+							<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+						</svg>
+						<svg
+							v-else
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-check"
+						>
+							<path d="M20 6 9 17l-5-5" />
+						</svg>
+					</Button>
+				</div>
 
 				<div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>

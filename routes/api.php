@@ -7,6 +7,7 @@ use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\PromptController;
+use App\Http\Controllers\PromptOptimizeController;
 use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
@@ -71,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Prompts
 	Route::resource('prompts', PromptController::class);
 	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
+	Route::get('prompts/{prompt}/optimize', PromptOptimizeController::class);
 	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
 
 	// Running prompts
