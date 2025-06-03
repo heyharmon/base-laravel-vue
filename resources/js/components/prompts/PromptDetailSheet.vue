@@ -85,6 +85,7 @@ watch(() => props.promptId, fetchDetails)
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 			</div>
 			<div v-else-if="promptDetails" class="space-y-6">
+				<!-- Prompt header -->
 				<div>
 					<div class="bg-neutral-50 p-4 rounded-lg">
 						<div class="mb-4">
@@ -104,27 +105,11 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 				</div>
 
-				<div v-if="promptDetails.keywords && promptDetails.keywords.length > 0">
-					<h3 class="text-lg font-medium text-neutral-800 mb-2">Keywords Found</h3>
-					<div class="space-y-3">
-						<div v-for="keyword in promptDetails.keywords" :key="keyword.id" class="bg-white border border-neutral-300 p-3 rounded-lg">
-							<p class="text-neutral-800 font-medium">{{ keyword.name }}</p>
-							<div class="mt-2 text-sm text-neutral-500 flex justify-between">
-								<span
-									>Occurrences: <span class="font-medium">{{ keyword.pivot.count }}</span></span
-								>
-								<span>Last found: {{ new Date(keyword.pivot.last_found_at).toLocaleDateString() }}</span>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div v-else class="text-neutral-500 italic">No keywords have been found in this prompt yet.</div>
-
 				<!-- Call to action for article generation -->
-				<div class="mt-6 bg-neutral-100 border border-neutral-200 p-6 rounded-lg">
+				<div class="mt-6 bg-neutral-100 border border-2 border-neutral-800 p-6 rounded-lg">
 					<h3 class="text-xl font-medium text-neutral-800 mb-2">Optimize for this prompt</h3>
 					<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
-					<Button @click="copyPromptToClipboard" variant="primary" class="flex items-center gap-2">
+					<Button @click="copyPromptToClipboard" class="flex items-center gap-2">
 						<span v-if="isCopied">Copied to clipboard!</span>
 						<span v-else>Generate article</span>
 						<svg
@@ -159,7 +144,66 @@ watch(() => props.promptId, fetchDetails)
 							<path d="M20 6 9 17l-5-5" />
 						</svg>
 					</Button>
+					<a
+						href="https://chatgpt.com/g/g-683e71bf9d14819194ee7fe3121bf234-article-writer-for-prompt-visibility"
+						target="_blank"
+						class="mt-4 inline-flex items-center gap-2 px-4 py-1.5 text-sm bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 rounded-md font-medium transition-colors"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-sparkles"
+						>
+							<path
+								d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+							/>
+							<path d="M5 3v4" />
+							<path d="M19 17v4" />
+							<path d="M3 5h4" />
+							<path d="M17 19h4" />
+						</svg>
+						Use Article Writer GPT
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-external-link"
+						>
+							<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+							<polyline points="15 3 21 3 21 9"></polyline>
+							<line x1="10" y1="14" x2="21" y2="3"></line>
+						</svg>
+					</a>
 				</div>
+
+				<div v-if="promptDetails.keywords && promptDetails.keywords.length > 0">
+					<h3 class="text-lg font-medium text-neutral-800 mb-2">Keywords Found</h3>
+					<div class="space-y-3">
+						<div v-for="keyword in promptDetails.keywords" :key="keyword.id" class="bg-white border border-neutral-300 p-3 rounded-lg">
+							<p class="text-neutral-800 font-medium">{{ keyword.name }}</p>
+							<div class="mt-2 text-sm text-neutral-500 flex justify-between">
+								<span
+									>Occurrences: <span class="font-medium">{{ keyword.pivot.count }}</span></span
+								>
+								<span>Last found: {{ new Date(keyword.pivot.last_found_at).toLocaleDateString() }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div v-else class="text-neutral-500 italic">No keywords have been found in this prompt yet.</div>
 
 				<div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
