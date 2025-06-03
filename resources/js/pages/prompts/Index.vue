@@ -2,16 +2,19 @@
 import { onMounted, ref, computed, watch } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import { useOrganizationStore } from '@/stores/organizationStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
 import GeneratePromptsModal from '@/components/GeneratePromptsModal.vue'
 import PromptToolbar from '@/components/prompts/PromptToolbar.vue'
 import PromptListItem from '@/components/prompts/PromptListItem.vue'
 import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
+import VisibilityScore from '@/components/VisibilityScore.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
+const organizationStore = useOrganizationStore()
 
 const isPromptCreateModalOpen = ref(false)
 const isPromptDetailSheetOpen = ref(false)
@@ -103,14 +106,23 @@ const showPromptDetails = async (prompt) => {
 	isPromptDetailSheetOpen.value = true
 }
 
+const ownedOrg = computed(() => {
+	if (!organizationStore.visibilityMetrics.length) return null
+	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+})
+
 onMounted(async () => {
 	await promptStore.fetchPrompts()
+	await organizationStore.fetchVisibilityMetrics()
 })
 </script>
 
 <template>
 	<DefaultLayout>
-		<div class="flex flex-col space-y-4 mt-6">
+		<div class="flex flex-col space-y-6 mt-6">
+			<!-- Visibility score -->
+			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
+
 			<!-- Main Content -->
 			<div class="flex flex-col">
 				<!-- Prompts column -->

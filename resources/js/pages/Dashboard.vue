@@ -2,6 +2,7 @@
 import { onMounted, ref, watch, computed } from 'vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import VisibilityScore from '@/components/VisibilityScore.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const jobStatusStore = useJobStatusStore()
@@ -32,6 +33,15 @@ const ownedOrg = computed(() => {
 onMounted(async () => {
 	await organizationStore.fetchVisibilityMetrics()
 })
+
+const deleteOrganization = async (organizationId) => {
+	try {
+		await organizationStore.deleteOrganization(organizationId)
+		await organizationStore.fetchVisibilityMetrics()
+	} catch (error) {
+		console.error('Error deleting organization:', error)
+	}
+}
 </script>
 
 <template>
@@ -57,27 +67,8 @@ onMounted(async () => {
 			</div>
 		</div>
 
-		<!-- Visibility -->
-		<div v-if="ownedOrg" class="mt-6 w-2/5 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<img
-						:src="`https://cdn.brandfetch.io/${ownedOrg?.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
-						:alt="ownedOrg?.name + ' logo'"
-						class="size-12 object-contain bg-white rounded-lg border border-neutral-200"
-					/>
-					<div>
-						<h1 class="text-lg font-bold">Visibility score</h1>
-						<p class="text-neutral-500">{{ ownedOrg?.name || 'Your Organization' }}</p>
-					</div>
-				</div>
-				<div class="text-6xl font-medium text-green-600 flex items-start gap-1">
-					{{ ownedOrg?.visibility || 0 }}
-					<span class="text-2xl">%</span>
-				</div>
-				<!-- <div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-5 border-b-2 border-neutral-800"></div> -->
-			</div>
-		</div>
+		<!-- Visibility score -->
+		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
 		<!-- Rankings -->
 		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
@@ -90,6 +81,7 @@ onMounted(async () => {
 				<table class="min-w-full divide-y divide-neutral-200">
 					<thead>
 						<tr>
+							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12">Rank</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/10">Org</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/3">Visibility</th>
 							<th class="px-3 py-2 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-1/12"></th>
@@ -98,7 +90,8 @@ onMounted(async () => {
 						</tr>
 					</thead>
 					<tbody class="bg-white divide-y divide-neutral-200">
-						<tr v-for="org in organizationStore.visibilityMetrics.sort((a, b) => b.visibility - a.visibility)" :key="org.id">
+						<tr v-for="org in organizationStore.visibilityMetrics" :key="org.id" class="group">
+							<td class="px-3 py-2 text-left whitespace-nowrap font-medium text-neutral-500">#{{ org.visibility_rank }}</td>
 							<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 								<img
 									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
@@ -119,7 +112,24 @@ onMounted(async () => {
 							</td>
 							<td class="py-2 whitespace-nowrap text-sm flex items-start gap-0.5">{{ org.visibility }}<span class="text-xs">%</span></td>
 							<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
-							<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_responses }}</td>
+							<td class="px-3 py-2 whitespace-nowrap text-sm">
+								{{ org.total_responses }}
+
+								<button
+									v-if="org.is_competitor"
+									@click="deleteOrganization(org.id)"
+									class="float-right group-hover:block hidden text-neutral-300 hover:text-red-500 focus:outline-none cursor-pointer"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+										/>
+									</svg>
+								</button>
+							</td>
 						</tr>
 					</tbody>
 				</table>

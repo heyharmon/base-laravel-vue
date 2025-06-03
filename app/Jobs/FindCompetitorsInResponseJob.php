@@ -65,6 +65,10 @@ class FindCompetitorsInResponseJob extends TrackableJob
 	public function handle()
 	{
 		try {
+			if ($this->isCancelled()) {
+				return;
+			}
+
 			// Mark the job as started
 			$this->markJobAsStarted('Finding competitors in response');
 
@@ -74,7 +78,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			// Skip if team already has 30 competitors
 			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
 
-			if ($competitorCount >= 30) {
+			if ($competitorCount >= 100) {
 				$this->markJobAsCompleted('Skipping prompt, max 30 competitors reached');
 				return;
 			}
@@ -130,7 +134,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			->withMaxSteps(10)
 			->withMessages([
 				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
-				new UserMessage('Find other organizations mentioned in the prompt response. Include their name, website and the term you found them by. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
+				new UserMessage('Find other organizations mentioned in the prompt response. Include their name, website and the term you found them by in the response content. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
 			])
 			->withTools([$searchApiTool])
 			->withToolChoice(ToolChoice::Auto)
@@ -158,7 +162,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 							),
 							new StringSchema(
 								name: 'term',
-								description: 'The term in the prompt response content used to find the organization in the prompt response content'
+								description: 'The term in the prompt response content you found the organization by. This term should be a single word or phrase.'
 							),
 						],
 						requiredFields: ['name']
@@ -224,12 +228,16 @@ class FindCompetitorsInResponseJob extends TrackableJob
 					'name' => $competitor['website'],
 				]);
 
-				// Create a keyword for the term used to find the competitor
-				$termKeyword = Keyword::create([
-					'team_id' => $this->teamId,
-					'organization_id' => $competitorOrg->id,
-					'name' => $competitor['term'],
-				]);
+				// Create a keyword for the term found in response. Avoid duplicates.
+				$termKeyword = Keyword::firstOrCreate(
+					[
+						'team_id' => $this->teamId,
+						'name' => $competitor['term']
+					],
+					[
+						'organization_id' => $competitorOrg->id
+					]
+				);
 
 				// Dispatch a job to check past responses for this keyword
 				$jobDispatcher = app(JobDispatcherService::class);

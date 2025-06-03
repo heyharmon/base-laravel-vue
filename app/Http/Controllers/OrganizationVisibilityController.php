@@ -90,6 +90,16 @@ class OrganizationVisibilityController extends Controller
             ];
         }
 
+        // Sort results by visibility in descending order
+        usort($results, function ($a, $b) {
+            return $b['visibility'] <=> $a['visibility'];
+        });
+        
+        // Add visibility_rank property
+        foreach ($results as $index => $result) {
+            $results[$index]['visibility_rank'] = $index + 1;
+        }
+
         return response()->json($results);
     }
 }

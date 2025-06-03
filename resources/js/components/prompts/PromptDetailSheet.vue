@@ -1,7 +1,9 @@
 <script setup>
-import { computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted, ref } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
+import api from '@/services/api'
 import Sheet from '@/components/ui/Sheet.vue'
+import Button from '@/components/ui/Button.vue'
 
 const props = defineProps({
 	isOpen: {
@@ -26,6 +28,32 @@ const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
 })
 
+// Fetch and copy prompt to clipboard
+const isCopied = ref(false)
+const copyPromptToClipboard = async () => {
+	if (!promptDetails.value) return
+
+	try {
+		const data = await api.get(`prompts/${props.promptId}/optimize`)
+		navigator.clipboard.writeText(data.text)
+
+		isCopied.value = true
+		setTimeout(() => {
+			isCopied.value = false
+		}, 2000)
+	} catch (error) {
+		console.error('Error getting prompt:', error)
+	}
+}
+
+// Fetch prompt details when component mounts or promptId changes
+const fetchDetails = async () => {
+	if (props.promptId) {
+		await promptStore.showPrompt(props.promptId)
+		await promptStore.getPromptResponses(props.promptId)
+	}
+}
+
 // Method to highlight keywords in response content
 const highlightKeywords = (content) => {
 	if (!promptDetails.value?.keywords || !content) return content
@@ -45,14 +73,6 @@ const closeSheet = () => {
 	emit('close')
 }
 
-// Fetch prompt details when component mounts or promptId changes
-const fetchDetails = async () => {
-	if (props.promptId) {
-		await promptStore.showPrompt(props.promptId)
-		await promptStore.getPromptResponses(props.promptId)
-	}
-}
-
 onMounted(fetchDetails)
 
 watch(() => props.promptId, fetchDetails)
@@ -65,6 +85,7 @@ watch(() => props.promptId, fetchDetails)
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 			</div>
 			<div v-else-if="promptDetails" class="space-y-6">
+				<!-- Prompt header -->
 				<div>
 					<div class="bg-neutral-50 p-4 rounded-lg">
 						<div class="mb-4">
@@ -81,6 +102,76 @@ watch(() => props.promptId, fetchDetails)
 								>{{ promptDetails.keywords?.length || 0 }} {{ promptDetails.keywords?.length === 1 ? 'keyword' : 'keywords' }}</span
 							>
 						</div>
+					</div>
+				</div>
+
+				<!-- Call to action for article generation -->
+				<div class="mt-6 bg-neutral-100 border border-2 border-neutral-800 p-6 rounded-lg">
+					<h3 class="text-xl font-medium text-neutral-800 mb-2">Optimize for this prompt</h3>
+					<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
+					<div class="flex items-center gap-2">
+						<Button @click="copyPromptToClipboard" class="flex items-center gap-2">
+							<svg
+								v-if="!isCopied"
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="lucide lucide-clipboard"
+							>
+								<rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+								<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+							</svg>
+							<svg
+								v-else
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="lucide lucide-check"
+							>
+								<path d="M20 6 9 17l-5-5" />
+							</svg>
+							<span v-if="isCopied">Copied to clipboard!</span>
+							<span v-else>Generate article prompt</span>
+						</Button>
+						<a
+							href="https://chatgpt.com/g/g-683e71bf9d14819194ee7fe3121bf234-article-writer-for-prompt-visibility"
+							target="_blank"
+							class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 rounded-md font-medium transition-colors"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="lucide lucide-sparkles"
+							>
+								<path
+									d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+								/>
+								<path d="M5 3v4" />
+								<path d="M19 17v4" />
+								<path d="M3 5h4" />
+								<path d="M17 19h4" />
+							</svg>
+							Use Article Writer GPT
+						</a>
 					</div>
 				</div>
 

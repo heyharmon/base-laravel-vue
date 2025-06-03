@@ -65,11 +65,14 @@ class GeneratePrompt extends TrackableJob
 	 *
 	 * @return void
 	 */
-	public function handle(JobDispatcherService $jobDispatcher)
-	{
-		try {
-			// Mark the job as started
-			$this->markJobAsStarted('Generating prompt from term "' . $this->term . '"');
+        public function handle(JobDispatcherService $jobDispatcher)
+        {
+                try {
+                        if ($this->isCancelled()) {
+                                return;
+                        }
+                        // Mark the job as started
+                        $this->markJobAsStarted('Generating prompt from term "' . $this->term . '"');
 
 			$searchApiTool = new SearchApiTool();
 

@@ -62,6 +62,10 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 	public function handle()
 	{
 		try {
+			if ($this->isCancelled()) {
+				return;
+			}
+
 			// Mark the job as started
 			$this->markJobAsStarted('Checking keyword in past responses');
 

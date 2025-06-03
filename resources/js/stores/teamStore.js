@@ -145,7 +145,7 @@ export const useTeamStore = defineStore('team', {
     },
 
     async removeMember(teamId, userId) {
-	  console.log('Removing member from team ID:', teamId)
+          console.log('Removing member from team ID:', teamId)
       this.isLoading = true;
       this.error = null;
 
@@ -156,6 +156,29 @@ export const useTeamStore = defineStore('team', {
       } catch (error) {
         this.error = error.response?.data?.message || 'Failed to remove member';
         console.error('Error removing member:', error);
+        throw error;
+      } finally {
+      this.isLoading = false;
+      }
+    },
+
+    async deleteTeam(teamId) {
+          console.log('Deleting team ID:', teamId)
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await api.delete(`/teams/${teamId}`);
+        await this.fetchTeams();
+        if (this.currentTeam && this.currentTeam.id === teamId) {
+          this.currentTeam = null;
+          this.members = [];
+          this.pendingMembers = [];
+        }
+        return response;
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to delete team';
+        console.error('Error deleting team:', error);
         throw error;
       } finally {
         this.isLoading = false;

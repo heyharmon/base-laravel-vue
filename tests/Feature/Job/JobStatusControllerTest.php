@@ -42,3 +42,17 @@ it('limits results to 100 in descending order', function () {
         ->assertJsonCount(100)
         ->assertJsonPath('0.id', $jobs->last()->id);
 });
+
+it('cancels pending jobs for the authenticated team', function () {
+    $team = Team::factory()->create();
+    $user = $team->owner;
+    Sanctum::actingAs($user);
+
+    JobStatus::factory()->count(2)->for($team)->state(['status' => 'pending'])->create();
+
+    $response = $this->postJson('/api/team-jobs/cancel');
+
+    $response->assertStatus(200);
+
+    expect(JobStatus::where('team_id', $team->id)->where('status', 'cancelled')->count())->toBe(2);
+});

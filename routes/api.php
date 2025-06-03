@@ -7,6 +7,7 @@ use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\PromptController;
+use App\Http\Controllers\PromptOptimizeController;
 use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
@@ -48,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('organizations-onboard', [OrganizationOnboardController::class, 'store']);
 
 	// Organization Competitors
-	Route::post('organizations-generate-competitors', [OrganizationCompetitorController::class, 'generate']);
+	Route::post('organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
 
 	// Organization Visibility
 	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
@@ -71,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Prompts
 	Route::resource('prompts', PromptController::class);
 	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
+	Route::get('prompts/{prompt}/optimize', PromptOptimizeController::class);
 	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
 
 	// Running prompts
@@ -88,4 +90,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Job status routes
 	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
+	Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 });

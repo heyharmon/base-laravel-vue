@@ -49,10 +49,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		startAutoRefresh(1500)
 	}
 
-	async function fetchTeamJobs() {
-		console.log('Fetching team jobs...')
-		loading.value = true
-		error.value = null
+        async function fetchTeamJobs() {
+                console.log('Fetching team jobs...')
+                loading.value = true
+                error.value = null
 
 		try {
 			const response = await api.get('/team-jobs')
@@ -63,8 +63,18 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 			throw err
 		} finally {
 			loading.value = false
-		}
-	}
+                }
+        }
+
+        async function cancelTeamJobs() {
+                try {
+                        await api.post('/team-jobs/cancel')
+                        await fetchTeamJobs()
+                } catch (err) {
+                        error.value = 'Failed to cancel jobs: ' + (err.response?.data?.error || err.message)
+                        throw err
+                }
+        }
 
 	function hasActiveJobs() {
 		return jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
@@ -116,9 +126,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		pollTeamJobs,
 		fetchTeamJobs,
 		hasActiveJobs,
-		startAutoRefresh,
-		stopAutoRefresh,
-		getJobById,
-		getBatchById
-	}
+                startAutoRefresh,
+                stopAutoRefresh,
+                getJobById,
+                getBatchById,
+                cancelTeamJobs
+        }
 })

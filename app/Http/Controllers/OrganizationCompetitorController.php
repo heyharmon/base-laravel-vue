@@ -18,7 +18,7 @@ class OrganizationCompetitorController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-	public function generate(Request $request): JsonResponse
+	public function find(Request $request): JsonResponse
 	{
 		$teamId = Auth::user()->current_team_id;
 
