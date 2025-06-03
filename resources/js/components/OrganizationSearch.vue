@@ -202,7 +202,7 @@ const createFromDomain = () => {
 				>
 					<div class="flex items-center justify-between">
 						<div>
-							<div class="font-medium text-neutral-700">Create new competitor</div>
+							<div class="font-medium text-neutral-700">Create new</div>
 							<div class="text-sm text-neutral-500">Create from "{{ searchQuery }}"</div>
 						</div>
 						<div class="flex items-center gap-2 bg-white hover:bg-neutral-100/50 border border-neutral-900 px-2 rounded text-sm text-neutral-900">
