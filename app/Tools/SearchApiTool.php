@@ -25,7 +25,7 @@ class SearchApiTool extends Tool
             'gl' => 'us',
             'hl' => 'en',
             'api_key' => config('services.searchapi.api_key'),
-        ]);
+        ])->throw();
 
         $results = collect($response->json('organic_results'));
 
