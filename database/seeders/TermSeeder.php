@@ -2,21 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\Keyword;
+use App\Models\Term;
 use Illuminate\Database\Seeder;
 
-class KeywordSeeder extends Seeder
+class TermSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        Keyword::create([
+        Term::create([
             'name' => 'laravel'
         ]);
 
-        Keyword::create([
+        Term::create([
             'name' => 'taylor otwell'
         ]);
     }

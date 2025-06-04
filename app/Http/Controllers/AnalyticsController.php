@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Keyword;
+use App\Models\Term;
 use App\Models\Prompt;
 use App\Models\Response;
 use Illuminate\Http\JsonResponse;
@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
-    public function keywordStats(Request $request): JsonResponse
+    public function termStats(Request $request): JsonResponse
     {
         $period = $request->input('period', 'all');
-        $keywordId = $request->input('keyword_id');
+        $termId = $request->input('term_id');
         
         // Get the user's current team ID
         $teamId = Auth::user()->current_team_id;
@@ -35,18 +35,18 @@ class AnalyticsController extends Controller
                 break;
         }
         
-        if ($keywordId) {
-            // Get stats for a specific keyword
-            $keyword = Keyword::where('id', $keywordId)
+        if ($termId) {
+            // Get stats for a specific term
+            $term = Term::where('id', $termId)
                 ->where('team_id', $teamId)
                 ->firstOrFail();
             
             $stats = [
-                'id' => $keyword->id,
-                'keyword' => $keyword->name,
-                'total_occurrences' => $keyword->prompts()->sum('count'),
-                'prompt_count' => $keyword->prompts()->count(),
-                'prompts' => $keyword->prompts()
+                'id' => $term->id,
+                'term' => $term->name,
+                'total_occurrences' => $term->prompts()->sum('count'),
+                'prompt_count' => $term->prompts()->count(),
+                'prompts' => $term->prompts()
                     ->withPivot('count', 'last_found_at')
                     ->orderByDesc('pivot_count')
                     ->get()
@@ -63,22 +63,22 @@ class AnalyticsController extends Controller
             if ($period !== 'all') {
                 // Add period-specific data
                 $responseIds = $query->pluck('id');
-                $stats['period_occurrences'] = DB::table('keyword_response')
+                $stats['period_occurrences'] = DB::table('term_response')
                     ->whereIn('response_id', $responseIds)
-                    ->where('keyword_id', $keywordId)
+                    ->where('term_id', $termId)
                     ->count();
             }
         } else {
-            // Get stats for all keywords
-            $stats = Keyword::withCount('prompts')
+            // Get stats for all terms
+            $stats = Term::withCount('prompts')
                 ->where('team_id', $teamId)
                 ->get()
-                ->map(function ($keyword) {
+                ->map(function ($term) {
                     return [
-                        'id' => $keyword->id,
-                        'name' => $keyword->name,
-                        'prompt_count' => $keyword->prompts_count,
-                        'total_occurrences' => $keyword->prompts()->sum('count'),
+                        'id' => $term->id,
+                        'name' => $term->name,
+                        'prompt_count' => $term->prompts_count,
+                        'total_occurrences' => $term->prompts()->sum('count'),
                     ];
                 });
         }
@@ -120,31 +120,31 @@ class AnalyticsController extends Controller
             
             $stats = [
                 'prompt' => $prompt->name,
-                'keyword_count' => $prompt->keywords()->count(),
-                'keywords' => $prompt->keywords()
+                'term_count' => $prompt->terms()->count(),
+                'terms' => $prompt->terms()
                     ->withPivot('count', 'last_found_at')
                     ->orderByDesc('pivot_count')
                     ->get()
-                    ->map(function ($keyword) {
+                    ->map(function ($term) {
                         return [
-                            'id' => $keyword->id,
-                            'name' => $keyword->name,
-                            'count' => $keyword->pivot->count,
-                            'last_found_at' => $keyword->pivot->last_found_at,
+                            'id' => $term->id,
+                            'name' => $term->name,
+                            'count' => $term->pivot->count,
+                            'last_found_at' => $term->pivot->last_found_at,
                         ];
                     }),
-                'responses' => $query->with('keywords')->get(),
+                'responses' => $query->with('terms')->get(),
             ];
         } else {
             // Get stats for all prompts
-            $stats = Prompt::withCount('keywords')
+            $stats = Prompt::withCount('terms')
                 ->where('team_id', $teamId)
                 ->get()
                 ->map(function ($prompt) {
                     return [
                         'id' => $prompt->id,
                         'name' => $prompt->name,
-                        'keyword_count' => $prompt->keywords_count,
+                        'term_count' => $prompt->terms_count,
                         'response_count' => $prompt->responses()->count(),
                         'last_response' => $prompt->responses()->latest('created_at')->first()?->created_at,
                     ];
@@ -156,7 +156,7 @@ class AnalyticsController extends Controller
     
     public function timeSeriesData(Request $request): JsonResponse
     {
-        $keywordId = $request->input('keyword_id');
+        $termId = $request->input('term_id');
         $promptId = $request->input('prompt_id');
         $days = $request->input('days', 30);
         
@@ -187,23 +187,23 @@ class AnalyticsController extends Controller
         
         $responses = $query->get();
         
-        if ($keywordId) {
-            // Verify keyword belongs to user's team
-            $keyword = Keyword::where('id', $keywordId)
+        if ($termId) {
+            // Verify term belongs to user's team
+            $term = Term::where('id', $termId)
                 ->where('team_id', $teamId)
                 ->firstOrFail();
                 
-            // Get time series data for a specific keyword
+            // Get time series data for a specific term
             foreach ($responses as $response) {
                 $date = $response->created_at->format('Y-m-d');
                 
-                if (isset($dates[$date]) && $response->keywords()->where('keyword_id', $keywordId)->exists()) {
+                if (isset($dates[$date]) && $response->terms()->where('term_id', $termId)->exists()) {
                     $dates[$date]++;
                 }
             }
             
             $series = [
-                'name' => $keyword->name,
+                'name' => $term->name,
                 'data' => array_values($dates),
                 'labels' => array_keys($dates),
             ];

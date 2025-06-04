@@ -54,15 +54,15 @@ const fetchDetails = async () => {
 	}
 }
 
-// Method to highlight keywords in response content
-const highlightKeywords = (content) => {
-	if (!promptDetails.value?.keywords || !content) return content
+// Method to highlight terms in response content
+const highlightTerms = (content) => {
+	if (!promptDetails.value?.terms || !content) return content
 
 	let highlightedContent = content
 
-	// Apply highlighting for each keyword
-	promptDetails.value.keywords.forEach((keyword) => {
-		const regex = new RegExp(keyword.name, 'gi')
+	// Apply highlighting for each term
+	promptDetails.value.terms.forEach((term) => {
+		const regex = new RegExp(term.name, 'gi')
 		highlightedContent = highlightedContent.replace(regex, (match) => `<span class="bg-yellow-200">${match}</span>`)
 	})
 
@@ -97,9 +97,9 @@ watch(() => props.promptId, fetchDetails)
 							<span class="text-neutral-800 ml-2">{{ prompt.mentions_percentage }}% of the time</span>
 						</div>
 						<div class="mb-2 text-sm">
-							<span class="text-neutral-500">Keyword occurrences:</span>
+							<span class="text-neutral-500">Term occurrences:</span>
 							<span class="text-neutral-800 ml-2"
-								>{{ promptDetails.keywords?.length || 0 }} {{ promptDetails.keywords?.length === 1 ? 'keyword' : 'keywords' }}</span
+								>{{ promptDetails.terms?.length || 0 }} {{ promptDetails.terms?.length === 1 ? 'term' : 'terms' }}</span
 							>
 						</div>
 					</div>
@@ -175,21 +175,21 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 				</div>
 
-				<div v-if="promptDetails.keywords && promptDetails.keywords.length > 0">
-					<h3 class="text-lg font-medium text-neutral-800 mb-2">Keywords Found</h3>
+				<div v-if="promptDetails.terms && promptDetails.terms.length > 0">
+					<h3 class="text-lg font-medium text-neutral-800 mb-2">Terms Found</h3>
 					<div class="space-y-3">
-						<div v-for="keyword in promptDetails.keywords" :key="keyword.id" class="bg-white border border-neutral-300 p-3 rounded-lg">
-							<p class="text-neutral-800 font-medium">{{ keyword.name }}</p>
+						<div v-for="term in promptDetails.terms" :key="term.id" class="bg-white border border-neutral-300 p-3 rounded-lg">
+							<p class="text-neutral-800 font-medium">{{ term.name }}</p>
 							<div class="mt-2 text-sm text-neutral-500 flex justify-between">
 								<span
-									>Occurrences: <span class="font-medium">{{ keyword.pivot.count }}</span></span
+									>Occurrences: <span class="font-medium">{{ term.pivot.count }}</span></span
 								>
-								<span>Last found: {{ new Date(keyword.pivot.last_found_at).toLocaleDateString() }}</span>
+								<span>Last found: {{ new Date(term.pivot.last_found_at).toLocaleDateString() }}</span>
 							</div>
 						</div>
 					</div>
 				</div>
-				<div v-else class="text-neutral-500 italic">No keywords have been found in this prompt yet.</div>
+				<div v-else class="text-neutral-500 italic">No terms have been found in this prompt yet.</div>
 
 				<div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
@@ -216,7 +216,7 @@ watch(() => props.promptId, fetchDetails)
 							<!-- Response content -->
 							<div
 								class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7 mb-4"
-								v-html="highlightKeywords(response.content)"
+								v-html="highlightTerms(response.content)"
 							></div>
 
 							<!-- Response search queries -->

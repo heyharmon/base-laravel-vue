@@ -3,11 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Team;
-use App\Models\Keyword;
+use App\Models\Term;
 use App\Models\Organization;
 use Illuminate\Database\Seeder;
 
-class AssignKeywordsToOrganizationsSeeder extends Seeder
+class AssignTermsToOrganizationsSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -29,8 +29,8 @@ class AssignKeywordsToOrganizationsSeeder extends Seeder
                 ]);
             }
 
-            // Assign all keywords for this team to the owned organization
-            Keyword::where('team_id', $team->id)
+            // Assign all terms for this team to the owned organization
+            Term::where('team_id', $team->id)
                 ->update(['organization_id' => $ownedOrg->id]);
         }
     }

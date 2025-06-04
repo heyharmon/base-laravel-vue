@@ -3,7 +3,7 @@
 use App\Models\Organization;
 use App\Models\Team;
 use App\Models\User;
-use App\Models\Keyword;
+use App\Models\Term;
 use App\Models\JobStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -14,6 +14,8 @@ uses(RefreshDatabase::class);
 it('lists organizations for the current team', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
 
     $org1 = Organization::factory()->for($team)->owned()->create();
     $org2 = Organization::factory()->for($team)->create();
@@ -30,11 +32,13 @@ it('lists organizations for the current team', function () {
         ->assertJsonMissing(['id' => $otherOrg->id]);
 });
 
-it('creates an organization with keywords for name and website', function () {
+it('creates an organization with terms for name and website', function () {
     Bus::fake();
 
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/organizations', [
@@ -53,13 +57,15 @@ it('creates an organization with keywords for name and website', function () {
     $organizationId = $response->json('id');
 
     expect(Organization::find($organizationId))->not->toBeNull();
-    expect(Keyword::where('organization_id', $organizationId)->count())->toBe(2);
-    expect(JobStatus::where('team_id', $team->id)->where('trackable_type', Keyword::class)->count())->toBe(2);
+    expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
+    expect(JobStatus::where('team_id', $team->id)->where('trackable_type', Term::class)->count())->toBe(2);
 });
 
 it('shows an organization belonging to the team', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->create();
 
     Sanctum::actingAs($user);
@@ -73,6 +79,8 @@ it('shows an organization belonging to the team', function () {
 it('returns unauthorized when viewing another team\'s organization', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $otherOrganization = Organization::factory()->create();
 
     Sanctum::actingAs($user);
@@ -85,6 +93,8 @@ it('returns unauthorized when viewing another team\'s organization', function ()
 it('updates an organization belonging to the team', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->create(['name' => 'Old']);
 
     Sanctum::actingAs($user);
@@ -102,6 +112,8 @@ it('updates an organization belonging to the team', function () {
 it('deletes a competitor organization', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->create();
 
     Sanctum::actingAs($user);
@@ -116,6 +128,8 @@ it('deletes a competitor organization', function () {
 it('does not delete the default organization', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->owned()->create();
 
     Sanctum::actingAs($user);

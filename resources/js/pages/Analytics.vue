@@ -9,8 +9,8 @@ import api from '@/services/api.js'
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 // State
-const keywords = ref([])
-const selectedKeyword = ref(null)
+const terms = ref([])
+const selectedTerm = ref(null)
 const selectedPeriod = ref('all')
 const timeSeriesData = ref(null)
 const isLoading = ref(false)
@@ -57,22 +57,22 @@ const chartData = computed(() => {
 })
 
 // Methods
-const fetchKeywords = async () => {
+const fetchTerms = async () => {
 	isLoading.value = true
 	try {
-		keywords.value = await api.get(`/analytics/keywords?period=${selectedPeriod.value}`)
+		terms.value = await api.get(`/analytics/terms?period=${selectedPeriod.value}`)
 	} catch (error) {
-		console.error('Error fetching keywords:', error)
+		console.error('Error fetching terms:', error)
 	} finally {
 		isLoading.value = false
 	}
 }
 
-const fetchTimeSeriesData = async (keywordId = null, days = 30) => {
+const fetchTimeSeriesData = async (termId = null, days = 30) => {
 	isTimeSeriesLoading.value = true
 	try {
 		let url = `/analytics/timeseries?days=${days}`
-		if (keywordId) url += `&keyword_id=${keywordId}`
+		if (termId) url += `&term_id=${termId}`
 
 		timeSeriesData.value = await api.get(url)
 	} catch (error) {
@@ -82,28 +82,28 @@ const fetchTimeSeriesData = async (keywordId = null, days = 30) => {
 	}
 }
 
-const selectKeyword = async (keyword) => {
-	selectedKeyword.value = keyword
-	await fetchKeywordDetails(keyword.id)
-	await fetchTimeSeriesData(keyword.id)
+const selectTerm = async (term) => {
+	selectedTerm.value = term
+	await fetchTermDetails(term.id)
+	await fetchTimeSeriesData(term.id)
 }
 
-const fetchKeywordDetails = async (keywordId) => {
+const fetchTermDetails = async (termId) => {
 	try {
-		// Update the selected keyword with detailed data
-		selectedKeyword.value = await api.get(`/analytics/keywords?keyword_id=${keywordId}&period=${selectedPeriod.value}`)
+		// Update the selected term with detailed data
+		selectedTerm.value = await api.get(`/analytics/terms?term_id=${termId}&period=${selectedPeriod.value}`)
 	} catch (error) {
-		console.error('Error fetching keyword details:', error)
+		console.error('Error fetching term details:', error)
 	}
 }
 
 const changePeriod = async (period) => {
 	selectedPeriod.value = period
-	await fetchKeywords()
+	await fetchTerms()
 
-	if (selectedKeyword.value) {
-		await fetchKeywordDetails(selectedKeyword.value.id)
-		await fetchTimeSeriesData(selectedKeyword.value.id)
+	if (selectedTerm.value) {
+		await fetchTermDetails(selectedTerm.value.id)
+		await fetchTimeSeriesData(selectedTerm.value.id)
 	} else {
 		await fetchTimeSeriesData()
 	}
@@ -111,7 +111,7 @@ const changePeriod = async (period) => {
 
 // Lifecycle hooks
 onMounted(async () => {
-	await fetchKeywords()
+	await fetchTerms()
 	await fetchTimeSeriesData()
 })
 </script>
@@ -120,7 +120,7 @@ onMounted(async () => {
 	<DefaultLayout>
 		<div class="py-6">
 			<div class="flex justify-between items-center mb-6">
-				<h1 class="text-2xl font-semibold">Keyword Analytics</h1>
+				<h1 class="text-2xl font-semibold">Term Analytics</h1>
 
 				<div class="flex space-x-2">
 					<button
@@ -136,26 +136,26 @@ onMounted(async () => {
 			</div>
 
 			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				<!-- Keywords List -->
+				<!-- Terms List -->
 				<div class="lg:col-span-1 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
-					<h2 class="text-lg font-medium mb-4">Keywords</h2>
+					<h2 class="text-lg font-medium mb-4">Terms</h2>
 
 					<div v-if="isLoading" class="flex justify-center py-8">
 						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 					</div>
 
-					<div v-else-if="keywords.length === 0" class="text-center py-8 text-neutral-500">No keywords found</div>
+					<div v-else-if="terms.length === 0" class="text-center py-8 text-neutral-500">No terms found</div>
 
 					<div v-else class="space-y-3 max-h-[500px] overflow-y-auto">
 						<div
-							v-for="keyword in keywords"
-							:key="keyword.id"
-							@click="selectKeyword(keyword)"
+							v-for="term in terms"
+							:key="term.id"
+							@click="selectTerm(term)"
 							class="p-3 border border-neutral-300 hover:border-neutral-400 hover:bg-white rounded-lg cursor-pointer transition-colors"
-							:class="{ 'border-2 border-neutral-400 bg-white': selectedKeyword?.id === keyword.id }"
+							:class="{ 'border-2 border-neutral-400 bg-white': selectedTerm?.id === term.id }"
 						>
-							<div class="font-medium">{{ keyword.name }}</div>
-							<div class="text-sm text-neutral-500 mt-1">{{ keyword.total_occurrences }} occurrences in {{ keyword.prompt_count }} prompts</div>
+							<div class="font-medium">{{ term.name }}</div>
+							<div class="text-sm text-neutral-500 mt-1">{{ term.total_occurrences }} occurrences in {{ term.prompt_count }} prompts</div>
 						</div>
 					</div>
 				</div>
@@ -163,7 +163,7 @@ onMounted(async () => {
 				<!-- Time Series Chart -->
 				<div class="lg:col-span-2 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
 					<h2 class="text-lg font-medium mb-4">
-						{{ selectedKeyword ? `Trend for "${selectedKeyword.keyword || selectedKeyword.name}"` : 'Overall Trends' }}
+						{{ selectedTerm ? `Trend for "${selectedTerm.term || selectedTerm.name}"` : 'Overall Trends' }}
 					</h2>
 
 					<div v-if="isTimeSeriesLoading" class="flex justify-center py-8">
@@ -178,28 +178,28 @@ onMounted(async () => {
 				</div>
 			</div>
 
-			<!-- Keyword Details -->
-			<div v-if="selectedKeyword && selectedKeyword.prompts" class="mt-6 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
-				<h2 class="text-lg font-medium mb-4">Details for "{{ selectedKeyword.keyword }}"</h2>
+			<!-- Term Details -->
+			<div v-if="selectedTerm && selectedTerm.prompts" class="mt-6 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
+				<h2 class="text-lg font-medium mb-4">Details for "{{ selectedTerm.term }}"</h2>
 
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 					<div class="bg-white p-4 rounded-lg border border-neutral-200">
 						<div class="text-sm text-neutral-500">Total Occurrences</div>
-						<div class="text-2xl font-semibold">{{ selectedKeyword.total_occurrences }}</div>
+						<div class="text-2xl font-semibold">{{ selectedTerm.total_occurrences }}</div>
 					</div>
 
 					<div class="bg-white p-4 rounded-lg border border-neutral-200">
 						<div class="text-sm text-neutral-500">Prompts</div>
-						<div class="text-2xl font-semibold">{{ selectedKeyword.prompt_count }}</div>
+						<div class="text-2xl font-semibold">{{ selectedTerm.prompt_count }}</div>
 					</div>
 
-					<div v-if="selectedKeyword.period_occurrences !== undefined" class="bg-white p-4 rounded-lg border border-neutral-200">
+					<div v-if="selectedTerm.period_occurrences !== undefined" class="bg-white p-4 rounded-lg border border-neutral-200">
 						<div class="text-sm text-neutral-500">Period Occurrences</div>
-						<div class="text-2xl font-semibold">{{ selectedKeyword.period_occurrences }}</div>
+						<div class="text-2xl font-semibold">{{ selectedTerm.period_occurrences }}</div>
 					</div>
 				</div>
 
-				<h3 class="text-md font-medium mb-3">Prompts containing this keyword</h3>
+				<h3 class="text-md font-medium mb-3">Prompts containing this term</h3>
 				<div class="overflow-x-auto">
 					<table class="min-w-full bg-white border border-neutral-200 rounded-lg">
 						<thead>
@@ -210,7 +210,7 @@ onMounted(async () => {
 							</tr>
 						</thead>
 						<tbody>
-							<tr v-for="prompt in selectedKeyword.prompts" :key="prompt.id" class="border-t border-neutral-200">
+							<tr v-for="prompt in selectedTerm.prompts" :key="prompt.id" class="border-t border-neutral-200">
 								<td class="py-2 px-4 text-sm max-w-xs truncate">{{ prompt.content }}</td>
 								<td class="py-2 px-4 text-sm">{{ prompt.count }}</td>
 								<td class="py-2 px-4 text-sm">{{ new Date(prompt.last_found_at).toLocaleDateString() }}</td>

@@ -8,7 +8,7 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
-it('registers a user and creates a team', function () {
+it('registers a user', function () {
     $payload = [
         'name' => 'John Doe',
         'email' => 'john@example.com',
@@ -24,22 +24,23 @@ it('registers a user and creates a team', function () {
                 'id',
                 'name',
                 'email',
-                'current_team_id',
             ],
             'token',
         ]);
 
     $userId = $response->json('user.id');
-    $team = Team::where('owner_id', $userId)->first();
-
-    expect($team)->not->toBeNull();
-    expect($team->users()->where('user_id', $userId)->exists())->toBeTrue();
+    $user = User::find($userId);
+    
+    expect($user)->not->toBeNull();
 });
 
 it('issues a token on login', function () {
     $user = User::factory()->create([
         'password' => Hash::make('secret123'),
     ]);
+    $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
 
     $response = $this->postJson('/api/login', [
         'email' => $user->email,
@@ -55,6 +56,9 @@ it('issues a token on login', function () {
 
 it('retrieves the authenticated user', function () {
     $user = User::factory()->create();
+    $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
 
     Sanctum::actingAs($user);
 

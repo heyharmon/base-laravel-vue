@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import api from '@/services/api'
-import { useKeywordStore } from '@/stores/keywordStore'
+import { useTermStore } from '@/stores/termStore'
 
 const props = defineProps({
 	domain: {
@@ -14,73 +14,63 @@ const props = defineProps({
 	}
 })
 
-const emit = defineEmits(['update:keywords', 'create-keywords'])
+const emit = defineEmits(['update:terms', 'create-terms'])
 
-const isLoadingKeywords = ref(false)
-const generatedKeywords = ref([])
+const isLoadingTerms = ref(false)
+const generatedTerms = ref([])
 const error = ref(null)
-const keywordStore = useKeywordStore()
+const termStore = useTermStore()
 
-// Auto-generate keywords when domain changes
-watch(
-	() => props.domain,
-	(newDomain) => {
-		if (newDomain) {
-			generateKeywords()
-		}
-	}
-)
-
-// Generate keywords on mount if domain is available
+// Generate terms on mount if domain is available
 onMounted(() => {
 	if (props.domain) {
-		generateKeywords()
+		generateTerms()
 	}
 })
 
-const generateKeywords = async () => {
+const generateTerms = async () => {
 	if (!props.domain) {
 		error.value = 'No website domain available.'
 		return
 	}
 
-	isLoadingKeywords.value = true
+	isLoadingTerms.value = true
 	error.value = null
-	generatedKeywords.value = []
+	generatedTerms.value = []
 
 	try {
-		const response = await api.post('/generate-keywords', { domain: props.domain })
-		generatedKeywords.value = response || []
-		emit('update:keywords', generatedKeywords.value)
+		const response = await api.post('/generate-terms', { domain: props.domain })
+		generatedTerms.value = response || []
+		emit('update:terms', generatedTerms.value)
 	} catch (err) {
-		console.error('Error generating keywords:', err)
-		error.value = 'Failed to generate keywords. Please try again.'
+		console.error('Error generating terms:', err)
+		error.value = 'Failed to generate terms. Please try again.'
 	} finally {
-		isLoadingKeywords.value = false
+		isLoadingTerms.value = false
 	}
 }
 
-const removeKeyword = (index) => {
-	generatedKeywords.value.splice(index, 1)
-	emit('update:keywords', generatedKeywords.value)
+const removeTerm = (index) => {
+	generatedTerms.value.splice(index, 1)
+	emit('update:terms', generatedTerms.value)
 }
 
-const createKeywords = async () => {
-	if (!generatedKeywords.value.length || !props.organizationId) return
+const createTerms = async () => {
+	if (!generatedTerms.value.length || !props.organizationId) return
 
 	try {
-		const promises = generatedKeywords.value.map((keyword) => keywordStore.createKeyword(props.organizationId, { name: keyword }))
+		const promises = generatedTerms.value.map((term) => termStore.createTerm(props.organizationId, { name: term }))
 
 		await Promise.all(promises)
-		emit('create-keywords')
+		emit('create-terms')
 	} catch (err) {
-		console.error('Error creating keywords:', err)
-		error.value = 'Failed to create keywords. Please try again.'
+		console.error('Error creating terms:', err)
+		error.value = 'Failed to create terms. Please try again.'
 	}
 }
 
 // Expose methods to parent components
-defineExpose({ generateKeywords })
+defineExpose({ generateTerms })
 </script>
 
 <template>
@@ -90,8 +80,8 @@ defineExpose({ generateKeywords })
 		</div>
 
 		<div class="max-h-[calc(100vh-30rem)] overflow-y-auto">
-			<div v-if="isLoadingKeywords" class="space-x-4">
-				<h3 class="text-sm font-medium text-neutral-700 mb-2">Generating keywords...</h3>
+			<div v-if="isLoadingTerms" class="space-x-4">
+				<h3 class="text-sm font-medium text-neutral-700 mb-2">Generating terms...</h3>
 				<div class="flex-1 space-y-3 animate-pulse">
 					<div class="h-4 rounded bg-neutral-200"></div>
 					<div class="h-4 w-11/12 rounded bg-neutral-200"></div>
@@ -99,17 +89,17 @@ defineExpose({ generateKeywords })
 					<div class="h-4 rounded bg-neutral-200"></div>
 				</div>
 			</div>
-			<div v-else-if="generatedKeywords.length > 0">
-				<h3 class="text-sm font-medium text-neutral-700 mb-2">Keyword suggestions:</h3>
+			<div v-else-if="generatedTerms.length > 0">
+				<h3 class="text-sm font-medium text-neutral-700 mb-2">Term suggestions:</h3>
 				<ul>
 					<li
-						v-for="(keyword, index) in generatedKeywords"
+						v-for="(term, index) in generatedTerms"
 						:key="index"
 						class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1.5"
 					>
-						<span class="text-sm">{{ keyword }}</span>
+						<span class="text-sm">{{ term }}</span>
 						<button
-							@click="removeKeyword(index)"
+							@click="removeTerm(index)"
 							class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
 							type="button"
 						>
@@ -136,19 +126,19 @@ defineExpose({ generateKeywords })
 
 		<div class="flex space-x-2 mt-4">
 			<button
-				v-if="generatedKeywords.length > 0 && organizationId"
-				@click="createKeywords"
+				v-if="generatedTerms.length > 0 && organizationId"
+				@click="createTerms"
 				class="inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
-				:disabled="isLoadingKeywords"
+				:disabled="isLoadingTerms"
 			>
-				Create Keywords
+				Create Terms
 			</button>
 
 			<button
-				v-if="generatedKeywords.length > 0"
-				@click="generateKeywords"
+				v-if="generatedTerms.length > 0"
+				@click="generateTerms"
 				class="flex items-center gap-2 text-neutral-600 text-sm rounded-md cursor-pointer hover:text-neutral-900"
-				:disabled="isLoadingKeywords || !domain"
+				:disabled="isLoadingTerms || !domain"
 			>
 				<svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 					<path
@@ -157,7 +147,7 @@ defineExpose({ generateKeywords })
 						d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
 					/>
 				</svg>
-				Regenerate keywords
+				Regenerate terms
 			</button>
 		</div>
 	</div>

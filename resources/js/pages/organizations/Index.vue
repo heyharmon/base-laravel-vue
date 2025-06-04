@@ -53,7 +53,7 @@ onMounted(async () => {
 		<div class="container mx-auto py-6">
 			<!-- Header -->
 			<div class="flex justify-between items-center mb-3">
-				<h1 class="text-2xl font-bold">Keywords</h1>
+				<h1 class="text-2xl font-bold">Terms</h1>
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
@@ -116,8 +116,8 @@ onMounted(async () => {
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 								<div class="mt-1 flex items-center">
-									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
-									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+									<span class="font-medium text-neutral-700">{{ org.terms_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.terms_count === 1 ? 'term' : 'terms' }}</span>
 								</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
@@ -161,8 +161,8 @@ onMounted(async () => {
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 								<div class="mt-1 flex items-center">
-									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
-									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+									<span class="font-medium text-neutral-700">{{ org.terms_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.terms_count === 1 ? 'term' : 'terms' }}</span>
 								</div>
 							</div>
 							<div class="flex space-x-2 mt-4">

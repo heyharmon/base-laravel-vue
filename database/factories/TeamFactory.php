@@ -15,8 +15,9 @@ class TeamFactory extends Factory
 
     public function definition(): array
     {
+        static $count = 1;
         return [
-            'name' => $this->faker->company(),
+            'name' => 'Team ' . $count++,
             'owner_id' => User::factory(),
         ];
     }
