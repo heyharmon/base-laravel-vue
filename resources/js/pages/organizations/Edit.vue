@@ -2,21 +2,21 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organizationStore'
-import { useKeywordStore } from '@/stores/keywordStore'
+import { useTermStore } from '@/stores/termStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import KeywordDetailSheet from '@/components/keywords/KeywordDetailSheet.vue'
-import KeywordCreateModal from '@/components/keywords/KeywordCreateModal.vue'
-import GenerateKeywordsModal from '@/components/GenerateKeywordsModal.vue'
-import KeywordNotification from '@/components/keywords/KeywordNotification.vue'
-import KeywordListItem from '@/components/keywords/KeywordListItem.vue'
-import RecommendedKeywordItem from '@/components/keywords/RecommendedKeywordItem.vue'
+import TermDetailSheet from '@/components/terms/TermDetailSheet.vue'
+import TermCreateModal from '@/components/terms/TermCreateModal.vue'
+import GenerateTermsModal from '@/components/GenerateTermsModal.vue'
+import TermNotification from '@/components/terms/TermNotification.vue'
+import TermListItem from '@/components/terms/TermListItem.vue'
+import RecommendedTermItem from '@/components/terms/RecommendedTermItem.vue'
 import OrganizationForm from '@/components/organizations/OrganizationForm.vue'
 
 const route = useRoute()
 const router = useRouter()
 const organizationStore = useOrganizationStore()
-const keywordStore = useKeywordStore()
+const termStore = useTermStore()
 const organization = ref({
 	name: '',
 	website: '',
@@ -39,19 +39,19 @@ const originalOrganization = ref({
 })
 const isSubmitting = ref(false)
 const isLoading = ref(true)
-const isKeywordCreateModalOpen = ref(false)
-const isGenerateKeywordsModalOpen = ref(false)
-const isKeywordDetailSheetOpen = ref(false)
-const selectedKeyword = ref(null)
-const selectedKeywordId = ref(null)
-const deletedKeywordMessage = ref(null)
+const isTermCreateModalOpen = ref(false)
+const isGenerateTermsModalOpen = ref(false)
+const isTermDetailSheetOpen = ref(false)
+const selectedTerm = ref(null)
+const selectedTermId = ref(null)
+const deletedTermMessage = ref(null)
 
 onMounted(async () => {
 	try {
 		const data = await organizationStore.fetchOrganization(route.params.id)
 		organization.value = { ...data }
 		originalOrganization.value = { ...data }
-		await keywordStore.fetchKeywords(route.params.id)
+		await termStore.fetchTerms(route.params.id)
 	} catch (error) {
 		console.error('Error fetching organization:', error)
 	} finally {
@@ -72,15 +72,15 @@ const hasChanges = computed(() => {
 	)
 })
 
-const showKeywordDetails = (keyword) => {
-	selectedKeyword.value = keyword
-	selectedKeywordId.value = keyword.id
-	isKeywordDetailSheetOpen.value = true
+const showTermDetails = (term) => {
+	selectedTerm.value = term
+	selectedTermId.value = term.id
+	isTermDetailSheetOpen.value = true
 }
 
-const addKeyword = (keyword) => {
-	keyword.organization_id = route.params.id
-	return keyword
+const addTerm = (term) => {
+	term.organization_id = route.params.id
+	return term
 }
 
 const updateOrganization = async () => {
@@ -108,35 +108,35 @@ const cancelEdit = () => {
 	router.push({ name: 'organizations.index' })
 }
 
-const handleDeleteKeyword = (keywordId, keywordName) => {
-	deletedKeywordMessage.value = `The keyword "${keywordName}" and its history has been deleted.`
-	keywordStore.deleteKeyword(route.params.id, keywordId)
+const handleDeleteTerm = (termId, termName) => {
+	deletedTermMessage.value = `The term "${termName}" and its history has been deleted.`
+	termStore.deleteTerm(route.params.id, termId)
 	setTimeout(() => {
-		deletedKeywordMessage.value = null
+		deletedTermMessage.value = null
 	}, 10000)
 }
 
-const acceptRecommendedKeyword = async (keywordId) => {
+const acceptRecommendedTerm = async (termId) => {
 	try {
-		await keywordStore.acceptRecommendedKeyword(route.params.id, keywordId)
-		deletedKeywordMessage.value = 'Keyword added to your organization.'
+		await termStore.acceptRecommendedTerm(route.params.id, termId)
+		deletedTermMessage.value = 'Term added to your organization.'
 		setTimeout(() => {
-			deletedKeywordMessage.value = null
+			deletedTermMessage.value = null
 		}, 10000)
 	} catch (error) {
-		console.error('Error accepting recommended keyword:', error)
+		console.error('Error accepting recommended term:', error)
 	}
 }
 
-const denyRecommendedKeyword = async (keywordId, keywordName) => {
+const denyRecommendedTerm = async (termId, termName) => {
 	try {
-		await keywordStore.denyRecommendedKeyword(route.params.id, keywordId)
-		deletedKeywordMessage.value = `The keyword "${keywordName}" recommendation has been removed.`
+		await termStore.denyRecommendedTerm(route.params.id, termId)
+		deletedTermMessage.value = `The term "${termName}" recommendation has been removed.`
 		setTimeout(() => {
-			deletedKeywordMessage.value = null
+			deletedTermMessage.value = null
 		}, 10000)
 	} catch (error) {
-		console.error('Error denying recommended keyword:', error)
+		console.error('Error denying recommended term:', error)
 	}
 }
 </script>
@@ -180,70 +180,70 @@ const denyRecommendedKeyword = async (keywordId, keywordName) => {
 			</div>
 
 			<div v-else class="flex flex-col md:flex-row gap-12">
-				<!-- Left column - Keywords section -->
+				<!-- Left column - Terms section -->
 				<div class="w-full md:w-2/3">
-					<!-- Keywords header -->
+					<!-- Terms header -->
 					<div class="flex justify-between items-center mb-4">
-						<h2 class="text-xl font-semibold">Keywords</h2>
+						<h2 class="text-xl font-semibold">Terms</h2>
 
 						<div class="flex gap-2">
 							<button
-								@click="isGenerateKeywordsModalOpen = true"
+								@click="isGenerateTermsModalOpen = true"
 								class="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
 							>
 								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
 									<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
 								</svg>
-								<span>Generate keywords</span>
+								<span>Generate terms</span>
 							</button>
 							<button
-								@click="isKeywordCreateModalOpen = true"
+								@click="isTermCreateModalOpen = true"
 								class="px-3 py-1.5 bg-white text-neutral-800 border border-neutral-400 rounded-md text-xs font-medium hover:bg-neutral-100 transition-colors cursor-pointer"
 							>
-								Add a keyword
+								Add a term
 							</button>
 						</div>
 					</div>
 
-					<!-- Loading state for keywords -->
-					<div v-if="keywordStore.isLoading" class="flex justify-center py-8">
+					<!-- Loading state for terms -->
+					<div v-if="termStore.isLoading" class="flex justify-center py-8">
 						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 					</div>
 
-					<!-- Keywords section -->
+					<!-- Terms section -->
 					<div v-else>
-						<!-- No keywords message -->
-						<div v-if="keywordStore.keywords.length === 0" class="text-center py-12 border border-neutral-200 rounded-xl mb-8">
-							<div class="text-neutral-400 text-sm">No keywords yet</div>
+						<!-- No terms message -->
+						<div v-if="termStore.terms.length === 0" class="text-center py-12 border border-neutral-200 rounded-xl mb-8">
+							<div class="text-neutral-400 text-sm">No terms yet</div>
 						</div>
 
-						<!-- Existing keywords list -->
+						<!-- Existing terms list -->
 						<div v-else class="space-y-3 mb-8">
-							<KeywordNotification :message="deletedKeywordMessage" />
+							<TermNotification :message="deletedTermMessage" />
 
-							<KeywordListItem
-								v-for="keyword in keywordStore.keywords"
-								:key="keyword.id"
-								:keyword="keyword"
-								:is-selected="selectedKeywordId === keyword.id"
-								@select="showKeywordDetails"
-								@delete="(kw) => handleDeleteKeyword(kw.id, kw.name)"
+							<TermListItem
+								v-for="term in termStore.terms"
+								:key="term.id"
+								:term="term"
+								:is-selected="selectedTermId === term.id"
+								@select="showTermDetails"
+								@delete="(kw) => handleDeleteTerm(kw.id, kw.name)"
 							/>
 						</div>
 
-						<!-- Recommended Keywords Section -->
-						<div v-if="keywordStore.recommendedKeywords.length > 0">
-							<h3 class="text-lg font-semibold mb-4">Recommended keywords</h3>
-							<div v-if="keywordStore.isLoadingRecommended" class="flex justify-center py-8">
+						<!-- Recommended Terms Section -->
+						<div v-if="termStore.recommendedTerms.length > 0">
+							<h3 class="text-lg font-semibold mb-4">Recommended terms</h3>
+							<div v-if="termStore.isLoadingRecommended" class="flex justify-center py-8">
 								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 							</div>
 							<div v-else class="space-y-3">
-								<RecommendedKeywordItem
-									v-for="keyword in keywordStore.recommendedKeywords"
-									:key="keyword.id"
-									:keyword="keyword"
-									@accept="(kw) => acceptRecommendedKeyword(kw.id)"
-									@deny="(kw) => denyRecommendedKeyword(kw.id, kw.name)"
+								<RecommendedTermItem
+									v-for="term in termStore.recommendedTerms"
+									:key="term.id"
+									:term="term"
+									@accept="(kw) => acceptRecommendedTerm(kw.id)"
+									@deny="(kw) => denyRecommendedTerm(kw.id, kw.name)"
 								/>
 							</div>
 						</div>
@@ -256,21 +256,21 @@ const denyRecommendedKeyword = async (keywordId, keywordName) => {
 		</div>
 	</DefaultLayout>
 
-	<!-- Keyword Modal -->
-	<KeywordCreateModal :is-open="isKeywordCreateModalOpen" @close="isKeywordCreateModalOpen = false" @create="addKeyword" />
+	<!-- Term Modal -->
+	<TermCreateModal :is-open="isTermCreateModalOpen" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
-	<!-- Generate Keywords Modal -->
-	<GenerateKeywordsModal :is-open="isGenerateKeywordsModalOpen" @close="isGenerateKeywordsModalOpen = false" />
+	<!-- Generate Terms Modal -->
+	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />
 
-	<!-- Keyword Detail Sheet -->
-	<KeywordDetailSheet
-		:is-open="isKeywordDetailSheetOpen"
-		:keyword="selectedKeyword"
-		:keyword-id="selectedKeyword?.id"
+	<!-- Term Detail Sheet -->
+	<TermDetailSheet
+		:is-open="isTermDetailSheetOpen"
+		:term="selectedTerm"
+		:term-id="selectedTerm?.id"
 		@close="
 			() => {
-				isKeywordDetailSheetOpen = false
-				selectedKeywordId = null
+				isTermDetailSheetOpen = false
+				selectedTermId = null
 			}
 		"
 	/>

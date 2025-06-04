@@ -29,16 +29,16 @@ class PromptGeneratorController extends Controller
 
 			// Create an array of messages
 			$messages = [
-				new UserMessage("Here is a list of keyword terms: " . json_encode($organization->terms) . ". Your job is to generate a list of statements, questions, or prompts that a person would likely put into ChatGPT for these terms.
-The prompts should elicit a response that mentions specific brands. So, pretend you are given the keyword term, \"car loan\". In that case, an example of an acceptable prompt is, \"Where can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that is likely to elicit a response that gives general information rather than recommending specific companies.
-Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the keyword.
+				new UserMessage("Here is a list of term terms: " . json_encode($organization->terms) . ". Your job is to generate a list of statements, questions, or prompts that a person would likely put into ChatGPT for these terms.
+The prompts should elicit a response that mentions specific brands. So, pretend you are given the term term, \"car loan\". In that case, an example of an acceptable prompt is, \"Where can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that is likely to elicit a response that gives general information rather than recommending specific companies.
+Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the term.
 Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")
 			];
 
 			// Add location message conditionally if location is available
 			if (isset($organization->location) && !empty($organization->location)) {
 				$messages[] = new UserMessage("You also need to incorporate the brands location \"" . $organization->location . "\" in the prompt when appropriate.
-So, again pretend you are given the keyword term, \"car loan\" and the location is \"" . $organization->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $organization->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $organization->location . " that can provide a loan.");
+So, again pretend you are given the term term, \"car loan\" and the location is \"" . $organization->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $organization->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $organization->location . " that can provide a loan.");
 			}
 
 			$textResponse = Prism::text()

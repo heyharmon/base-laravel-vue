@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasJobStatus;
 
-class Keyword extends Model
+class Term extends Model
 {
     use HasFactory, HasJobStatus;
 
@@ -39,26 +39,26 @@ class Keyword extends Model
     }
 
     /**
-     * The prompts that are associated with this keyword.
+     * The prompts that are associated with this term.
      */
     public function prompts(): BelongsToMany
     {
-        return $this->belongsToMany(Prompt::class)
+        return $this->belongsToMany(Prompt::class, 'term_prompt')
             ->withPivot('count', 'last_found_at')
             ->withTimestamps();
     }
 
     /**
-     * The responses that contain this keyword.
+     * The responses that contain this term.
      */
     public function responses(): BelongsToMany
     {
-        return $this->belongsToMany(Response::class)
+        return $this->belongsToMany(Response::class, 'term_response')
             ->withTimestamps();
     }
 
     /**
-     * Get the team that owns the keyword.
+     * Get the team that owns the term.
      */
     public function team(): BelongsTo
     {
@@ -66,7 +66,7 @@ class Keyword extends Model
     }
 
     /**
-     * Get the organization that owns the keyword.
+     * Get the organization that owns the term.
      */
     public function organization(): BelongsTo
     {
@@ -76,7 +76,7 @@ class Keyword extends Model
 
     
     /**
-     * Scope a query to include recommended keywords.
+     * Scope a query to include recommended terms.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder

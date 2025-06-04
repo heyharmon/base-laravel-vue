@@ -37,11 +37,11 @@ class Organization extends Model
 	}
 
 	/**
-	 * Get the keywords that belong to the organization.
+	 * Get the terms that belong to the organization.
 	 */
-	public function keywords(): HasMany
+	public function terms(): HasMany
 	{
-		return $this->hasMany(Keyword::class);
+		return $this->hasMany(Term::class);
 	}
 
 
@@ -64,15 +64,15 @@ class Organization extends Model
 	//         return 0;
 	//     }
 
-	//     // Count responses that contain at least one keyword from this organization
-	//     $keywordIds = $this->keywords()->pluck('id')->toArray();
+	//     // Count responses that contain at least one term from this organization
+	//     $termIds = $this->terms()->pluck('id')->toArray();
 
 	//     $totalMentions = 0;
-	//     if (!empty($keywordIds)) {
+	//     if (!empty($termIds)) {
 	//         $totalMentions = Response::whereHas('prompt', function ($query) use ($teamId) {
 	//             $query->where('team_id', $teamId);
-	//         })->whereHas('keywords', function ($query) use ($keywordIds) {
-	//             $query->whereIn('keywords.id', $keywordIds);
+	//         })->whereHas('terms', function ($query) use ($termIds) {
+	//             $query->whereIn('terms.id', $termIds);
 	//         })->count();
 	//     }
 

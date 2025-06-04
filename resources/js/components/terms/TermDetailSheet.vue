@@ -1,6 +1,6 @@
 <script setup>
 import { watch, onMounted, ref } from 'vue'
-import { useKeywordStore } from '@/stores/keywordStore'
+import { useTermStore } from '@/stores/termStore'
 import Sheet from '@/components/ui/Sheet.vue'
 import { useRoute } from 'vue-router'
 
@@ -11,55 +11,55 @@ const props = defineProps({
 		type: Boolean,
 		required: true
 	},
-	keywordId: {
+	termId: {
 		type: [Number, String],
 		default: null
 	},
-	keyword: {
+	term: {
 		type: Object,
 		default: null
 	}
 })
 
 const emit = defineEmits(['close'])
-const keywordStore = useKeywordStore()
+const termStore = useTermStore()
 const selectedPromptId = ref(null)
 const selectedPrompt = ref(null)
 
 // Methods
-const highlightKeyword = (content) => {
-	if (!keywordStore.selectedKeywordDetails?.name || !content) return content
+const highlightTerm = (content) => {
+	if (!termStore.selectedTermDetails?.name || !content) return content
 
-	const regex = new RegExp(keywordStore.selectedKeywordDetails.name, 'gi')
+	const regex = new RegExp(termStore.selectedTermDetails.name, 'gi')
 	return content.replace(regex, (match) => `<span class="bg-yellow-200">${match}</span>`)
 }
 
-const showKeyword = async () => {
+const showTerm = async () => {
 	selectedPromptId.value = null
 	selectedPrompt.value = null
 
-	if (props.keywordId) {
-		await keywordStore.showKeyword(route.params.id, props.keywordId)
+	if (props.termId) {
+		await termStore.showTerm(route.params.id, props.termId)
 	}
 }
 
-const getKeywordResponses = async (prompt) => {
+const getTermResponses = async (prompt) => {
 	selectedPromptId.value = prompt.id
 	selectedPrompt.value = prompt
-	await keywordStore.getKeywordResponses(props.keywordId, prompt.id)
+	await termStore.getTermResponses(props.termId, prompt.id)
 }
 
 // Lifecycle hooks
-onMounted(showKeyword)
-watch(() => props.keywordId, showKeyword)
+onMounted(showTerm)
+watch(() => props.termId, showTerm)
 
-// Watch for keyword details to load, then select the latest prompt
+// Watch for term details to load, then select the latest prompt
 watch(
-	() => keywordStore.selectedKeywordDetails,
+	() => termStore.selectedTermDetails,
 	(newDetails, oldDetails) => {
 		if (newDetails?.prompts?.length > 0) {
 			const latestPrompt = newDetails.prompts[0]
-			getKeywordResponses(latestPrompt)
+			getTermResponses(latestPrompt)
 		}
 	},
 	{ deep: true }
@@ -69,51 +69,51 @@ watch(
 watch(
 	() => props.isOpen,
 	(isOpen) => {
-		if (isOpen && keywordStore.selectedKeywordDetails?.prompts?.length > 0) {
-			const latestPrompt = keywordStore.selectedKeywordDetails.prompts[0]
-			getKeywordResponses(latestPrompt)
+		if (isOpen && termStore.selectedTermDetails?.prompts?.length > 0) {
+			const latestPrompt = termStore.selectedTermDetails.prompts[0]
+			getTermResponses(latestPrompt)
 		}
 	}
 )
 </script>
 
 <template>
-	<Sheet :is-open="isOpen" @close="emit('close')" position="right" title="Keyword">
+	<Sheet :is-open="isOpen" @close="emit('close')" position="right" title="Term">
 		<div class="flex flex-col md:flex-row xl:w-[1300px] w-full h-full">
-			<!-- Keyword Details Column -->
+			<!-- Term Details Column -->
 			<section class="w-full md:w-1/3 h-full overflow-y-auto">
 				<!-- Loading state -->
-				<div v-if="keywordStore.isLoadingDetails" class="flex justify-center py-8">
+				<div v-if="termStore.isLoadingDetails" class="flex justify-center py-8">
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 				</div>
 
-				<!-- Keyword details content -->
-				<div v-else-if="keywordStore.selectedKeywordDetails" class="space-y-6 md:p-4 md:pr-4 md:border-r border-b md:border-b-0 border-neutral-200">
-					<!-- Keyword info card -->
+				<!-- Term details content -->
+				<div v-else-if="termStore.selectedTermDetails" class="space-y-6 md:p-4 md:pr-4 md:border-r border-b md:border-b-0 border-neutral-200">
+					<!-- Term info card -->
 					<div class="bg-neutral-50 p-4 rounded-lg">
 						<div>
-							<div class="text-neutral-500 text-sm mb-1">Keyword:</div>
-							<span class="text-neutral-800 text-2xl/7 font-medium">{{ keywordStore.selectedKeywordDetails.name }}</span>
+							<div class="text-neutral-500 text-sm mb-1">Term:</div>
+							<span class="text-neutral-800 text-2xl/7 font-medium">{{ termStore.selectedTermDetails.name }}</span>
 						</div>
-						<div v-if="keywordStore.selectedKeywordDetails.description" class="mt-3 text-lg">
+						<div v-if="termStore.selectedTermDetails.description" class="mt-3 text-lg">
 							<span class="text-neutral-500">Description:</span>
-							<span class="text-neutral-800 ml-2">{{ keywordStore.selectedKeywordDetails.description }}</span>
+							<span class="text-neutral-800 ml-2">{{ termStore.selectedTermDetails.description }}</span>
 						</div>
 					</div>
 
 					<!-- Prompts list -->
-					<div v-if="keywordStore.selectedKeywordDetails?.prompts?.length > 0">
+					<div v-if="termStore.selectedTermDetails?.prompts?.length > 0">
 						<h3 class="text-lg font-medium text-neutral-800 mb-2">
-							Found in {{ keywordStore.selectedKeywordDetails?.prompts?.length || 0 }}
-							{{ (keywordStore.selectedKeywordDetails?.prompts?.length || 0) === 1 ? 'prompt' : 'prompts' }}
+							Found in {{ termStore.selectedTermDetails?.prompts?.length || 0 }}
+							{{ (termStore.selectedTermDetails?.prompts?.length || 0) === 1 ? 'prompt' : 'prompts' }}
 						</h3>
 						<div class="space-y-3">
 							<div
-								v-for="prompt in keywordStore.selectedKeywordDetails.prompts"
+								v-for="prompt in termStore.selectedTermDetails.prompts"
 								:key="prompt.id"
 								class="border border-neutral-300 hover:border-neutral-400 p-3 rounded-lg cursor-pointer hover:bg-neutral-50"
 								:class="{ 'border-2 border-neutral-400 bg-neutral-50': selectedPromptId === prompt.id }"
-								@click="getKeywordResponses(prompt)"
+								@click="getTermResponses(prompt)"
 							>
 								<p class="text-neutral-800">{{ prompt.content }}</p>
 								<div class="mt-2 text-sm text-neutral-500 flex justify-between">
@@ -127,14 +127,14 @@ watch(
 					</div>
 
 					<!-- No prompts message -->
-					<div v-else class="text-neutral-500 italic">This keyword hasn't been found in any prompts yet.</div>
+					<div v-else class="text-neutral-500 italic">This term hasn't been found in any prompts yet.</div>
 				</div>
 			</section>
 
 			<!-- Responses Column -->
 			<section class="w-full md:w-2/3 h-full p-4 md:pl-4 overflow-y-auto">
 				<!-- Loading state -->
-				<div v-if="selectedPromptId && keywordStore.isLoadingKeywordResponses" class="flex justify-center py-8">
+				<div v-if="selectedPromptId && termStore.isLoadingTermResponses" class="flex justify-center py-8">
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 				</div>
 
@@ -153,14 +153,14 @@ watch(
 					<h3 class="text-lg font-medium text-neutral-800 mb-2">Responses</h3>
 
 					<!-- No responses message -->
-					<div v-if="keywordStore.selectedKeywordResponses.length === 0" class="text-neutral-500 italic">
-						No responses found containing this keyword.
+					<div v-if="termStore.selectedTermResponses.length === 0" class="text-neutral-500 italic">
+						No responses found containing this term.
 					</div>
 
 					<!-- Response list -->
 					<div v-else class="space-y-4">
 						<div
-							v-for="response in keywordStore.selectedKeywordResponses"
+							v-for="response in termStore.selectedTermResponses"
 							:key="response.id"
 							class="bg-white border border-neutral-200 p-4 rounded-lg"
 						>
@@ -177,7 +177,7 @@ watch(
 							<!-- Response content -->
 							<div
 								class="p-3 bg-neutral-50 rounded border border-neutral-200 whitespace-pre-wrap text-base/7 mb-4"
-								v-html="highlightKeyword(response.content)"
+								v-html="highlightTerm(response.content)"
 							></div>
 
 							<!-- Response search queries -->
@@ -227,7 +227,7 @@ watch(
 
 				<!-- No prompt selected message -->
 				<div v-else class="flex items-center justify-center h-full text-neutral-500">
-					<p>Select a prompt to view responses containing this keyword</p>
+					<p>Select a prompt to view responses containing this term</p>
 				</div>
 			</section>
 		</div>

@@ -59,11 +59,11 @@ class Team extends Model
 	}
 
 	/**
-	 * Get the keywords that belong to the team.
+	 * Get the terms that belong to the team.
 	 */
-	public function keywords(): HasMany
+	public function terms(): HasMany
 	{
-		return $this->hasMany(Keyword::class);
+		return $this->hasMany(Term::class);
 	}
 
 	/**
@@ -102,7 +102,7 @@ class Team extends Model
 
                         // Delete related models via Eloquent so model events fire
                         $team->prompts()->get()->each->delete();
-                        $team->keywords()->get()->each->delete();
+                        $team->terms()->get()->each->delete();
                         $team->organizations()->get()->each->delete();
 
                         // Remove queued job data

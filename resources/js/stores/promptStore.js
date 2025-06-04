@@ -30,7 +30,7 @@ export const usePromptStore = defineStore('prompts', () => {
 	console.log('Fetching prompt details for prompt ID:', id)
     isLoadingDetails.value = true;
     try {
-      selectedPromptDetails.value = await api.get(`/prompts/${id}?include=keywords`);
+      selectedPromptDetails.value = await api.get(`/prompts/${id}?include=terms`);
     } catch (error) {
       console.error('Error fetching prompt details:', error);
       throw error;

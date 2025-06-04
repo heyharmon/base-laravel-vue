@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             // OrganizationSeeder::class,
-            // KeywordSeeder::class,
+            // TermSeeder::class,
             // PromptSeeder::class,
         ]);
     }

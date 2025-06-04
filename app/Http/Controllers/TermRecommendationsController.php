@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
-use App\Models\Keyword;
-use App\Jobs\CheckKeywordInPastResponsesJob;
+use App\Models\Term;
+use App\Jobs\CheckTermInPastResponsesJob;
 
-class KeywordRecommendationsController extends Controller
+class TermRecommendationsController extends Controller
 {
     protected $jobDispatcher;
 
@@ -20,7 +20,7 @@ class KeywordRecommendationsController extends Controller
     }
 
     /**
-     * Display a listing of the recommended keywords for an organization.
+     * Display a listing of the recommended terms for an organization.
      */
     public function index(Organization $organization): JsonResponse
     {
@@ -29,12 +29,12 @@ class KeywordRecommendationsController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $keywords = Keyword::where('organization_id', $organization->id)
+        $terms = Term::where('organization_id', $organization->id)
             ->withRecommended()
             ->where('is_recommended', true)
             ->get();
 
-        return response()->json($keywords);
+        return response()->json($terms);
     }
 
     /**
@@ -47,23 +47,23 @@ class KeywordRecommendationsController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $keyword = Keyword::withRecommended()
+        $term = Term::withRecommended()
             ->where('organization_id', $organization->id)
             ->findOrFail($id);
 
-        $keyword->update([
+        $term->update([
             'is_recommended' => false,
         ]);
 
-		// Dispatch a job to check past responses for this keyword
-        $job = new CheckKeywordInPastResponsesJob($keyword, $keyword->team_id);
-        $this->jobDispatcher->dispatch($keyword, $job);
+		// Dispatch a job to check past responses for this term
+        $job = new CheckTermInPastResponsesJob($term, $term->team_id);
+        $this->jobDispatcher->dispatch($term, $job);
 
-        return response()->json($keyword);
+        return response()->json($term);
     }
 
     /**
-     * Remove the specified recommended keyword from storage.
+     * Remove the specified recommended term from storage.
      */
     public function deny(Organization $organization, $id): JsonResponse
     {
@@ -72,13 +72,13 @@ class KeywordRecommendationsController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Find keyword with the withRecommended scope to include recommended keywords
-        $keyword = Keyword::withRecommended()
+        // Find term with the withRecommended scope to include recommended terms
+        $term = Term::withRecommended()
             ->where('organization_id', $organization->id)
             ->findOrFail($id);
 
-        // Delete the keyword
-        $keyword->delete();
+        // Delete the term
+        $term->delete();
 
         return response()->json(null, 204);
     }

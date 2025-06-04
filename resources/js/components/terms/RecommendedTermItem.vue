@@ -1,6 +1,6 @@
 <script setup>
 const props = defineProps({
-	keyword: { type: Object, required: true }
+	term: { type: Object, required: true }
 })
 const emit = defineEmits(['accept', 'deny'])
 </script>
@@ -9,16 +9,16 @@ const emit = defineEmits(['accept', 'deny'])
 	<div class="p-4 border border-neutral-200 rounded-lg">
 		<div class="flex justify-between items-center">
 			<div>
-				<span class="text-lg font-medium text-neutral-800">{{ keyword.name }}</span>
-				<div v-if="keyword.description" class="text-sm text-neutral-500 mt-1">
-					{{ keyword.description }}
+				<span class="text-lg font-medium text-neutral-800">{{ term.name }}</span>
+				<div v-if="term.description" class="text-sm text-neutral-500 mt-1">
+					{{ term.description }}
 				</div>
 			</div>
 			<div class="flex gap-2">
 				<button
-					@click="$emit('accept', keyword)"
+					@click="$emit('accept', term)"
 					class="text-green-600 hover:text-green-800 transition-colors cursor-pointer"
-					title="Accept this keyword"
+					title="Accept this term"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 						<path
@@ -28,7 +28,7 @@ const emit = defineEmits(['accept', 'deny'])
 						/>
 					</svg>
 				</button>
-				<button @click="$emit('deny', keyword)" class="text-red-600 hover:text-red-800 transition-colors cursor-pointer" title="Deny this keyword">
+				<button @click="$emit('deny', term)" class="text-red-600 hover:text-red-800 transition-colors cursor-pointer" title="Deny this term">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 						<path
 							fill-rule="evenodd"
