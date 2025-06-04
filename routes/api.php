@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\PromptRunController;
@@ -33,6 +34,10 @@ Route::post('/reset-password', [AuthPasswordController::class, 'resetPassword'])
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
 	// Auth
+	Route::get('/user', function (Request $request) {
+		return $request->user();
+	});
+
 	Route::post('/logout', [AuthController::class, 'logout']);
 
 	// Analytics endpoints

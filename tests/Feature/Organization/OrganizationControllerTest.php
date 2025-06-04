@@ -14,6 +14,8 @@ uses(RefreshDatabase::class);
 it('lists organizations for the current team', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
 
     $org1 = Organization::factory()->for($team)->owned()->create();
     $org2 = Organization::factory()->for($team)->create();
@@ -35,6 +37,8 @@ it('creates an organization with terms for name and website', function () {
 
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/organizations', [
@@ -60,6 +64,8 @@ it('creates an organization with terms for name and website', function () {
 it('shows an organization belonging to the team', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->create();
 
     Sanctum::actingAs($user);
@@ -73,6 +79,8 @@ it('shows an organization belonging to the team', function () {
 it('returns unauthorized when viewing another team\'s organization', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $otherOrganization = Organization::factory()->create();
 
     Sanctum::actingAs($user);
@@ -85,6 +93,8 @@ it('returns unauthorized when viewing another team\'s organization', function ()
 it('updates an organization belonging to the team', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->create(['name' => 'Old']);
 
     Sanctum::actingAs($user);
@@ -102,6 +112,8 @@ it('updates an organization belonging to the team', function () {
 it('deletes a competitor organization', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->create();
 
     Sanctum::actingAs($user);
@@ -116,6 +128,8 @@ it('deletes a competitor organization', function () {
 it('does not delete the default organization', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     $organization = Organization::factory()->for($team)->owned()->create();
 
     Sanctum::actingAs($user);

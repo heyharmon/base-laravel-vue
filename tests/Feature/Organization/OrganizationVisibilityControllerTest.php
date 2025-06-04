@@ -14,6 +14,8 @@ uses(RefreshDatabase::class);
 it('calculates visibility for organizations', function () {
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     $org1 = Organization::factory()->for($team)->owned()->create(['name' => 'Org1']);

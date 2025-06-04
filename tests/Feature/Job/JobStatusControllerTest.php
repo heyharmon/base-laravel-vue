@@ -10,6 +10,8 @@ uses(RefreshDatabase::class);
 it('returns job statuses for the authenticated team', function () {
     $team = Team::factory()->create();
     $user = $team->owner;
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     JobStatus::factory()->count(3)->for($team)->create();
@@ -20,16 +22,16 @@ it('returns job statuses for the authenticated team', function () {
 
     $response->assertStatus(200)
         ->assertJsonCount(3)
-        ->assertJson(fn ($json) =>
-            $json->each(fn ($item) =>
-                $item->where('team_id', $team->id)
-            )
-        );
+        ->assertJsonPath('0.team_id', $team->id)
+        ->assertJsonPath('1.team_id', $team->id)
+        ->assertJsonPath('2.team_id', $team->id);
 });
 
 it('limits results to 100 in descending order', function () {
     $team = Team::factory()->create();
     $user = $team->owner;
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     $jobs = JobStatus::factory()->for($team)
@@ -46,6 +48,8 @@ it('limits results to 100 in descending order', function () {
 it('cancels pending jobs for the authenticated team', function () {
     $team = Team::factory()->create();
     $user = $team->owner;
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     JobStatus::factory()->count(2)->for($team)->state(['status' => 'pending'])->create();

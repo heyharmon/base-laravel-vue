@@ -16,6 +16,8 @@ it('onboards a new organization and dispatches a generate phrases job', function
 
     $user = User::factory()->create();
     $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/organizations-onboard', [

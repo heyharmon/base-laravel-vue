@@ -15,6 +15,8 @@ it('returns not found when there are no prompts', function () {
 
 	$user = User::factory()->create();
 	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
 	Sanctum::actingAs($user);
 
 	$response = $this->postJson('/api/organizations-find-competitors');
@@ -27,6 +29,8 @@ it('dispatches competitor jobs for each prompt', function () {
 
 	$user = User::factory()->create();
 	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
 	Sanctum::actingAs($user);
 
 	$prompt1 = Prompt::factory()->for($team)->create();
