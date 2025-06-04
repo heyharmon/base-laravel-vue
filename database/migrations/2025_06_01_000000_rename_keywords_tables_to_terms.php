@@ -14,6 +14,9 @@ return new class extends Migration
 
         if (Schema::hasTable('keyword_prompt')) {
             Schema::table('keyword_prompt', function (Blueprint $table) {
+                // First drop the foreign key constraint
+                $table->dropForeign(['keyword_id']);
+                // Then drop the unique index
                 $table->dropUnique(['keyword_id', 'prompt_id']);
             });
 
@@ -21,6 +24,8 @@ return new class extends Migration
 
             Schema::table('term_prompt', function (Blueprint $table) {
                 $table->renameColumn('keyword_id', 'term_id');
+                // Add the foreign key back, now referencing terms table
+                $table->foreign('term_id')->references('id')->on('terms')->onDelete('cascade');
                 $table->unique(['term_id', 'prompt_id']);
             });
         }
@@ -50,6 +55,8 @@ return new class extends Migration
         if (Schema::hasTable('term_prompt')) {
             if (Schema::hasColumn('term_prompt', 'term_id')) {
                 Schema::table('term_prompt', function (Blueprint $table) {
+                    // Drop foreign key first
+                    $table->dropForeign(['term_id']);
                     $table->dropUnique(['term_id', 'prompt_id']);
                 });
             } else {
@@ -67,6 +74,8 @@ return new class extends Migration
             }
 
             Schema::table('keyword_prompt', function (Blueprint $table) {
+                // Add back the foreign key to keywords table
+                $table->foreign('keyword_id')->references('id')->on('keywords')->onDelete('cascade');
                 $table->unique(['keyword_id', 'prompt_id']);
             });
         }

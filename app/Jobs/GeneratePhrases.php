@@ -61,36 +61,36 @@ class GeneratePhrases extends TrackableJob
 	 * @param JobDispatcherService $jobDispatcher
 	 * @return void
 	 */
-        public function handle(JobDispatcherService $jobDispatcher)
-        {
-                try {
-                        if ($this->isCancelled()) {
-                                return;
-                        }
-                        // Mark the job as started
-                        $this->markJobAsStarted('Generating term terms for ' . $this->model->name);
+	public function handle(JobDispatcherService $jobDispatcher)
+	{
+		try {
+			if ($this->isCancelled()) {
+				return;
+			}
+			// Mark the job as started
+			$this->markJobAsStarted('Generating term terms for ' . $this->model->name);
 
 			$searchApiTool = new SearchApiTool();
 
 			// Build organization context with available properties
 			$organizationContext = "Here is a company: \"" . $this->model->name . "\" (" . $this->model->website . ")";
-			
+
 			// Add location if available
 			if (!empty($this->model->location)) {
 				$organizationContext .= " located in " . $this->model->location;
 			}
-			
+
 			// Add industry if available
 			if (!empty($this->model->industry)) {
 				$organizationContext .= " in the " . $this->model->industry . " industry";
 			}
-			
+
 			// Add description if available
 			if (!empty($this->model->description)) {
 				$organizationContext .= ". Description: " . $this->model->description;
 			}
-			
-			$prompt = $organizationContext . ". Your job is to come up with a list of term terms relevent to this company.
+
+			$prompt = $organizationContext . ". Your job is to come up with a list of terms relevent to this company.
 These are terms people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with terms like \"auto loan\", \"home loan\", \"checking account\", etc.
 Output terms as a plain text list.";
 

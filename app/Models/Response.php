@@ -39,7 +39,7 @@ class Response extends Model
      */
     public function terms(): BelongsToMany
     {
-        return $this->belongsToMany(Term::class)
+        return $this->belongsToMany(Term::class, 'term_response')
             ->withTimestamps();
     }
 

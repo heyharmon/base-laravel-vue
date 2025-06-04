@@ -36,7 +36,7 @@ class Prompt extends Model
 	 */
 	public function terms(): BelongsToMany
 	{
-		return $this->belongsToMany(Term::class)
+		return $this->belongsToMany(Term::class, 'term_prompt')
 			->withPivot('count', 'last_found_at')
 			->withTimestamps();
 	}
