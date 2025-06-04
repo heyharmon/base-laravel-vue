@@ -39,6 +39,7 @@ jobs:
             - name: Run tests
               run: php artisan test
 
+            # This uses a repository secret that needs to be defined in GitHub
             - name: Deploy staging
               if: github.ref == 'refs/heads/paraloom-staging'
               run: curl "${{ secrets.FORGE_DEPLOY_URL }}"
