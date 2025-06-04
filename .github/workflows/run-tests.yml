@@ -40,5 +40,5 @@ jobs:
               run: php artisan test
 
             - name: Deploy staging
-              if: github.ref == 'refs/heads/staging'
+              if: github.ref == 'refs/heads/paraloom-staging'
               run: curl "${{ secrets.FORGE_DEPLOY_URL }}"
