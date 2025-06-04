@@ -16,7 +16,7 @@ use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
 
-class GeneratePhrases extends TrackableJob
+class GenerateOrganizationTerms extends TrackableJob
 {
 	use Batchable;
 
