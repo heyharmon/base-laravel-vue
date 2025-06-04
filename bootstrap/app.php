@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
     })
+    ->withProviders([
+        App\Providers\DuskServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
