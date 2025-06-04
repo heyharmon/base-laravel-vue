@@ -154,7 +154,6 @@ class RunPromptJob extends TrackableJob
 			$this->updateJobProgress(90, 'Processing LLM response');
 
 			// Find competitors in response if this is the first response to this prompt
-			Log::info('Number of responses: ' . $this->prompt->responses()->count());
 			if ($this->prompt->responses()->count() == 1) {
 				$jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt, $this->prompt->team_id));
 			}
@@ -242,6 +241,7 @@ class RunPromptJob extends TrackableJob
 				$pivot = $prompt->terms()->syncWithoutDetaching([$term->id]);
 
 				// If this is a new relationship, initialize the count
+				// TODO: Remove the count functionality
 				if (isset($pivot[$term->id]) && $pivot[$term->id]['created']) {
 					$prompt->terms()->updateExistingPivot($term->id, [
 						'count' => 1,

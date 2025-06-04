@@ -21,16 +21,6 @@ const generatedTerms = ref([])
 const error = ref(null)
 const termStore = useTermStore()
 
-// Auto-generate terms when domain changes
-watch(
-	() => props.domain,
-	(newDomain) => {
-		if (newDomain) {
-			generateTerms()
-		}
-	}
-)
-
 // Generate terms on mount if domain is available
 onMounted(() => {
 	if (props.domain) {

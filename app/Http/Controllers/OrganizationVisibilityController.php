@@ -50,8 +50,9 @@ class OrganizationVisibilityController extends Controller
         $totalResponses = $responsesQuery->count();
 
         foreach ($organizations as $organization) {
-            // Get all terms for this organization
-            $termIds = Term::where('organization_id', $organization->id)
+            // Get all terms for this organization, including recommended ones
+            $termIds = Term::withoutGlobalScope('without-recommended')
+                ->where('organization_id', $organization->id)
                 ->pluck('id')
                 ->toArray();
 
