@@ -29,4 +29,4 @@ jobs:
 
             - name: Deploy staging
               if: github.ref == 'refs/heads/staging'
-              run: curl https://forge.laravel.com/servers/920748/sites/2723098/deploy/http?token=nb7YP2eUMSprFKvfQNmq947sAhI5RZiKwwXtsRd3
+              run: curl "${{ secrets.FORGE_DEPLOY_URL }}"
