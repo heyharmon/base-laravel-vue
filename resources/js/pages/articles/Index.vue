@@ -143,7 +143,9 @@ const deleteArticle = async (id) => {
 						class="grid grid-cols-12 gap-4 p-4 border-b border-neutral-100 hover:bg-neutral-50 transition-colors"
 					>
 						<div class="col-span-6">
-							<div class="font-medium text-neutral-800">{{ article.title }}</div>
+							<div @click="editArticle(article.id)" class="font-medium text-neutral-800 cursor-pointer hover:underline transition-colors">
+								{{ article.title }}
+							</div>
 						</div>
 						<div class="col-span-3 text-neutral-500 text-sm flex items-center">
 							{{ formatDate(article.updated_at) }}

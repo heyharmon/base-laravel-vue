@@ -136,7 +136,7 @@ Most importantly, directly answers this prompt in the most authentic, honest att
 					),
 					new StringSchema(
 						name: 'content',
-						description: 'The full content of the article'
+						description: 'The full content of the article in HTML format'
 					)
 				],
 				requiredFields: ['title', 'content']
@@ -146,7 +146,7 @@ Most importantly, directly answers this prompt in the most authentic, honest att
 			$response = Prism::structured()
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withSchema($schema)
-				->withPrompt('Here is an article. Please extract the title and content: ' . $textResponse->text)
+				->withPrompt('Here is an article. Please extract the title and content, and convert the content to valid html: ' . $textResponse->text)
 				->asStructured();
 
 			$result = $response->structured;
