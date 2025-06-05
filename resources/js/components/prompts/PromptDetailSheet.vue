@@ -31,7 +31,8 @@ const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
 })
 
-const activeArticleJob = computed(() => {
+// Check if there is an active article job for this prompt
+const activeArticleJobForThisPrompt = computed(() => {
 	let jobs = jobStatusStore.jobs.filter(
 		(job) =>
 			job.job_class.includes('GenerateArticleJob') &&
@@ -41,6 +42,13 @@ const activeArticleJob = computed(() => {
 	)
 
 	return jobs.length > 0
+})
+
+// Watch activeArticleJobForThisPrompt and when it changes to false, fetch the prompt details
+watch(activeArticleJobForThisPrompt, (newVal) => {
+	if (!newVal) {
+		fetchDetails()
+	}
 })
 
 // Fetch prompt details when component mounts or promptId changes
@@ -115,25 +123,6 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 				</div>
 
-				<!-- Terms section -->
-				<div class="mt-6">
-					<div v-if="promptDetails.terms && promptDetails.terms.length > 0">
-						<h3 class="text-lg font-medium text-neutral-800 mb-2">Terms Found</h3>
-						<div class="space-y-3">
-							<div v-for="term in promptDetails.terms" :key="term.id" class="bg-white border border-neutral-300 p-3 rounded-lg">
-								<p class="text-neutral-800 font-medium">{{ term.name }}</p>
-								<div class="mt-2 text-sm text-neutral-500 flex justify-between">
-									<span
-										>Occurrences: <span class="font-medium">{{ term.pivot.count }}</span></span
-									>
-									<span>Last found: {{ new Date(term.pivot.last_found_at).toLocaleDateString() }}</span>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div v-else class="text-neutral-500 italic">No terms have been found in this prompt yet.</div>
-				</div>
-
 				<!-- Articles section -->
 				<div class="mt-6">
 					<div class="flex items-center justify-between gap-6 mb-6">
@@ -144,11 +133,11 @@ watch(() => props.promptId, fetchDetails)
 						<Button
 							@click="generateArticle"
 							class="flex items-center gap-2"
-							:class="{ 'bg-green-600 hover:bg-green-700': activeArticleJob }"
-							:disabled="activeArticleJob"
+							:class="{ 'bg-green-600 hover:bg-green-700': activeArticleJobForThisPrompt }"
+							:disabled="activeArticleJobForThisPrompt"
 						>
 							<svg
-								v-if="!activeArticleJob"
+								v-if="!activeArticleJobForThisPrompt"
 								xmlns="http://www.w3.org/2000/svg"
 								width="16"
 								height="16"
@@ -168,7 +157,10 @@ watch(() => props.promptId, fetchDetails)
 								<path d="M3 5h4" />
 								<path d="M17 19h4" />
 							</svg>
-							<div v-else-if="activeArticleJob" class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></div>
+							<div
+								v-else-if="activeArticleJobForThisPrompt"
+								class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"
+							></div>
 							<svg
 								v-else
 								xmlns="http://www.w3.org/2000/svg"
@@ -184,7 +176,9 @@ watch(() => props.promptId, fetchDetails)
 							>
 								<polyline points="20 6 9 17 4 12"></polyline>
 							</svg>
-							<span>{{ activeArticleJob ? 'Generating...' : activeArticleJob ? 'Processing...' : 'Generate article' }}</span>
+							<span>{{
+								activeArticleJobForThisPrompt ? 'Generating...' : activeArticleJobForThisPrompt ? 'Processing...' : 'Generate article'
+							}}</span>
 						</Button>
 					</div>
 
@@ -296,6 +290,25 @@ watch(() => props.promptId, fetchDetails)
 					<div v-else-if="promptDetails && promptStore.selectedPromptResponses.length === 0" class="mt-6 text-neutral-500 italic">
 						No responses found for this prompt.
 					</div>
+				</div>
+
+				<!-- Terms section -->
+				<div class="mt-6">
+					<div v-if="promptDetails.terms && promptDetails.terms.length > 0">
+						<h3 class="text-lg font-medium text-neutral-800 mb-2">Terms Found</h3>
+						<div class="space-y-3">
+							<div v-for="term in promptDetails.terms" :key="term.id" class="bg-white border border-neutral-300 p-3 rounded-lg">
+								<p class="text-neutral-800 font-medium">{{ term.name }}</p>
+								<div class="mt-2 text-sm text-neutral-500 flex justify-between">
+									<span
+										>Occurrences: <span class="font-medium">{{ term.pivot.count }}</span></span
+									>
+									<span>Last found: {{ new Date(term.pivot.last_found_at).toLocaleDateString() }}</span>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div v-else class="text-neutral-500 italic">No terms have been found in this prompt yet.</div>
 				</div>
 			</div>
 		</div>

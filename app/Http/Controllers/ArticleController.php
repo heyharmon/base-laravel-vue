@@ -9,91 +9,91 @@ use App\Models\Article;
 
 class ArticleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): JsonResponse
-    {
-        $teamId = Auth::user()->current_team_id;
+	/**
+	 * Display a listing of the resource.
+	 */
+	public function index(): JsonResponse
+	{
+		$teamId = Auth::user()->current_team_id;
 
-        $articles = Article::where('team_id', $teamId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+		$articles = Article::where('team_id', $teamId)
+			->latest()
+			->get();
 
-        return response()->json($articles);
-    }
+		return response()->json($articles);
+	}
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'organization_id' => 'nullable|exists:organizations,id',
-            'prompt_id' => 'nullable|exists:prompts,id',
-            'conversation_id' => 'nullable|string',
-            'title' => 'required|string|max:255',
-            'outline' => 'nullable|string',
-            'content' => 'nullable|string',
-        ]);
+	/**
+	 * Store a newly created resource in storage.
+	 */
+	public function store(Request $request): JsonResponse
+	{
+		$validated = $request->validate([
+			'organization_id' => 'nullable|exists:organizations,id',
+			'prompt_id' => 'nullable|exists:prompts,id',
+			'conversation_id' => 'nullable|string',
+			'title' => 'required|string|max:255',
+			'outline' => 'nullable|string',
+			'content' => 'nullable|string',
+		]);
 
-        $article = request()->user()->currentTeam->articles()->create([
-            ...$validated,
-            'team_id' => request()->user()->currentTeam->id,
-        ]);
+		$article = request()->user()->currentTeam->articles()->create([
+			...$validated,
+			'team_id' => request()->user()->currentTeam->id,
+		]);
 
-        return response()->json($article, 201);
-    }
+		return response()->json($article, 201);
+	}
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Article $article): JsonResponse
-    {
-        // Ensure the article belongs to the current team
-        if ($article->team_id !== request()->user()->currentTeam->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+	/**
+	 * Display the specified resource.
+	 */
+	public function show(Article $article): JsonResponse
+	{
+		// Ensure the article belongs to the current team
+		if ($article->team_id !== request()->user()->currentTeam->id) {
+			return response()->json(['message' => 'Unauthorized'], 403);
+		}
 
-        return response()->json($article);
-    }
+		return response()->json($article);
+	}
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Article $article): JsonResponse
-    {
-        // Ensure the article belongs to the current team
-        if ($article->team_id !== request()->user()->currentTeam->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+	/**
+	 * Update the specified resource in storage.
+	 */
+	public function update(Request $request, Article $article): JsonResponse
+	{
+		// Ensure the article belongs to the current team
+		if ($article->team_id !== request()->user()->currentTeam->id) {
+			return response()->json(['message' => 'Unauthorized'], 403);
+		}
 
-        $validated = $request->validate([
-            'organization_id' => 'sometimes|nullable|exists:organizations,id',
-            'prompt_id' => 'sometimes|nullable|exists:prompts,id',
-            'conversation_id' => 'sometimes|nullable|string',
-            'title' => 'sometimes|required|string|max:255',
-            'outline' => 'sometimes|nullable|string',
-            'content' => 'sometimes|nullable|string',
-        ]);
+		$validated = $request->validate([
+			'organization_id' => 'sometimes|nullable|exists:organizations,id',
+			'prompt_id' => 'sometimes|nullable|exists:prompts,id',
+			'conversation_id' => 'sometimes|nullable|string',
+			'title' => 'sometimes|required|string|max:255',
+			'outline' => 'sometimes|nullable|string',
+			'content' => 'sometimes|nullable|string',
+		]);
 
-        $article->update($validated);
+		$article->update($validated);
 
-        return response()->json($article);
-    }
+		return response()->json($article);
+	}
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Article $article): JsonResponse
-    {
-        // Ensure the article belongs to the current team
-        if ($article->team_id !== request()->user()->currentTeam->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+	/**
+	 * Remove the specified resource from storage.
+	 */
+	public function destroy(Article $article): JsonResponse
+	{
+		// Ensure the article belongs to the current team
+		if ($article->team_id !== request()->user()->currentTeam->id) {
+			return response()->json(['message' => 'Unauthorized'], 403);
+		}
 
-        $article->delete();
+		$article->delete();
 
-        return response()->json(null, 204);
-    }
+		return response()->json(null, 204);
+	}
 }

@@ -56,13 +56,13 @@ class Prompt extends Model
 	{
 		return $this->belongsTo(Team::class);
 	}
-	
+
 	/**
 	 * Get the articles that are associated with this prompt.
 	 */
 	public function articles(): HasMany
 	{
-		return $this->hasMany(Article::class);
+		return $this->hasMany(Article::class)->latest();
 	}
 
 	/**
