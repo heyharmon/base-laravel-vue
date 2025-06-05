@@ -73,7 +73,7 @@ const updateArticle = async () => {
 	isSubmitting.value = true
 	try {
 		await articleStore.updateArticle(route.params.id, article.value)
-		router.push({ name: 'articles.index' })
+		window.location.reload()
 	} catch (error) {
 		console.error('Error updating article:', error)
 	} finally {
@@ -90,12 +90,12 @@ const cancelEdit = () => {
 	<DefaultLayout>
 		<div class="container mx-auto py-8">
 			<!-- Top bar -->
-			<div class="flex justify-between items-center mb-8">
+			<div class="flex justify-between items-start mb-8">
 				<div class="flex items-center gap-3">
 					<h1 class="text-2xl font-bold">{{ article.title || 'Edit Article' }}</h1>
 				</div>
-				<div class="flex items-center gap-2">
-					<Button @click="updateArticle" :disabled="isSubmitting || !hasChanges" :loading="isSubmitting"> Save </Button>
+				<div class="flex items-center justify-end gap-2 w-2/6">
+					<Button v-if="hasChanges" @click="updateArticle" :disabled="isSubmitting" :loading="isSubmitting"> Save </Button>
 					<Button @click="cancelEdit" variant="neutral"> Cancel </Button>
 				</div>
 			</div>
@@ -146,41 +146,16 @@ const cancelEdit = () => {
 								:class="{ 'bg-neutral-200': editor.isActive('bold') }"
 								class="p-1 rounded hover:bg-neutral-200"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
-									<path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg fill=none height=16 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 viewBox="0 0 24 24" width=16 xmlns=http://www.w3.org/2000/svg><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path></svg>
 							</button>
 							<button
 								@click="editor.chain().focus().toggleItalic().run()"
 								:class="{ 'bg-neutral-200': editor.isActive('italic') }"
 								class="p-1 rounded hover:bg-neutral-200"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<line x1="19" y1="4" x2="10" y2="4"></line>
-									<line x1="14" y1="20" x2="5" y2="20"></line>
-									<line x1="15" y1="4" x2="9" y2="20"></line>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg fill=none height=16 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 viewBox="0 0 24 24" width=16 xmlns=http://www.w3.org/2000/svg><line x1=19 x2=10 y1=4 y2=4></line><line x1=14 x2=5 y1=20 y2=20></line><line x1=15 x2=9 y1=4 y2=20></line></svg>
 							</button>
 							<button
 								@click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
@@ -201,104 +176,32 @@ const cancelEdit = () => {
 								:class="{ 'bg-neutral-200': editor.isActive('bulletList') }"
 								class="p-1 rounded hover:bg-neutral-200"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<line x1="8" y1="6" x2="21" y2="6"></line>
-									<line x1="8" y1="12" x2="21" y2="12"></line>
-									<line x1="8" y1="18" x2="21" y2="18"></line>
-									<line x1="3" y1="6" x2="3.01" y2="6"></line>
-									<line x1="3" y1="12" x2="3.01" y2="12"></line>
-									<line x1="3" y1="18" x2="3.01" y2="18"></line>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg fill=none height=16 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 viewBox="0 0 24 24" width=16 xmlns=http://www.w3.org/2000/svg><line x1=8 x2=21 y1=6 y2=6></line><line x1=8 x2=21 y1=12 y2=12></line><line x1=8 x2=21 y1=18 y2=18></line><line x1=3 x2=3.01 y1=6 y2=6></line><line x1=3 x2=3.01 y1=12 y2=12></line><line x1=3 x2=3.01 y1=18 y2=18></line></svg>
 							</button>
 							<button
 								@click="editor.chain().focus().toggleOrderedList().run()"
 								:class="{ 'bg-neutral-200': editor.isActive('orderedList') }"
 								class="p-1 rounded hover:bg-neutral-200"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<line x1="10" y1="6" x2="21" y2="6"></line>
-									<line x1="10" y1="12" x2="21" y2="12"></line>
-									<line x1="10" y1="18" x2="21" y2="18"></line>
-									<path d="M4 6h1v4"></path>
-									<path d="M4 10h2"></path>
-									<path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
 							</button>
 							<button
 								@click="editor.chain().focus().toggleBlockquote().run()"
 								:class="{ 'bg-neutral-200': editor.isActive('blockquote') }"
 								class="p-1 rounded hover:bg-neutral-200"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M14 9.5L21 9.5"></path>
-									<path d="M14 14.5L21 14.5"></path>
-									<path d="M3 9.5L10 9.5"></path>
-									<path d="M3 14.5L10 14.5"></path>
-									<path d="M10 19.5L3 19.5L3 4.5L10 4.5"></path>
-									<path d="M21 19.5L14 19.5L14 4.5L21 4.5"></path>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg fill=none height=16 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 viewBox="0 0 24 24" width=16 xmlns=http://www.w3.org/2000/svg><path d="M14 9.5L21 9.5"></path><path d="M14 14.5L21 14.5"></path><path d="M3 9.5L10 9.5"></path><path d="M3 14.5L10 14.5"></path><path d="M10 19.5L3 19.5L3 4.5L10 4.5"></path><path d="M21 19.5L14 19.5L14 4.5L21 4.5"></path></svg>
 							</button>
 							<button @click="editor.chain().focus().undo().run()" class="p-1 rounded hover:bg-neutral-200">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M3 7v6h6"></path>
-									<path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg fill=none height=16 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 viewBox="0 0 24 24" width=16 xmlns=http://www.w3.org/2000/svg><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
 							</button>
 							<button @click="editor.chain().focus().redo().run()" class="p-1 rounded hover:bg-neutral-200">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								>
-									<path d="M21 7v6h-6"></path>
-									<path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path>
-								</svg>
+								<!-- prettier-ignore -->
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
 							</button>
 						</div>
 

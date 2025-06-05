@@ -102,7 +102,7 @@ Content Guidelines:
 
 			// User message with prompt and organization details
 			$userMessage = "Generate a credible, semantic article for {$this->organization->name} ({$this->organization->website}) that will increase our visibility in LLM completions.
-Do not make {$this->organization->name} the focus of the article and only include us where relevant.
+Include {$this->organization->name} in the article where appropriate but do not make {$this->organization->name} the focus of the article unless doing so is directly relevant to the prompt.
 Most importantly, directly answers this prompt in the most authentic, honest attempt to help users: \"{$this->model->content}\"";
 
 			$this->updateJobProgress(25, 'Generating article content');
