@@ -19,7 +19,7 @@ class ChatService
      * @param string $userMessage
      * @return array
      */
-    public function generateResponse(Conversation $conversation, string $userMessage): array
+    public function generateResponse(Conversation $conversation, string $userMessage, ?string $systemMessage = null): array
     {
         // Store the user message
         $userChat = $conversation->chats()->create([
@@ -28,7 +28,7 @@ class ChatService
         ]);
         
         // Get AI response
-        $response = $this->getAiResponse($conversation, $userMessage);
+        $response = $this->getAiResponse($conversation, $userMessage, $systemMessage);
         
         // Store the AI response
         $aiChat = $conversation->chats()->create([
@@ -55,7 +55,7 @@ class ChatService
      * @param string $userMessage
      * @return object
      */
-    private function getAiResponse(Conversation $conversation, string $userMessage): object
+    private function getAiResponse(Conversation $conversation, string $userMessage, ?string $systemMessage = null): object
     {
         // Fetch all previous chats in the conversation
         $previousChats = $conversation->chats()->orderBy('created_at', 'asc')->get();
@@ -64,7 +64,7 @@ class ChatService
         $messages = [];
         
         // Add system message
-        $messages[] = new SystemMessage((string)view('prompts.system'));
+        $messages[] = new SystemMessage($systemMessage ?? (string)view('prompts.system'));
         
         // Add all previous messages as context
         foreach ($previousChats as $chat) {
