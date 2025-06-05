@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useRouter } from 'vue-router'
@@ -18,6 +18,7 @@ const activeCompetitorJobs = computed(() => {
 	)
 })
 
+// Watch for competitor job completions
 watch(
 	jobStatusStore.jobs,
 	(newJobs, oldJobs) => {
