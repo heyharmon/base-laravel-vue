@@ -55,7 +55,7 @@ onMounted(async () => {
 		<div class="container mx-auto py-6">
 			<!-- Header -->
 			<div class="flex justify-between items-center mb-3">
-				<h1 class="text-2xl font-bold">Terms</h1>
+				<h1 class="text-2xl font-bold">Organizations</h1>
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
