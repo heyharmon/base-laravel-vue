@@ -14,7 +14,7 @@ use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Response;
 use App\Models\Prompt;
-use App\Models\Keyword;
+use App\Models\Term;
 
 class RunPromptJob extends TrackableJob
 {
@@ -89,14 +89,14 @@ class RunPromptJob extends TrackableJob
 	 *
 	 * @return void
 	 */
-        public function handle(JobDispatcherService $jobDispatcher)
-        {
-                try {
-                        if ($this->isCancelled()) {
-                                return;
-                        }
-                        // Mark the job as started
-                        $this->markJobAsStarted('Running a prompt');
+	public function handle(JobDispatcherService $jobDispatcher)
+	{
+		try {
+			if ($this->isCancelled()) {
+				return;
+			}
+			// Mark the job as started
+			$this->markJobAsStarted('Running a prompt');
 
 			// If no providers specified, use all
 			if (!$this->providers) {
@@ -143,8 +143,8 @@ class RunPromptJob extends TrackableJob
 					// Save search tool results
 					$this->saveSearchToolResults($llm->steps, $response);
 
-					// Check for keywords in the response
-					$this->checkForKeywords($response, $this->prompt);
+					// Check for terms in the response
+					$this->checkForTerms($response, $this->prompt);
 				} catch (\Exception $e) {
 					// Log the error but continue with other providers
 					Log::error('Error running prompt: ' . $e);
@@ -213,42 +213,43 @@ class RunPromptJob extends TrackableJob
 	}
 
 	/**
-	 * Check for keywords in the response.
+	 * Check for terms in the response.
 	 *
-	 * @param  iterable  $keywords
+	 * @param  iterable  $terms
 	 * @param  Response  $response
 	 * @param  Prompt  $prompt
 	 * @return void
 	 */
-	private function checkForKeywords(Response $response, Prompt $prompt): void
+	private function checkForTerms(Response $response, Prompt $prompt): void
 	{
-		// Get keywords for all organizations scoped to the team
-		$keywords = Keyword::whereHas('organization', function ($query) {
+		// Get terms for all organizations scoped to the team
+		$terms = Term::whereHas('organization', function ($query) {
 			$query->where('team_id', $this->teamId);
 		})->get();
 
 		$responseText = strtolower($response->content);
-		$foundKeywords = [];
+		$foundTerms = [];
 
-		foreach ($keywords as $keyword) {
-			$keywordName = strtolower($keyword->name);
+		foreach ($terms as $term) {
+			$termName = strtolower($term->name);
 
-			// Check if the keyword exists in the response
-			if (str_contains($responseText, $keywordName)) {
-				$foundKeywords[] = $keyword->id;
+			// Check if the term exists in the response
+			if (str_contains($responseText, $termName)) {
+				$foundTerms[] = $term->id;
 
-				// Update the pivot table for keyword-prompt relationship
-				$pivot = $prompt->keywords()->syncWithoutDetaching([$keyword->id]);
+				// Update the pivot table for term-prompt relationship
+				$pivot = $prompt->terms()->syncWithoutDetaching([$term->id]);
 
 				// If this is a new relationship, initialize the count
-				if (isset($pivot[$keyword->id]) && $pivot[$keyword->id]['created']) {
-					$prompt->keywords()->updateExistingPivot($keyword->id, [
+				// TODO: Remove the count functionality
+				if (isset($pivot[$term->id]) && $pivot[$term->id]['created']) {
+					$prompt->terms()->updateExistingPivot($term->id, [
 						'count' => 1,
 						'last_found_at' => now(),
 					]);
 				} else {
 					// Increment the count and update last_found_at
-					$prompt->keywords()->updateExistingPivot($keyword->id, [
+					$prompt->terms()->updateExistingPivot($term->id, [
 						'count' => DB::raw('count + 1'),
 						'last_found_at' => now(),
 					]);
@@ -256,9 +257,9 @@ class RunPromptJob extends TrackableJob
 			}
 		}
 
-		// Attach found keywords to the response and record a mention
-		if (!empty($foundKeywords)) {
-			$response->keywords()->syncWithoutDetaching($foundKeywords);
+		// Attach found terms to the response and record a mention
+		if (!empty($foundTerms)) {
+			$response->terms()->syncWithoutDetaching($foundTerms);
 		}
 	}
 }

@@ -5,7 +5,7 @@ import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
-import GeneratePromptsModal from '@/components/GeneratePromptsModal.vue'
+import GeneratePromptsModal from '@/components/prompts/GeneratePromptsModal.vue'
 import PromptToolbar from '@/components/prompts/PromptToolbar.vue'
 import PromptListItem from '@/components/prompts/PromptListItem.vue'
 import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
@@ -127,7 +127,13 @@ onMounted(async () => {
 			<div class="flex flex-col">
 				<!-- Prompts column -->
 				<div class="w-full">
-					<div class="mb-4">
+					<div class="mb-4 flex justify-between items-center">
+						<div class="flex items-center gap-3">
+							<h1 class="text-xl font-bold">
+								{{ sortedPrompts.length ? sortedPrompts.length : 'No' }} {{ sortedPrompts.length === 1 ? 'Prompt' : 'Prompts' }}
+							</h1>
+							<div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+						</div>
 						<PromptToolbar
 							:sort-option="sortOption"
 							@update:sort-option="(v) => (sortOption = v)"
@@ -143,9 +149,7 @@ onMounted(async () => {
 						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 					>
 						<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-						<span>
-							{{ activePromptJobs.length }} {{ activePromptJobs.length === 1 ? 'job' : 'jobs' }} are running prompts and looking for competitors.
-						</span>
+						<span> {{ activePromptJobs.length }} {{ activePromptJobs.length === 1 ? 'prompt is being run' : 'prompts are being run' }} </span>
 					</div>
 
 					<div v-if="sortedPrompts.length" class="space-y-4">

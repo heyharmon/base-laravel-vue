@@ -2,16 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\Keyword;
+use App\Models\Term;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Keyword>
+ * @extends Factory<Term>
  */
-class KeywordFactory extends Factory
+class TermFactory extends Factory
 {
-    protected $model = Keyword::class;
+    protected $model = Term::class;
 
     public function definition(): array
     {

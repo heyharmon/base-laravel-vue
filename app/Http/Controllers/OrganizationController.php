@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
-use App\Models\Keyword;
-use App\Jobs\CheckKeywordInPastResponsesJob;
+use App\Models\Term;
+use App\Jobs\CheckTermInPastResponsesJob;
 
 class OrganizationController extends Controller
 {
@@ -27,7 +27,7 @@ class OrganizationController extends Controller
 		$teamId = Auth::user()->current_team_id;
 
 		$organizations = Organization::where('team_id', $teamId)
-			->withCount('keywords')
+			->withCount('terms')
 			->get();
 
 		return response()->json($organizations);
@@ -55,25 +55,25 @@ class OrganizationController extends Controller
 			'is_competitor' => 'boolean',
 		]);
 
-		// TODO: Move this keyword creation logic into the organization model boot method
+		// TODO: Move this term creation logic into the organization model boot method
 		$organization = request()->user()->currentTeam->organizations()->create($validated);
 
-		// Create a keyword for the competitor name
-		$nameKeyword = Keyword::create([
+		// Create a term for the competitor name
+		$nameTerm = Term::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->name,
 		]);
 
-		// Create a keyword for the competitor website
-		$websiteKeyword = Keyword::create([
+		// Create a term for the competitor website
+		$websiteTerm = Term::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->website,
 		]);
 
-		foreach ([$nameKeyword, $websiteKeyword] as $keyword) {
-			$this->jobDispatcher->dispatch($keyword, new CheckKeywordInPastResponsesJob($keyword, request()->user()->currentTeam->id));
+		foreach ([$nameTerm, $websiteTerm] as $term) {
+			$this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, request()->user()->currentTeam->id));
 		}
 
 		return response()->json($organization, 201);

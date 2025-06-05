@@ -3,7 +3,7 @@ import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
 // Import pages
-import Home from '@/pages/Home.vue'
+import Chat from '@/pages/Chat.vue'
 import Dashboard from '@/pages/Dashboard.vue'
 import Analytics from '@/pages/Analytics.vue'
 import Login from '@/pages/auth/Login.vue'
@@ -17,12 +17,21 @@ import OrganizationsIndex from '@/pages/organizations/Index.vue'
 import OrganizationCreate from '@/pages/organizations/Create.vue'
 import OrganizationEdit from '@/pages/organizations/Edit.vue'
 import PromptsIndex from '@/pages/prompts/Index.vue'
+import ArticlesIndex from '@/pages/articles/Index.vue'
+import ArticleCreate from '@/pages/articles/Create.vue'
+import ArticleEdit from '@/pages/articles/Edit.vue'
 
 const routes = [
 	{
 		path: '/',
 		name: 'home',
 		component: Dashboard,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/chat',
+		name: 'chat',
+		component: Chat,
 		meta: { requiresAuth: true }
 	},
 	{
@@ -100,6 +109,24 @@ const routes = [
 		name: 'prompts.index',
 		component: PromptsIndex,
 		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles',
+		name: 'articles.index',
+		component: ArticlesIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles/create',
+		name: 'articles.create',
+		component: ArticleCreate,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles/:id/edit',
+		name: 'articles.edit',
+		component: ArticleEdit,
+		meta: { requiresAuth: true }
 	}
 ]
 
@@ -111,30 +138,30 @@ const router = createRouter({
 // Navigation guard for authentication and team check
 router.beforeEach(async (to, from, next) => {
 	const token = localStorage.getItem('token')
-	
+
 	// Handle guest routes
 	if (to.matched.some((record) => record.meta.guest)) {
 		return token ? next({ name: 'home' }) : next()
 	}
-	
+
 	// Handle non-auth routes
 	if (!to.matched.some((record) => record.meta.requiresAuth)) {
 		return next()
 	}
-	
+
 	// Handle auth routes when not logged in
 	if (!token) {
 		return next({ name: 'login' })
 	}
-	
+
 	// Skip team check for teams.create route
 	if (to.name === 'teams.create') {
 		return next()
 	}
-	
+
 	// Check if user has teams
 	const teamStore = useTeamStore()
-	
+
 	// Load teams if not already loaded
 	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
 		try {
@@ -143,12 +170,12 @@ router.beforeEach(async (to, from, next) => {
 			console.error('Error fetching teams in router guard:', error)
 		}
 	}
-	
+
 	// Redirect to teams.create if user has no teams
 	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
 		return next({ name: 'teams.create' })
 	}
-	
+
 	// Allow navigation
 	next()
 })

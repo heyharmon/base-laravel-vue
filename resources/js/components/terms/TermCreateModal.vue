@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, watch } from 'vue'
 import Modal from '@/components/ui/Modal.vue'
-import { useKeywordStore } from '@/stores/keywordStore'
+import { useTermStore } from '@/stores/termStore'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -14,17 +14,17 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'create'])
 
-const keywordStore = useKeywordStore()
-const newKeyword = ref('')
-const keywordInput = ref(null)
+const termStore = useTermStore()
+const newTerm = ref('')
+const termInput = ref(null)
 
 watch(
 	() => props.isOpen,
 	async (isOpen) => {
 		if (isOpen) {
 			await nextTick()
-			if (keywordInput.value) {
-				keywordInput.value.focus()
+			if (termInput.value) {
+				termInput.value.focus()
 			}
 		}
 	},
@@ -32,37 +32,37 @@ watch(
 )
 
 const closeModal = () => {
-	newKeyword.value = ''
+	newTerm.value = ''
 	emit('close')
 }
 
-const addKeyword = async () => {
-	if (newKeyword.value.trim()) {
-		const keywordData = { name: newKeyword.value.trim() }
-		const processedData = emit('create', keywordData) || keywordData
-		await keywordStore.createKeyword(route.params.id, processedData)
+const addTerm = async () => {
+	if (newTerm.value.trim()) {
+		const termData = { name: newTerm.value.trim() }
+		const processedData = emit('create', termData) || termData
+		await termStore.createTerm(route.params.id, processedData)
 		closeModal()
 	}
 }
 </script>
 
 <template>
-	<Modal :is-open="isOpen" title="Add Keyword" @close="closeModal">
+	<Modal :is-open="isOpen" title="Add Term" @close="closeModal">
 		<div class="space-y-4">
 			<input
-				ref="keywordInput"
-				v-model="newKeyword"
+				ref="termInput"
+				v-model="newTerm"
 				type="text"
-				placeholder="New keyword"
+				placeholder="New term"
 				class="w-full px-3 py-2 border border-neutral-300 rounded-md"
-				@keyup.enter="addKeyword"
+				@keyup.enter="addTerm"
 			/>
 		</div>
 		<template #footer>
 			<button
-				@click="addKeyword"
+				@click="addTerm"
 				class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
-				:disabled="keywordStore.isLoading"
+				:disabled="termStore.isLoading"
 			>
 				Add
 			</button>

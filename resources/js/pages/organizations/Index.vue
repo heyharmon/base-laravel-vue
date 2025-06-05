@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useRouter } from 'vue-router'
@@ -18,8 +18,9 @@ const activeCompetitorJobs = computed(() => {
 	)
 })
 
+// Watch for competitor job completions
 watch(
-	jobStatusStore.jobs,
+	() => jobStatusStore.jobs,
 	(newJobs, oldJobs) => {
 		// Check if any competitor job has just completed
 		const completedCompetitorJob = newJobs.some(
@@ -30,6 +31,7 @@ watch(
 		)
 
 		if (completedCompetitorJob) {
+			console.log('Competitor job completed, refreshing organizations')
 			organizationStore.fetchOrganizations()
 		}
 	},
@@ -53,7 +55,7 @@ onMounted(async () => {
 		<div class="container mx-auto py-6">
 			<!-- Header -->
 			<div class="flex justify-between items-center mb-3">
-				<h1 class="text-2xl font-bold">Keywords</h1>
+				<h1 class="text-2xl font-bold">Organizations</h1>
 				<div class="flex space-x-2">
 					<Button
 						v-if="organizationStore.ownedOrganizations.length > 0"
@@ -116,8 +118,8 @@ onMounted(async () => {
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 								<div class="mt-1 flex items-center">
-									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
-									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+									<span class="font-medium text-neutral-700">{{ org.terms_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.terms_count === 1 ? 'term' : 'terms' }}</span>
 								</div>
 							</div>
 							<div class="mt-4 flex space-x-2">
@@ -132,10 +134,10 @@ onMounted(async () => {
 					<h2 class="text-xl font-semibold mb-4">Competitors</h2>
 					<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">You haven't added any competitors yet.</div>
 					<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						<router-link
+						<div
 							v-for="org in organizationStore.competitorOrganizations"
 							:key="org.id"
-							:to="{ name: 'organizations.edit', params: { id: org.id } }"
+							@click="router.push({ name: 'organizations.edit', params: { id: org.id } })"
 							class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 						>
 							<div class="flex justify-between items-start">
@@ -145,7 +147,9 @@ onMounted(async () => {
 											Added {{ moment(org.created_at).fromNow() }}
 										</span>
 									</div>
-									<h3 class="text-lg font-medium">{{ org.name || 'Unnamed Competitor' }}</h3>
+									<p class="text-lg font-medium hover:underline">
+										{{ org.name || 'Unnamed Competitor' }}
+									</p>
 								</div>
 								<img
 									v-if="org.website"
@@ -159,14 +163,25 @@ onMounted(async () => {
 								<div v-if="org.founded">Founded: {{ org.founded }}</div>
 								<div v-if="org.employee_count">Employees: {{ org.employee_count }}</div>
 								<div class="mt-1 flex items-center">
-									<span class="font-medium text-neutral-700">{{ org.keywords_count }}</span>
-									<span class="ml-1 text-neutral-500">{{ org.keywords_count === 1 ? 'keyword' : 'keywords' }}</span>
+									<span class="font-medium text-neutral-700">{{ org.terms_count }}</span>
+									<span class="ml-1 text-neutral-500">{{ org.terms_count === 1 ? 'term' : 'terms' }}</span>
 								</div>
 							</div>
-							<div class="mt-4 flex space-x-2">
-								<button class="text-blue-600 hover:text-blue-800 text-sm font-medium cursor-pointer">Edit</button>
+							<div class="flex space-x-2 mt-4">
+								<router-link
+									:to="{ name: 'organizations.edit', params: { id: org.id } }"
+									class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+								>
+									Edit
+								</router-link>
+								<button
+									@click.stop="organizationStore.deleteOrganization(org.id)"
+									class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+								>
+									Remove
+								</button>
 							</div>
-						</router-link>
+						</div>
 					</div>
 				</div>
 			</div>

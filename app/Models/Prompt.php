@@ -32,11 +32,11 @@ class Prompt extends Model
 	];
 
 	/**
-	 * The keywords that are associated with this prompt.
+	 * The terms that are associated with this prompt.
 	 */
-	public function keywords(): BelongsToMany
+	public function terms(): BelongsToMany
 	{
-		return $this->belongsToMany(Keyword::class)
+		return $this->belongsToMany(Term::class, 'term_prompt')
 			->withPivot('count', 'last_found_at')
 			->withTimestamps();
 	}
@@ -55,6 +55,14 @@ class Prompt extends Model
 	public function team(): BelongsTo
 	{
 		return $this->belongsTo(Team::class);
+	}
+
+	/**
+	 * Get the articles that are associated with this prompt.
+	 */
+	public function articles(): HasMany
+	{
+		return $this->hasMany(Article::class)->latest();
 	}
 
 	/**
@@ -77,17 +85,17 @@ class Prompt extends Model
 			return 0;
 		}
 
-		// Get all keywords for this organization
-		$keywordIds = $organization->keywords()->pluck('id')->toArray();
+		// Get all terms for this organization
+		$termIds = $organization->terms()->pluck('id')->toArray();
 
-		if (empty($keywordIds)) {
+		if (empty($termIds)) {
 			return 0;
 		}
 
-		// Count responses that contain at least one keyword from the team's organization
+		// Count responses that contain at least one term from the team's organization
 		$mentions = $this->responses()
-			->whereHas('keywords', function ($query) use ($keywordIds) {
-				$query->whereIn('keywords.id', $keywordIds);
+			->whereHas('terms', function ($query) use ($termIds) {
+				$query->whereIn('terms.id', $termIds);
 			})
 			->count();
 

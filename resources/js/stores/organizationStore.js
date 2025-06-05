@@ -22,7 +22,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 	// Actions
 	async function fetchOrganizations() {
 		console.log('Fetching organizations...')
-		isLoading.value = true
+		// isLoading.value = true
 		error.value = null
 
 		try {
@@ -32,7 +32,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 			error.value = err.response?.data?.message || 'Failed to fetch organizations'
 			console.error('Error fetching organizations:', err)
 		} finally {
-			isLoading.value = false
+			// isLoading.value = false
 		}
 	}
 
@@ -114,12 +114,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	async function deleteOrganization(organizationId) {
-		if (!confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
-			return
-		}
-
 		console.log('Deleting organization ID:', organizationId)
-		isLoading.value = true
+		// isLoading.value = true
 		error.value = null
 
 		try {
@@ -131,7 +127,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 			console.error('Error deleting organization:', err)
 			throw err
 		} finally {
-			isLoading.value = false
+			// isLoading.value = false
 		}
 	}
 

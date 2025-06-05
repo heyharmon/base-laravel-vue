@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Batchable;
 use App\Models\Response;
-use App\Models\Keyword;
+use App\Models\Term;
 
-class CheckKeywordInPastResponsesJob extends TrackableJob
+class CheckTermInPastResponsesJob extends TrackableJob
 {
 	use Batchable;
 
@@ -21,11 +21,11 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 	public $tries = 3;
 
 	/**
-	 * The keyword instance.
+	 * The term instance.
 	 *
-	 * @var \App\Models\Keyword
+	 * @var \App\Models\Term
 	 */
-	protected $keyword;
+	protected $term;
 
 	/**
 	 * The model to use for job tracking.
@@ -44,14 +44,14 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 	/**
 	 * Create a new job instance.
 	 *
-	 * @param  \App\Models\Keyword  $keyword
+	 * @param  \App\Models\Term  $term
 	 * @return void
 	 */
-	public function __construct(Keyword $keyword, int $teamId)
+	public function __construct(Term $term, int $teamId)
 	{
-		$this->model = $keyword;
+		$this->model = $term;
 		$this->teamId = $teamId;
-		$this->keyword = $keyword;
+		$this->term = $term;
 	}
 
 	/**
@@ -67,48 +67,48 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 			}
 
 			// Mark the job as started
-			$this->markJobAsStarted('Checking keyword in past responses');
+			$this->markJobAsStarted('Checking term in past responses');
 
 			// Get all responses for prompts in the same team
 			$responses = Response::whereHas('prompt', function ($query) {
 				$query->whereHas('team', function ($teamQuery) {
-					$teamQuery->where('id', $this->keyword->team_id);
+					$teamQuery->where('id', $this->term->team_id);
 				});
 			})->get();
 
-			$keywordName = strtolower($this->keyword->name);
+			$termName = strtolower($this->term->name);
 			$foundInResponses = 0;
 			$foundInPrompts = [];
 
 			// Update progress
-			$this->updateJobProgress(10, 'Checking for keyword "' . $this->keyword->name . '" in past responses');
+			$this->updateJobProgress(10, 'Checking for term "' . $this->term->name . '" in past responses');
 
 			foreach ($responses as $response) {
 				$responseText = strtolower($response->content);
 
-				// Check if the keyword exists in the response
-				if (str_contains($responseText, $keywordName)) {
+				// Check if the term exists in the response
+				if (str_contains($responseText, $termName)) {
 					$foundInResponses++;
 
-					// Attach keyword to response
-					$response->keywords()->syncWithoutDetaching([$this->keyword->id]);
+					// Attach term to response
+					$response->terms()->syncWithoutDetaching([$this->term->id]);
 
 					// Get the prompt for this response
 					$prompt = $response->prompt;
 
-					// Update the pivot table for keyword-prompt relationship
-					$pivot = $prompt->keywords()->syncWithoutDetaching([$this->keyword->id]);
+					// Update the pivot table for term-prompt relationship
+					$pivot = $prompt->terms()->syncWithoutDetaching([$this->term->id]);
 
 					// If this is a new relationship, initialize the count
-					if (isset($pivot[$this->keyword->id]) && $pivot[$this->keyword->id]['created']) {
-						$prompt->keywords()->updateExistingPivot($this->keyword->id, [
+					if (isset($pivot[$this->term->id]) && $pivot[$this->term->id]['created']) {
+						$prompt->terms()->updateExistingPivot($this->term->id, [
 							'count' => 1, // TODO: Remove the count column, I don't think we use it anymore
 							'last_found_at' => now(),
 						]);
 						$foundInPrompts[$prompt->id] = 1;
 					} else {
 						// Increment the count and update last_found_at
-						$prompt->keywords()->updateExistingPivot($this->keyword->id, [
+						$prompt->terms()->updateExistingPivot($this->term->id, [
 							'count' => DB::raw('count + 1'),
 							'last_found_at' => now(),
 						]);
@@ -118,9 +118,9 @@ class CheckKeywordInPastResponsesJob extends TrackableJob
 			}
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Found keyword "' . $this->keyword->name . '" in ' . $foundInResponses . ' responses');
+			$this->markJobAsCompleted('Found term "' . $this->term->name . '" in ' . $foundInResponses . ' responses');
 		} catch (Throwable $exception) {
-			Log::error('Error in CheckKeywordInPastResponsesJob: ' . $exception->getMessage());
+			Log::error('Error in CheckTermInPastResponsesJob: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);
 			throw $exception;
 		}

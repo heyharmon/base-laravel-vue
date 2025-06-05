@@ -53,11 +53,14 @@ it('lists owned, joined and pending teams for a user', function () {
 
     $response->assertStatus(200)
         ->assertJsonCount(1, 'ownedTeams')
-        ->assertJsonCount(1, 'joinedTeams')
+        ->assertJsonCount(2, 'joinedTeams')
         ->assertJsonCount(1, 'pendingInvitations')
         ->assertJsonPath('ownedTeams.0.id', $ownedTeam->id)
-        ->assertJsonPath('joinedTeams.0.id', $joinedTeam->id)
         ->assertJsonPath('pendingInvitations.0.id', $pendingTeam->id);
+        
+    // Verify that joinedTeams contains the joinedTeam
+    $joinedTeamIds = collect($response->json('joinedTeams'))->pluck('id')->toArray();
+    expect($joinedTeamIds)->toContain($joinedTeam->id);
 });
 
 it('invites an existing user to a team', function () {

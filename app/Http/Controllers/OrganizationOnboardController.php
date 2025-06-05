@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
-use App\Models\Keyword;
-
-use App\Jobs\GeneratePhrases;
-use App\Jobs\GenerateOrganizationState;
+use App\Models\Term;
+use App\Jobs\GenerateOrganizationKeywords;
 
 class OrganizationOnboardController extends Controller
 {
@@ -41,25 +39,25 @@ class OrganizationOnboardController extends Controller
 			'is_competitor' => 'boolean',
 		]);
 
-		// TODO: Move this keyword creation logic into the organization model boot method
+		// TODO: Move this term creation logic into the organization model boot method
 		$organization = request()->user()->currentTeam->organizations()->create($validated);
 
-		// Create a keyword for the competitor name
-		Keyword::create([
+		// Create a term for the competitor name
+		Term::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->name,
 		]);
 
-		// Create a keyword for the competitor website
-		Keyword::create([
+		// Create a term for the competitor website
+		Term::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->website,
 		]);
 
 		// Dispatch a job to generate phrases for this organization
-		$this->jobDispatcher->dispatch($organization, new GeneratePhrases($organization, $organization->team_id));
+		$this->jobDispatcher->dispatch($organization, new GenerateOrganizationKeywords($organization, $organization->team_id));
 
 		return response()->json($organization, 201);
 	}

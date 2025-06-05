@@ -15,8 +15,8 @@ class PromptController extends Controller
         $teamId = Auth::user()->current_team_id;
         $prompts = Prompt::where('team_id', $teamId)
             ->withCount([
-				// Count keywords that are not competitor keywords
-                'keywords' => function($query) use ($teamId) {
+				// Count terms that are not competitor terms
+                'terms' => function($query) use ($teamId) {
                     $query->whereHas('organization', function($q) {
                         $q->where('is_competitor', false);
                     });
@@ -37,7 +37,7 @@ class PromptController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $prompt->load('keywords');
+        $prompt->load(['terms', 'articles']);
 
         return response()->json($prompt);
     }

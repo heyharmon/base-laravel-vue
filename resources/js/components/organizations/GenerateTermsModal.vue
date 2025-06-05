@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Modal from '@/components/ui/Modal.vue'
-import KeywordSuggestions from '@/components/keywords/KeywordSuggestions.vue'
+import TermSuggestions from '@/components/terms/TermSuggestions.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 
 const props = defineProps({
@@ -54,13 +54,13 @@ const closeModal = () => {
 	emit('close')
 }
 
-const handleCreateKeywords = () => {
+const handleCreateTerms = () => {
 	closeModal()
 }
 </script>
 
 <template>
-	<Modal :is-open="isOpen" title="Generate Keywords" width="wider" @close="closeModal">
+	<Modal :is-open="isOpen" title="Generate Terms" width="wider" @close="closeModal">
 		<div class="space-y-4">
 			<!-- Organization Info -->
 			<div v-if="organization" class="mb-4 p-4 bg-neutral-50 rounded-lg">
@@ -73,11 +73,11 @@ const handleCreateKeywords = () => {
 				{{ error }}
 			</div>
 
-			<KeywordSuggestions
+			<TermSuggestions
 				v-if="organization?.website"
 				:domain="organization.website"
 				:organization-id="route.params.id"
-				@create-keywords="handleCreateKeywords"
+				@create-terms="handleCreateTerms"
 			/>
 		</div>
 

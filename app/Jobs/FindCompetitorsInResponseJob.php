@@ -17,7 +17,7 @@ use App\Services\JobDispatcherService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Organization;
-use App\Models\Keyword;
+use App\Models\Term;
 
 class FindCompetitorsInResponseJob extends TrackableJob
 {
@@ -78,7 +78,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			// Skip if team already has 30 competitors
 			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
 
-			if ($competitorCount >= 100) {
+			if ($competitorCount >= 50) {
 				$this->markJobAsCompleted('Skipping prompt, max 30 competitors reached');
 				return;
 			}
@@ -134,7 +134,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			->withMaxSteps(10)
 			->withMessages([
 				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
-				new UserMessage('Find other organizations mentioned in the prompt response. Include their name, website and the term you found them by in the response content. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE!')
+				new UserMessage('Find other organizations mentioned in the prompt response that may be potential competitors. Include their name, website and the term you found them by in the response content. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE THAT MAY BE COMPETITORS!')
 			])
 			->withTools([$searchApiTool])
 			->withToolChoice(ToolChoice::Auto)
@@ -143,14 +143,14 @@ class FindCompetitorsInResponseJob extends TrackableJob
 		// Define the schema for structured output
 		$schema = new ObjectSchema(
 			name: 'competitor_suggestions',
-			description: 'Organiazion mentions',
+			description: 'Competitor suggestions',
 			properties: [
 				new ArraySchema(
 					name: 'competitors',
-					description: 'List of organizations',
+					description: 'List of organizations that may be competitors',
 					items: new ObjectSchema(
 						name: 'competitor',
-						description: 'An organization',
+						description: 'An organization that may be a competitor',
 						properties: [
 							new StringSchema(
 								name: 'name',
@@ -176,7 +176,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 		$response = Prism::structured()
 			->using(Provider::OpenAI, 'gpt-4o')
 			->withSchema($schema)
-			->withPrompt('Look at text about my competitors and return them as a structured array including the competitor\'s name, website root domain and the term you found them by: "' . $textResponse->text . '"')
+			->withPrompt('Look at this text about my competitors and return them as a structured array including the competitor\'s name, website root domain and the term they were found by: "' . $textResponse->text . '"')
 			->asStructured();
 
 		$result = $response->structured;
@@ -214,22 +214,22 @@ class FindCompetitorsInResponseJob extends TrackableJob
 					'is_competitor' => true,
 				]);
 
-				// Create a keyword for the competitor name
-				$nameKeyword = Keyword::create([
+				// Create a term for the competitor name
+				$nameTerm = Term::create([
 					'team_id' => $this->teamId,
 					'organization_id' => $competitorOrg->id,
 					'name' => $competitor['name'],
 				]);
 
-				// Create a keyword for the competitor website
-				$websiteKeyword = Keyword::create([
+				// Create a term for the competitor website
+				$websiteTerm = Term::create([
 					'team_id' => $this->teamId,
 					'organization_id' => $competitorOrg->id,
 					'name' => $competitor['website'],
 				]);
 
-				// Create a keyword for the term found in response. Avoid duplicates.
-				$termKeyword = Keyword::firstOrCreate(
+				// Create a term for the term found in response. Avoid duplicates.
+				$termTerm = Term::firstOrCreate(
 					[
 						'team_id' => $this->teamId,
 						'name' => $competitor['term']
@@ -239,14 +239,14 @@ class FindCompetitorsInResponseJob extends TrackableJob
 					]
 				);
 
-				// Dispatch a job to check past responses for this keyword
+				// Dispatch a job to check past responses for this term
 				$jobDispatcher = app(JobDispatcherService::class);
-				foreach ([$nameKeyword, $websiteKeyword, $termKeyword] as $keyword) {
-					$jobDispatcher->dispatch($keyword, new CheckKeywordInPastResponsesJob($keyword, $this->teamId));
+				foreach ([$nameTerm, $websiteTerm, $termTerm] as $term) {
+					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId));
 				}
 
-				// Dispatch the GeneratePhrases job for this organization
-				$jobDispatcher->dispatch($competitorOrg, new GeneratePhrases($competitorOrg, $this->teamId));
+				// Dispatch the GenerateOrganizationKeywords job for this organization
+				$jobDispatcher->dispatch($competitorOrg, new GenerateOrganizationKeywords($competitorOrg, $this->teamId));
 
 				$createdCount++;
 			}

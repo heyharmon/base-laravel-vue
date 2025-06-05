@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasJobStatus;
+use App\Models\Article;
 
 class Organization extends Model
 {
@@ -21,7 +22,6 @@ class Organization extends Model
 
 	protected $casts = [
 		'is_competitor' => 'boolean',
-		'terms' => 'array',
 	];
 
 	protected $appends = [
@@ -37,45 +37,18 @@ class Organization extends Model
 	}
 
 	/**
-	 * Get the keywords that belong to the organization.
+	 * Get the terms that belong to the organization.
 	 */
-	public function keywords(): HasMany
+	public function terms(): HasMany
 	{
-		return $this->hasMany(Keyword::class);
+		return $this->hasMany(Term::class);
 	}
 
-
-	// TODO: do we need this if we already calculate visibility in the OrganizationVisibilityController?
 	/**
-	 * Calculate the visibility percentage for this organization.
-	 * Visibility is defined as the total mentions divided by total responses.
+	 * Get the articles that belong to the organization.
 	 */
-	// public function getVisibilityAttribute(): float
-	// {
-	//     // Get the team_id for this organization
-	//     $teamId = $this->team_id;
-
-	//     // Count total responses for this team
-	//     $totalResponses = Response::whereHas('prompt', function ($query) use ($teamId) {
-	//         $query->where('team_id', $teamId);
-	//     })->count();
-
-	//     if ($totalResponses === 0) {
-	//         return 0;
-	//     }
-
-	//     // Count responses that contain at least one keyword from this organization
-	//     $keywordIds = $this->keywords()->pluck('id')->toArray();
-
-	//     $totalMentions = 0;
-	//     if (!empty($keywordIds)) {
-	//         $totalMentions = Response::whereHas('prompt', function ($query) use ($teamId) {
-	//             $query->where('team_id', $teamId);
-	//         })->whereHas('keywords', function ($query) use ($keywordIds) {
-	//             $query->whereIn('keywords.id', $keywordIds);
-	//         })->count();
-	//     }
-
-	//     return round(($totalMentions / $totalResponses) * 100, 2);
-	// }
+	public function articles(): HasMany
+	{
+		return $this->hasMany(Article::class);
+	}
 }
