@@ -68,7 +68,7 @@ class GenerateOrganizationKeywords extends TrackableJob
 				return;
 			}
 			// Mark the job as started
-			$this->markJobAsStarted('Generating keywords for ' . $this->model->name);
+			$this->markJobAsStarted('Finding keywords for ' . $this->model->name);
 
 			$searchApiTool = new SearchApiTool();
 
@@ -142,7 +142,7 @@ Output keywords as a plain text list.";
 				}
 			}
 		} catch (Throwable $exception) {
-			Log::error('Prompt generation job failed: ' . $exception->getMessage());
+			Log::error('Keyword generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);
 			throw $exception;
 		}
