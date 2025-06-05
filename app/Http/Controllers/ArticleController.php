@@ -9,6 +9,7 @@ use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\ChatService;
+use App\Tools\UpdateArticleTool;
 
 class ArticleController extends Controller
 {
@@ -77,7 +78,9 @@ EOT;
 
         $initialMessage = 'Please start by outlining your strategy for this article.';
 
-        $this->chatService->generateResponse($conversation, $initialMessage, $systemMessage);
+        $updateTool = new UpdateArticleTool($article);
+
+        $this->chatService->generateResponse($conversation, $initialMessage, $systemMessage, [$updateTool]);
 
         return response()->json([
             'article' => $article,
