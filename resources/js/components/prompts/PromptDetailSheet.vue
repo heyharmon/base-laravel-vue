@@ -27,10 +27,20 @@ const promptStore = usePromptStore()
 const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
 
-const isGeneratingArticle = ref(false)
-
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
+})
+
+const activeArticleJob = computed(() => {
+	let jobs = jobStatusStore.jobs.filter(
+		(job) =>
+			job.job_class.includes('GenerateArticleJob') &&
+			job.trackable_type === 'App\\Models\\Prompt' &&
+			job.trackable_id === props.promptId &&
+			(job.status === 'pending' || job.status === 'processing')
+	)
+
+	return jobs.length > 0
 })
 
 // Fetch prompt details when component mounts or promptId changes
@@ -64,14 +74,11 @@ const closeSheet = () => {
 const generateArticle = async () => {
 	if (!props.promptId) return
 
-	isGeneratingArticle.value = true
 	try {
 		await articleStore.generateArticle(props.promptId)
 		jobStatusStore.pollTeamJobs()
 	} catch (error) {
 		console.error('Error generating article:', error)
-	} finally {
-		isGeneratingArticle.value = false
 	}
 }
 
@@ -88,9 +95,14 @@ watch(() => props.promptId, fetchDetails)
 			<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
 			<div class="space-y-4">
 				<div class="flex items-center gap-2">
-					<Button @click="generateArticle" class="flex items-center gap-2" :disabled="isGeneratingArticle">
+					<Button
+						@click="generateArticle"
+						class="flex items-center gap-2"
+						:class="{ 'bg-green-600 hover:bg-green-700': activeArticleJob }"
+						:disabled="activeArticleJob"
+					>
 						<svg
-							v-if="!isGeneratingArticle"
+							v-if="!activeArticleJob"
 							xmlns="http://www.w3.org/2000/svg"
 							width="16"
 							height="16"
@@ -110,8 +122,23 @@ watch(() => props.promptId, fetchDetails)
 							<path d="M3 5h4" />
 							<path d="M17 19h4" />
 						</svg>
-						<div v-else class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></div>
-						<span>{{ isGeneratingArticle ? 'Generating...' : 'Generate article' }}</span>
+						<div v-else-if="activeArticleJob" class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></div>
+						<svg
+							v-else
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-check"
+						>
+							<polyline points="20 6 9 17 4 12"></polyline>
+						</svg>
+						<span>{{ activeArticleJob ? 'Generating...' : activeArticleJob ? 'Processing...' : 'Generate article' }}</span>
 					</Button>
 				</div>
 			</div>
