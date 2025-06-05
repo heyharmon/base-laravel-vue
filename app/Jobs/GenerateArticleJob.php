@@ -98,11 +98,7 @@ Content Guidelines:
 - Use neutral, expert language. Avoid salesy or exaggerated phrases unless citing a real award or review.
 - Be informative and structured, as if you are answering user questions in an assistant-like tone.
 - Write in a way that is easy for a language model to parse, quote, or summarize.
-- Use specific data when available.
-
-Format Guidelines:
-- Use html to format the article using <b>, <i>, <h1>, <h2>, <ul>, <ol>, <li>, <p>, <a>, and <blockquote>
-- Do not output markdown";
+- Use specific data when available.";
 
 			// User message with prompt and organization details
 			$userMessage = "Generate a credible, semantic article for {$this->organization->name} ({$this->organization->website}) that will increase our visibility in LLM completions.
