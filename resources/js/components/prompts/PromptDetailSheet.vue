@@ -46,6 +46,19 @@ const copyPromptToClipboard = async () => {
 	}
 }
 
+const startArticleConversation = async () => {
+        if (!props.promptId) return
+
+        try {
+                const response = await api.post(`/prompts/${props.promptId}/articles`)
+                if (response.conversation?.id) {
+                        window.location.href = `/chat?conversation=${response.conversation.id}`
+                }
+        } catch (error) {
+                console.error('Error starting article conversation:', error)
+        }
+}
+
 // Fetch prompt details when component mounts or promptId changes
 const fetchDetails = async () => {
 	if (props.promptId) {
@@ -110,7 +123,7 @@ watch(() => props.promptId, fetchDetails)
 					<h3 class="text-xl font-medium text-neutral-800 mb-2">Optimize for this prompt</h3>
 					<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
 					<div class="flex items-center gap-2">
-						<Button @click="copyPromptToClipboard" class="flex items-center gap-2">
+                                                <Button @click="copyPromptToClipboard" class="flex items-center gap-2">
 							<svg
 								v-if="!isCopied"
 								xmlns="http://www.w3.org/2000/svg"
@@ -144,8 +157,11 @@ watch(() => props.promptId, fetchDetails)
 							</svg>
 							<span v-if="isCopied">Copied to clipboard!</span>
 							<span v-else>Generate article prompt</span>
-						</Button>
-						<a
+                                                </Button>
+                                                <Button @click="startArticleConversation" class="flex items-center gap-2">
+                                                        Start article conversation
+                                                </Button>
+                                                <a
 							href="https://chatgpt.com/g/g-683e71bf9d14819194ee7fe3121bf234-article-writer-for-prompt-visibility"
 							target="_blank"
 							class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 rounded-md font-medium transition-colors"

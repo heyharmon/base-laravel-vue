@@ -6,6 +6,7 @@ use App\Models\Chat;
 use App\Models\Conversation;
 use Prism\Prism\Prism;
 use Prism\Prism\Enums\Provider;
+use Prism\Prism\Enums\ToolChoice;
 use Prism\Prism\ValueObjects\Messages\UserMessage;
 use Prism\Prism\ValueObjects\Messages\AssistantMessage;
 use Prism\Prism\ValueObjects\Messages\SystemMessage;
@@ -19,7 +20,7 @@ class ChatService
      * @param string $userMessage
      * @return array
      */
-    public function generateResponse(Conversation $conversation, string $userMessage): array
+    public function generateResponse(Conversation $conversation, string $userMessage, ?string $systemMessage = null, array $tools = []): array
     {
         // Store the user message
         $userChat = $conversation->chats()->create([
@@ -28,7 +29,7 @@ class ChatService
         ]);
         
         // Get AI response
-        $response = $this->getAiResponse($conversation, $userMessage);
+        $response = $this->getAiResponse($conversation, $userMessage, $systemMessage, $tools);
         
         // Store the AI response
         $aiChat = $conversation->chats()->create([
@@ -55,7 +56,7 @@ class ChatService
      * @param string $userMessage
      * @return object
      */
-    private function getAiResponse(Conversation $conversation, string $userMessage): object
+    private function getAiResponse(Conversation $conversation, string $userMessage, ?string $systemMessage = null, array $tools = []): object
     {
         // Fetch all previous chats in the conversation
         $previousChats = $conversation->chats()->orderBy('created_at', 'asc')->get();
@@ -64,7 +65,7 @@ class ChatService
         $messages = [];
         
         // Add system message
-        $messages[] = new SystemMessage((string)view('prompts.system'));
+        $messages[] = new SystemMessage($systemMessage ?? (string)view('prompts.system'));
         
         // Add all previous messages as context
         foreach ($previousChats as $chat) {
@@ -79,9 +80,14 @@ class ChatService
         $messages[] = new UserMessage($userMessage);
         
         // Generate AI response using Prism with full conversation context
-        return Prism::text()
+        $prism = Prism::text()
             ->using(Provider::OpenAI, 'gpt-4o')
-            ->withMessages($messages)
-            ->asText();
+            ->withMessages($messages);
+
+        if (!empty($tools)) {
+            $prism->withMaxSteps(10)->withTools($tools)->withToolChoice(ToolChoice::Auto);
+        }
+
+        return $prism->asText();
     }
 }
