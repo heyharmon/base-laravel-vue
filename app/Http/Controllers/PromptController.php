@@ -37,7 +37,7 @@ class PromptController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $prompt->load('terms');
+        $prompt->load(['terms', 'articles']);
 
         return response()->json($prompt);
     }
