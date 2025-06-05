@@ -6,6 +6,7 @@ export const useArticleStore = defineStore('article', () => {
   const articles = ref([])
   const article = ref(null)
   const isLoading = ref(false)
+  const isGenerating = ref(false)
   const error = ref(null)
 
   const fetchArticles = async () => {
@@ -109,15 +110,35 @@ export const useArticleStore = defineStore('article', () => {
     }
   }
 
+  /**
+   * Generate an article for a prompt
+   */
+  const generateArticle = async (promptId) => {
+    isGenerating.value = true;
+    error.value = null;
+
+    try {
+      const response = await api.post(`/prompts/${promptId}/generate-article`);
+      return response.data;
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to generate article';
+      throw err;
+    } finally {
+      isGenerating.value = false;
+    }
+  };
+
   return {
     articles,
     article,
     isLoading,
+    isGenerating,
     error,
     fetchArticles,
     fetchArticle,
     createArticle,
     updateArticle,
-    deleteArticle
+    deleteArticle,
+    generateArticle
   }
 })

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, watch, onMounted, ref } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
+import { useArticleStore } from '@/stores/articleStore'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
 
@@ -22,6 +23,9 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
+const articleStore = useArticleStore()
+
+const isGeneratingArticle = ref(false)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
@@ -54,6 +58,20 @@ const closeSheet = () => {
 	emit('close')
 }
 
+// Generate an article for the current prompt
+const generateArticle = async () => {
+	if (!props.promptId) return
+	
+	isGeneratingArticle.value = true
+	try {
+		await articleStore.generateArticle(props.promptId)
+	} catch (error) {
+		console.error('Error generating article:', error)
+	} finally {
+		isGeneratingArticle.value = false
+	}
+}
+
 onMounted(fetchDetails)
 
 watch(() => props.promptId, fetchDetails)
@@ -65,30 +83,38 @@ watch(() => props.promptId, fetchDetails)
 		<div class="bg-white border-b border-neutral-200 p-6 -mx-6 -mt-6 mb-4">
 			<h3 class="text-xl font-medium text-neutral-800 mb-2">Optimize for this prompt</h3>
 			<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
-			<div class="flex items-center gap-2">
-				<Button @click="" class="flex items-center gap-2">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="lucide lucide-sparkles"
+			<div class="space-y-4">
+				<div class="flex items-center gap-2">
+					<Button 
+						@click="generateArticle" 
+						class="flex items-center gap-2"
+						:disabled="isGeneratingArticle"
 					>
-						<path
-							d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
-						/>
-						<path d="M5 3v4" />
-						<path d="M19 17v4" />
-						<path d="M3 5h4" />
-						<path d="M17 19h4" />
-					</svg>
-					<span>Generate article</span>
-				</Button>
+						<svg
+							v-if="!isGeneratingArticle"
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-sparkles"
+						>
+							<path
+								d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+							/>
+							<path d="M5 3v4" />
+							<path d="M19 17v4" />
+							<path d="M3 5h4" />
+							<path d="M17 19h4" />
+						</svg>
+						<div v-else class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></div>
+						<span>{{ isGeneratingArticle ? 'Generating...' : 'Generate article' }}</span>
+					</Button>
+				</div>
 			</div>
 		</div>
 
