@@ -24,6 +24,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\ArticleController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -96,4 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Job status routes
 	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
 	Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+
+	// Articles
+	Route::resource('articles', ArticleController::class);
 });

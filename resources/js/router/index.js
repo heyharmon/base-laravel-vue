@@ -17,6 +17,9 @@ import OrganizationsIndex from '@/pages/organizations/Index.vue'
 import OrganizationCreate from '@/pages/organizations/Create.vue'
 import OrganizationEdit from '@/pages/organizations/Edit.vue'
 import PromptsIndex from '@/pages/prompts/Index.vue'
+import ArticlesIndex from '@/pages/articles/Index.vue'
+import ArticleCreate from '@/pages/articles/Create.vue'
+import ArticleEdit from '@/pages/articles/Edit.vue'
 
 const routes = [
 	{
@@ -105,6 +108,24 @@ const routes = [
 		path: '/prompts',
 		name: 'prompts.index',
 		component: PromptsIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles',
+		name: 'articles.index',
+		component: ArticlesIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles/create',
+		name: 'articles.create',
+		component: ArticleCreate,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles/:id/edit',
+		name: 'articles.edit',
+		component: ArticleEdit,
 		meta: { requiresAuth: true }
 	}
 ]
