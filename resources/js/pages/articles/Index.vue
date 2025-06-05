@@ -3,13 +3,13 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
 const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
-const isLoading = ref(true)
 
 // Get active jobs related to competitors
 const activeArticleJobs = computed(() => {
@@ -18,7 +18,7 @@ const activeArticleJobs = computed(() => {
 
 // Watch for article job completions
 watch(
-	jobStatusStore.jobs,
+	() => jobStatusStore.jobs,
 	(newJobs, oldJobs) => {
 		// Check if any article job has just completed
 		const completedArticleJob = newJobs.some(
@@ -29,6 +29,7 @@ watch(
 		)
 
 		if (completedArticleJob) {
+			console.log('Article job completed, refreshing articles')
 			articleStore.fetchArticles()
 		}
 	},
@@ -36,22 +37,12 @@ watch(
 )
 
 onMounted(async () => {
-	try {
-		await articleStore.fetchArticles()
-	} catch (error) {
-		console.error('Error fetching articles:', error)
-	} finally {
-		isLoading.value = false
-	}
+	await articleStore.fetchArticles()
+	// await jobStatusStore.pollTeamJobs()
 })
 
 const formatDate = (dateString) => {
-	const date = new Date(dateString)
-	return new Intl.DateTimeFormat('en-US', {
-		month: 'short',
-		day: 'numeric',
-		year: 'numeric'
-	}).format(date)
+	return moment(dateString).format('MMM D, YYYY')
 }
 
 const createNewArticle = async () => {
@@ -108,7 +99,7 @@ const deleteArticle = async (id) => {
 			</div>
 
 			<!-- Loading state -->
-			<div v-if="isLoading" class="flex justify-center py-8">
+			<div v-if="articleStore.isLoading" class="flex justify-center py-8">
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
 

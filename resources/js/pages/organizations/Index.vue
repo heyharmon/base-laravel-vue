@@ -20,7 +20,7 @@ const activeCompetitorJobs = computed(() => {
 
 // Watch for competitor job completions
 watch(
-	jobStatusStore.jobs,
+	() => jobStatusStore.jobs,
 	(newJobs, oldJobs) => {
 		// Check if any competitor job has just completed
 		const completedCompetitorJob = newJobs.some(
@@ -31,6 +31,7 @@ watch(
 		)
 
 		if (completedCompetitorJob) {
+			console.log('Competitor job completed, refreshing organizations')
 			organizationStore.fetchOrganizations()
 		}
 	},

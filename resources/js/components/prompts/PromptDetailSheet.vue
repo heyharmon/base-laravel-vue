@@ -2,6 +2,7 @@
 import { computed, watch, onMounted, ref } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
 
@@ -24,6 +25,7 @@ const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const jobStatusStore = useJobStatusStore()
 
 const isGeneratingArticle = ref(false)
 
@@ -61,10 +63,11 @@ const closeSheet = () => {
 // Generate an article for the current prompt
 const generateArticle = async () => {
 	if (!props.promptId) return
-	
+
 	isGeneratingArticle.value = true
 	try {
 		await articleStore.generateArticle(props.promptId)
+		jobStatusStore.pollTeamJobs()
 	} catch (error) {
 		console.error('Error generating article:', error)
 	} finally {
@@ -85,11 +88,7 @@ watch(() => props.promptId, fetchDetails)
 			<p class="text-neutral-600 mb-4">Generate an article that can be published on your website and increase visibility for this prompt</p>
 			<div class="space-y-4">
 				<div class="flex items-center gap-2">
-					<Button 
-						@click="generateArticle" 
-						class="flex items-center gap-2"
-						:disabled="isGeneratingArticle"
-					>
+					<Button @click="generateArticle" class="flex items-center gap-2" :disabled="isGeneratingArticle">
 						<svg
 							v-if="!isGeneratingArticle"
 							xmlns="http://www.w3.org/2000/svg"
