@@ -81,6 +81,14 @@ class Team extends Model
         {
                 return $this->hasMany(Organization::class);
         }
+        
+        /**
+         * Get the articles that belong to the team.
+         */
+        public function articles(): HasMany
+        {
+                return $this->hasMany(Article::class);
+        }
 
         /**
          * Get the job statuses that belong to the team.

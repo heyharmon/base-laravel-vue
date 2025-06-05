@@ -24,11 +24,11 @@ const termStore = useTermStore()
 // Generate terms on mount if domain is available
 onMounted(() => {
 	if (props.domain) {
-		generateTerms()
+		GenerateOrganizationKeywords()
 	}
 })
 
-const generateTerms = async () => {
+const GenerateOrganizationKeywords = async () => {
 	if (!props.domain) {
 		error.value = 'No website domain available.'
 		return
@@ -70,7 +70,7 @@ const createTerms = async () => {
 }
 
 // Expose methods to parent components
-defineExpose({ generateTerms })
+defineExpose({ GenerateOrganizationKeywords })
 </script>
 
 <template>
@@ -136,7 +136,7 @@ defineExpose({ generateTerms })
 
 			<button
 				v-if="generatedTerms.length > 0"
-				@click="generateTerms"
+				@click="GenerateOrganizationKeywords"
 				class="flex items-center gap-2 text-neutral-600 text-sm rounded-md cursor-pointer hover:text-neutral-900"
 				:disabled="isLoadingTerms || !domain"
 			>

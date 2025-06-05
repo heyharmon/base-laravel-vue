@@ -28,7 +28,7 @@ This document gives AI developers a concise view of the **LLM Mention Tracker** 
 -   **CheckTermInPastResponsesJob** – scans previous responses for a term and updates pivot tables.
 -   **FindCompetitorsInResponseJob** – analyzes a prompt response to extract competitor organizations and creates them with associated terms.
 -   **GeneratePrompt** – turns a term term into a new prompt and immediately queues it for execution.
--   **GenerateOrganizationTerms** – generates terms for an organization and then dispatches `GeneratePrompt` for each term.
+-   **GenerateOrganizationKeywords** – generates terms for an organization and then dispatches `GeneratePrompt` for each term.
 
 ### Services & Tools
 

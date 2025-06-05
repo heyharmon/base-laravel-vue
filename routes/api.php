@@ -16,7 +16,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\TermResponsesController;
 use App\Http\Controllers\TermRecommendationsController;
-use App\Http\Controllers\KeywordGeneratorController;
+use App\Http\Controllers\TermGeneratorController;
 use App\Http\Controllers\TermController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\ConversationController;
@@ -24,6 +24,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\ArticleController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -66,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Terms
 	Route::resource('organizations/{organization}/terms', TermController::class);
-	Route::post('generate-terms', [KeywordGeneratorController::class, 'generate']);
+	Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Term Recommendations
@@ -96,4 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Job status routes
 	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
 	Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+
+	// Articles
+	Route::resource('articles', ArticleController::class);
 });
