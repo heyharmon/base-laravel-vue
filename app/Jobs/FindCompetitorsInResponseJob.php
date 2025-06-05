@@ -245,8 +245,8 @@ class FindCompetitorsInResponseJob extends TrackableJob
                     $jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId));
                 }
 
-                // Dispatch the GenerateOrganizationTerms job for this organization
-                $jobDispatcher->dispatch($competitorOrg, new GenerateOrganizationTerms($competitorOrg, $this->teamId));
+                // Dispatch the GenerateOrganizationKeywords job for this organization
+                $jobDispatcher->dispatch($competitorOrg, new GenerateOrganizationKeywords($competitorOrg, $this->teamId));
 
                 $createdCount++;
             }

@@ -7,7 +7,7 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import TermDetailSheet from '@/components/terms/TermDetailSheet.vue'
 import TermCreateModal from '@/components/terms/TermCreateModal.vue'
-import GenerateTermsModal from '@/components/GenerateTermsModal.vue'
+import GenerateTermsModal from '@/components/organizations/GenerateTermsModal.vue'
 import TermNotification from '@/components/terms/TermNotification.vue'
 import TermListItem from '@/components/terms/TermListItem.vue'
 import RecommendedTermItem from '@/components/terms/RecommendedTermItem.vue'
@@ -259,7 +259,7 @@ const denyRecommendedTerm = async (termId, termName) => {
 	<!-- Term Modal -->
 	<TermCreateModal :is-open="isTermCreateModalOpen" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
-	<!-- Generate Terms Modal -->
+	<!-- Generate Keywords Modal -->
 	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />
 
 	<!-- Term Detail Sheet -->

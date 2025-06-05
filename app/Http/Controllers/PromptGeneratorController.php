@@ -20,8 +20,8 @@ class PromptGeneratorController extends Controller
 {
 	public function generate(Organization $organization): JsonResponse
 	{
-		if (!$organization->terms) {
-			return response()->json(['error' => 'Organization does not have any terms.'], 422);
+		if (!$organization->keywords) {
+			return response()->json(['error' => 'Organization does not have any keywords.'], 422);
 		}
 
 		try {
@@ -29,7 +29,7 @@ class PromptGeneratorController extends Controller
 
 			// Create an array of messages
 			$messages = [
-				new UserMessage("Here is a list of term terms: " . json_encode($organization->terms) . ". Your job is to generate a list of statements, questions, or prompts that a person would likely put into ChatGPT for these terms.
+				new UserMessage("Here is a list of keywords: " . json_encode($organization->keywords) . ". Your job is to generate a list of statements, questions, or prompts that a person would likely put into ChatGPT for these keywords.
 The prompts should elicit a response that mentions specific brands. So, pretend you are given the term term, \"car loan\". In that case, an example of an acceptable prompt is, \"Where can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that is likely to elicit a response that gives general information rather than recommending specific companies.
 Also, remember to keep the prompts simple. Don't make assumptions about the intent behind the term.
 Output your suggested prompt as plain text, without quotation marks, or any type of formatting.")
@@ -37,9 +37,25 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 
 			// Add location message conditionally if location is available
 			if (isset($organization->location) && !empty($organization->location)) {
-				$messages[] = new UserMessage("You also need to incorporate the brands location \"" . $organization->location . "\" in the prompt when appropriate.
+				$messages[] = new UserMessage("You also need to incorporate the brands location \"" . $organization->location . "\" in the prompts when appropriate.
 So, again pretend you are given the term term, \"car loan\" and the location is \"" . $organization->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $organization->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $organization->location . " that can provide a loan.");
 			}
+
+			// Add industry message conditionally if industry is available
+			if (isset($organization->industry) && !empty($organization->industry)) {
+				$messages[] = new UserMessage("You also need to incorporate the industry \"" . $organization->industry . "\" in the prompts when it makes sense.
+For example, if the keyword is related to the " . $organization->industry . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
+			}
+
+			// Add description message conditionally if description is available
+			if (isset($organization->description) && !empty($organization->description)) {
+				$messages[] = new UserMessage("Here is additional context about the organization that might help you create more relevant prompts: \"" . $organization->description . "\".
+Use this information to better understand what the organization does and create a prompt that would elicit responses mentioning organizations in this specific line of business. However, don't make the prompt too specific or narrow that it would only return this single organization.");
+			}
+
+			$messages[] = new UserMessage("Do not mention brand names or product names in a prompt.
+Also, remember to keep prompts simple. Don't make assumptions about the intent behind the keyword.
+Output your suggested prompt as plain text, without quotation marks, or any type of formatting.");
 
 			$textResponse = Prism::text()
 				->using(Provider::OpenAI, 'gpt-4o')
@@ -51,14 +67,14 @@ So, again pretend you are given the term term, \"car loan\" and the location is 
 
 			$schema = new ObjectSchema(
 				name: 'prompt_suggestions',
-				description: 'AI prompt suggestions',
+				description: 'Prompt suggestions',
 				properties: [
 					new ArraySchema(
 						name: 'prompts',
-						description: 'List of AI prompt suggestions',
+						description: 'List of prompt suggestions',
 						items: new StringSchema(
 							name: 'prompt',
-							description: 'A suggested AI prompt'
+							description: 'A suggested prompt'
 						)
 					)
 				],
@@ -68,7 +84,7 @@ So, again pretend you are given the term term, \"car loan\" and the location is 
 			$response = Prism::structured()
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withSchema($schema)
-				->withPrompt('Here is a list of prompts for my brand, please return them as an array: ' . $textResponse->text)
+				->withPrompt('Here is a list of prompts, please return them as an array: ' . $textResponse->text)
 				->asStructured();
 
 			$result = $response->structured;

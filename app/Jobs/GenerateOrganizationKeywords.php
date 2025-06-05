@@ -16,7 +16,7 @@ use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
 
-class GenerateOrganizationTerms extends TrackableJob
+class GenerateOrganizationKeywords extends TrackableJob
 {
 	use Batchable;
 
@@ -68,7 +68,7 @@ class GenerateOrganizationTerms extends TrackableJob
 				return;
 			}
 			// Mark the job as started
-			$this->markJobAsStarted('Generating term terms for ' . $this->model->name);
+			$this->markJobAsStarted('Generating keywords for ' . $this->model->name);
 
 			$searchApiTool = new SearchApiTool();
 
@@ -90,9 +90,9 @@ class GenerateOrganizationTerms extends TrackableJob
 				$organizationContext .= ". Description: " . $this->model->description;
 			}
 
-			$prompt = $organizationContext . ". Your job is to come up with a list of terms relevent to this company.
-These are terms people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with terms like \"auto loan\", \"home loan\", \"checking account\", etc.
-Output terms as a plain text list.";
+			$prompt = $organizationContext . ". Your job is to come up with a list of keywords relevent to this company.
+These are keywords people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with keywords like \"auto loan\", \"home loan\", \"checking account\", etc.
+Output keywords as a plain text list.";
 
 			$textResponse = Prism::text()
 				->using(Provider::OpenAI, 'gpt-4o')
@@ -103,42 +103,42 @@ Output terms as a plain text list.";
 				->asText();
 
 			$schema = new ObjectSchema(
-				name: 'term_suggestions',
-				description: 'Term term suggestions.',
+				name: 'keyword_suggestions',
+				description: 'Company keyword suggestions.',
 				properties: [
 					new ArraySchema(
-						name: 'terms',
-						description: 'List of term terms.',
+						name: 'keywords',
+						description: 'List of keywords.',
 						items: new StringSchema(
-							name: 'term',
-							description: 'A suggested term term'
+							name: 'keyword',
+							description: 'A suggested keyword'
 						)
 					)
 				],
-				requiredFields: ['terms']
+				requiredFields: ['keywords']
 			);
 
 			$response = Prism::structured()
 				->using(Provider::OpenAI, 'gpt-4o')
 				->withSchema($schema)
-				->withPrompt('Here is a list of term terms, please return them as an array: ' . $textResponse->text)
+				->withPrompt('Here is a list of keywords, please return them as an array: ' . $textResponse->text)
 				->asStructured();
 
 			$result = $response->structured;
 
-			$this->updateJobProgress(90, 'Saving termterms for ' . $this->model->name);
+			$this->updateJobProgress(90, 'Saving keywords for ' . $this->model->name);
 
 			$this->model->update([
-				'terms' => $result['terms']
+				'keywords' => $result['keywords']
 			]);
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Saved term terms for ' . $this->model->name);
+			$this->markJobAsCompleted('Saved keywords for ' . $this->model->name);
 
-			// Generate prompts for phrases if this is the owned organization
+			// Generate prompts for keywords if this is the owned organization
 			if (!$this->model->is_competitor) {
-				foreach ($this->model->terms as $term) {
-					$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $term, 'Utah'));
+				foreach ($this->model->keywords as $keyword) {
+					$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $keyword));
 				}
 			}
 		} catch (Throwable $exception) {

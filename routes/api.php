@@ -16,7 +16,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\TermResponsesController;
 use App\Http\Controllers\TermRecommendationsController;
-use App\Http\Controllers\KeywordGeneratorController;
+use App\Http\Controllers\TermGeneratorController;
 use App\Http\Controllers\TermController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\ConversationController;
@@ -67,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Terms
 	Route::resource('organizations/{organization}/terms', TermController::class);
-	Route::post('generate-terms', [KeywordGeneratorController::class, 'generate']);
+	Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Term Recommendations
