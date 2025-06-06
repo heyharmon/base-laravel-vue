@@ -13,6 +13,9 @@ const articleStore = useArticleStore()
 
 const article = ref({
 	title: '',
+	meta_title: '',
+	meta_description: '',
+	schema: '',
 	outline: '',
 	content: '',
 	organization_id: null,
@@ -22,6 +25,9 @@ const article = ref({
 
 const originalArticle = ref({
 	title: '',
+	meta_title: '',
+	meta_description: '',
+	schema: '',
 	outline: '',
 	content: '',
 	organization_id: null,
@@ -31,6 +37,7 @@ const originalArticle = ref({
 
 const isSubmitting = ref(false)
 const isLoading = ref(true)
+const showSettings = ref(false)
 
 const editor = useEditor({
 	content: '',
@@ -62,6 +69,9 @@ onMounted(async () => {
 const hasChanges = computed(() => {
 	return (
 		article.value.title !== originalArticle.value.title ||
+		article.value.meta_title !== originalArticle.value.meta_title ||
+		article.value.meta_description !== originalArticle.value.meta_description ||
+		article.value.schema !== originalArticle.value.schema ||
 		article.value.outline !== originalArticle.value.outline ||
 		article.value.content !== originalArticle.value.content ||
 		article.value.organization_id !== originalArticle.value.organization_id ||
@@ -84,6 +94,20 @@ const updateArticle = async () => {
 const cancelEdit = () => {
 	router.push({ name: 'articles.index' })
 }
+
+const isCopied = ref(false)
+
+const copyContentToClipboard = async () => {
+	try {
+		await navigator.clipboard.writeText(article.value.content)
+		isCopied.value = true
+		setTimeout(() => {
+			isCopied.value = false
+		}, 2000)
+	} catch (error) {
+		console.error('Failed to copy content:', error)
+	}
+}
 </script>
 
 <template>
@@ -94,9 +118,13 @@ const cancelEdit = () => {
 				<div class="flex items-center gap-3">
 					<h1 class="text-2xl font-bold">{{ article.title || 'Edit Article' }}</h1>
 				</div>
-				<div class="flex items-center justify-end gap-2 w-2/6">
+				<div class="flex items-center justify-end gap-2">
+					<Button @click="showSettings = !showSettings" variant="neutral">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+						{{ showSettings ? 'Hide Settings' : 'Show Settings' }}
+					</Button>
+					<Button @click="cancelEdit" variant="neutral">{{ hasChanges ? 'Discard Changes' : 'Back' }}</Button>
 					<Button v-if="hasChanges" @click="updateArticle" :disabled="isSubmitting" :loading="isSubmitting"> Save </Button>
-					<Button @click="cancelEdit" variant="neutral"> Cancel </Button>
 				</div>
 			</div>
 
@@ -111,16 +139,58 @@ const cancelEdit = () => {
 			</div>
 
 			<div v-else class="flex flex-col gap-6">
-				<!-- Title input -->
-				<div>
-					<label for="title" class="block text-sm font-medium text-neutral-700 mb-1">Title</label>
-					<input
-						id="title"
-						v-model="article.title"
-						type="text"
-						class="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-						placeholder="Article title"
-					/>
+				<!-- Settings panel -->
+				<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
+					<h2 class="text-lg font-medium mb-4">Article Settings</h2>
+					<div class="flex flex-col gap-4">
+						<!-- Title input -->
+						<div>
+							<label for="title" class="block text-sm font-medium text-neutral-700 mb-1">Title</label>
+							<input
+								id="title"
+								v-model="article.title"
+								type="text"
+								class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
+								placeholder="Article title"
+							/>
+						</div>
+
+						<!-- Meta Title input -->
+						<div>
+							<label for="meta_title" class="block text-sm font-medium text-neutral-700 mb-1">Meta Title</label>
+							<input
+								id="meta_title"
+								v-model="article.meta_title"
+								type="text"
+								class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
+								placeholder="Meta title for SEO"
+							/>
+						</div>
+
+						<!-- Meta Description input -->
+						<div>
+							<label for="meta_description" class="block text-sm font-medium text-neutral-700 mb-1">Meta Description</label>
+							<textarea
+								id="meta_description"
+								v-model="article.meta_description"
+								rows="3"
+								class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
+								placeholder="Meta description for SEO"
+							></textarea>
+						</div>
+
+						<!-- Schema input -->
+						<div>
+							<label for="schema" class="block text-sm font-medium text-neutral-700 mb-1">Schema</label>
+							<textarea
+								id="schema"
+								v-model="article.schema"
+								rows="5"
+								class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500 font-mono text-sm"
+								placeholder="JSON-LD structured data schema"
+							></textarea>
+						</div>
+					</div>
 				</div>
 
 				<!-- Outline input -->
@@ -137,7 +207,20 @@ const cancelEdit = () => {
 
 				<!-- Rich text editor -->
 				<div>
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Content</label>
+					<div class="flex justify-between items-center mb-2">
+						<label class="block text-sm font-medium text-neutral-700">Content</label>
+						<Button
+							@click="copyContentToClipboard"
+							variant="outline"
+							class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 transition-colors"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+								<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+							</svg>
+							{{ isCopied ? 'Copied!' : 'Copy to clipboard' }}
+						</Button>
+					</div>
 					<div class="border border-neutral-300 rounded-md shadow-sm overflow-hidden">
 						<!-- Editor menu -->
 						<div class="flex items-center gap-2 p-2 border-b border-neutral-300 bg-neutral-50">

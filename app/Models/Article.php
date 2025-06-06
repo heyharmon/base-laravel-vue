@@ -16,6 +16,9 @@ class Article extends Model
         'prompt_id',
         'conversation_id',
         'title',
+        'meta_title',
+        'meta_description',
+        'schema',
         'outline',
         'content',
     ];

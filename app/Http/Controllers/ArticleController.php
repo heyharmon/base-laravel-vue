@@ -33,6 +33,9 @@ class ArticleController extends Controller
 			'prompt_id' => 'nullable|exists:prompts,id',
 			'conversation_id' => 'nullable|string',
 			'title' => 'required|string|max:255',
+			'meta_title' => 'nullable|string|max:255',
+			'meta_description' => 'nullable|string',
+			'schema' => 'nullable|string',
 			'outline' => 'nullable|string',
 			'content' => 'nullable|string',
 		]);
@@ -73,6 +76,9 @@ class ArticleController extends Controller
 			'prompt_id' => 'sometimes|nullable|exists:prompts,id',
 			'conversation_id' => 'sometimes|nullable|string',
 			'title' => 'sometimes|required|string|max:255',
+			'meta_title' => 'sometimes|nullable|string|max:255',
+			'meta_description' => 'sometimes|nullable|string',
+			'schema' => 'sometimes|nullable|string',
 			'outline' => 'sometimes|nullable|string',
 			'content' => 'sometimes|nullable|string',
 		]);
