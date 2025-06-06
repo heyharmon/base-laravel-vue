@@ -71,6 +71,7 @@
 }
 
 @layer utilities {
+	/* Hide scrollbars */
 	.no-scrollbar::-webkit-scrollbar {
 		display: none;
 	}
