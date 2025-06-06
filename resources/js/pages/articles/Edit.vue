@@ -14,6 +14,7 @@ const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
 
 const article = ref({
+	id: null,
 	title: '',
 	meta_title: '',
 	meta_description: '',
@@ -46,7 +47,7 @@ const activeArticleJobs = computed(() => {
 	return jobStatusStore.jobs.filter(
 		(job) =>
 			job.trackable_type === 'App\\Models\\Article' &&
-			job.trackable_id === route.params.id &&
+			job.trackable_id === article.value.id &&
 			(job.status === 'pending' || job.status === 'processing')
 	)
 })
@@ -141,16 +142,16 @@ const copyContentToClipboard = async () => {
 
 <template>
 	<DefaultLayout>
-		<div class="container mx-auto py-8">
-			<!-- Active jobs message -->
-			<div
-				v-if="activeArticleJobs.length > 0"
-				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
-			>
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span> {{ activeArticleJobs.length }} {{ activeArticleJobs.length === 1 ? 'job is running for this article' : 'jobs are running for this article' }} </span>
-			</div>
+		<!-- Active jobs message -->
+		<div
+			v-if="activeArticleJobs.length > 0"
+			class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+		>
+			<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+			<span> {{ activeArticleJobs.length }} {{ activeArticleJobs.length === 1 ? 'job is running for this article' : 'jobs are running for this article' }} </span>
+		</div>
 
+		<div class="container mx-auto py-8">
 			<!-- Top bar -->
 			<div class="flex justify-between items-start mb-8">
 				<div class="flex items-center gap-3">
