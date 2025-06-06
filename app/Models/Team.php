@@ -89,6 +89,14 @@ class Team extends Model
         {
                 return $this->hasMany(Article::class);
         }
+        
+        /**
+         * Get the conversations that belong to the team.
+         */
+        public function conversations(): HasMany
+        {
+                return $this->hasMany(Conversation::class);
+        }
 
         /**
          * Get the job statuses that belong to the team.
@@ -112,6 +120,7 @@ class Team extends Model
                         $team->prompts()->get()->each->delete();
                         $team->terms()->get()->each->delete();
                         $team->organizations()->get()->each->delete();
+                        $team->conversations()->get()->each->delete();
 
                         // Remove queued job data
                         $jobIds = $team->jobStatuses()->pluck('job_id')->toArray();
