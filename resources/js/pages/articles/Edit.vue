@@ -13,6 +13,9 @@ const articleStore = useArticleStore()
 
 const article = ref({
 	title: '',
+	meta_title: '',
+	meta_description: '',
+	schema: '',
 	outline: '',
 	content: '',
 	organization_id: null,
@@ -22,6 +25,9 @@ const article = ref({
 
 const originalArticle = ref({
 	title: '',
+	meta_title: '',
+	meta_description: '',
+	schema: '',
 	outline: '',
 	content: '',
 	organization_id: null,
@@ -62,6 +68,9 @@ onMounted(async () => {
 const hasChanges = computed(() => {
 	return (
 		article.value.title !== originalArticle.value.title ||
+		article.value.meta_title !== originalArticle.value.meta_title ||
+		article.value.meta_description !== originalArticle.value.meta_description ||
+		article.value.schema !== originalArticle.value.schema ||
 		article.value.outline !== originalArticle.value.outline ||
 		article.value.content !== originalArticle.value.content ||
 		article.value.organization_id !== originalArticle.value.organization_id ||
@@ -135,6 +144,42 @@ const copyContentToClipboard = async () => {
 						class="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
 						placeholder="Article title"
 					/>
+				</div>
+
+				<!-- Meta Title input -->
+				<div>
+					<label for="meta_title" class="block text-sm font-medium text-neutral-700 mb-1">Meta Title</label>
+					<input
+						id="meta_title"
+						v-model="article.meta_title"
+						type="text"
+						class="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
+						placeholder="Meta title for SEO"
+					/>
+				</div>
+
+				<!-- Meta Description input -->
+				<div>
+					<label for="meta_description" class="block text-sm font-medium text-neutral-700 mb-1">Meta Description</label>
+					<textarea
+						id="meta_description"
+						v-model="article.meta_description"
+						rows="3"
+						class="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
+						placeholder="Meta description for SEO"
+					></textarea>
+				</div>
+
+				<!-- Schema input -->
+				<div>
+					<label for="schema" class="block text-sm font-medium text-neutral-700 mb-1">Schema</label>
+					<textarea
+						id="schema"
+						v-model="article.schema"
+						rows="5"
+						class="w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500 font-mono text-sm"
+						placeholder="JSON-LD structured data schema"
+					></textarea>
 				</div>
 
 				<!-- Outline input -->
