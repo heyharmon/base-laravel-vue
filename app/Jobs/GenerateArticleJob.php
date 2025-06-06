@@ -132,7 +132,7 @@ Most importantly, directly answers this prompt in the most authentic, honest att
 					),
 					new StringSchema(
 						name: 'content',
-						description: 'The full content of the article in HTML format using where necessary <h1>, <h2>, <p>, <b>, <i>, <ul>, <li>, <blockquote>, <table> and <a> tags'
+						description: 'The full content of the article in HTML format using where necessary <h1>, <h2>, <h3>, <h4>, <p>, <b>, <i>, <ul>, <li>, <blockquote>, <table> and <a> tags'
 					)
 				],
 				requiredFields: ['title', 'content']

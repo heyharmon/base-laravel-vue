@@ -172,6 +172,20 @@ const cancelEdit = () => {
 								H2
 							</button>
 							<button
+								@click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+								:class="{ 'bg-neutral-200': editor.isActive('heading', { level: 3 }) }"
+								class="p-1 rounded hover:bg-neutral-200"
+							>
+								H3
+							</button>
+							<button
+								@click="editor.chain().focus().toggleHeading({ level: 4 }).run()"
+								:class="{ 'bg-neutral-200': editor.isActive('heading', { level: 4 }) }"
+								class="p-1 rounded hover:bg-neutral-200"
+							>
+								H4
+							</button>
+							<button
 								@click="editor.chain().focus().toggleBulletList().run()"
 								:class="{ 'bg-neutral-200': editor.isActive('bulletList') }"
 								class="p-1 rounded hover:bg-neutral-200"
@@ -193,7 +207,7 @@ const cancelEdit = () => {
 								class="p-1 rounded hover:bg-neutral-200"
 							>
 								<!-- prettier-ignore -->
-								<svg fill=none height=16 stroke=currentColor stroke-linecap=round stroke-linejoin=round stroke-width=2 viewBox="0 0 24 24" width=16 xmlns=http://www.w3.org/2000/svg><path d="M14 9.5L21 9.5"></path><path d="M14 14.5L21 14.5"></path><path d="M3 9.5L10 9.5"></path><path d="M3 14.5L10 14.5"></path><path d="M10 19.5L3 19.5L3 4.5L10 4.5"></path><path d="M21 19.5L14 19.5L14 4.5L21 4.5"></path></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m6.585 17.308l2.396-4.174q-.173.097-.404.135t-.461.039q-1.4 0-2.354-.972q-.954-.971-.954-2.336q0-1.4.954-2.354t2.354-.954q1.364 0 2.336.954t.971 2.347q0 .486-.118.906t-.336.793l-3.238 5.616zm8.769 0l2.396-4.173q-.173.096-.404.134t-.461.039q-1.4 0-2.354-.972q-.954-.971-.954-2.336q0-1.42.954-2.363t2.354-.945q1.364 0 2.336.954t.971 2.347q0 .486-.118.906t-.335.793L16.5 17.308zm-7.238-5.116q.913 0 1.552-.639q.64-.64.64-1.553t-.64-1.553t-1.552-.64q-.914 0-1.553.64q-.64.64-.64 1.553t.64 1.553t1.553.64m8.769 0q.913 0 1.553-.64T19.077 10t-.64-1.553t-1.552-.64t-1.553.64t-.64 1.553t.64 1.553t1.553.64M8.115 10"/></svg>
 							</button>
 							<button @click="editor.chain().focus().undo().run()" class="p-1 rounded hover:bg-neutral-200">
 								<!-- prettier-ignore -->
@@ -215,40 +229,3 @@ const cancelEdit = () => {
 		</div>
 	</DefaultLayout>
 </template>
-
-<style>
-.ProseMirror {
-	min-height: 300px;
-	outline: none;
-}
-
-.ProseMirror p {
-	margin-bottom: 0.75em;
-}
-
-.ProseMirror h1 {
-	font-size: 1.5em;
-	font-weight: bold;
-	margin-bottom: 0.5em;
-}
-
-.ProseMirror h2 {
-	font-size: 1.25em;
-	font-weight: bold;
-	margin-bottom: 0.5em;
-}
-
-.ProseMirror ul,
-.ProseMirror ol {
-	padding-left: 1.5em;
-	margin-bottom: 0.75em;
-}
-
-.ProseMirror blockquote {
-	border-left: 3px solid #ddd;
-	padding-left: 1em;
-	margin-left: 0;
-	margin-right: 0;
-	font-style: italic;
-}
-</style>
