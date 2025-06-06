@@ -16,6 +16,10 @@ use App\Tools\SearchApiTool;
 use App\Models\Article;
 use App\Models\Prompt;
 use App\Models\Organization;
+use App\Jobs\GenerateArticleMetaTitleJob;
+use App\Jobs\GenerateArticleMetaDescriptionJob;
+use App\Jobs\GenerateArticleSchemaJob;
+use App\Services\JobDispatcherService;
 
 class GenerateArticleJob extends TrackableJob
 {
@@ -26,7 +30,7 @@ class GenerateArticleJob extends TrackableJob
 	 *
 	 * @var int
 	 */
-	public $tries = 3;
+	public $tries = 1;
 
 	/**
 	 * The prompt to generate an article for.
@@ -67,9 +71,10 @@ class GenerateArticleJob extends TrackableJob
 	/**
 	 * Execute the job.
 	 *
+	 * @param  \App\Services\JobDispatcherService  $jobDispatcher
 	 * @return void
 	 */
-	public function handle()
+	public function handle(JobDispatcherService $jobDispatcher)
 	{
 		if ($this->isCancelled()) return;
 
@@ -150,13 +155,20 @@ Most importantly, directly answers this prompt in the most authentic, honest att
 			$this->updateJobProgress(90, 'Saving article');
 
 			// Create the article record
-			Article::create([
+			$article = Article::create([
 				'team_id' => $this->teamId,
 				'organization_id' => $this->organization->id,
 				'prompt_id' => $this->model->id,
 				'title' => $result['title'],
 				'content' => $result['content'],
 			]);
+
+			$this->updateJobProgress(95, 'Dispatching SEO generation jobs');
+
+			// Dispatch jobs to generate SEO meta fields and schema using JobDispatcherService
+			$jobDispatcher->dispatch($article, new GenerateArticleMetaTitleJob($article, $this->teamId));
+			$jobDispatcher->dispatch($article, new GenerateArticleMetaDescriptionJob($article, $this->teamId));
+			$jobDispatcher->dispatch($article, new GenerateArticleSchemaJob($article, $this->teamId));
 
 			// Mark the job as completed
 			$this->markJobAsCompleted('Created article for prompt "' . $this->model->content . '"');

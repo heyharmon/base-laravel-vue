@@ -25,7 +25,7 @@ class GenerateOrganizationKeywords extends TrackableJob
 	 *
 	 * @var int
 	 */
-	public $tries = 3;
+	public $tries = 1;
 
 	/**
 	 * The model to use for job tracking.
