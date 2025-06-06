@@ -23,7 +23,6 @@ const article = ref({
 	content: '',
 	organization_id: null,
 	prompt_id: null,
-	conversation_id: null
 })
 
 const originalArticle = ref({
@@ -35,7 +34,6 @@ const originalArticle = ref({
 	content: '',
 	organization_id: null,
 	prompt_id: null,
-	conversation_id: null
 })
 
 const isSubmitting = ref(false)

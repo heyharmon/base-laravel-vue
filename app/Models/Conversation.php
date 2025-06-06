@@ -26,9 +26,4 @@ class Conversation extends Model
 	{
 		return $this->hasMany(Chat::class);
 	}
-
-	public function articles(): HasMany
-	{
-		return $this->hasMany(Article::class);
-	}
 }

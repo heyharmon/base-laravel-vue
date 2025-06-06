@@ -15,7 +15,6 @@ class Article extends Model
 		'team_id',
 		'organization_id',
 		'prompt_id',
-		'conversation_id',
 		'title',
 		'meta_title',
 		'meta_description',
@@ -37,10 +36,5 @@ class Article extends Model
 	public function prompt(): BelongsTo
 	{
 		return $this->belongsTo(Prompt::class);
-	}
-
-	public function conversation(): BelongsTo
-	{
-		return $this->belongsTo(Conversation::class);
 	}
 }
