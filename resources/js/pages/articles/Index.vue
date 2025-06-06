@@ -11,8 +11,8 @@ const router = useRouter()
 const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
 
-// Get active jobs related to competitors
-const activeArticleJobs = computed(() => {
+// Get active article generation jobs
+const activeArticleGenerationJobs = computed(() => {
 	return jobStatusStore.jobs.filter((job) => job.job_class.includes('GenerateArticleJob') && (job.status === 'pending' || job.status === 'processing'))
 })
 
@@ -91,11 +91,11 @@ const deleteArticle = async (id) => {
 
 			<!-- Active jobs message -->
 			<div
-				v-if="!articleStore.error && activeArticleJobs.length > 0"
+				v-if="!articleStore.error && activeArticleGenerationJobs.length > 0"
 				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span> Generating {{ activeArticleJobs.length }} {{ activeArticleJobs.length === 1 ? 'article' : 'articles' }}. </span>
+				<span> Generating {{ activeArticleGenerationJobs.length }} {{ activeArticleGenerationJobs.length === 1 ? 'article' : 'articles' }}. </span>
 			</div>
 
 			<!-- Loading state -->

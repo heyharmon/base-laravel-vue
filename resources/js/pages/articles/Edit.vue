@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -10,8 +11,10 @@ import Button from '@/components/ui/Button.vue'
 const route = useRoute()
 const router = useRouter()
 const articleStore = useArticleStore()
+const jobStatusStore = useJobStatusStore()
 
 const article = ref({
+	id: null,
 	title: '',
 	meta_title: '',
 	meta_description: '',
@@ -39,6 +42,28 @@ const isSubmitting = ref(false)
 const isLoading = ref(true)
 const showSettings = ref(false)
 
+// Get active jobs related to this article
+const activeArticleJobs = computed(() => {
+	return jobStatusStore.jobs.filter(
+		(job) =>
+			job.trackable_type === 'App\\Models\\Article' &&
+			job.trackable_id === article.value.id &&
+			(job.status === 'pending' || job.status === 'processing')
+	)
+})
+
+// Watch activeArticleJobs and when it changes to false, fetch the article
+watch(
+	activeArticleJobs,
+	(newJobs, oldJobs) => {
+		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
+			// At least one job completed, or all jobs are done
+			fetchArticle()
+		}
+	},
+	{ deep: true }
+)
+
 const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
@@ -47,17 +72,22 @@ const editor = useEditor({
 	}
 })
 
+const fetchArticle = async () => {
+	const data = await articleStore.fetchArticle(route.params.id)
+	article.value = { ...data }
+	originalArticle.value = { ...data }
+
+	// Set editor content
+	if (editor.value && article.value.content) {
+		editor.value.commands.setContent(article.value.content)
+	}
+}
+
+
 onMounted(async () => {
 	try {
 		if (route.params.id) {
-			const data = await articleStore.fetchArticle(route.params.id)
-			article.value = { ...data }
-			originalArticle.value = { ...data }
-
-			// Set editor content
-			if (editor.value && article.value.content) {
-				editor.value.commands.setContent(article.value.content)
-			}
+			await fetchArticle()
 		}
 	} catch (error) {
 		console.error('Error fetching article:', error)
@@ -112,6 +142,15 @@ const copyContentToClipboard = async () => {
 
 <template>
 	<DefaultLayout>
+		<!-- Active jobs message -->
+		<div
+			v-if="activeArticleJobs.length > 0"
+			class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+		>
+			<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+			<span> {{ activeArticleJobs.length }} {{ activeArticleJobs.length === 1 ? 'job is running for this article' : 'jobs are running for this article' }} </span>
+		</div>
+
 		<div class="container mx-auto py-8">
 			<!-- Top bar -->
 			<div class="flex justify-between items-start mb-8">
