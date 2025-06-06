@@ -84,6 +84,20 @@ const updateArticle = async () => {
 const cancelEdit = () => {
 	router.push({ name: 'articles.index' })
 }
+
+const isCopied = ref(false)
+
+const copyContentToClipboard = async () => {
+	try {
+		await navigator.clipboard.writeText(article.value.content)
+		isCopied.value = true
+		setTimeout(() => {
+			isCopied.value = false
+		}, 2000)
+	} catch (error) {
+		console.error('Failed to copy content:', error)
+	}
+}
 </script>
 
 <template>
@@ -137,7 +151,20 @@ const cancelEdit = () => {
 
 				<!-- Rich text editor -->
 				<div>
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Content</label>
+					<div class="flex justify-between items-center mb-1">
+						<label class="block text-sm font-medium text-neutral-700">Content</label>
+						<Button
+							@click="copyContentToClipboard"
+							variant="outline"
+							class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 transition-colors"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+								<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+							</svg>
+							{{ isCopied ? 'Copied!' : 'Copy to clipboard' }}
+						</Button>
+					</div>
 					<div class="border border-neutral-300 rounded-md shadow-sm overflow-hidden">
 						<!-- Editor menu -->
 						<div class="flex items-center gap-2 p-2 border-b border-neutral-300 bg-neutral-50">
