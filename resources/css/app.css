@@ -18,11 +18,11 @@
 	}
 
 	.ProseMirror h3 {
-		@apply text-xl font-semibold mt-4 mb-3 text-neutral-800;
+		@apply text-lg font-semibold mt-4 mb-3 text-neutral-700;
 	}
 
 	.ProseMirror h4 {
-		@apply text-lg font-semibold mt-4 mb-2 text-neutral-700;
+		@apply text-base font-semibold mt-3 mb-2 text-neutral-600;
 	}
 
 	.ProseMirror p {
