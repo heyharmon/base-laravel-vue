@@ -16,7 +16,6 @@ const article = ref({
   content: '',
   organization_id: null,
   prompt_id: null,
-  conversation_id: null
 })
 
 const isSubmitting = ref(false)
@@ -57,9 +56,9 @@ const cancelCreate = () => {
           <h1 class="text-2xl font-bold">Create New Article</h1>
         </div>
         <div class="flex items-center gap-2">
-          <Button 
-            @click="createArticle" 
-            :disabled="isSubmitting || !article.title" 
+          <Button
+            @click="createArticle"
+            :disabled="isSubmitting || !article.title"
             :loading="isSubmitting"
           >
             Create
