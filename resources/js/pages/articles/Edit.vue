@@ -26,6 +26,7 @@ const article = ref({
 })
 
 const originalArticle = ref({
+	id: null,
 	title: '',
 	meta_title: '',
 	meta_description: '',
@@ -51,41 +52,39 @@ const activeArticleJobs = computed(() => {
 })
 
 // Watch activeArticleJobs and when it changes to false, fetch the article
-watch(
-	activeArticleJobs,
-	(newJobs, oldJobs) => {
-		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
-			// At least one job completed, or all jobs are done
-			fetchArticle()
-		}
-	},
-	{ deep: true }
-)
+// watch(
+// 	activeArticleJobs,
+// 	(newJobs, oldJobs) => {
+// 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
+// 			// At least one job completed, or all jobs are done
+// 			fetchArticle()
+// 		}
+// 	},
+// 	{ deep: true }
+// )
 
 const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
+		console.log('On updating article...')
 		article.value.content = editor.getHTML()
 	}
 })
 
 const fetchArticle = async () => {
+	console.log('Fetching article...')
 	const data = await articleStore.fetchArticle(route.params.id)
 	article.value = { ...data }
 	originalArticle.value = { ...data }
-
-	// Set editor content
-	if (editor.value && article.value.content) {
-		editor.value.commands.setContent(article.value.content)
-	}
+	editor.value.commands.setContent(article.value.content) // Set editor content
 }
 
 
 onMounted(async () => {
 	try {
 		if (route.params.id) {
-			await fetchArticle()
+			fetchArticle()
 		}
 	} catch (error) {
 		console.error('Error fetching article:', error)
@@ -108,6 +107,7 @@ const hasChanges = computed(() => {
 })
 
 const updateArticle = async () => {
+	console.log('Updating article...')
 	isSubmitting.value = true
 	try {
 		await articleStore.updateArticle(route.params.id, article.value)
