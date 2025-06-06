@@ -1,16 +1,81 @@
 @import 'tailwindcss';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+	--font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer components {
+	.ProseMirror {
+		@apply min-h-[300px] outline-none;
+	}
+
+	.ProseMirror h1 {
+		@apply text-3xl font-bold mt-6 mb-4 text-neutral-900;
+	}
+
+	.ProseMirror h2 {
+		@apply text-2xl font-bold mt-5 mb-3 text-neutral-800;
+	}
+
+	.ProseMirror h3 {
+		@apply text-xl font-semibold mt-4 mb-3 text-neutral-800;
+	}
+
+	.ProseMirror h4 {
+		@apply text-lg font-semibold mt-4 mb-2 text-neutral-700;
+	}
+
+	.ProseMirror p {
+		@apply text-base leading-relaxed mb-4 text-neutral-700;
+	}
+
+	.ProseMirror b {
+		@apply font-bold;
+	}
+
+	.ProseMirror i {
+		@apply italic;
+	}
+
+	.ProseMirror ul {
+		@apply list-disc pl-6 mb-4 text-neutral-700;
+	}
+
+	.ProseMirror ol {
+		@apply list-decimal pl-6 mb-4 text-neutral-700;
+	}
+
+	.ProseMirror li {
+		@apply mb-1;
+	}
+
+	.ProseMirror blockquote {
+		@apply pl-4 italic border-l-4 border-neutral-300 my-4 text-neutral-600;
+	}
+
+	.ProseMirror table {
+		@apply w-full border-collapse mb-4;
+	}
+
+	.ProseMirror table th {
+		@apply border border-neutral-300 bg-neutral-100 p-2 text-left font-semibold;
+	}
+
+	.ProseMirror table td {
+		@apply border border-neutral-300 p-2;
+	}
+
+	.ProseMirror a {
+		@apply text-blue-600 underline hover:text-blue-800;
+	}
 }
 
 @layer utilities {
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
 }
