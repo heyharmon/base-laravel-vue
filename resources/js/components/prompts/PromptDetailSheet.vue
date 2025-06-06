@@ -32,7 +32,7 @@ const promptDetails = computed(() => {
 })
 
 // Check if there is an active article job for this prompt
-const activeArticleJobForThisPrompt = computed(() => {
+const hasActiveArticleJob = computed(() => {
 	let jobs = jobStatusStore.jobs.filter(
 		(job) =>
 			job.job_class.includes('GenerateArticleJob') &&
@@ -44,8 +44,8 @@ const activeArticleJobForThisPrompt = computed(() => {
 	return jobs.length > 0
 })
 
-// Watch activeArticleJobForThisPrompt and when it changes to false, fetch the prompt details
-watch(activeArticleJobForThisPrompt, (newVal) => {
+// Watch hasActiveArticleJob and when it changes to false, fetch the prompt details
+watch(hasActiveArticleJob, (newVal) => {
 	if (!newVal) {
 		fetchDetails()
 	}
@@ -133,11 +133,11 @@ watch(() => props.promptId, fetchDetails)
 						<Button
 							@click="generateArticle"
 							class="flex items-center gap-2"
-							:class="{ 'bg-green-600 hover:bg-green-700': activeArticleJobForThisPrompt }"
-							:disabled="activeArticleJobForThisPrompt"
+							:class="{ 'bg-green-600 hover:bg-green-700': hasActiveArticleJob }"
+							:disabled="hasActiveArticleJob"
 						>
 							<svg
-								v-if="!activeArticleJobForThisPrompt"
+								v-if="!hasActiveArticleJob"
 								xmlns="http://www.w3.org/2000/svg"
 								width="16"
 								height="16"
@@ -157,10 +157,7 @@ watch(() => props.promptId, fetchDetails)
 								<path d="M3 5h4" />
 								<path d="M17 19h4" />
 							</svg>
-							<div
-								v-else-if="activeArticleJobForThisPrompt"
-								class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"
-							></div>
+							<div v-else-if="hasActiveArticleJob" class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></div>
 							<svg
 								v-else
 								xmlns="http://www.w3.org/2000/svg"
@@ -176,9 +173,7 @@ watch(() => props.promptId, fetchDetails)
 							>
 								<polyline points="20 6 9 17 4 12"></polyline>
 							</svg>
-							<span>{{
-								activeArticleJobForThisPrompt ? 'Generating...' : activeArticleJobForThisPrompt ? 'Processing...' : 'Generate article'
-							}}</span>
+							<span>{{ hasActiveArticleJob ? 'Generating...' : hasActiveArticleJob ? 'Processing...' : 'Generate article' }}</span>
 						</Button>
 					</div>
 

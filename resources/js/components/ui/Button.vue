@@ -14,7 +14,8 @@ const props = defineProps({
 		type: String,
 		default: 'button'
 	},
-	asChild: Boolean
+	asChild: Boolean,
+	loading: Boolean
 })
 
 const variants = {
@@ -46,8 +47,9 @@ const sizes = {
 		:as="as"
 		:as-child="asChild"
 		:class="`${variants[variant]} ${sizes[size]}`"
-		class="'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\'size-\'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive'"
+		class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive'"
 	>
+		<div v-if="loading" class="animate-spin rounded-full h-3.5 w-3.5 border border-b-transparent border-neutral-800"></div>
 		<slot />
 	</Primitive>
 </template>
