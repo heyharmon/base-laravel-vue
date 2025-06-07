@@ -34,7 +34,7 @@ watch(
 				<h2 class="text-2xl font-semibold mb-4">{{ conversationStore.activeConversation?.title || 'Untitled conversation' }}</h2>
 
 				<div class="flex-grow mb-4 space-y-4 overflow-y-auto no-scrollbar">
-					<ChatMessage v-for="(chat, index) in chatStore.chats" :key="index" :message="chat" />
+					<ChatMessage v-for="(chat, index) in chatStore.chats" :key="index" :chat="chat" />
 
 					<ChatLoadingIndicator v-if="chatStore.isLoading" />
 				</div>
