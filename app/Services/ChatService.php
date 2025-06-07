@@ -54,7 +54,7 @@ class ChatService
 	/**
 	 * Get AI response using OpenAI client
 	 *
-	 * @param Conversation $conversation
+        $result = $this->client->responses()->create([
 	 * @param string $userMessage
 	 * @return string
 	 */
