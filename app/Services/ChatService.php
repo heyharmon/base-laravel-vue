@@ -33,13 +33,20 @@ class ChatService
 		// Get AI response
 		$response = $this->getAiResponse($conversation, $userMessage);
 
+		// Extract the text content from the response
+		$responseContent = '';
+		if (isset($response->output[0]->content[0]->text)) {
+			$responseContent = $response->output[0]->content[0]->text;
+		}
+
 		// Store the AI response
 		$aiChat = $conversation->chats()->create([
 			'role' => 'assistant',
-			'content' => $response,
+			'content' => $responseContent,
 			'metadata' => [
-				'model' => 'gpt-4o',
+				'model' => 'gpt-4.1',
 				'provider' => 'openai',
+				'response_id' => $response->id,
 			],
 		]);
 
@@ -54,35 +61,40 @@ class ChatService
 	/**
 	 * Get AI response using OpenAI client
 	 *
-        $result = $this->client->responses()->create([
+	 * @param Conversation $conversation
 	 * @param string $userMessage
-	 * @return string
+	 * @return object
 	 */
-	private function getAiResponse(Conversation $conversation, string $userMessage): string
+	private function getAiResponse(Conversation $conversation, string $userMessage): object
 	{
-		// Fetch all previous chats in the conversation
-		$previousChats = $conversation->chats()->orderBy('created_at', 'asc')->get();
+		// Get the last chat that has a response_id in its metadata (if any)
+		$lastResponseChat = $conversation->chats()
+			->where('role', 'assistant')
+			->whereNotNull('metadata->response_id')
+			->orderBy('created_at', 'desc')
+			->first();
 
-		// Build messages array for conversation history
-		$messages = [];
+		$requestData = [
+			'model' => 'gpt-4.1',
+			'input' => $userMessage,
+		];
 
-		// Add system message
-		$messages[] = ['role' => 'system', 'content' => (string) view('prompts.system')];
-
-		// Add all previous messages as context
-		foreach ($previousChats as $chat) {
-			$messages[] = ['role' => $chat->role, 'content' => $chat->content];
+		// If we have a previous response ID, use it to maintain conversation state
+		if ($lastResponseChat && isset($lastResponseChat->metadata['response_id'])) {
+			$requestData['previous_response_id'] = $lastResponseChat->metadata['response_id'];
+		} else {
+			// For new conversations or if no previous response_id exists,
+			// we need to include the system message
+			$systemMessage = (string) view('prompts.system');
+			$requestData['input'] = [
+				['role' => 'system', 'content' => $systemMessage],
+				['role' => 'user', 'content' => $userMessage]
+			];
 		}
 
-		// Add the current user message
-		$messages[] = ['role' => 'user', 'content' => $userMessage];
+		// Generate AI response using OpenAI Responses API
+		$response = $this->client->responses()->create($requestData);
 
-		// Generate AI response using OpenAI with full conversation context
-		$result = $this->client->chat()->create([
-			'model' => 'gpt-4o',
-			'messages' => $messages,
-		]);
-
-		return $result->choices[0]->message->content ?? '';
+		return $response;
 	}
 }
