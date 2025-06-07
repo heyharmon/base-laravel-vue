@@ -4,14 +4,18 @@ namespace App\Services;
 
 use App\Models\Chat;
 use App\Models\Conversation;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\Provider;
-use Prism\Prism\ValueObjects\Messages\UserMessage;
-use Prism\Prism\ValueObjects\Messages\AssistantMessage;
-use Prism\Prism\ValueObjects\Messages\SystemMessage;
+use OpenAI\Client;
+use OpenAI;
 
 class ChatService
 {
+    protected Client $client;
+
+    public function __construct()
+    {
+        $this->client = OpenAI::client(config('services.openai.api_key'));
+    }
+
     /**
      * Generate an AI response for a conversation
      *
@@ -33,7 +37,7 @@ class ChatService
         // Store the AI response
         $aiChat = $conversation->chats()->create([
             'role' => 'assistant',
-            'content' => $response->text,
+            'content' => $response,
             'metadata' => [
                 'model' => 'gpt-4o',
                 'provider' => 'openai',
@@ -49,39 +53,37 @@ class ChatService
     }
     
     /**
-     * Get AI response using Prism
+     * Get AI response using OpenAI client
      *
      * @param Conversation $conversation
      * @param string $userMessage
-     * @return object
+     * @return string
      */
-    private function getAiResponse(Conversation $conversation, string $userMessage): object
+    private function getAiResponse(Conversation $conversation, string $userMessage): string
     {
         // Fetch all previous chats in the conversation
         $previousChats = $conversation->chats()->orderBy('created_at', 'asc')->get();
-        
+
         // Build messages array for conversation history
         $messages = [];
-        
+
         // Add system message
-        $messages[] = new SystemMessage((string)view('prompts.system'));
-        
+        $messages[] = ['role' => 'system', 'content' => (string) view('prompts.system')];
+
         // Add all previous messages as context
         foreach ($previousChats as $chat) {
-            if ($chat->role === 'user') {
-                $messages[] = new UserMessage($chat->content);
-            } elseif ($chat->role === 'assistant') {
-                $messages[] = new AssistantMessage($chat->content);
-            }
+            $messages[] = ['role' => $chat->role, 'content' => $chat->content];
         }
-        
+
         // Add the current user message
-        $messages[] = new UserMessage($userMessage);
-        
-        // Generate AI response using Prism with full conversation context
-        return Prism::text()
-            ->using(Provider::OpenAI, 'gpt-4o')
-            ->withMessages($messages)
-            ->asText();
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+
+        // Generate AI response using OpenAI with full conversation context
+        $result = $this->client->chat()->create([
+            'model' => 'gpt-4o',
+            'messages' => $messages,
+        ]);
+
+        return $result->choices[0]->message->content ?? '';
     }
 }
