@@ -8,6 +8,7 @@ use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\PromptController;
+use App\Http\Controllers\PromptExportController;
 use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
@@ -80,6 +81,7 @@ Route::resource('prompts', PromptController::class);
 Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
 Route::post('prompts/{prompt}/generate-article', [ArticleGeneratorController::class, 'generate']);
+Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
 
 // Running prompts
 Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);

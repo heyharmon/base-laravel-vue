@@ -3,6 +3,7 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import api from '@/services/api.js'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
 
@@ -26,6 +27,7 @@ const emit = defineEmits(['close'])
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
+const isCopied = ref(false)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
@@ -90,6 +92,21 @@ const generateArticle = async () => {
 	}
 }
 
+const exportPrompt = async () => {
+	if (!props.promptId) return
+
+	try {
+		const response = await api.get(`prompts/${props.promptId}/export`)
+		await navigator.clipboard.writeText(JSON.stringify(response, null, 2))
+		isCopied.value = true
+		setTimeout(() => {
+			isCopied.value = false
+		}, 2000)
+	} catch (error) {
+		console.error('Error exporting prompt:', error)
+	}
+}
+
 onMounted(fetchDetails)
 
 watch(() => props.promptId, fetchDetails)
@@ -108,7 +125,20 @@ watch(() => props.promptId, fetchDetails)
 				<!-- Prompt header -->
 				<div class="bg-neutral-50 p-4 rounded-lg">
 					<div class="mb-4">
-						<span class="text-neutral-500 text-sm">Content:</span>
+						<div class="flex justify-between items-start">
+							<span class="text-neutral-500 text-sm">Content:</span>
+							<Button
+								@click="exportPrompt"
+								variant="outline"
+								class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 transition-colors"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+									<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+								</svg>
+								{{ isCopied ? 'Copied!' : 'Export' }}
+							</Button>
+						</div>
 						<p class="text-neutral-800 text-2xl/7 font-medium mt-1">{{ promptDetails.content }}</p>
 					</div>
 					<div class="mb-1 text-sm">
