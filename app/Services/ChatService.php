@@ -35,7 +35,7 @@ class ChatService
 		$response = $this->getAiResponse($conversation, $userMessage);
 
 		// Log the response
-		Log::info('AI Response: ' . json_encode($response));
+		// Log::info('AI Response: ' . json_encode($response));
 
 		// Extract the text content from the response
 		$responseContent = '';
