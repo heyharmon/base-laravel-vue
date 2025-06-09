@@ -11,6 +11,7 @@ interface ChatTool
 
     /**
      * Definition array used by OpenAI tool calling.
+     * Must return a properly formatted tool definition for the OpenAI Responses API.
      */
     public function definition(): array;
 

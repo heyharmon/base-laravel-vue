@@ -2,23 +2,26 @@
 
 namespace App\Services;
 
+use stdClass;
 use OpenAI\Client;
 use OpenAI;
-use App\Models\Conversation;
-use App\Tools\ChatTool;
+use Illuminate\Support\Facades\Log;
+use App\Tools\WriteArticleContentTool;
+use App\Tools\WebSearchTool;
 use App\Tools\ListPromptsTool;
 use App\Tools\GetPromptTool;
 use App\Tools\CreateArticleTool;
-use App\Tools\WriteArticleContentTool;
+use App\Tools\ChatTool;
+use App\Models\Conversation;
 
 class ChatService
 {
-        protected Client $client;
+	protected Client $client;
 
-        public function __construct()
-        {
-                $this->client = OpenAI::client(config('services.openai.api_key'));
-        }
+	public function __construct()
+	{
+		$this->client = OpenAI::client(config('services.openai.api_key'));
+	}
 
 	/**
 	 * Generate an AI response for a conversation
@@ -27,144 +30,161 @@ class ChatService
 	 * @param string $userMessage
 	 * @return array
 	 */
-        public function generateResponse(Conversation $conversation, string $userMessage): array
-        {
-                // Store the user message
-                $conversation->chats()->create([
-                        'role' => 'user',
-                        'content' => $userMessage,
-                ]);
+	public function generateResponse(Conversation $conversation, string $userMessage): array
+	{
+		// Store the user message
+		$conversation->chats()->create([
+			'role' => 'user',
+			'content' => $userMessage,
+		]);
 
-                $tools = $this->buildTools($conversation);
-                $toolDefinitions = array_map(fn(ChatTool $t) => $t->definition(), $tools);
-                array_unshift($toolDefinitions, ['type' => 'web_search']);
+		// Build tools and prepare definitions
+		$tools = $this->buildTools($conversation);
+		$toolDefinitions = [];
 
-                // Determine previous response id if conversation has history
-                $lastResponseChat = $conversation->chats()
-                        ->where('role', 'assistant')
-                        ->whereNotNull('metadata->response_id')
-                        ->orderByDesc('created_at')
-                        ->first();
+		foreach ($tools as $tool) {
+			$toolDefinitions[] = $tool->definition();
+		}
 
-                $previousId = $lastResponseChat->metadata['response_id'] ?? null;
-                if ($previousId) {
-                        $input = $userMessage;
-                } else {
-                        $input = [
-                                ['role' => 'system', 'content' => (string) view('prompts.system')],
-                                ['role' => 'user', 'content' => $userMessage],
-                        ];
-                }
+		// Prepare conversation history for the API call
+		$messages = $this->prepareMessages($conversation, $userMessage);
 
-                $response = $this->client->responses()->create([
-                        'model' => 'gpt-4.1',
-                        'input' => $input,
-                        'tools' => $toolDefinitions,
-                        'tool_choice' => 'auto',
-                        'previous_response_id' => $previousId,
-                ]);
+		// Make the initial API call
+		$response = $this->client->chat()->create([
+			'model' => 'gpt-4-turbo',
+			'messages' => $messages,
+			'tools' => $toolDefinitions,
+			'tool_choice' => 'auto',
+		]);
 
-                $messageOutput = $this->extractMessage($response);
+		// Get the assistant's response
+		$assistantMessage = $response->choices[0]->message;
+		$toolCalls = $assistantMessage->tool_calls ?? [];
 
-                while ($messageOutput && isset($messageOutput->tool_calls)) {
-                        $toolMessages = [];
-                        foreach ($messageOutput->tool_calls as $call) {
-                                $tool = $this->findTool($call->function->name, $tools);
-                                if (!$tool) {
-                                        continue;
-                                }
-                                $args = json_decode($call->function->arguments, true) ?: [];
-                                $result = $tool->run($args);
+		// Log the assistants message and tool calls
+		Log::info('Assistant message: ' . json_encode($assistantMessage));
+		Log::info('Assistant tool calls: ' . json_encode($toolCalls));
 
-                                $toolMessages[] = [
-                                        'role' => 'tool',
-                                        'tool_call_id' => $call->id,
-                                        'name' => $call->function->name,
-                                        'content' => is_string($result) ? $result : json_encode($result),
-                                ];
-                        }
+		// Process tool calls if they exist
+		while (!empty($toolCalls)) {
+			// Add the assistant's message to the conversation
+			$messages[] = [
+				'role' => 'assistant',
+				'content' => $assistantMessage->content ?? null,
+				'tool_calls' => $toolCalls
+			];
 
-                        $response = $this->client->responses()->create([
-                                'model' => 'gpt-4.1',
-                                'input' => $toolMessages,
-                                'tools' => $toolDefinitions,
-                                'tool_choice' => 'auto',
-                                'previous_response_id' => $response->id,
-                        ]);
+			// Process each tool call
+			foreach ($toolCalls as $call) {
+				$tool = $this->findTool($call->function->name, $tools);
+				if (!$tool) {
+					continue;
+				}
 
-                        $messageOutput = $this->extractMessage($response);
-                }
+				$args = json_decode($call->function->arguments, true) ?: [];
+				$result = $tool->run($args);
 
-                $content = '';
-                $annotations = null;
-                if ($messageOutput && isset($messageOutput->content[0]->text)) {
-                        $content = $messageOutput->content[0]->text;
-                        if (isset($messageOutput->content[0]->annotations) &&
-                                is_array($messageOutput->content[0]->annotations) &&
-                                count($messageOutput->content[0]->annotations) > 0) {
-                                $annotations = $messageOutput->content[0]->annotations;
-                        }
-                }
+				$messages[] = [
+					'role' => 'tool',
+					'tool_call_id' => $call->id,
+					'name' => $call->function->name,
+					'content' => is_string($result) ? $result : json_encode($result),
+				];
+			}
 
-                $aiChat = $conversation->chats()->create([
-                        'role' => 'assistant',
-                        'content' => $content,
-                        'metadata' => [
-                                'model' => 'gpt-4.1',
-                                'provider' => 'openai',
-                                'response_id' => $response->id,
-                        ],
-                        'annotations' => $annotations,
-                ]);
+			// Log the messages after tool calls
+			Log::info('Messages after tool calls: ' . $messages);
 
-                return [
-                        'id' => $aiChat->id,
-                        'role' => $aiChat->role,
-                        'content' => $aiChat->content,
-                        'created_at' => $aiChat->created_at,
-                ];
-        }
+			// Make the next API call with tool results
+			$response = $this->client->chat()->create([
+				'model' => 'gpt-4-turbo',
+				'messages' => $messages,
+				'tools' => $toolDefinitions,
+				'tool_choice' => 'auto',
+			]);
 
-        /**
-         * Build the tool instances for this conversation.
-         */
-        protected function buildTools(Conversation $conversation): array
-        {
-                $teamId = $conversation->team_id;
+			// Get the assistant's response for the next iteration
+			$assistantMessage = $response->choices[0]->message;
+			$toolCalls = $assistantMessage->tool_calls ?? [];
+		}
 
-                return [
-                        new ListPromptsTool($teamId),
-                        new GetPromptTool($teamId),
-                        new CreateArticleTool($teamId),
-                        new WriteArticleContentTool($teamId),
-                ];
-        }
+		// Extract the final content
+		$content = $assistantMessage->content ?? '';
 
-        /**
-         * Find a tool by name from the provided array.
-         */
-        protected function findTool(string $name, array $tools): ?ChatTool
-        {
-                foreach ($tools as $tool) {
-                        if ($tool->name() === $name) {
-                                return $tool;
-                        }
-                }
+		// Store the assistant's response
+		$aiChat = $conversation->chats()->create([
+			'role' => 'assistant',
+			'content' => $content,
+			'metadata' => [
+				'model' => 'gpt-4-turbo',
+				'provider' => 'openai',
+				'response_id' => $response->id,
+			],
+			'annotations' => null,
+		]);
 
-                return null;
-        }
+		// Log the final ai chat
+		Log::info('Final ai chat: ' . $aiChat);
 
-        /**
-         * Extract the assistant message from a responses API result.
-         */
-        protected function extractMessage(object $response): ?object
-        {
-                foreach ($response->output as $output) {
-                        if ($output->type === 'message' && $output->role === 'assistant') {
-                                return $output;
-                        }
-                }
+		return [
+			'id' => $aiChat->id,
+			'role' => $aiChat->role,
+			'content' => $aiChat->content,
+			'created_at' => $aiChat->created_at,
+		];
+	}
 
-                return null;
-        }
+	/**
+	 * Prepare messages for the API call based on conversation history
+	 */
+	protected function prepareMessages(Conversation $conversation, string $userMessage): array
+	{
+		// Check if conversation has history
+		$lastResponseChat = $conversation->chats()
+			->where('role', 'assistant')
+			->whereNotNull('metadata->response_id')
+			->orderByDesc('created_at')
+			->first();
+
+		// If this is a new conversation, include the system prompt
+		if (!$lastResponseChat) {
+			return [
+				['role' => 'system', 'content' => (string) view('prompts.system')],
+				['role' => 'user', 'content' => $userMessage],
+			];
+		}
+
+		// For existing conversations, just add the new user message
+		return [['role' => 'user', 'content' => $userMessage]];
+	}
+
+	/**
+	 * Build the tool instances for this conversation.
+	 */
+	protected function buildTools(Conversation $conversation): array
+	{
+		$teamId = $conversation->team_id;
+
+		return [
+			new WebSearchTool(),
+			new ListPromptsTool($teamId),
+			new GetPromptTool($teamId),
+			new CreateArticleTool($teamId),
+			new WriteArticleContentTool($teamId),
+		];
+	}
+
+	/**
+	 * Find a tool by name from the provided array.
+	 */
+	protected function findTool(string $name, array $tools): ?ChatTool
+	{
+		foreach ($tools as $tool) {
+			if ($tool->name() === $name) {
+				return $tool;
+			}
+		}
+
+		return null;
+	}
 }
