@@ -62,8 +62,7 @@ const loadTeams = async () => {
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
-		// Navigate to the team page instead of reloading
-		router.push(`/teams/${teamId}`)
+		window.location.reload()
 	} catch (error) {
 		console.error('Error switching team:', error)
 	}
@@ -199,7 +198,7 @@ onMounted(async () => {
 											<span>Team invitations</span>
 											<span
 												v-if="teams?.pendingInvitations?.length"
-												class="flex items-center justify-center bg-neutral-700 text-xs font-medium rounded-full h-5 min-w-5 px-1.5"
+												class="flex items-center justify-center bg-red-700 text-xs font-medium rounded-full h-5 min-w-5 px-1.5"
 											>
 												{{ teams.pendingInvitations.length }}
 											</span>

@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button.vue'
 const router = useRouter()
 const teamStore = useTeamStore()
 const isSubmitting = ref(false)
+const successMessage = ref('')
 
 onMounted(async () => {
 	await teamStore.fetchTeams()
@@ -17,7 +18,11 @@ const acceptInvitation = async (teamId) => {
 	isSubmitting.value = true
 	try {
 		await teamStore.acceptInvitation(teamId)
-		window.location.reload()
+		successMessage.value = 'You have joined the team'
+		// Clear success message after 5 seconds
+		setTimeout(() => {
+			successMessage.value = ''
+		}, 5000)
 	} catch (error) {
 		console.error('Error accepting invitation:', error)
 	} finally {
@@ -46,18 +51,18 @@ const declineInvitation = async (teamId) => {
 				<h1 class="text-2xl font-bold">Team Invitations</h1>
 			</div>
 
-			<!-- Loading state -->
-			<div v-if="teamStore.isLoading" class="flex justify-center py-8">
-				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
-			</div>
-
 			<!-- Error state -->
-			<div v-else-if="teamStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+			<div v-if="teamStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
 				{{ teamStore.error }}
 			</div>
 
+			<!-- Success message -->
+			<div v-if="successMessage" class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
+				<span>{{ successMessage }}</span>
+			</div>
+
 			<!-- Pending invitations -->
-			<div v-else class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+			<div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
 				<div class="px-6 py-4 bg-neutral-100 border-b border-neutral-200">
 					<h2 class="text-lg font-semibold">Pending Invitations ({{ teamStore.pendingInvitations.length }})</h2>
 				</div>
