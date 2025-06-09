@@ -86,7 +86,7 @@ onMounted(() => {
 				</div>
 			</div>
 
-			<div class="flex items-center space-x-3">
+			<div class="flex items-center">
 				<template v-if="isAuthenticated">
 					<!-- Jobs status button -->
 					<button
@@ -117,6 +117,11 @@ onMounted(() => {
 						<span class="text-sm font-medium">Runs</span>
 					</button>
 
+					<!-- Team settings link -->
+					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="px-3 py-1 mr-2.5 rounded hover:bg-neutral-800 text-sm">
+						Team settings
+					</router-link>
+
 					<!-- Teams dropdown -->
 					<PopoverRoot>
 						<PopoverTrigger as-child>
@@ -146,7 +151,7 @@ onMounted(() => {
 								:side-offset="5"
 							>
 								<div class="p-2">
-									<p class="text-xs font-medium text-neutral-300 mb-2">Your Teams</p>
+									<p class="text-xs font-medium text-neutral-300 mb-2">Your teams</p>
 									<div v-if="teams" class="space-y-1">
 										<div
 											v-if="teams.joinedTeams && teams.joinedTeams.length > 0"
@@ -168,7 +173,9 @@ onMounted(() => {
 								</div>
 								<div class="border-t border-neutral-700 mt-1">
 									<PopoverClose as-child>
-										<router-link to="/teams" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700"> Manage Teams </router-link>
+										<router-link to="/teams/create" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Create team
+										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>
 										<a @click="logout" class="cursor-pointer w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
