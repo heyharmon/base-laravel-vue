@@ -112,7 +112,7 @@ export const useTeamStore = defineStore('team', {
 
 			try {
 				const response = await api.post(`/teams/${teamId}/accept-invitation`)
-				await this.fetchTeams()
+				await this.switchTeam(teamId)
 				return response
 			} catch (error) {
 				this.error = error.response?.data?.message || 'Failed to accept invitation'

@@ -15,6 +15,7 @@ onMounted(async () => {
 const acceptInvitation = async (teamId) => {
 	try {
 		await teamStore.acceptInvitation(teamId)
+		window.location.reload()
 	} catch (error) {
 		console.error('Error accepting invitation:', error)
 	}

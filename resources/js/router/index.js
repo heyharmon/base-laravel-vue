@@ -166,6 +166,11 @@ router.beforeEach(async (to, from, next) => {
 		return next()
 	}
 
+	// Skip team check for invitations.index route
+	if (to.name === 'invitations.index') {
+		return next()
+	}
+
 	// Check if user has teams
 	const teamStore = useTeamStore()
 
