@@ -35,72 +35,86 @@ class ChatService
                         'content' => $userMessage,
                 ]);
 
-                // Build chat history including system prompt
-                $messages = $conversation->chats()
-                        ->orderBy('created_at')
-                        ->get()
-                        ->map(fn($chat) => [
-                                'role' => $chat->role,
-                                'content' => $chat->content,
-                        ])
-                        ->toArray();
-
-                array_unshift($messages, [
-                        'role' => 'system',
-                        'content' => (string) view('prompts.system'),
-                ]);
-
                 $tools = $this->buildTools($conversation);
                 $toolDefinitions = array_map(fn(ChatTool $t) => $t->definition(), $tools);
-                array_unshift($toolDefinitions, [
-                        'type' => 'web_search',
-                ]);
+                array_unshift($toolDefinitions, ['type' => 'web_search']);
 
-                $response = $this->client->chat()->create([
-                        'model' => 'gpt-4o',
-                        'messages' => $messages,
+                // Determine previous response id if conversation has history
+                $lastResponseChat = $conversation->chats()
+                        ->where('role', 'assistant')
+                        ->whereNotNull('metadata->response_id')
+                        ->orderByDesc('created_at')
+                        ->first();
+
+                $previousId = $lastResponseChat->metadata['response_id'] ?? null;
+                if ($previousId) {
+                        $input = $userMessage;
+                } else {
+                        $input = [
+                                ['role' => 'system', 'content' => (string) view('prompts.system')],
+                                ['role' => 'user', 'content' => $userMessage],
+                        ];
+                }
+
+                $response = $this->client->responses()->create([
+                        'model' => 'gpt-4.1',
+                        'input' => $input,
                         'tools' => $toolDefinitions,
                         'tool_choice' => 'auto',
+                        'previous_response_id' => $previousId,
                 ]);
 
-                $message = $response['choices'][0]['message'];
-                while (isset($message['tool_calls'])) {
-                        $messages[] = $message;
-                        $toolMessages = [];
+                $messageOutput = $this->extractMessage($response);
 
-                        foreach ($message['tool_calls'] as $toolCall) {
-                                $tool = $this->findTool($toolCall['function']['name'], $tools);
+                while ($messageOutput && isset($messageOutput->tool_calls)) {
+                        $toolMessages = [];
+                        foreach ($messageOutput->tool_calls as $call) {
+                                $tool = $this->findTool($call->function->name, $tools);
                                 if (!$tool) {
                                         continue;
                                 }
-                                $args = json_decode($toolCall['function']['arguments'], true) ?: [];
-                                $output = $tool->run($args);
+                                $args = json_decode($call->function->arguments, true) ?: [];
+                                $result = $tool->run($args);
 
                                 $toolMessages[] = [
                                         'role' => 'tool',
-                                        'tool_call_id' => $toolCall['id'],
-                                        'name' => $toolCall['function']['name'],
-                                        'content' => is_string($output) ? $output : json_encode($output),
+                                        'tool_call_id' => $call->id,
+                                        'name' => $call->function->name,
+                                        'content' => is_string($result) ? $result : json_encode($result),
                                 ];
                         }
 
-                        $messages = array_merge($messages, $toolMessages);
-
-                        $response = $this->client->chat()->create([
-                                'model' => 'gpt-4o',
-                                'messages' => $messages,
+                        $response = $this->client->responses()->create([
+                                'model' => 'gpt-4.1',
+                                'input' => $toolMessages,
+                                'tools' => $toolDefinitions,
+                                'tool_choice' => 'auto',
+                                'previous_response_id' => $response->id,
                         ]);
-                        $message = $response['choices'][0]['message'];
+
+                        $messageOutput = $this->extractMessage($response);
                 }
 
-                // Store the AI response
+                $content = '';
+                $annotations = null;
+                if ($messageOutput && isset($messageOutput->content[0]->text)) {
+                        $content = $messageOutput->content[0]->text;
+                        if (isset($messageOutput->content[0]->annotations) &&
+                                is_array($messageOutput->content[0]->annotations) &&
+                                count($messageOutput->content[0]->annotations) > 0) {
+                                $annotations = $messageOutput->content[0]->annotations;
+                        }
+                }
+
                 $aiChat = $conversation->chats()->create([
                         'role' => 'assistant',
-                        'content' => $message['content'] ?? '',
+                        'content' => $content,
                         'metadata' => [
-                                'model' => 'gpt-4o',
+                                'model' => 'gpt-4.1',
                                 'provider' => 'openai',
+                                'response_id' => $response->id,
                         ],
+                        'annotations' => $annotations,
                 ]);
 
                 return [
@@ -134,6 +148,20 @@ class ChatService
                 foreach ($tools as $tool) {
                         if ($tool->name() === $name) {
                                 return $tool;
+                        }
+                }
+
+                return null;
+        }
+
+        /**
+         * Extract the assistant message from a responses API result.
+         */
+        protected function extractMessage(object $response): ?object
+        {
+                foreach ($response->output as $output) {
+                        if ($output->type === 'message' && $output->role === 'assistant') {
+                                return $output;
                         }
                 }
 
