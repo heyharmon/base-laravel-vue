@@ -28,7 +28,7 @@ const variants = {
 	neutral: 'bg-neutral-200 text-neutral-800 hover:bg-neutral-100',
 	dark: 'bg-neutral-800 text-white hover:bg-neutral-700',
 	primary: 'bg-blue-600 text-white hover:bg-blue-700',
-	success: 'bg-green-600 text-white hover:bg-green-700',
+	success: 'bg-emerald-600 text-white hover:bg-emerald-700',
 	muted: 'bg-neutral-600 text-white hover:bg-neutral-700'
 }
 

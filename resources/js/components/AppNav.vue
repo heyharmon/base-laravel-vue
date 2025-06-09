@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import auth from '@/services/auth'
 import { useTeamStore } from '@/stores/teamStore'
@@ -25,6 +25,16 @@ const currentTeam = computed(() => teamStore.currentTeam)
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
+const searchQuery = ref('')
+
+// Filtered teams based on search query
+const filteredTeams = computed(() => {
+	if (!teams.value?.joinedTeams?.length) return []
+	if (!searchQuery.value.trim()) return teams.value.joinedTeams
+
+	const query = searchQuery.value.toLowerCase().trim()
+	return teams.value.joinedTeams.filter((team) => team.name.toLowerCase().includes(query))
+})
 
 const logout = async () => {
 	await auth.logout()
@@ -36,7 +46,7 @@ const loadTeams = async () => {
 		try {
 			await teamStore.fetchTeams()
 			// No need to manually update teams.value as it's now a computed property
-			
+
 			// If we have a current team ID from the user but no current team loaded yet
 			if (user.value?.current_team_id && !teamStore.currentTeam) {
 				await teamStore.fetchTeam(user.value.current_team_id)
@@ -145,12 +155,17 @@ onMounted(async () => {
 							>
 								<div class="p-2">
 									<p class="text-xs font-medium text-neutral-300 mb-2">Your teams</p>
+									<div class="mb-2">
+										<input
+											v-model="searchQuery"
+											type="text"
+											placeholder="Search teams..."
+											class="w-full px-2 py-1 text-sm text-white bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-1 focus:ring-neutral-500"
+										/>
+									</div>
 									<div v-if="teams" class="space-y-1">
-										<div
-											v-if="teams.joinedTeams && teams.joinedTeams.length > 0"
-											class="space-y-1.5 max-h-[calc(100vh-250px)] overflow-y-auto"
-										>
-											<PopoverClose as-child v-for="team in teams.joinedTeams" :key="team.id">
+										<div v-if="filteredTeams.length > 0" class="space-y-1.5 max-h-[calc(100vh-250px)] overflow-y-auto">
+											<PopoverClose as-child v-for="team in filteredTeams" :key="team.id">
 												<div
 													@click="switchTeam(team.id)"
 													class="flex items-center px-2 py-1 rounded cursor-pointer hover:bg-neutral-700"
@@ -160,6 +175,12 @@ onMounted(async () => {
 													<span v-if="currentTeam?.id === team.id" class="ml-auto text-xs text-neutral-400">Current</span>
 												</div>
 											</PopoverClose>
+										</div>
+										<div
+											v-if="teams.joinedTeams && teams.joinedTeams.length > 0 && filteredTeams.length === 0"
+											class="text-sm text-neutral-400 py-1"
+										>
+											No teams match your search
 										</div>
 									</div>
 									<div v-else class="text-sm text-neutral-400 py-1">Loading teams...</div>
