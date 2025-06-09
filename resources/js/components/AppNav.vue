@@ -12,23 +12,19 @@ const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
 const user = computed(() => auth.getUser())
-const teams = ref(null)
-const currentTeam = ref(null)
+
+// Use computed properties to directly reference store values
+const teams = computed(() => ({
+	ownedTeams: teamStore.ownedTeams,
+	joinedTeams: teamStore.joinedTeams,
+	pendingInvitations: teamStore.pendingInvitations
+}))
+
+const currentTeam = computed(() => teamStore.currentTeam)
 
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
-
-// Get the most recently completed job
-// const mostRecentCompletedJob = computed(() => {
-// 	if (jobStatusStore.jobs.length === 0) return null
-
-// 	// Filter for completed jobs (status === 'completed')
-// 	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
-// 	if (completedJobs.length === 0) return null
-
-// 	return completedJobs[0]
-// })
 
 const logout = async () => {
 	await auth.logout()
@@ -39,35 +35,32 @@ const loadTeams = async () => {
 	if (isAuthenticated.value) {
 		try {
 			await teamStore.fetchTeams()
-			teams.value = {
-				ownedTeams: teamStore.ownedTeams,
-				joinedTeams: teamStore.joinedTeams,
-				pendingInvitations: teamStore.pendingInvitations
+			// No need to manually update teams.value as it's now a computed property
+			
+			// If we have a current team ID from the user but no current team loaded yet
+			if (user.value?.current_team_id && !teamStore.currentTeam) {
+				await teamStore.fetchTeam(user.value.current_team_id)
 			}
-			updateCurrentTeam()
 		} catch (error) {
 			console.error('Error loading teams:', error)
 		}
 	}
 }
 
-const updateCurrentTeam = () => {
-	if (teams.value && user.value) {
-		currentTeam.value = teamStore.getCurrentTeam(teams.value, user.value)
-	}
-}
+// updateCurrentTeam function removed as currentTeam is now a computed property
 
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
-		window.location.reload()
+		// Navigate to the team page instead of reloading
+		router.push(`/teams/${teamId}`)
 	} catch (error) {
 		console.error('Error switching team:', error)
 	}
 }
 
-onMounted(() => {
-	loadTeams()
+onMounted(async () => {
+	await loadTeams()
 	jobStatusStore.pollTeamJobs()
 	isTeamDropdownOpen.value = false
 })
@@ -178,8 +171,17 @@ onMounted(() => {
 										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>
-										<router-link to="/invitations" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
-											Team invitations
+										<router-link
+											to="/invitations"
+											class="flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-neutral-700"
+										>
+											<span>Team invitations</span>
+											<span
+												v-if="teams?.pendingInvitations?.length"
+												class="flex items-center justify-center bg-neutral-700 text-xs font-medium rounded-full h-5 min-w-5 px-1.5"
+											>
+												{{ teams.pendingInvitations.length }}
+											</span>
 										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>
