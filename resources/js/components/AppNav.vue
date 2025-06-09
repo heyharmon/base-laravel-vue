@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import auth from '@/services/auth'
 import { useTeamStore } from '@/stores/teamStore'
@@ -12,23 +12,29 @@ const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
 const user = computed(() => auth.getUser())
-const teams = ref(null)
-const currentTeam = ref(null)
+
+// Use computed properties to directly reference store values
+const teams = computed(() => ({
+	ownedTeams: teamStore.ownedTeams,
+	joinedTeams: teamStore.joinedTeams,
+	pendingInvitations: teamStore.pendingInvitations
+}))
+
+const currentTeam = computed(() => teamStore.currentTeam)
 
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
+const searchQuery = ref('')
 
-// Get the most recently completed job
-// const mostRecentCompletedJob = computed(() => {
-// 	if (jobStatusStore.jobs.length === 0) return null
+// Filtered teams based on search query
+const filteredTeams = computed(() => {
+	if (!teams.value?.joinedTeams?.length) return []
+	if (!searchQuery.value.trim()) return teams.value.joinedTeams
 
-// 	// Filter for completed jobs (status === 'completed')
-// 	const completedJobs = jobStatusStore.jobs.filter((job) => job.status === 'processing')
-// 	if (completedJobs.length === 0) return null
-
-// 	return completedJobs[0]
-// })
+	const query = searchQuery.value.toLowerCase().trim()
+	return teams.value.joinedTeams.filter((team) => team.name.toLowerCase().includes(query))
+})
 
 const logout = async () => {
 	await auth.logout()
@@ -39,23 +45,19 @@ const loadTeams = async () => {
 	if (isAuthenticated.value) {
 		try {
 			await teamStore.fetchTeams()
-			teams.value = {
-				ownedTeams: teamStore.ownedTeams,
-				joinedTeams: teamStore.joinedTeams,
-				pendingInvitations: teamStore.pendingInvitations
+			// No need to manually update teams.value as it's now a computed property
+
+			// If we have a current team ID from the user but no current team loaded yet
+			if (user.value?.current_team_id && !teamStore.currentTeam) {
+				await teamStore.fetchTeam(user.value.current_team_id)
 			}
-			updateCurrentTeam()
 		} catch (error) {
 			console.error('Error loading teams:', error)
 		}
 	}
 }
 
-const updateCurrentTeam = () => {
-	if (teams.value && user.value) {
-		currentTeam.value = teamStore.getCurrentTeam(teams.value, user.value)
-	}
-}
+// updateCurrentTeam function removed as currentTeam is now a computed property
 
 const switchTeam = async (teamId) => {
 	try {
@@ -66,8 +68,8 @@ const switchTeam = async (teamId) => {
 	}
 }
 
-onMounted(() => {
-	loadTeams()
+onMounted(async () => {
+	await loadTeams()
 	jobStatusStore.pollTeamJobs()
 	isTeamDropdownOpen.value = false
 })
@@ -86,7 +88,7 @@ onMounted(() => {
 				</div>
 			</div>
 
-			<div class="flex items-center space-x-3">
+			<div class="flex items-center">
 				<template v-if="isAuthenticated">
 					<!-- Jobs status button -->
 					<button
@@ -117,6 +119,11 @@ onMounted(() => {
 						<span class="text-sm font-medium">Runs</span>
 					</button>
 
+					<!-- Team settings link -->
+					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="px-3 py-1 mr-2.5 rounded hover:bg-neutral-800 text-sm">
+						Team settings
+					</router-link>
+
 					<!-- Teams dropdown -->
 					<PopoverRoot>
 						<PopoverTrigger as-child>
@@ -146,13 +153,18 @@ onMounted(() => {
 								:side-offset="5"
 							>
 								<div class="p-2">
-									<p class="text-xs font-medium text-neutral-300 mb-2">Your Teams</p>
+									<p class="text-xs font-medium text-neutral-300 mb-2">Your teams</p>
+									<div class="mb-2">
+										<input
+											v-model="searchQuery"
+											type="text"
+											placeholder="Search teams..."
+											class="w-full px-2 py-1 text-sm text-white bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:ring-1 focus:ring-neutral-500"
+										/>
+									</div>
 									<div v-if="teams" class="space-y-1">
-										<div
-											v-if="teams.joinedTeams && teams.joinedTeams.length > 0"
-											class="space-y-1.5 max-h-[calc(100vh-250px)] overflow-y-auto"
-										>
-											<PopoverClose as-child v-for="team in teams.joinedTeams" :key="team.id">
+										<div v-if="filteredTeams.length > 0" class="space-y-1.5 max-h-[calc(100vh-250px)] overflow-y-auto">
+											<PopoverClose as-child v-for="team in filteredTeams" :key="team.id">
 												<div
 													@click="switchTeam(team.id)"
 													class="flex items-center px-2 py-1 rounded cursor-pointer hover:bg-neutral-700"
@@ -163,12 +175,34 @@ onMounted(() => {
 												</div>
 											</PopoverClose>
 										</div>
+										<div
+											v-if="teams.joinedTeams && teams.joinedTeams.length > 0 && filteredTeams.length === 0"
+											class="text-sm text-neutral-400 py-1"
+										>
+											No teams match your search
+										</div>
 									</div>
 									<div v-else class="text-sm text-neutral-400 py-1">Loading teams...</div>
 								</div>
 								<div class="border-t border-neutral-700 mt-1">
 									<PopoverClose as-child>
-										<router-link to="/teams" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700"> Manage Teams </router-link>
+										<router-link to="/teams/create" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Create team
+										</router-link>
+									</PopoverClose>
+									<PopoverClose as-child>
+										<router-link
+											to="/invitations"
+											class="flex items-center justify-between px-3 py-2 text-sm text-white hover:bg-neutral-700"
+										>
+											<span>Team invitations</span>
+											<span
+												v-if="teams?.pendingInvitations?.length"
+												class="flex items-center justify-center bg-red-700 text-xs font-medium rounded-full h-5 min-w-5 px-1.5"
+											>
+												{{ teams.pendingInvitations.length }}
+											</span>
+										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>
 										<a @click="logout" class="cursor-pointer w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">

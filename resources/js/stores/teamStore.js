@@ -112,8 +112,9 @@ export const useTeamStore = defineStore('team', {
 
 			try {
 				const response = await api.post(`/teams/${teamId}/accept-invitation`)
-				await this.fetchTeams()
-				return response
+				// Remove the accepted invitation from pendingInvitations array
+				this.pendingInvitations = this.pendingInvitations.filter((invitation) => invitation.id !== teamId)
+				await this.switchTeam(teamId)
 			} catch (error) {
 				this.error = error.response?.data?.message || 'Failed to accept invitation'
 				console.error('Error accepting invitation:', error)
@@ -214,6 +215,10 @@ export const useTeamStore = defineStore('team', {
 						user.current_team_id = response.team.id
 						localStorage.setItem('user', JSON.stringify(user))
 					}
+
+					// Fetch the team data to ensure we have the latest information
+					await this.fetchTeam(teamId)
+
 					return response
 				}
 				return null

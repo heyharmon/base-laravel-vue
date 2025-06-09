@@ -10,7 +10,7 @@ import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
 import ForgotPassword from '@/pages/auth/ForgotPassword.vue'
 import ResetPassword from '@/pages/auth/ResetPassword.vue'
-import TeamsIndex from '@/pages/teams/Index.vue'
+import InvitationsIndex from '@/pages/invitations/Index.vue'
 import TeamShow from '@/pages/teams/Show.vue'
 import TeamCreate from '@/pages/teams/Create.vue'
 import OrganizationsIndex from '@/pages/organizations/Index.vue'
@@ -69,9 +69,9 @@ const routes = [
 		meta: { guest: true }
 	},
 	{
-		path: '/teams',
-		name: 'teams.index',
-		component: TeamsIndex,
+		path: '/invitations',
+		name: 'invitations.index',
+		component: InvitationsIndex,
 		meta: { requiresAuth: true }
 	},
 	{
@@ -156,6 +156,11 @@ router.beforeEach(async (to, from, next) => {
 
 	// Skip team check for teams.create route
 	if (to.name === 'teams.create') {
+		return next()
+	}
+
+	// Skip team check for invitations.index route
+	if (to.name === 'invitations.index') {
 		return next()
 	}
 

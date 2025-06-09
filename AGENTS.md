@@ -33,7 +33,7 @@ This document gives AI developers a concise view of the **LLM Mention Tracker** 
 ### Services & Tools
 
 -   **JobDispatcherService** – wraps the queue/batch API and automatically creates `JobStatus` entries when dispatching or batching jobs.
--   **ChatService** – simple conversation service that stores chats and uses Prism to generate assistant replies.
+-   **ChatService** – simple conversation service that stores chats and uses the OpenAI PHP client Responses API to generate assistant replies.
 -   **BrandFetchService** – wrapper around the BrandFetch API for looking up brand details.
 -   **SearchApiTool**, **SearchTool**, **SearchToolFirecrawl** – Prism tools used by jobs to perform external web searches.
 

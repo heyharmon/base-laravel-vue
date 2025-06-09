@@ -13,8 +13,6 @@ const teamStore = useTeamStore()
 const organizationStore = useOrganizationStore()
 const isSubmitting = ref(false)
 
-
-
 // Organization data
 const organization = ref({
 	name: '',
@@ -81,8 +79,8 @@ const createTeamAndOrganization = async () => {
 				<div v-if="organization.name || organization.website" class="mt-4">
 					<div class="flex justify-between items-center mb-2">
 						<h3 class="text-sm font-medium text-neutral-700">Organization Preview</h3>
-						<button 
-							@click="deselectOrganization" 
+						<button
+							@click="deselectOrganization"
 							class="px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
 						>
 							<span>Deselect</span>
@@ -109,7 +107,7 @@ const createTeamAndOrganization = async () => {
 							/>
 							<p class="text-xs text-neutral-500 mt-1">Customize the name of your organization</p>
 						</div>
-						
+
 						<!-- Location Input -->
 						<div class="mt-4 border-t border-neutral-200 pt-4">
 							<label for="location-input" class="block text-sm font-medium text-neutral-700 mb-1">Location</label>
@@ -152,7 +150,6 @@ const createTeamAndOrganization = async () => {
 				</div>
 
 				<div class="mt-6 flex justify-end space-x-2">
-					<!-- <Button @click="router.push({ name: 'teams.index' })" variant="neutral"> Cancel </Button> -->
 					<Button @click="createTeamAndOrganization" :disabled="isSubmitting || !organization.name" variant="dark">
 						{{ isSubmitting ? 'Creating...' : 'Create Team' }}
 					</Button>
