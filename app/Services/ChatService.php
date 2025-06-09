@@ -52,6 +52,9 @@ class ChatService
 
                 $tools = $this->buildTools($conversation);
                 $toolDefinitions = array_map(fn(ChatTool $t) => $t->definition(), $tools);
+                array_unshift($toolDefinitions, [
+                        'type' => 'web_search',
+                ]);
 
                 $response = $this->client->chat()->create([
                         'model' => 'gpt-4o',
