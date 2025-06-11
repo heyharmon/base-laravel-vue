@@ -62,6 +62,8 @@ const loadTeams = async () => {
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
+		// delay for half a second before reloading the page
+		// await new Promise((resolve) => setTimeout(resolve, 500))
 		window.location.reload()
 	} catch (error) {
 		console.error('Error switching team:', error)
