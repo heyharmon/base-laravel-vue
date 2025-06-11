@@ -54,6 +54,9 @@ class ChatService
 	 */
 	public function generateResponse(Conversation $conversation, string $userMessage): array
 	{
+		Log::info('With Article: ' . $this->article);
+		Log::info('With Prompt: ' . $this->prompt);
+
 		// Store the user message
 		$userChat = $conversation->chats()->create([
 			'role' => 'user',
@@ -64,7 +67,7 @@ class ChatService
 		$response = $this->getAiResponse($conversation, $userMessage);
 
 		// Log the response
-		// Log::info('AI Response: ' . json_encode($response));
+		Log::info('AI Response: ' . json_encode($response));
 
 		// Extract the text content from the response
 		$responseContent = '';
@@ -132,8 +135,10 @@ class ChatService
 			->orderBy('created_at', 'desc')
 			->first();
 
+		Log::info('Last response chat: ' . json_encode($lastResponseChat));
+
 		$requestData = [
-			'model' => 'gpt-4.1',
+			'model' => 'gpt-4o',
 			'input' => $userMessage,
 			// Add tools for the model to use
 			'tools' => [
@@ -197,19 +202,23 @@ class ChatService
 			];
 		}
 
+		Log::info('Request data: ' . json_encode($requestData));
+
 		// Generate AI response using OpenAI Responses API
 		$response = $this->client->responses()->create($requestData);
+		$responseOutputs = $response->toArray()['output'] ?? [];
+
+		Log::info('Response outputs: ' . json_encode($responseOutputs));
 
 		// Handle tool calls if any
-		if (isset($response->output)) {
-			foreach ($response->output as $output) {
-				if ($output->type === 'tool_calls' && property_exists($output, 'tool_calls')) {
-					foreach ($output->tool_calls as $toolCall) {
-						if ($toolCall->type === 'function' && property_exists($toolCall, 'function')) {
-							$this->handleToolCall($toolCall->function->name, json_decode($toolCall->function->arguments, true));
-						}
-					}
-				}
+		foreach ($responseOutputs as $item) {
+			if ($item['type'] === 'function_call') {
+				// Model wants to use a tool
+				$funcName = $item['name'];
+				$funcArgs = json_decode($item['arguments'], true);
+
+				// Handle the tool call
+				$this->handleToolCall($funcName, $funcArgs);
 			}
 		}
 
