@@ -14,10 +14,12 @@ class Chat extends Model
         'role', // The role of the chat (user, agent)
         'content', // The content of the chat
         'metadata', // Any additional metadata
+        'annotations', // Web search annotations/citations
     ];
     
     protected $casts = [
         'metadata' => 'array',
+        'annotations' => 'array',
     ];
     
     public function conversation(): BelongsTo

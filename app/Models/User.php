@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Auth\Passwords\CanResetPassword;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, CanResetPassword;
 
     /**
      * The attributes that are mass assignable.
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'current_team_id',
     ];
 
     /**
@@ -81,5 +83,13 @@ class User extends Authenticatable
     public function pendingTeamInvitations(): BelongsToMany
     {
         return $this->teams()->wherePivot('invitation_accepted', false);
+    }
+    
+    /**
+     * Get the user's current team.
+     */
+    public function currentTeam()
+    {
+        return $this->belongsTo(Team::class, 'current_team_id');
     }
 }

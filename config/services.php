@@ -35,4 +35,24 @@ return [
         ],
     ],
 
+    'firecrawl' => [
+        'api_key' => env('FIRECRAWL_API_KEY'),
+    ],
+
+    'serpapi' => [
+        'api_key' => env('SERPAPI_API_KEY'),
+    ],
+
+    'searchapi' => [
+        'api_key' => env('SEARCHAPIIO_API_KEY'),
+    ],
+
+    'brandfetch' => [
+        'api_key' => env('BRANDFETCH_API_KEY'),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'organization' => env('OPENAI_ORGANIZATION'),
+    ],
 ];

@@ -1,69 +1,188 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router'
+import { useTeamStore } from '@/stores/teamStore'
+import auth from '@/services/auth'
 
 // Import pages
-import Home from '@/pages/Home.vue';
-import Login from '@/pages/auth/Login.vue';
-import Register from '@/pages/auth/Register.vue';
-import TeamsIndex from '@/pages/teams/Index.vue';
-import TeamShow from '@/pages/teams/Show.vue';
+import Chat from '@/pages/Chat.vue'
+import Dashboard from '@/pages/Dashboard.vue'
+import Analytics from '@/pages/Analytics.vue'
+import Login from '@/pages/auth/Login.vue'
+import Register from '@/pages/auth/Register.vue'
+import ForgotPassword from '@/pages/auth/ForgotPassword.vue'
+import ResetPassword from '@/pages/auth/ResetPassword.vue'
+import InvitationsIndex from '@/pages/invitations/Index.vue'
+import TeamShow from '@/pages/teams/Show.vue'
+import TeamCreate from '@/pages/teams/Create.vue'
+import OrganizationsIndex from '@/pages/organizations/Index.vue'
+import OrganizationCreate from '@/pages/organizations/Create.vue'
+import OrganizationEdit from '@/pages/organizations/Edit.vue'
+import PromptsIndex from '@/pages/prompts/Index.vue'
+import ArticlesIndex from '@/pages/articles/Index.vue'
+import ArticleCreate from '@/pages/articles/Create.vue'
+import ArticleEdit from '@/pages/articles/Edit.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: Home,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/login',
-    name: 'login',
-    component: Login,
-    meta: { guest: true }
-  },
-  {
-    path: '/register',
-    name: 'register',
-    component: Register,
-    meta: { guest: true }
-  },
-  {
-    path: '/teams',
-    name: 'teams.index',
-    component: TeamsIndex,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/teams/:id',
-    name: 'teams.show',
-    component: TeamShow,
-    meta: { requiresAuth: true }
-  },
-];
+	{
+		path: '/',
+		name: 'home',
+		component: Dashboard,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/chat',
+		name: 'chat',
+		component: Chat,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/dashboard',
+		name: 'dashboard',
+		component: Dashboard
+	},
+	{
+		path: '/analytics',
+		name: 'analytics',
+		component: Analytics
+	},
+	{
+		path: '/login',
+		name: 'login',
+		component: Login,
+		meta: { guest: true }
+	},
+	{
+		path: '/register',
+		name: 'register',
+		component: Register,
+		meta: { guest: true }
+	},
+	{
+		path: '/forgot-password',
+		name: 'forgot-password',
+		component: ForgotPassword,
+		meta: { guest: true }
+	},
+	{
+		path: '/reset-password',
+		name: 'reset-password',
+		component: ResetPassword,
+		meta: { guest: true }
+	},
+	{
+		path: '/invitations',
+		name: 'invitations.index',
+		component: InvitationsIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/teams/:id',
+		name: 'teams.show',
+		component: TeamShow,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/teams/create',
+		name: 'teams.create',
+		component: TeamCreate,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/organizations',
+		name: 'organizations.index',
+		component: OrganizationsIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/organizations/create',
+		name: 'organizations.create',
+		component: OrganizationCreate,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/organizations/:id/edit',
+		name: 'organizations.edit',
+		component: OrganizationEdit,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/prompts',
+		name: 'prompts.index',
+		component: PromptsIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles',
+		name: 'articles.index',
+		component: ArticlesIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles/create',
+		name: 'articles.create',
+		component: ArticleCreate,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/articles/:id/edit',
+		name: 'articles.edit',
+		component: ArticleEdit,
+		meta: { requiresAuth: true }
+	}
+]
 
 const router = createRouter({
-  history: createWebHistory(),
-  routes,
-});
+	history: createWebHistory(),
+	routes
+})
 
-// Navigation guard for authentication
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
-  
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!token) {
-      next({ name: 'login' });
-    } else {
-      next();
-    }
-  } else if (to.matched.some(record => record.meta.guest)) {
-    if (token) {
-      next({ name: 'home' });
-    } else {
-      next();
-    }
-  } else {
-    next();
-  }
-});
+// Navigation guard for authentication and team check
+router.beforeEach(async (to, from, next) => {
+	const token = localStorage.getItem('token')
 
-export default router;
+	// Handle guest routes
+	if (to.matched.some((record) => record.meta.guest)) {
+		return token ? next({ name: 'home' }) : next()
+	}
+
+	// Handle non-auth routes
+	if (!to.matched.some((record) => record.meta.requiresAuth)) {
+		return next()
+	}
+
+	// Handle auth routes when not logged in
+	if (!token) {
+		return next({ name: 'login' })
+	}
+
+	// Skip team check for teams.create route
+	if (to.name === 'teams.create') {
+		return next()
+	}
+
+	// Skip team check for invitations.index route
+	if (to.name === 'invitations.index') {
+		return next()
+	}
+
+	// Check if user has teams
+	const teamStore = useTeamStore()
+
+	// Load teams if not already loaded
+	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
+		try {
+			await teamStore.fetchTeams()
+		} catch (error) {
+			console.error('Error fetching teams in router guard:', error)
+		}
+	}
+
+	// Redirect to teams.create if user has no teams
+	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
+		return next({ name: 'teams.create' })
+	}
+
+	// Allow navigation
+	next()
+})
+
+export default router

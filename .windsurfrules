@@ -2,7 +2,8 @@
 ## Critical: With each of my requests, think carefully and only action the specific task I have given you with the most concise and elegant solution that changes as little code as possible.
 
 ### General Context
-* This is a Laravel 12 api project.
+* This is a Laravel 12 api project that uses PrismPHP to integrate with LLMs.
+* You can find the AI agent overview which summarizes the key components of the application, in AI_AGENT_OVERVIEW.md.
 
 ### General Rules
 * Always challenge me on my instructions if I am suggesting a pattern that does not map to the Laravel, Inertia, Vue way.
@@ -29,6 +30,7 @@
 
 ### Vue Rules
 * Never write typescript. If you see typescript, do not remove it just leave it, unless instructed to remove it.
+* Always write Pinia store in composition api setup style not option api style.
 * Always look at resources/js/pages for Inertia page examples.
 * Always use script setup style in Vue components.
 * Always attempt to use a component in resources/js/components for components you can use before writing new components.
@@ -36,9 +38,6 @@
 * Always use a radix-vue component when creating a new component, if available.
 * Always import components then layouts after all other imports.
 * Always use '@' for imports.
-
-### Authorization Rules
-* We are not using authentication or authorization in this app, ignore any authorization logic.
 
 ### Tailwind Rules
 * Always use Tailwind CSS classes for styling.
