@@ -17,6 +17,10 @@ const props = defineProps({
 	placeholder: {
 		type: String,
 		default: 'Type your message here...'
+	},
+	showOptions: {
+		type: Boolean,
+		default: false
 	}
 })
 
@@ -43,34 +47,34 @@ function sendMessage() {
 			<div class="flex items-center justify-between">
 				<div>
 					<!-- Prompt w/ image button -->
-					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
+					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<ImageIcon />
 					</button>
 
 					<!-- Search button -->
-					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
+					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<SearchIcon />
 					</button>
 
 					<!-- Deep research button -->
-					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
+					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<BookIcon />
 					</button>
 
 					<!-- Internal knowledge button -->
-					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
+					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<DatabaseIcon />
 					</button>
 
 					<!-- More options button -->
-					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
+					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<EllipsesHorizontalIcon />
 					</button>
 				</div>
 
 				<div>
 					<!-- Microphone button -->
-					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
+					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<MicrophoneIcon />
 					</button>
 

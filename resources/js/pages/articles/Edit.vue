@@ -14,6 +14,7 @@ import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import ChatMessage from '@/components/ChatMessage.vue'
 import ChatInput from '@/components/ChatInput.vue'
+import ArticleConversationDropdown from '@/components/conversations/ArticleConversationDropdown.vue'
 import ChatLoadingIndicator from '@/components/ChatLoadingIndicator.vue'
 import EditorMenu from '@/components/editor/EditorMenu.vue'
 
@@ -154,6 +155,22 @@ const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const promptStore = usePromptStore()
 
+// Preset prompts for empty chat
+const presetPrompts = [
+	'🧠 Summarize this article for me',
+	'🔗 List sources mentioned in responses',
+	'✨ Suggest improvements for this article',
+	'🌐 Search the web for information related to this article'
+]
+
+// Handle conversation selection from dropdown
+const handleConversationChanged = async (conversationId) => {
+	if (conversationId) {
+		articleChatStore.setConversationId(conversationId)
+		await articleChatStore.fetchChats()
+	}
+}
+
 // Open the prompt detail sheet
 const showPromptDetails = () => {
 	if (article.value.prompt_id) {
@@ -179,10 +196,24 @@ const copyContentToClipboard = async () => {
 		<template #left-column>
 			<!-- Chat panel -->
 			<div class="py-4 min-h-[calc(100vh-52px)] flex flex-col">
-				<h2 class="text-lg font-medium mb-4">AI Chat Assistant</h2>
+				<ArticleConversationDropdown :article-id="article.id" @conversation-changed="handleConversationChanged" />
+
 				<div class="flex flex-col flex-grow">
 					<!-- Chat messages -->
 					<div class="flex-grow mb-4 space-y-4 overflow-y-auto p-2">
+						<!-- Show preset prompts when there are no chat messages -->
+						<div v-if="articleChatStore.chats.length === 0 && !articleChatStore.isLoading" class="flex flex-col gap-3 p-2">
+							<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
+							<button
+								v-for="(prompt, index) in presetPrompts"
+								:key="index"
+								@click="articleChatStore.sendMessage(prompt)"
+								class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
+							>
+								{{ prompt }}
+							</button>
+						</div>
+						<!-- Display chat messages when available -->
 						<ChatMessage v-for="(chat, index) in articleChatStore.chats" :key="index" :chat="chat" />
 						<ChatLoadingIndicator v-if="articleChatStore.isLoading" />
 					</div>

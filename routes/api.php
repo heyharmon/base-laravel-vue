@@ -106,4 +106,8 @@ Route::resource('articles', ArticleController::class);
 // Article Chat
 Route::get('articles/{article}/chats', [App\Http\Controllers\ArticleChatController::class, 'index']);
 Route::post('articles/{article}/chats', [App\Http\Controllers\ArticleChatController::class, 'store']);
+
+// Article Conversations
+Route::get('articles/{article}/conversations', [App\Http\Controllers\ArticleConversationController::class, 'index']);
+Route::post('articles/{article}/conversations', [App\Http\Controllers\ArticleConversationController::class, 'store']);
 });

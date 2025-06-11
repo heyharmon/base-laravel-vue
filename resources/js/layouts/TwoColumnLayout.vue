@@ -7,7 +7,7 @@ import AppNav from '@/components/AppNav.vue'
 		<AppNav />
 
 		<main class="mx-auto px-6">
-			<div class="flex flex-row gap-4">
+			<div class="flex flex-row gap-6">
 				<!-- Left column (fixed width) -->
 				<div class="w-1/3">
 					<slot name="left-column" />

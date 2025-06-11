@@ -7,11 +7,21 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 	const chats = ref([])
 	const isLoading = ref(false)
 	const articleId = ref(null)
+	const conversationId = ref(null)
+	const newMessage = ref('')
 
 	// Actions
 	function setArticleId(id) {
 		articleId.value = id
 		// Clear chats when changing articles
+		chats.value = []
+		// Reset conversation ID when changing articles
+		conversationId.value = null
+	}
+
+	function setConversationId(id) {
+		conversationId.value = id
+		// Clear chats when changing conversations
 		chats.value = []
 	}
 
@@ -19,7 +29,15 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 		if (!articleId.value) return
 		
 		try {
-			const response = await api.get(`/articles/${articleId.value}/chats`)
+			let url = `/articles/${articleId.value}/chats`
+			let params = {}
+			
+			// If we have a specific conversation ID, add it as a parameter
+			if (conversationId.value) {
+				params.conversation_id = conversationId.value
+			}
+			
+			const response = await api.get(url, { params })
 			// Ensure we handle the response format correctly
 			chats.value = Array.isArray(response) ? response : []
 			// Make sure each chat has the expected properties
@@ -39,6 +57,7 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 		if (!articleId.value) return
 		
 		isLoading.value = true
+		newMessage.value = ''
 
 		// Add user message to chat immediately
 		chats.value.push({
@@ -47,9 +66,15 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 		})
 
 		try {
-			const response = await api.post(`/articles/${articleId.value}/chats`, {
-				content: content
-			})
+			let url = `/articles/${articleId.value}/chats`
+			let payload = { content }
+			
+			// If we have a specific conversation ID, include it in the payload
+			if (conversationId.value) {
+				payload.conversation_id = conversationId.value
+			}
+
+			const response = await api.post(url, payload)
 
 			// Add AI response to chat with all fields from the updated ChatService
 			chats.value.push({
@@ -76,9 +101,12 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 		chats: computed(() => chats.value),
 		isLoading: computed(() => isLoading.value),
 		articleId: computed(() => articleId.value),
+		conversationId: computed(() => conversationId.value),
+		newMessage,
 
 		// Actions
 		setArticleId,
+		setConversationId,
 		fetchChats,
 		sendMessage
 	}
