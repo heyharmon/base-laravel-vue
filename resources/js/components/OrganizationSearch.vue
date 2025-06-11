@@ -195,7 +195,7 @@ const createFromDomain = () => {
 
 				<!-- Create from custom URL-->
 				<li
-					v-if="isDomain && searchResults.length === 0"
+					v-if="isDomain"
 					@click="createFromDomain"
 					@keydown.enter="createFromDomain"
 					class="px-3 py-2 bg-neutral-100 hover:bg-neutral-200/60 cursor-pointer border-b border-neutral-200 last:border-t-0"
