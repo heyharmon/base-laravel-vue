@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use App\Models\Team;
 
 class Conversation extends Model
@@ -15,6 +16,8 @@ class Conversation extends Model
 	protected $fillable = [
 		'team_id',
 		'title',
+		'conversable_type',
+		'conversable_id',
 	];
 
 	public function team(): BelongsTo
@@ -25,5 +28,10 @@ class Conversation extends Model
 	public function chats(): HasMany
 	{
 		return $this->hasMany(Chat::class);
+	}
+
+	public function conversable(): MorphTo
+	{
+		return $this->morphTo();
 	}
 }

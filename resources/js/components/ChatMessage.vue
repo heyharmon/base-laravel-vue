@@ -57,7 +57,7 @@ const renderMarkdown = (content) => {
 	margin-bottom: 0.5rem;
 }
 
-.markdown-content p {
+.markdown-content p:not(:last-of-type) {
 	margin-bottom: 0.75rem;
 }
 

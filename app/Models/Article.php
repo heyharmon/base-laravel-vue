@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
@@ -36,5 +37,10 @@ class Article extends Model
 	public function prompt(): BelongsTo
 	{
 		return $this->belongsTo(Prompt::class);
+	}
+
+	public function conversations(): MorphMany
+	{
+		return $this->morphMany(Conversation::class, 'conversable');
 	}
 }
