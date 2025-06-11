@@ -2,12 +2,6 @@
 import { ref } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
-import BookIcon from '@/components/icons/BookIcon.vue'
-import DatabaseIcon from '@/components/icons/DatabaseIcon.vue'
-import EllipsesHorizontalIcon from '@/components/icons/EllipsesHorizontalIcon.vue'
-import ImageIcon from '@/components/icons/ImageIcon.vue'
-import MicrophoneIcon from '@/components/icons/MicrophoneIcon.vue'
-import SearchIcon from '@/components/icons/SearchIcon.vue'
 
 const emit = defineEmits(['send'])
 const message = ref('')
@@ -44,12 +38,41 @@ function sendMessage() {
 				<div>
 					<!-- Prompt w/ image button -->
 					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
-						<ImageIcon />
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-image"
+						>
+							<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+							<circle cx="9" cy="9" r="2" />
+							<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+						</svg>
 					</button>
 
 					<!-- Search button -->
 					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
-						<SearchIcon />
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-search"
+						>
+							<circle cx="11" cy="11" r="8" />
+							<path d="m21 21-4.3-4.3" />
+						</svg>
 					</button>
 
 					<!-- Deep research button -->
@@ -64,14 +87,44 @@ function sendMessage() {
 
 					<!-- More options button -->
 					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
-						<EllipsesHorizontalIcon />
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-more-horizontal"
+						>
+							<circle cx="12" cy="12" r="1" />
+							<circle cx="19" cy="12" r="1" />
+							<circle cx="5" cy="12" r="1" />
+						</svg>
 					</button>
 				</div>
 
 				<div>
 					<!-- Microphone button -->
 					<button type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
-						<MicrophoneIcon />
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-mic"
+						>
+							<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+							<path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+							<line x1="12" x2="12" y1="19" y2="22" />
+						</svg>
 					</button>
 
 					<!-- Send button -->
