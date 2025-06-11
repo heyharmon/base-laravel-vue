@@ -56,7 +56,7 @@ class OrganizationOnboardController extends Controller
 			'name' => $organization->website,
 		]);
 
-		// Dispatch a job to generate phrases for this organization
+		// Dispatch a job to generate keywords for this organization
 		$this->jobDispatcher->dispatch($organization, new GenerateOrganizationKeywords($organization, $organization->team_id));
 
 		return response()->json($organization, 201);
