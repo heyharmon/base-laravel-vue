@@ -158,7 +158,7 @@ const promptStore = usePromptStore()
 // Preset prompts for empty chat
 const presetPrompts = [
 	'🧠 Summarize this article for me',
-	'🔗 List sources mentioned in responses',
+	'🔗 List sources mentioned in prompt responses',
 	'✨ Suggest improvements for this article',
 	'🌐 Search the web for information related to this article'
 ]
