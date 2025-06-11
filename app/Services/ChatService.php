@@ -6,14 +6,43 @@ use OpenAI\Client;
 use OpenAI;
 use Illuminate\Support\Facades\Log;
 use App\Models\Conversation;
+use App\Models\Article;
+use App\Models\Prompt;
+use App\Models\Response;
 
 class ChatService
 {
 	protected Client $client;
+	protected ?Article $article = null;
+	protected ?Prompt $prompt = null;
 
 	public function __construct()
 	{
 		$this->client = OpenAI::client(config('services.openai.api_key'));
+	}
+
+	/**
+	 * Set the article context for the chat
+	 *
+	 * @param Article $article
+	 * @return $this
+	 */
+	public function withArticle(Article $article): self
+	{
+		$this->article = $article;
+		return $this;
+	}
+
+	/**
+	 * Set the prompt context for the chat
+	 *
+	 * @param Prompt $prompt
+	 * @return $this
+	 */
+	public function withPrompt(Prompt $prompt): self
+	{
+		$this->prompt = $prompt;
+		return $this;
 	}
 
 	/**
@@ -106,10 +135,39 @@ class ChatService
 		$requestData = [
 			'model' => 'gpt-4.1',
 			'input' => $userMessage,
-			// Add web search tool to allow the model to search the web if needed
+			// Add tools for the model to use
 			'tools' => [
 				[
 					'type' => 'web_search'
+				],
+				[
+					'type' => 'function',
+					'name' => 'edit_article_content',
+					'description' => 'Edit the content of the current article',
+					'parameters' => [
+						'type' => 'object',
+						'properties' => [
+							'content' => [
+								'type' => 'string',
+								'description' => 'The new content for the article in HTML format'
+							]
+						],
+						'required' => ['content']
+					]
+				],
+				[
+					'type' => 'function',
+					'name' => 'fetch_prompt_with_responses',
+					'description' => 'Fetch a prompt record with its associated responses',
+					'parameters' => [
+						'type' => 'object',
+						'properties' => [
+							'prompt_id' => [
+								'type' => 'integer',
+								'description' => 'The ID of the prompt to fetch. If not provided, will use the current article\'s prompt_id.'
+							]
+						]
+					]
 				]
 			]
 		];
@@ -121,6 +179,18 @@ class ChatService
 			// For new conversations or if no previous response_id exists,
 			// we need to include the system message
 			$systemMessage = (string) view('prompts.system');
+
+			// Add article and prompt context if available
+			if ($this->article) {
+				$systemMessage .= "\n\nYou are currently editing an article with ID: {$this->article->id} and title: '{$this->article->title}'.";
+				$systemMessage .= "\nCurrent article content: \n{$this->article->content}";
+			}
+
+			if ($this->prompt) {
+				$systemMessage .= "\n\nThis article is based on the prompt: '{$this->prompt->name}'";
+				$systemMessage .= "\nPrompt content: {$this->prompt->content}";
+			}
+
 			$requestData['input'] = [
 				['role' => 'system', 'content' => $systemMessage],
 				['role' => 'user', 'content' => $userMessage]
@@ -130,6 +200,123 @@ class ChatService
 		// Generate AI response using OpenAI Responses API
 		$response = $this->client->responses()->create($requestData);
 
+		// Handle tool calls if any
+		if (isset($response->output)) {
+			foreach ($response->output as $output) {
+				if ($output->type === 'tool_calls' && property_exists($output, 'tool_calls')) {
+					foreach ($output->tool_calls as $toolCall) {
+						if ($toolCall->type === 'function' && property_exists($toolCall, 'function')) {
+							$this->handleToolCall($toolCall->function->name, json_decode($toolCall->function->arguments, true));
+						}
+					}
+				}
+			}
+		}
+
 		return $response;
+	}
+
+	/**
+	 * Handle tool calls from the AI
+	 *
+	 * @param string $name
+	 * @param array $arguments
+	 * @return mixed
+	 */
+	private function handleToolCall(string $name, array $arguments)
+	{
+		switch ($name) {
+			case 'edit_article_content':
+				return $this->editArticleContent($arguments['content'] ?? '');
+
+			case 'fetch_prompt_with_responses':
+				$promptId = $arguments['prompt_id'] ?? ($this->article ? $this->article->prompt_id : null);
+				return $this->fetchPromptWithResponses($promptId);
+
+			default:
+				Log::warning("Unknown tool call: {$name}");
+				return null;
+		}
+	}
+
+	/**
+	 * Edit the content of the current article
+	 *
+	 * @param string $content
+	 * @return array|null
+	 */
+	private function editArticleContent(string $content): ?array
+	{
+		if (!$this->article) {
+			Log::error('Cannot edit article content: No article context provided');
+			return null;
+		}
+
+		try {
+			$this->article->content = $content;
+			$this->article->save();
+
+			return [
+				'success' => true,
+				'message' => 'Article content updated successfully',
+				'article_id' => $this->article->id
+			];
+		} catch (\Exception $e) {
+			Log::error('Error updating article content: ' . $e->getMessage());
+			return [
+				'success' => false,
+				'message' => 'Failed to update article content: ' . $e->getMessage()
+			];
+		}
+	}
+
+	/**
+	 * Fetch a prompt with its associated responses
+	 *
+	 * @param int|null $promptId
+	 * @return array|null
+	 */
+	private function fetchPromptWithResponses(?int $promptId): ?array
+	{
+		if (!$promptId) {
+			Log::error('Cannot fetch prompt: No prompt ID provided');
+			return null;
+		}
+
+		try {
+			$prompt = Prompt::with(['responses' => function ($query) {
+				$query->latest()->limit(5);
+			}])->find($promptId);
+
+			if (!$prompt) {
+				return [
+					'success' => false,
+					'message' => 'Prompt not found'
+				];
+			}
+
+			return [
+				'success' => true,
+				'prompt' => [
+					'id' => $prompt->id,
+					'name' => $prompt->name,
+					'content' => $prompt->content,
+					'description' => $prompt->description,
+					'responses' => $prompt->responses->map(function ($response) {
+						return [
+							'id' => $response->id,
+							'content' => $response->content,
+							'created_at' => $response->created_at->toDateTimeString()
+						];
+					})->toArray()
+				]
+			];
+		} catch (\Exception $e) {
+			Log::error('Error fetching prompt with responses: ' . $e->getMessage());
+			return [
+				'success' => false,
+				'message' => 'Failed to fetch prompt: ' . $e->getMessage()
+			];
+		}
 	}
 }

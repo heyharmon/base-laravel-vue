@@ -102,4 +102,8 @@ Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs'])
 
 // Articles
 Route::resource('articles', ArticleController::class);
+
+// Article Chat
+Route::get('articles/{article}/chats', [App\Http\Controllers\ArticleChatController::class, 'index']);
+Route::post('articles/{article}/chats', [App\Http\Controllers\ArticleChatController::class, 'store']);
 });
