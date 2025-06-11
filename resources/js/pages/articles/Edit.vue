@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useArticleChatStore } from '@/stores/articleChatStore'
+import { usePromptStore } from '@/stores/promptStore'
+import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import CopyIcon from '@/components/icons/CopyIcon.vue'
 import SettingsIcon from '@/components/icons/SettingsIcon.vue'
@@ -149,6 +151,15 @@ const cancelEdit = () => {
 }
 
 const isCopied = ref(false)
+const isPromptDetailSheetOpen = ref(false)
+const promptStore = usePromptStore()
+
+// Open the prompt detail sheet
+const showPromptDetails = () => {
+	if (article.value.prompt_id) {
+		isPromptDetailSheetOpen.value = true
+	}
+}
 
 const copyContentToClipboard = async () => {
 	try {
@@ -194,20 +205,19 @@ const copyContentToClipboard = async () => {
 
 			<div class="py-8">
 				<!-- Top bar -->
-				<div class="flex justify-between items-start mb-8">
-					<div class="flex items-center gap-3">
-						<h1 class="text-2xl font-bold">{{ article.title || 'Edit Article' }}</h1>
-					</div>
+				<div class="flex justify-between items-start gap-10 mb-8">
+					<h1 class="text-2xl font-bold">{{ article.title || 'Edit Article' }}</h1>
 					<div class="flex items-center justify-end gap-2">
 						<Button @click="showSettings = !showSettings" variant="neutral">
 							<SettingsIcon />
-							{{ showSettings ? 'Hide Settings' : 'Show Settings' }}
+							{{ showSettings ? 'Hide Settings' : 'Settings' }}
 						</Button>
 						<Button @click="copyContentToClipboard" variant="neutral" :disabled="isCopied">
 							<CopyIcon />
-							{{ isCopied ? 'Copied!' : 'Copy article HTML' }}
+							{{ isCopied ? 'Copied!' : 'Copy HTML' }}
 						</Button>
-						<Button v-if="hasChanges" @click="updateArticle" :disabled="isSubmitting" :loading="isSubmitting"> Save </Button>
+						<Button v-if="article.prompt_id" @click="showPromptDetails" variant="neutral">View Prompt</Button>
+						<Button v-if="hasChanges" @click="updateArticle" :disabled="isSubmitting" :loading="isSubmitting">Save</Button>
 					</div>
 				</div>
 
@@ -292,4 +302,7 @@ const copyContentToClipboard = async () => {
 			</div>
 		</template>
 	</TwoColumnLayout>
+
+	<!-- Prompt Detail Sheet -->
+	<PromptDetailSheet v-if="article.prompt_id" :is-open="isPromptDetailSheetOpen" :prompt-id="article.prompt_id" @close="isPromptDetailSheetOpen = false" />
 </template>
