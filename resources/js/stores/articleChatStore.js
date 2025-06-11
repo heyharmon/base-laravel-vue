@@ -20,7 +20,16 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 		
 		try {
 			const response = await api.get(`/articles/${articleId.value}/chats`)
-			chats.value = response || []
+			// Ensure we handle the response format correctly
+			chats.value = Array.isArray(response) ? response : []
+			// Make sure each chat has the expected properties
+			chats.value = chats.value.map(chat => ({
+				id: chat.id,
+				role: chat.role,
+				content: chat.content,
+				created_at: chat.created_at,
+				annotations: chat.annotations || []
+			}))
 		} catch (error) {
 			console.error('Error fetching article chats:', error)
 		}
@@ -42,10 +51,12 @@ export const useArticleChatStore = defineStore('articleChat', () => {
 				content: content
 			})
 
-			// Add AI response to chat
+			// Add AI response to chat with all fields from the updated ChatService
 			chats.value.push({
-				role: 'assistant',
+				id: response.id,
+				role: response.role,
 				content: response.content,
+				created_at: response.created_at,
 				annotations: response.annotations
 			})
 		} catch (error) {
