@@ -94,33 +94,30 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 <template>
 	<div v-if="props.articleId" ref="dropdownRef" class="flex items-center justify-between mb-4">
 		<!-- Dropdown Trigger -->
-		<div class="relative">
+		<div class="relative w-4/5">
 			<button
-				class="max-w-2/3 flex items-center gap-1 text-lg font-medium px-2 py-1 rounded-md hover:bg-neutral-100"
+				class="w-full flex items-center gap-1 text-md font-medium px-2 py-1 border border-neutral-200 rounded-md hover:bg-neutral-100"
 				:disabled="isLoading"
 				@click="isOpen = !isOpen"
 				type="button"
 			>
-				<span class="truncate">{{ activeConversationTitle }}</span>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+				<svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 20 20" fill="currentColor">
 					<path
 						fill-rule="evenodd"
 						d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
 						clip-rule="evenodd"
 					/>
 				</svg>
+				<span class="truncate">{{ activeConversationTitle }}</span>
 			</button>
 
 			<!-- Dropdown Menu -->
 			<div v-if="isOpen" class="absolute z-50 bg-white border border-neutral-200 rounded-md shadow-lg min-w-[240px] max-w-[500px] mt-1">
 				<div class="p-1">
-					<!-- Divider -->
-					<div class="h-px bg-neutral-200 my-1"></div>
-
 					<!-- Loading / Empty / List -->
 					<div v-if="isLoading" class="p-3 text-center text-neutral-500">Loading conversations...</div>
 					<div v-else-if="conversations.length === 0" class="p-3 text-center text-neutral-500">No conversations yet</div>
-					<div v-else class="max-h-[240px] overflow-y-auto">
+					<div v-else class="overflow-y-auto">
 						<button
 							v-for="conversation in conversations"
 							:key="conversation.id"
@@ -135,7 +132,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 							<svg
 								v-if="conversation.id === activeConversationId"
 								xmlns="http://www.w3.org/2000/svg"
-								class="h-4 w-4 text-neutral-900"
+								class="size-4 text-neutral-900"
 								viewBox="0 0 20 20"
 								fill="currentColor"
 							>

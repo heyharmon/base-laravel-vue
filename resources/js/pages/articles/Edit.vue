@@ -200,7 +200,7 @@ const copyContentToClipboard = async () => {
 
 				<div class="flex flex-col flex-grow">
 					<!-- Chat messages -->
-					<div class="flex-grow mb-4 space-y-4 overflow-y-auto p-2">
+					<div class="flex-grow mb-4 space-y-4 overflow-y-auto p-2 max-h-[calc(100vh-260px)]">
 						<!-- Show preset prompts when there are no chat messages -->
 						<div v-if="articleChatStore.chats.length === 0 && !articleChatStore.isLoading" class="flex flex-col gap-3 p-2">
 							<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
@@ -234,7 +234,7 @@ const copyContentToClipboard = async () => {
 				</span>
 			</div>
 
-			<div class="py-8">
+			<div class="pt-4">
 				<!-- Top bar -->
 				<div class="flex justify-between items-start gap-10 mb-8">
 					<h1 class="text-2xl font-bold">{{ article.title || 'Edit Article' }}</h1>
@@ -324,7 +324,7 @@ const copyContentToClipboard = async () => {
 							<EditorMenu @command="handleEditorCommand" :active-commands="activeEditorCommands" />
 
 							<!-- Editor content -->
-							<div class="p-4 min-h-[400px]">
+							<div class="p-4 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto">
 								<EditorContent :editor="editor" />
 							</div>
 						</div>
