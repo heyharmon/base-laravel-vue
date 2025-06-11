@@ -149,7 +149,10 @@ onMounted(async () => {
 						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 					>
 						<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-						<span> {{ activePromptJobs.length }} {{ activePromptJobs.length === 1 ? 'prompt is being run' : 'prompts are being run' }} </span>
+						<span>
+							{{ activePromptJobs.length }}
+							{{ activePromptJobs.length === 1 ? 'prompt related job is being run' : 'prompt related jobs are being run' }}
+						</span>
 					</div>
 
 					<div v-if="sortedPrompts.length" class="space-y-4">

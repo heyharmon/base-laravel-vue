@@ -9,7 +9,6 @@ import Button from '@/components/ui/Button.vue'
 const route = useRoute()
 const router = useRouter()
 const teamStore = useTeamStore()
-const teamId = computed(() => route.params.id)
 const currentUser = computed(() => auth.getUser())
 const isOwner = computed(() => teamStore.currentTeam?.owner_id === currentUser.value?.id)
 const isAdmin = computed(() => {
@@ -28,7 +27,7 @@ onMounted(async () => {
 })
 
 const loadTeam = async () => {
-	await teamStore.fetchTeam(teamId.value)
+	await teamStore.fetchTeam(route.params.id)
 	if (teamStore.currentTeam) {
 		editTeamName.value = teamStore.currentTeam.name
 	}
@@ -39,7 +38,7 @@ const updateTeam = async () => {
 
 	isSubmitting.value = true
 	try {
-		await teamStore.updateTeam(teamId.value, { name: editTeamName.value })
+		await teamStore.updateTeam(route.params.id, { name: editTeamName.value })
 		showEditModal.value = false
 	} catch (error) {
 		console.error('Error updating team:', error)
@@ -53,7 +52,7 @@ const inviteUser = async () => {
 
 	isSubmitting.value = true
 	try {
-		await teamStore.inviteUser(teamId.value, {
+		await teamStore.inviteUser(route.params.id, {
 			email: inviteEmail.value,
 			role: inviteRole.value
 		})
@@ -71,7 +70,7 @@ const removeMember = async (userId) => {
 	if (!confirm('Are you sure you want to remove this member?')) return
 
 	try {
-		await teamStore.removeMember(teamId.value, userId)
+		await teamStore.removeMember(route.params.id, userId)
 	} catch (error) {
 		console.error('Error removing member:', error)
 	}
@@ -79,7 +78,7 @@ const removeMember = async (userId) => {
 
 const updateRole = async (userId, role) => {
 	try {
-		await teamStore.updateMemberRole(teamId.value, userId, { role })
+		await teamStore.updateMemberRole(route.params.id, userId, { role })
 	} catch (error) {
 		console.error('Error updating role:', error)
 	}
@@ -89,8 +88,19 @@ const deleteTeam = async () => {
 	if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) return
 
 	try {
-		await teamStore.deleteTeam(teamId.value)
-		router.push('/teams')
+		await teamStore.deleteTeam(route.params.id)
+
+		// Find another team to switch to
+		if (teamStore.ownedTeams.length > 0) {
+			await teamStore.switchTeam(teamStore.ownedTeams[0].id)
+			router.push(`/teams/${teamStore.ownedTeams[0].id}`)
+		} else if (teamStore.joinedTeams.length > 0) {
+			await teamStore.switchTeam(teamStore.joinedTeams[0].id)
+			router.push(`/teams/${teamStore.joinedTeams[0].id}`)
+		} else {
+			// No teams left, redirect to teams index
+			router.push('/')
+		}
 	} catch (error) {
 		console.error('Error deleting team:', error)
 	}
