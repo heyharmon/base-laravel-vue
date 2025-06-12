@@ -122,25 +122,18 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 	}
 })
 
-// Subscribe to article updates function (for compatibility with existing code)
-const subscribeToArticleUpdates = () => {
-	if (!route.params.id) return
-
-	// Re-listen to the channel
-	listen()
-	console.log('Subscribed to article updates')
-}
-
 onMounted(async () => {
 	try {
 		if (route.params.id) {
 			fetchArticle()
+
 			// Set article ID in chat store and fetch chats
+			// TODO: Do we need a another store for article chats?
 			articleChatStore.setArticleId(route.params.id)
 			await articleChatStore.fetchChats()
 
 			// Subscribe to real-time updates
-			subscribeToArticleUpdates()
+			listen()
 		}
 	} catch (error) {
 		console.error('Error fetching article:', error)
