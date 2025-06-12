@@ -3,32 +3,22 @@
 namespace App\Events;
 
 use App\Models\Article;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ArticleUpdated implements ShouldBroadcast
+class ArticleUpdated implements ShouldBroadcastNow
 {
 	use Dispatchable, InteractsWithSockets, SerializesModels;
 
 	/**
-	 * The article instance.
-	 *
-	 * @var \App\Models\Article
-	 */
-	public $article;
-
-	/**
 	 * Create a new event instance.
 	 */
-	public function __construct(Article $article)
-	{
-		$this->article = $article;
-	}
+	public function __construct(
+		public Article $article
+	) {}
 
 	/**
 	 * Get the channels the event should broadcast on.
