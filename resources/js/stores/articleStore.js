@@ -9,7 +9,6 @@ export const useArticleStore = defineStore('article', () => {
 	const isLoading = ref(false)
 	const isGenerating = ref(false)
 	const error = ref(null)
-	const autoSaveEnabled = ref(true)
 	const isSaving = ref(false)
 
 	const fetchArticles = async () => {
@@ -22,7 +21,6 @@ export const useArticleStore = defineStore('article', () => {
 			return response
 		} catch (err) {
 			error.value = err.message || 'Failed to fetch articles'
-			console.error('Error fetching articles:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -39,7 +37,6 @@ export const useArticleStore = defineStore('article', () => {
 			return response
 		} catch (err) {
 			error.value = err.message || 'Failed to fetch article'
-			console.error('Error fetching article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -56,7 +53,6 @@ export const useArticleStore = defineStore('article', () => {
 			return response
 		} catch (err) {
 			error.value = err.message || 'Failed to create article'
-			console.error('Error creating article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -81,7 +77,6 @@ export const useArticleStore = defineStore('article', () => {
 			return response
 		} catch (err) {
 			error.value = err.message || 'Failed to update article'
-			console.error('Error updating article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -106,7 +101,6 @@ export const useArticleStore = defineStore('article', () => {
 			return true
 		} catch (err) {
 			error.value = err.message || 'Failed to delete article'
-			console.error('Error deleting article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -135,8 +129,8 @@ export const useArticleStore = defineStore('article', () => {
 	watchDebounced(
 		article,
 		async (newArticle, oldArticle) => {
-			// Only proceed if auto-save is enabled and article exists with an ID
-			if (!autoSaveEnabled.value || !newArticle || !newArticle.id) return
+			// Only proceed if article exists with an ID
+			if (!newArticle || !newArticle.id) return
 
 			// Don't auto-save if we're already in a loading state
 			if (isSaving.value) return
@@ -151,7 +145,6 @@ export const useArticleStore = defineStore('article', () => {
 				await api.put(`/articles/${newArticle.id}`, newArticle)
 				console.log('Article auto-saved successfully')
 			} catch (err) {
-				console.error('Error auto-saving article:', err)
 				error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')
 			} finally {
 				isSaving.value = false
@@ -160,12 +153,6 @@ export const useArticleStore = defineStore('article', () => {
 		{ debounce: 1000, maxWait: 5000 } // 1 second debounce, max 5 seconds
 	)
 
-	// Toggle auto-save functionality
-	const toggleAutoSave = () => {
-		autoSaveEnabled.value = !autoSaveEnabled.value
-		return autoSaveEnabled.value
-	}
-
 	return {
 		articles,
 		article,
@@ -173,13 +160,11 @@ export const useArticleStore = defineStore('article', () => {
 		isGenerating,
 		isSaving,
 		error,
-		autoSaveEnabled,
 		fetchArticles,
 		fetchArticle,
 		createArticle,
 		updateArticle,
 		deleteArticle,
-		generateArticle,
-		toggleAutoSave
+		generateArticle
 	}
 })

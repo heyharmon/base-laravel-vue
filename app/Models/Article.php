@@ -25,9 +25,9 @@ class Article extends Model
 		'content',
 	];
 
-	protected $dispatchesEvents = [
-		'updated' => ArticleUpdated::class,
-	];
+	// protected $dispatchesEvents = [
+	// 	'updated' => ArticleUpdated::class,
+	// ];
 
 	public function team(): BelongsTo
 	{

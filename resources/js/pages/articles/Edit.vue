@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useArticleChatStore } from '@/stores/articleChatStore'
@@ -20,16 +20,10 @@ import EditorMenu from '@/components/editor/EditorMenu.vue'
 import { useEcho } from '@laravel/echo-vue'
 
 const route = useRoute()
-const router = useRouter()
 const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
 const articleChatStore = useArticleChatStore()
 
-// Local article ref removed as we're using the article ref from the store directly
-
-// originalArticle ref removed as we're using auto-save
-
-const isSubmitting = ref(false)
 const isLoading = ref(true)
 const showSettings = ref(false)
 
@@ -131,17 +125,10 @@ onMounted(async () => {
 	}
 })
 
-// Clean up the Echo subscription when the component is unmounted
 onUnmounted(() => {
 	// Leave the Echo channel when component is unmounted
 	leaveChannel()
 })
-
-// hasChanges and updateArticle removed as we're using auto-save
-
-const cancelEdit = () => {
-	router.push({ name: 'articles.index' })
-}
 
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
@@ -240,18 +227,6 @@ const copyContentToClipboard = async () => {
 								Saving...
 							</span>
 							<span v-else-if="articleStore.error" class="text-red-600">{{ articleStore.error }}</span>
-							<span v-else class="flex items-center cursor-pointer" @click="articleStore.toggleAutoSave()">
-								<span
-									class="inline-block w-8 h-4 mr-2 rounded-full relative transition-colors"
-									:class="articleStore.autoSaveEnabled ? 'bg-green-500' : 'bg-neutral-300'"
-								>
-									<span
-										class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform"
-										:class="articleStore.autoSaveEnabled ? 'translate-x-4' : ''"
-									></span>
-								</span>
-								Auto-save {{ articleStore.autoSaveEnabled ? 'on' : 'off' }}
-							</span>
 						</div>
 
 						<Button @click="showSettings = !showSettings" variant="neutral">

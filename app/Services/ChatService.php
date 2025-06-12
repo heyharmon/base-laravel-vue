@@ -309,6 +309,8 @@ class ChatService
 			$this->article->content = $content;
 			$this->article->save();
 
+			ArticleUpdated::class::dispatch($this->article);
+
 			return [
 				'success'   => true,
 				'message'   => 'Article content updated successfully.',
