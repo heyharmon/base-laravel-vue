@@ -25,29 +25,9 @@ const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
 const articleChatStore = useArticleChatStore()
 
-const article = ref({
-	id: null,
-	title: '',
-	meta_title: '',
-	meta_description: '',
-	schema: '',
-	outline: '',
-	content: '',
-	organization_id: null,
-	prompt_id: null
-})
+// Local article ref removed as we're using the article ref from the store directly
 
-const originalArticle = ref({
-	id: null,
-	title: '',
-	meta_title: '',
-	meta_description: '',
-	schema: '',
-	outline: '',
-	content: '',
-	organization_id: null,
-	prompt_id: null
-})
+// originalArticle ref removed as we're using auto-save
 
 const isSubmitting = ref(false)
 const isLoading = ref(true)
@@ -55,9 +35,12 @@ const showSettings = ref(false)
 
 // Get active jobs related to this article
 const activeArticleJobs = computed(() => {
+	if (!articleStore.article) return []
 	return jobStatusStore.jobs.filter(
 		(job) =>
-			job.trackable_type === 'App\\Models\\Article' && job.trackable_id === article.value.id && (job.status === 'pending' || job.status === 'processing')
+			job.trackable_type === 'App\\Models\\Article' &&
+			job.trackable_id === articleStore.article.id &&
+			(job.status === 'pending' || job.status === 'processing')
 	)
 })
 
@@ -66,7 +49,14 @@ const editor = useEditor({
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
 		console.log('On updating article...')
-		article.value.content = editor.getHTML()
+		// Update the article content in the store in a way that triggers reactivity
+		if (articleStore.article) {
+			// Create a new object with the updated content to trigger the watcher
+			articleStore.article = {
+				...articleStore.article,
+				content: editor.getHTML()
+			}
+		}
 	}
 })
 
@@ -102,9 +92,8 @@ const activeEditorCommands = computed(() => ({
 const fetchArticle = async () => {
 	console.log('Fetching article...')
 	const data = await articleStore.fetchArticle(route.params.id)
-	article.value = { ...data }
-	originalArticle.value = { ...data }
-	editor.value.commands.setContent(article.value.content) // Set editor content
+
+	editor.value.commands.setContent(articleStore.article.content) // Set editor content
 }
 
 // Echo channel subscription handlers
@@ -112,8 +101,8 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 	console.log('Received article update:', e)
 
 	// Update the article content
-	if (e.id === article.value.id) {
-		article.value.content = e.content
+	if (e.id === articleStore.article.id) {
+		articleStore.article.content = e.content
 
 		// Update the editor content if it's different
 		if (editor.value && editor.value.getHTML() !== e.content) {
@@ -148,31 +137,7 @@ onUnmounted(() => {
 	leaveChannel()
 })
 
-const hasChanges = computed(() => {
-	return (
-		article.value.title !== originalArticle.value.title ||
-		article.value.meta_title !== originalArticle.value.meta_title ||
-		article.value.meta_description !== originalArticle.value.meta_description ||
-		article.value.schema !== originalArticle.value.schema ||
-		article.value.outline !== originalArticle.value.outline ||
-		article.value.content !== originalArticle.value.content ||
-		article.value.organization_id !== originalArticle.value.organization_id ||
-		article.value.prompt_id !== originalArticle.value.prompt_id
-	)
-})
-
-const updateArticle = async () => {
-	console.log('Updating article...')
-	isSubmitting.value = true
-	try {
-		await articleStore.updateArticle(route.params.id, article.value)
-		// window.location.reload()
-	} catch (error) {
-		console.error('Error updating article:', error)
-	} finally {
-		isSubmitting.value = false
-	}
-}
+// hasChanges and updateArticle removed as we're using auto-save
 
 const cancelEdit = () => {
 	router.push({ name: 'articles.index' })
@@ -200,18 +165,20 @@ const handleConversationChanged = async (conversationId) => {
 
 // Open the prompt detail sheet
 const showPromptDetails = () => {
-	if (article.value.prompt_id) {
+	if (articleStore.article?.prompt_id) {
 		isPromptDetailSheetOpen.value = true
 	}
 }
 
 const copyContentToClipboard = async () => {
 	try {
-		await navigator.clipboard.writeText(article.value.content)
-		isCopied.value = true
-		setTimeout(() => {
-			isCopied.value = false
-		}, 2000)
+		if (articleStore.article?.content) {
+			await navigator.clipboard.writeText(articleStore.article.content)
+			isCopied.value = true
+			setTimeout(() => {
+				isCopied.value = false
+			}, 2000)
+		}
 	} catch (error) {
 		console.error('Failed to copy content:', error)
 	}
@@ -223,7 +190,7 @@ const copyContentToClipboard = async () => {
 		<template #left-column>
 			<!-- Chat panel -->
 			<div class="py-4 min-h-[calc(100vh-52px)] flex flex-col">
-				<ArticleConversationDropdown :article-id="article.id" @conversation-changed="handleConversationChanged" />
+				<ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
 
 				<div class="flex flex-col flex-grow">
 					<!-- Chat messages -->
@@ -264,8 +231,29 @@ const copyContentToClipboard = async () => {
 			<div class="pt-4">
 				<!-- Top bar -->
 				<div class="flex justify-between items-start gap-10 mb-8">
-					<h1 class="text-2xl font-bold">{{ article.title || 'Edit Article' }}</h1>
+					<h1 class="text-2xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
 					<div class="flex items-center justify-end gap-2">
+						<!-- Auto-save indicator -->
+						<div class="flex items-center mr-2 text-sm text-neutral-600">
+							<span v-if="articleStore.isSaving" class="flex items-center">
+								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
+								Saving...
+							</span>
+							<span v-else-if="articleStore.error" class="text-red-600">{{ articleStore.error }}</span>
+							<span v-else class="flex items-center cursor-pointer" @click="articleStore.toggleAutoSave()">
+								<span
+									class="inline-block w-8 h-4 mr-2 rounded-full relative transition-colors"
+									:class="articleStore.autoSaveEnabled ? 'bg-green-500' : 'bg-neutral-300'"
+								>
+									<span
+										class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform"
+										:class="articleStore.autoSaveEnabled ? 'translate-x-4' : ''"
+									></span>
+								</span>
+								Auto-save {{ articleStore.autoSaveEnabled ? 'on' : 'off' }}
+							</span>
+						</div>
+
 						<Button @click="showSettings = !showSettings" variant="neutral">
 							<SettingsIcon />
 							{{ showSettings ? 'Hide Settings' : 'Settings' }}
@@ -274,8 +262,7 @@ const copyContentToClipboard = async () => {
 							<CopyIcon />
 							{{ isCopied ? 'Copied!' : 'Copy HTML' }}
 						</Button>
-						<Button v-if="article.prompt_id" @click="showPromptDetails" variant="neutral">View Prompt</Button>
-						<Button v-if="hasChanges" @click="updateArticle" :disabled="isSubmitting" :loading="isSubmitting">Save</Button>
+						<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="neutral">View Prompt</Button>
 					</div>
 				</div>
 
@@ -299,7 +286,7 @@ const copyContentToClipboard = async () => {
 								<label for="title" class="block text-sm font-medium text-neutral-700 mb-1">Title</label>
 								<input
 									id="title"
-									v-model="article.title"
+									v-model="articleStore.article.title"
 									type="text"
 									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
 									placeholder="Article title"
@@ -311,7 +298,7 @@ const copyContentToClipboard = async () => {
 								<label for="meta_title" class="block text-sm font-medium text-neutral-700 mb-1">Meta Title</label>
 								<input
 									id="meta_title"
-									v-model="article.meta_title"
+									v-model="articleStore.article.meta_title"
 									type="text"
 									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
 									placeholder="Meta title for SEO"
@@ -323,7 +310,7 @@ const copyContentToClipboard = async () => {
 								<label for="meta_description" class="block text-sm font-medium text-neutral-700 mb-1">Meta Description</label>
 								<textarea
 									id="meta_description"
-									v-model="article.meta_description"
+									v-model="articleStore.article.meta_description"
 									rows="3"
 									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
 									placeholder="Meta description for SEO"
@@ -335,7 +322,7 @@ const copyContentToClipboard = async () => {
 								<label for="schema" class="block text-sm font-medium text-neutral-700 mb-1">Schema</label>
 								<textarea
 									id="schema"
-									v-model="article.schema"
+									v-model="articleStore.article.schema"
 									rows="5"
 									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500 font-mono text-sm"
 									placeholder="JSON-LD structured data schema"
@@ -362,5 +349,10 @@ const copyContentToClipboard = async () => {
 	</TwoColumnLayout>
 
 	<!-- Prompt Detail Sheet -->
-	<PromptDetailSheet v-if="article.prompt_id" :is-open="isPromptDetailSheetOpen" :prompt-id="article.prompt_id" @close="isPromptDetailSheetOpen = false" />
+	<PromptDetailSheet
+		v-if="articleStore.article?.prompt_id"
+		:is-open="isPromptDetailSheetOpen"
+		:prompt-id="articleStore.article.prompt_id"
+		@close="isPromptDetailSheetOpen = false"
+	/>
 </template>
