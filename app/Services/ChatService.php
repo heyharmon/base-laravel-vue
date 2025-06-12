@@ -9,6 +9,7 @@ use App\Models\Conversation;
 use App\Models\Article;
 use App\Models\Prompt;
 use App\Models\Response;
+use App\Events\ArticleUpdated;
 
 class ChatService
 {
@@ -307,6 +308,9 @@ class ChatService
 		try {
 			$this->article->content = $content;
 			$this->article->save();
+
+			// Broadcast the article content update event
+			ArticleUpdated::dispatch($this->article);
 
 			return [
 				'success'   => true,
