@@ -9,6 +9,7 @@ use App\Models\Conversation;
 use App\Models\Article;
 use App\Models\Prompt;
 use App\Models\Response;
+use App\Events\ArticleUpdated;
 
 class ChatService
 {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
@@ -17,6 +17,7 @@ import ChatInput from '@/components/ChatInput.vue'
 import ArticleConversationDropdown from '@/components/conversations/ArticleConversationDropdown.vue'
 import ChatLoadingIndicator from '@/components/ChatLoadingIndicator.vue'
 import EditorMenu from '@/components/editor/EditorMenu.vue'
+import { useEcho } from '@laravel/echo-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,6 +107,30 @@ const fetchArticle = async () => {
 	editor.value.commands.setContent(article.value.content) // Set editor content
 }
 
+// Echo channel subscription handlers
+const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
+	console.log('Received article update:', e)
+
+	// Update the article content
+	if (e.id === article.value.id) {
+		article.value.content = e.content
+
+		// Update the editor content if it's different
+		if (editor.value && editor.value.getHTML() !== e.content) {
+			editor.value.commands.setContent(e.content)
+		}
+	}
+})
+
+// Subscribe to article updates function (for compatibility with existing code)
+const subscribeToArticleUpdates = () => {
+	if (!route.params.id) return
+
+	// Re-listen to the channel
+	listen()
+	console.log('Subscribed to article updates')
+}
+
 onMounted(async () => {
 	try {
 		if (route.params.id) {
@@ -113,12 +138,21 @@ onMounted(async () => {
 			// Set article ID in chat store and fetch chats
 			articleChatStore.setArticleId(route.params.id)
 			await articleChatStore.fetchChats()
+
+			// Subscribe to real-time updates
+			subscribeToArticleUpdates()
 		}
 	} catch (error) {
 		console.error('Error fetching article:', error)
 	} finally {
 		isLoading.value = false
 	}
+})
+
+// Clean up the Echo subscription when the component is unmounted
+onUnmounted(() => {
+	// Leave the Echo channel when component is unmounted
+	leaveChannel()
 })
 
 const hasChanges = computed(() => {
@@ -139,7 +173,7 @@ const updateArticle = async () => {
 	isSubmitting.value = true
 	try {
 		await articleStore.updateArticle(route.params.id, article.value)
-		window.location.reload()
+		// window.location.reload()
 	} catch (error) {
 		console.error('Error updating article:', error)
 	} finally {
