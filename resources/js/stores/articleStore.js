@@ -150,7 +150,7 @@ export const useArticleStore = defineStore('article', () => {
 				isSaving.value = false
 			}
 		},
-		{ debounce: 1000, maxWait: 5000 } // 1 second debounce, max 5 seconds
+		{ debounce: 1000, maxWait: 5000, deep: true } // 1 second debounce, max 5 seconds
 	)
 
 	return {

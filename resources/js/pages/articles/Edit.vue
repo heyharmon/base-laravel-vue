@@ -42,15 +42,7 @@ const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
-		console.log('On updating article...')
-		// Update the article content in the store in a way that triggers reactivity
-		if (articleStore.article) {
-			// Create a new object with the updated content to trigger the watcher
-			articleStore.article = {
-				...articleStore.article,
-				content: editor.getHTML()
-			}
-		}
+		articleStore.article.content = editor.getHTML()
 	}
 })
 
