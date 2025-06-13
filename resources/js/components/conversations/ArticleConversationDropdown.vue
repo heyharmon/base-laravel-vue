@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import api from '@/services/api'
+import Button from '@/components/ui/Button.vue'
 
 const props = defineProps({
 	articleId: {
@@ -92,11 +93,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 </script>
 
 <template>
-	<div v-if="props.articleId" ref="dropdownRef" class="flex items-center justify-between mb-4">
+	<div v-if="props.articleId" ref="dropdownRef" class="flex items-center justify-between">
 		<!-- Dropdown Trigger -->
 		<div class="relative w-4/5">
 			<button
-				class="w-full flex items-center gap-1 text-md font-medium px-2 py-1 border border-neutral-200 rounded-md hover:bg-neutral-100"
+				class="w-full flex items-center gap-0.5 text-md px-2 py-1 -ml-2 rounded-md hover:bg-neutral-100 cursor-pointer"
 				:disabled="isLoading"
 				@click="isOpen = !isOpen"
 				type="button"
@@ -112,7 +113,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 			</button>
 
 			<!-- Dropdown Menu -->
-			<div v-if="isOpen" class="absolute z-50 bg-white border border-neutral-200 rounded-md shadow-lg min-w-[240px] max-w-[500px] mt-1">
+			<div v-if="isOpen" class="absolute z-50 bg-white border border-neutral-200 rounded-md shadow-lg min-w-[240px] max-w-[460px] mt-1">
 				<div class="p-1">
 					<!-- Loading / Empty / List -->
 					<div v-if="isLoading" class="p-3 text-center text-neutral-500">Loading conversations...</div>
@@ -149,14 +150,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 		</div>
 
 		<!-- External New Button -->
-		<button
-			@click="createNewConversation"
-			class="cursor-pointer bg-neutral-800 text-white px-3 py-1 rounded-md text-sm hover:bg-neutral-700"
-			:disabled="isLoading"
-			type="button"
-		>
-			New
-		</button>
+		<Button @click="createNewConversation" :disabled="isLoading" type="button" variant="outline" size="sm"> New </Button>
 	</div>
 
 	<!-- Fallback when no articleId -->

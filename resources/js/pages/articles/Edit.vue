@@ -165,7 +165,10 @@ const copyContentToClipboard = async () => {
 		<template #left-column>
 			<!-- Chat column -->
 			<div class="flex-1 overflow-hidden flex flex-col h-full">
-				<!-- <ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" /> -->
+				<!-- Messages top bar -->
+				<div class="py-2 px-4">
+					<ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
+				</div>
 
 				<!-- Messages area (scrollable) -->
 				<div class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-8 space-y-6 custom-scrollbar">
