@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
@@ -24,6 +24,7 @@ const jobStatusStore = useJobStatusStore()
 
 const isLoading = ref(true)
 const showSettings = ref(false)
+const messagesContainer = ref(null)
 
 // Get active jobs related to this article
 const activeArticleJobs = computed(() => {
@@ -95,6 +96,22 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 	}
 })
 
+// Function to scroll to the bottom of the messages container
+const scrollToBottom = () => {
+	nextTick(() => {
+		if (messagesContainer.value) {
+			messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+		}
+	})
+}
+
+// Watch for changes in the chats array to scroll to bottom when new messages are added
+watch(() => articleStore.chats.length, (newLength, oldLength) => {
+	if (newLength > oldLength) {
+		scrollToBottom()
+	}
+})
+
 onMounted(async () => {
 	try {
 		if (route.params.id) {
@@ -102,6 +119,9 @@ onMounted(async () => {
 
 			// Fetch chats for this article
 			await articleStore.fetchChats(route.params.id)
+			
+			// Scroll to bottom after chats are loaded
+			scrollToBottom()
 
 			// Subscribe to real-time updates
 			listen()
@@ -171,7 +191,7 @@ const copyContentToClipboard = async () => {
 				</div>
 
 				<!-- Messages area (scrollable) -->
-				<div class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-8 space-y-6 custom-scrollbar">
+				<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-8 space-y-6 custom-scrollbar">
 					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3 p-2">
 						<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
 						<button
