@@ -163,31 +163,29 @@ const copyContentToClipboard = async () => {
 <template>
 	<TwoColumnLayout>
 		<template #left-column>
-			<!-- Chat panel -->
-			<div class="py-4 min-h-[calc(100vh-52px)] flex flex-col">
-				<ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
+			<!-- Chat column -->
+			<div class="flex-1 overflow-hidden flex flex-col h-full">
+				<!-- <ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" /> -->
 
-				<div class="flex flex-col flex-grow">
-					<!-- Chat messages -->
-					<div class="flex-grow mb-4 space-y-4 overflow-y-auto p-2 max-h-[calc(100vh-260px)]">
-						<!-- Show preset prompts when there are no chat messages -->
-						<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3 p-2">
-							<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
-							<button
-								v-for="(prompt, index) in presetPrompts"
-								:key="index"
-								@click="articleStore.sendMessage(prompt)"
-								class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
-							>
-								{{ prompt }}
-							</button>
-						</div>
-						<!-- Display chat messages when available -->
-						<ChatMessage v-for="(chat, index) in articleStore.chats" :key="index" :chat="chat" />
-						<ChatLoadingIndicator v-if="articleStore.isLoadingChats" />
+				<!-- Messages area (scrollable) -->
+				<div class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-8 space-y-6 custom-scrollbar">
+					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3 p-2">
+						<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
+						<button
+							v-for="(prompt, index) in presetPrompts"
+							:key="index"
+							@click="articleStore.sendMessage(prompt)"
+							class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
+						>
+							{{ prompt }}
+						</button>
 					</div>
+					<ChatMessage v-for="(chat, index) in articleStore.chats" :key="index" :chat="chat" />
+					<ChatLoadingIndicator v-if="articleStore.isLoadingChats" />
+				</div>
 
-					<!-- Chat input -->
+				<!-- Input area (fixed at bottom) -->
+				<div class="px-4 pb-4 bg-transparent -mt-4">
 					<ChatInput v-model="articleStore.newMessage" @send="articleStore.sendMessage" :disabled="articleStore.isLoadingChats" />
 				</div>
 			</div>
@@ -205,8 +203,9 @@ const copyContentToClipboard = async () => {
 
 			<div class="pt-4">
 				<!-- Top bar -->
-				<div class="flex justify-between items-start gap-10 mb-8">
-					<h1 class="text-2xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
+				<div class="flex justify-between items-start gap-10 mb-4 pr-6">
+					<h1 class="text-xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
+
 					<div class="flex items-center justify-end gap-2">
 						<!-- Auto-save indicator -->
 						<div class="flex items-center mr-2 text-sm text-neutral-600">
@@ -217,15 +216,15 @@ const copyContentToClipboard = async () => {
 							<span v-else-if="articleStore.error" class="text-red-600">{{ articleStore.error }}</span>
 						</div>
 
-						<Button @click="showSettings = !showSettings" variant="neutral">
+						<Button @click="showSettings = !showSettings" variant="outline">
 							<SettingsIcon />
 							{{ showSettings ? 'Hide Settings' : 'Settings' }}
 						</Button>
-						<Button @click="copyContentToClipboard" variant="neutral" :disabled="isCopied">
+						<Button @click="copyContentToClipboard" variant="outline" :disabled="isCopied">
 							<CopyIcon />
 							{{ isCopied ? 'Copied!' : 'Copy HTML' }}
 						</Button>
-						<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="neutral">View Prompt</Button>
+						<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="outline">View Prompt</Button>
 					</div>
 				</div>
 
@@ -295,15 +294,13 @@ const copyContentToClipboard = async () => {
 					</div>
 
 					<!-- Rich text editor -->
-					<div class="flex flex-col gap-6">
-						<div class="border border-neutral-300 rounded-md shadow-sm overflow-hidden">
-							<!-- Editor menu -->
-							<EditorMenu @command="handleEditorCommand" :active-commands="activeEditorCommands" />
+					<div class="flex flex-col overflow-hidden">
+						<!-- Editor menu -->
+						<EditorMenu @command="handleEditorCommand" :active-commands="activeEditorCommands" />
 
-							<!-- Editor content -->
-							<div class="p-4 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto">
-								<EditorContent :editor="editor" />
-							</div>
+						<!-- Editor content -->
+						<div class="pl-2 pr-6 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
+							<EditorContent :editor="editor" />
 						</div>
 					</div>
 				</div>

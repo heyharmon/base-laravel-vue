@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import BookIcon from '@/components/icons/BookIcon.vue'
@@ -11,6 +11,7 @@ import SearchIcon from '@/components/icons/SearchIcon.vue'
 
 const emit = defineEmits(['send'])
 const message = ref('')
+const textareaRef = ref(null)
 
 // add some props
 const props = defineProps({
@@ -24,27 +25,48 @@ const props = defineProps({
 	}
 })
 
+function resizeTextarea() {
+	if (!textareaRef.value) return
+	textareaRef.value.style.height = 'auto'
+	textareaRef.value.style.height = textareaRef.value.scrollHeight + 'px'
+}
+
 function sendMessage() {
 	if (!message.value.trim()) return
 	emit('send', message.value)
 	message.value = ''
+	// Reset textarea height after sending message
+	nextTick(() => {
+		resizeTextarea()
+	})
 }
+
+// Watch for changes in the message and resize the textarea
+function handleInput() {
+	resizeTextarea()
+}
+
+onMounted(() => {
+	resizeTextarea()
+})
 </script>
 
 <template>
-	<div class="relative px-3 pb-3 border border-neutral-300 rounded-3xl bg-white shadow-sm">
-		<form @submit.prevent="sendMessage">
-			<!-- Input -->
-			<div class="flex items-center">
-				<input
-					v-model="message"
-					:placeholder="placeholder"
-					autofocus
-					class="flex-1 py-7 px-2 flex h-9 w-full min-w-0 rounded-md outline-none bg-transparent text-base placeholder:text-muted-foreground transition-[color,box-shadow] md:text-base"
-				/>
-			</div>
+	<div class="relative max-w-full mx-auto">
+		<!-- <form @submit.prevent="sendMessage"> -->
+		<div class="border border-gray-300 bg-white rounded-3xl">
+			<textarea
+				v-model="message"
+				:placeholder="placeholder"
+				rows="1"
+				autofocus
+				ref="textareaRef"
+				@input="handleInput"
+				class="w-full pt-3 px-4 resize-none focus:outline-none"
+				style="min-height: 44px; max-height: 200px"
+			/>
 
-			<div class="flex items-center justify-between">
+			<div class="flex items-center justify-between px-2 pb-2">
 				<div>
 					<!-- Prompt w/ image button -->
 					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
@@ -79,7 +101,7 @@ function sendMessage() {
 					</button>
 
 					<!-- Send button -->
-					<button type="submit" class="p-2 bg-black text-white rounded-full ml-2 mr-1" :disabled="!message.trim()">
+					<button type="submit" class="p-2 bg-black text-white rounded-full" :disabled="!message.trim()">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="20"
@@ -98,6 +120,7 @@ function sendMessage() {
 					</button>
 				</div>
 			</div>
-		</form>
+		</div>
+		<!-- </form> -->
 	</div>
 </template>
