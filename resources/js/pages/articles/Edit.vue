@@ -83,7 +83,7 @@ const fetchArticle = async () => {
 
 // Echo channel subscription handlers
 const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
-	console.log('Received article update:', e)
+	console.log('Received update for article ID:', e.id)
 
 	// Update the article content
 	if (e.id === articleStore.article.id) {
@@ -106,11 +106,14 @@ const scrollToBottom = () => {
 }
 
 // Watch for changes in the chats array to scroll to bottom when new messages are added
-watch(() => articleStore.chats.length, (newLength, oldLength) => {
-	if (newLength > oldLength) {
-		scrollToBottom()
+watch(
+	() => articleStore.chats.length,
+	(newLength, oldLength) => {
+		if (newLength > oldLength) {
+			scrollToBottom()
+		}
 	}
-})
+)
 
 onMounted(async () => {
 	try {
@@ -119,7 +122,7 @@ onMounted(async () => {
 
 			// Fetch chats for this article
 			await articleStore.fetchChats(route.params.id)
-			
+
 			// Scroll to bottom after chats are loaded
 			scrollToBottom()
 

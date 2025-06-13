@@ -42,7 +42,6 @@ export const useArticleStore = defineStore('article', () => {
 			article.value = response
 			return response
 		} catch (err) {
-			error.value = err.message || 'Failed to fetch article'
 			window.location.href = '/articles'
 			throw err
 		} finally {
