@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import api from '@/services/api'
 
@@ -10,6 +10,12 @@ export const useArticleStore = defineStore('article', () => {
 	const isGenerating = ref(false)
 	const error = ref(null)
 	const isSaving = ref(false)
+	
+	// Chat-related state
+	const chats = ref([])
+	const isLoadingChats = ref(false)
+	const conversationId = ref(null)
+	const newMessage = ref('')
 
 	const fetchArticles = async () => {
 		isLoading.value = true
@@ -153,7 +159,87 @@ export const useArticleStore = defineStore('article', () => {
 		{ debounce: 1000, maxWait: 5000, deep: true } // 1 second debounce, max 5 seconds
 	)
 
+	// Chat-related actions
+	function setConversationId(id) {
+		conversationId.value = id
+		// Clear chats when changing conversations
+		chats.value = []
+	}
+
+	async function fetchChats(articleId) {
+		const id = articleId || (article.value ? article.value.id : null)
+		if (!id) return
+		
+		try {
+			let url = `/articles/${id}/chats`
+			let params = {}
+			
+			// If we have a specific conversation ID, add it as a parameter
+			if (conversationId.value) {
+				params.conversation_id = conversationId.value
+			}
+			
+			const response = await api.get(url, { params })
+			// Ensure we handle the response format correctly
+			chats.value = Array.isArray(response) ? response : []
+			// Make sure each chat has the expected properties
+			chats.value = chats.value.map(chat => ({
+				id: chat.id,
+				role: chat.role,
+				content: chat.content,
+				created_at: chat.created_at,
+				annotations: chat.annotations || []
+			}))
+		} catch (error) {
+			console.error('Error fetching article chats:', error)
+		}
+	}
+
+	async function sendMessage(content) {
+		if (!article.value || !article.value.id) return
+		
+		isLoadingChats.value = true
+		newMessage.value = ''
+
+		// Add user message to chat immediately
+		chats.value.push({
+			role: 'user',
+			content: content
+		})
+
+		try {
+			let url = `/articles/${article.value.id}/chats`
+			let payload = { content }
+			
+			// If we have a specific conversation ID, include it in the payload
+			if (conversationId.value) {
+				payload.conversation_id = conversationId.value
+			}
+
+			const response = await api.post(url, payload)
+
+			// Add AI response to chat with all fields from the updated ChatService
+			chats.value.push({
+				id: response.id,
+				role: response.role,
+				content: response.content,
+				created_at: response.created_at,
+				annotations: response.annotations
+			})
+		} catch (error) {
+			console.error('Error sending message:', error)
+			// Add error message
+			chats.value.push({
+				role: 'assistant',
+				content: 'Sorry, there was an error processing your request.'
+			})
+		} finally {
+			isLoadingChats.value = false
+		}
+	}
+
 	return {
+		// Article state
 		articles,
 		article,
 		isLoading,
@@ -165,6 +251,15 @@ export const useArticleStore = defineStore('article', () => {
 		createArticle,
 		updateArticle,
 		deleteArticle,
-		generateArticle
+		generateArticle,
+
+		// Chat state and actions
+		chats,
+		isLoadingChats: computed(() => isLoadingChats.value),
+		conversationId: computed(() => conversationId.value),
+		newMessage,
+		setConversationId,
+		fetchChats,
+		sendMessage
 	}
 })

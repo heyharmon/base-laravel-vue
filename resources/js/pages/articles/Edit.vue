@@ -3,7 +3,6 @@ import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import { useArticleChatStore } from '@/stores/articleChatStore'
 import { usePromptStore } from '@/stores/promptStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
@@ -22,7 +21,6 @@ import { useEcho } from '@laravel/echo-vue'
 const route = useRoute()
 const articleStore = useArticleStore()
 const jobStatusStore = useJobStatusStore()
-const articleChatStore = useArticleChatStore()
 
 const isLoading = ref(true)
 const showSettings = ref(false)
@@ -102,10 +100,8 @@ onMounted(async () => {
 		if (route.params.id) {
 			fetchArticle()
 
-			// Set article ID in chat store and fetch chats
-			// TODO: Do we need a another store for article chats?
-			articleChatStore.setArticleId(route.params.id)
-			await articleChatStore.fetchChats()
+			// Fetch chats for this article
+			await articleStore.fetchChats(route.params.id)
 
 			// Subscribe to real-time updates
 			listen()
@@ -137,8 +133,8 @@ const presetPrompts = [
 // Handle conversation selection from dropdown
 const handleConversationChanged = async (conversationId) => {
 	if (conversationId) {
-		articleChatStore.setConversationId(conversationId)
-		await articleChatStore.fetchChats()
+		articleStore.setConversationId(conversationId)
+		await articleStore.fetchChats()
 	}
 }
 
@@ -175,24 +171,24 @@ const copyContentToClipboard = async () => {
 					<!-- Chat messages -->
 					<div class="flex-grow mb-4 space-y-4 overflow-y-auto p-2 max-h-[calc(100vh-260px)]">
 						<!-- Show preset prompts when there are no chat messages -->
-						<div v-if="articleChatStore.chats.length === 0 && !articleChatStore.isLoading" class="flex flex-col gap-3 p-2">
+						<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3 p-2">
 							<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
 							<button
 								v-for="(prompt, index) in presetPrompts"
 								:key="index"
-								@click="articleChatStore.sendMessage(prompt)"
+								@click="articleStore.sendMessage(prompt)"
 								class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
 							>
 								{{ prompt }}
 							</button>
 						</div>
 						<!-- Display chat messages when available -->
-						<ChatMessage v-for="(chat, index) in articleChatStore.chats" :key="index" :chat="chat" />
-						<ChatLoadingIndicator v-if="articleChatStore.isLoading" />
+						<ChatMessage v-for="(chat, index) in articleStore.chats" :key="index" :chat="chat" />
+						<ChatLoadingIndicator v-if="articleStore.isLoadingChats" />
 					</div>
 
 					<!-- Chat input -->
-					<ChatInput v-model="articleChatStore.newMessage" @send="articleChatStore.sendMessage" :disabled="articleChatStore.isLoading" />
+					<ChatInput v-model="articleStore.newMessage" @send="articleStore.sendMessage" :disabled="articleStore.isLoadingChats" />
 				</div>
 			</div>
 		</template>

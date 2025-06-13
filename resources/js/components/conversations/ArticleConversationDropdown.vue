@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useArticleChatStore } from '@/stores/articleChatStore'
+import { useArticleStore } from '@/stores/articleStore'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -12,7 +12,7 @@ const props = defineProps({
 
 const emit = defineEmits(['conversationChanged'])
 
-const articleChatStore = useArticleChatStore()
+const articleStore = useArticleStore()
 const conversations = ref([])
 const isLoading = ref(false)
 const activeConversationId = ref(null)
@@ -44,7 +44,7 @@ const setActiveConversation = (id) => {
 	const conversation = conversations.value.find((c) => c.id === id)
 	if (conversation) {
 		activeConversationTitle.value = conversation.title || 'Untitled Conversation'
-		articleChatStore.setConversationId(id)
+		articleStore.setConversationId(id)
 		emit('conversationChanged', id)
 	}
 	isOpen.value = false
