@@ -14,7 +14,7 @@ use App\Events\ArticleUpdated;
 class ChatService
 {
 	protected Client $client;
-	protected ?Article $article = null;
+	protected Article $article;
 	protected ?Prompt $prompt = null;
 	// Removed the unused $conversation property (was causing bugs when not set).
 
@@ -108,6 +108,21 @@ class ChatService
 			['type' => 'web_search'],
 			[
 				'type' => 'function',
+				'name' => 'fetch_article',
+				'description' => 'Fetch the current article content by ID',
+				'parameters' => [
+					'type' => 'object',
+					'properties' => [
+						'article_id' => [
+							'type'        => 'integer',
+							'description' => 'The ID of the article to fetch. If not provided, uses the current article ID.'
+						]
+					],
+					'required' => ['article_id']
+				]
+			],
+			[
+				'type' => 'function',
 				'name' => 'edit_article_content',
 				'description' => 'Edit the content of the current article',
 				'parameters' => [
@@ -130,7 +145,7 @@ class ChatService
 					'properties' => [
 						'prompt_id' => [
 							'type'        => 'integer',
-							'description' => 'The ID of the prompt to fetch. If not provided, uses the current article’s prompt_id.'
+							'description' => 'The ID of the prompt to fetch. If not provided, uses the current article\'s prompt_id.'
 						]
 					]
 					// 'required' is not strictly needed here since prompt_id is optional
@@ -167,8 +182,8 @@ class ChatService
 
 			// Include current article context if available
 			if ($this->article) {
-				$systemMessage .= "\n\nThe current article being edited has ID {$this->article->id} and title '{$this->article->title}'."
-					. "\nCurrent article content:\n{$this->article->content}";
+				$systemMessage .= "\n\nThe current article being edited has ID {$this->article->id} and title '{$this->article->title}'.";
+				// (We avoid dumping full article content here to save token space; the agent can fetch it via the tool if needed)
 			}
 			// Include prompt context if available (note: content may be large, so using only ID or summary)
 			if ($this->prompt) {
@@ -277,6 +292,12 @@ class ChatService
 				Log::info("Editing article content via tool. New content length: " . strlen($content));
 				return $this->editArticleContent($content);
 
+			case 'fetch_article':
+				$articleId = $arguments['article_id']
+					?? ($this->article ? $this->article->id : null);
+				Log::info("Fetching article (ID: {$articleId}) via tool.");
+				return $this->fetchArticle($articleId);
+
 			case 'fetch_prompt_with_responses':
 				$promptId = $arguments['prompt_id']
 					?? ($this->article ? $this->article->prompt_id : null);
@@ -289,6 +310,55 @@ class ChatService
 					'success' => false,
 					'message' => "Tool {$name} not recognized by ChatService"
 				];
+		}
+	}
+
+	/**
+	 * Fetch an article by ID.
+	 * This allows the agent to get the most up-to-date version of the article from the database.
+	 */
+	private function fetchArticle(?int $articleId): array
+	{
+		// If no article ID provided, try to use the current article context
+		if (!$articleId) {
+			if (!$this->article) {
+				Log::error('Cannot fetch article: No article ID provided and no article context available.');
+				return [
+					'success' => false,
+					'message' => 'No article ID provided to fetch.'
+				];
+			}
+			$articleId = $this->article->id;
+		}
+
+		try {
+			// Fetch the article from the database to ensure we have the latest version
+			$article = Article::find($articleId);
+
+			if (!$article) {
+				return [
+					'success' => false,
+					'message' => 'Article not found.'
+				];
+			}
+
+			return [
+				'success' => true,
+				'article' => [
+					'id'         => $article->id,
+					'title'      => $article->title,
+					'content'    => $article->content,
+					'prompt_id'  => $article->prompt_id,
+					'created_at' => $article->created_at->toDateTimeString(),
+					'updated_at' => $article->updated_at->toDateTimeString(),
+				]
+			];
+		} catch (\Exception $e) {
+			Log::error('Error fetching article: ' . $e->getMessage());
+			return [
+				'success' => false,
+				'message' => 'Failed to fetch article: ' . $e->getMessage()
+			];
 		}
 	}
 
