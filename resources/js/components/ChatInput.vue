@@ -46,6 +46,14 @@ function handleInput() {
 	resizeTextarea()
 }
 
+// Handle keyboard events - submit on Enter but not on Shift+Enter
+function handleKeydown(event) {
+	if (event.key === 'Enter' && !event.shiftKey) {
+		event.preventDefault()
+		sendMessage()
+	}
+}
+
 onMounted(() => {
 	resizeTextarea()
 })
@@ -53,8 +61,7 @@ onMounted(() => {
 
 <template>
 	<div class="relative max-w-full mx-auto">
-		<!-- <form @submit.prevent="sendMessage"> -->
-		<div class="border border-gray-300 bg-white rounded-3xl">
+		<form @submit.prevent="sendMessage" class="border border-gray-300 bg-white rounded-3xl">
 			<textarea
 				v-model="message"
 				:placeholder="placeholder"
@@ -62,6 +69,7 @@ onMounted(() => {
 				autofocus
 				ref="textareaRef"
 				@input="handleInput"
+				@keydown="handleKeydown"
 				class="w-full pt-3 px-4 resize-none focus:outline-none"
 				style="min-height: 44px; max-height: 200px"
 			/>
@@ -101,7 +109,12 @@ onMounted(() => {
 					</button>
 
 					<!-- Send button -->
-					<button type="submit" class="p-2 bg-black text-white rounded-full" :disabled="!message.trim()">
+					<button
+						@click="sendMessage"
+						type="submit"
+						class="p-2 bg-black text-white rounded-full cursor-pointer hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
+						:disabled="!message.trim()"
+					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							width="20"
@@ -120,7 +133,6 @@ onMounted(() => {
 					</button>
 				</div>
 			</div>
-		</div>
-		<!-- </form> -->
+		</form>
 	</div>
 </template>

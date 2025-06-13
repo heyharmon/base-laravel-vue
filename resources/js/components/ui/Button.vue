@@ -21,7 +21,7 @@ const props = defineProps({
 const variants = {
 	default: 'bg-black text-white shadow-xs hover:bg-black/80',
 	destructive: 'bg-red-600 text-white shadow-xs hover:bg-red-600/80 focus-visible:ring-red/20',
-	outline: 'border border-neutral-400 bg-white text-neutral-700 shadow-xs hover:bg-neutral-100',
+	outline: 'border border-neutral-400/70 bg-white text-neutral-700 shadow-xs hover:bg-neutral-100',
 	secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
 	ghost: 'hover:bg-accent hover:text-accent-foreground',
 	link: 'text-black underline-offset-4 hover:underline',
