@@ -307,10 +307,18 @@ const copyContentToClipboard = async () => {
 							<div
 								v-for="version in articleStore.article.versions"
 								:key="version.id"
-								class="flex justify-between items-center p-3 bg-white rounded-md border border-neutral-200 mb-2 last:mb-0"
+								:class="[
+									'flex justify-between items-center p-3 rounded-md border mb-2 last:mb-0',
+									version.version_number === articleStore.article.current_version
+										? 'bg-neutral-100 border-neutral-300'
+										: 'bg-white border-neutral-200'
+								]"
 							>
 								<div>
-									<div class="text-sm font-medium">Version {{ version.version_number }}</div>
+									<div class="text-sm font-medium">
+										Version {{ version.version_number }}
+										{{ version.version_number === articleStore.article.current_version ? '(Current version)' : '' }}
+									</div>
 									<div class="text-xs text-neutral-500">{{ formatVersionDate(version.created_at) }}</div>
 								</div>
 								<Button @click="revertToVersion(version.id)" variant="outline" size="xs" :disabled="articleStore.isRevertingVersion">

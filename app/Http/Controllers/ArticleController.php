@@ -87,7 +87,7 @@ class ArticleController extends Controller
 		$article->update($validated);
 
 		// Load versions
-		$article->load('versions');
+		// $article->load('versions');
 
 		return response()->json($article);
 	}
