@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
+use App\Traits\HasVersions;
 use App\Events\ArticleUpdated;
 
 class Article extends Model
 {
-	use HasFactory, HasJobStatus;
+	use HasFactory, HasJobStatus, HasVersions;
 
 	protected $fillable = [
 		'team_id',
@@ -25,9 +26,23 @@ class Article extends Model
 		'content',
 	];
 
-	// protected $dispatchesEvents = [
-	// 	'updated' => ArticleUpdated::class,
-	// ];
+	/**
+	 * Attributes that trigger versioning.
+	 */
+	protected $versionableAttributes = ['content'];
+
+	/**
+	 * Events the model dispatches.
+	 *
+	 */
+	protected $dispatchesEvents = [
+		'updated' => ArticleUpdated::class,
+	];
+
+	/**
+	 * The version model class name.
+	 */
+	protected $versionModel = ArticleVersion::class;
 
 	public function team(): BelongsTo
 	{

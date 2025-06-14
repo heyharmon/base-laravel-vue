@@ -27,6 +27,7 @@ use App\Http\Controllers\ArticleGeneratorController;
 use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
+use App\Http\Controllers\ArticleVersionController;
 use App\Http\Controllers\AnalyticsController;
 
 // Public routes
@@ -104,6 +105,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Articles
 	Route::resource('articles', ArticleController::class);
+	
+	// Article Versions
+	Route::post('articles/{article}/versions/{version}/revert', [ArticleVersionController::class, 'revert']);
 
 	// Article Chat
 	Route::get('articles/{article}/chats', [ArticleChatController::class, 'index']);

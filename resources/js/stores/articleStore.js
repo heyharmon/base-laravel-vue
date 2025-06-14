@@ -11,6 +11,9 @@ export const useArticleStore = defineStore('article', () => {
 	const error = ref(null)
 	const isSaving = ref(false)
 
+	// Version-related state
+	const isRevertingVersion = ref(false)
+
 	// Chat-related state
 	const chats = ref([])
 	const isLoadingChats = ref(false)
@@ -43,6 +46,7 @@ export const useArticleStore = defineStore('article', () => {
 			return response
 		} catch (err) {
 			window.location.href = '/articles'
+			console.error('Error fetching article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -110,6 +114,30 @@ export const useArticleStore = defineStore('article', () => {
 			throw err
 		} finally {
 			isLoading.value = false
+		}
+	}
+
+	/**
+	 * Revert an article to a specific version
+	 */
+	const revertToVersion = async (articleId, versionId) => {
+		isRevertingVersion.value = true
+		error.value = null
+
+		try {
+			const response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
+
+			// Update the current article with the reverted data
+			if (article.value && article.value.id === articleId) {
+				article.value = response
+			}
+
+			return response
+		} catch (err) {
+			error.value = err.message || 'Failed to revert to version'
+			throw err
+		} finally {
+			isRevertingVersion.value = false
 		}
 	}
 
@@ -245,12 +273,14 @@ export const useArticleStore = defineStore('article', () => {
 		isLoading,
 		isGenerating,
 		isSaving,
+		isRevertingVersion,
 		error,
 		fetchArticles,
 		fetchArticle,
 		createArticle,
 		updateArticle,
 		deleteArticle,
+		revertToVersion,
 		generateArticle,
 
 		// Chat state and actions

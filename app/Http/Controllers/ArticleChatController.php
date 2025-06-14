@@ -31,7 +31,7 @@ class ArticleChatController extends Controller
 			$conversation = $article->conversations()->where('id', $request->conversation_id)->first();
 
 			if (!$conversation) {
-				return response()->json(['error' => 'Conversation not found for this article'], 404);
+				return response()->json([]);
 			}
 		} else {
 			// Get the first conversation for this article (default behavior)

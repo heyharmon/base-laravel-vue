@@ -3,6 +3,7 @@ import { ref, onMounted, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import moment from 'moment'
 import { usePromptStore } from '@/stores/promptStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
@@ -24,6 +25,7 @@ const jobStatusStore = useJobStatusStore()
 
 const isLoading = ref(true)
 const showSettings = ref(false)
+const showVersions = ref(false)
 const messagesContainer = ref(null)
 
 // Get active jobs related to this article
@@ -36,6 +38,29 @@ const activeArticleJobs = computed(() => {
 			(job.status === 'pending' || job.status === 'processing')
 	)
 })
+
+// Format the version date for display
+const formatVersionDate = (dateString) => {
+	if (!dateString) return ''
+	return moment(dateString).fromNow()
+}
+
+// Handle reverting to a previous version
+const revertToVersion = async (versionId) => {
+	if (!articleStore.article?.id || !versionId) return
+
+	if (confirm('Are you sure you want to revert to this version? Current changes will be lost.')) {
+		try {
+			await articleStore.revertToVersion(articleStore.article.id, versionId)
+			// Update editor content
+			if (editor.value && articleStore.article.content) {
+				editor.value.commands.setContent(articleStore.article.content)
+			}
+		} catch (err) {
+			console.error('Failed to revert to version:', err)
+		}
+	}
+}
 
 const editor = useEditor({
 	content: '',
@@ -242,15 +267,23 @@ const copyContentToClipboard = async () => {
 							<span v-else-if="articleStore.error" class="text-red-600">{{ articleStore.error }}</span>
 						</div>
 
-						<Button @click="showSettings = !showSettings" variant="outline">
-							<SettingsIcon />
-							{{ showSettings ? 'Hide Settings' : 'Settings' }}
-						</Button>
-						<Button @click="copyContentToClipboard" variant="outline" :disabled="isCopied">
-							<CopyIcon />
-							{{ isCopied ? 'Copied!' : 'Copy HTML' }}
-						</Button>
-						<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="outline">View Prompt</Button>
+						<div class="flex gap-2">
+							<Button @click="showSettings = !showSettings" variant="outline" size="sm">
+								{{ showSettings ? 'Hide Settings' : 'Settings' }}
+							</Button>
+
+							<Button @click="showVersions = !showVersions" variant="outline" size="sm">
+								{{ showVersions ? 'Hide Versions' : 'Versions' }}
+							</Button>
+
+							<Button @click="copyContentToClipboard" variant="outline" size="sm" :disabled="isCopied">
+								{{ isCopied ? 'Copied!' : 'Copy HTML' }}
+							</Button>
+
+							<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="outline" size="sm"
+								>Prompt</Button
+							>
+						</div>
 					</div>
 				</div>
 
@@ -260,14 +293,41 @@ const copyContentToClipboard = async () => {
 				</div>
 
 				<!-- Error state -->
-				<div v-else-if="articleStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+				<div v-else-if="articleStore.error" class="bg-red-100 border border-red-400 text-red-700 pl-4 pr-6 py-3 rounded mb-4">
 					{{ articleStore.error }}
 				</div>
 
 				<div v-else class="flex flex-col gap-6">
+					<!-- Versions panel -->
+					<div v-if="showVersions && articleStore.article?.versions?.length > 0" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
+						<h2 class="text-lg font-medium mb-4">Article Versions</h2>
+						<p class="text-sm text-neutral-500 mb-3">Select a version to revert the article to that state.</p>
+
+						<div class="max-h-60 overflow-y-auto custom-scrollbar">
+							<div
+								v-for="version in articleStore.article.versions"
+								:key="version.id"
+								class="flex justify-between items-center p-3 bg-white rounded-md border border-neutral-200 mb-2 last:mb-0"
+							>
+								<div>
+									<div class="text-sm font-medium">Version {{ version.id }}</div>
+									<div class="text-xs text-neutral-500">{{ formatVersionDate(version.created_at) }}</div>
+								</div>
+								<Button @click="revertToVersion(version.id)" variant="outline" size="xs" :disabled="articleStore.isRevertingVersion">
+									{{ articleStore.isRevertingVersion ? 'Reverting...' : 'Revert' }}
+								</Button>
+							</div>
+						</div>
+
+						<div v-if="articleStore.article?.versions?.length === 0" class="text-sm text-neutral-500 p-2">
+							No versions available yet. Versions are created when you edit the article content.
+						</div>
+					</div>
+
 					<!-- Settings panel -->
 					<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
 						<h2 class="text-lg font-medium mb-4">Article Settings</h2>
+
 						<div class="flex flex-col gap-4">
 							<!-- Title input -->
 							<div>
