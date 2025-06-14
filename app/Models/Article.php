@@ -18,6 +18,7 @@ class Article extends Model
 		'team_id',
 		'organization_id',
 		'prompt_id',
+		'current_version',
 		'title',
 		'meta_title',
 		'meta_description',

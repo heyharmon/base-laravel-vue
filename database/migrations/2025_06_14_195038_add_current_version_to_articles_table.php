@@ -11,12 +11,8 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
-		Schema::create('article_versions', function (Blueprint $table) {
-			$table->id();
-			$table->foreignId('article_id')->constrained()->cascadeOnDelete();
-			$table->integer('version_number')->default(1);
-			$table->json('data');
-			$table->timestamps();
+		Schema::table('articles', function (Blueprint $table) {
+			$table->unsignedInteger('current_version')->after('prompt_id')->default(1);
 		});
 	}
 
@@ -25,6 +21,8 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::dropIfExists('article_versions');
+		Schema::table('articles', function (Blueprint $table) {
+			$table->dropColumn('current_version');
+		});
 	}
 };

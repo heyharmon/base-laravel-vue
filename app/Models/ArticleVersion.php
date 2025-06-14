@@ -8,30 +8,31 @@ use Illuminate\Database\Eloquent\Casts\AsCollection;
 
 class ArticleVersion extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'article_id',
-        'data',
-    ];
+	/**
+	 * The attributes that are mass assignable.
+	 *
+	 * @var array<int, string>
+	 */
+	protected $fillable = [
+		'article_id',
+		'version_number',
+		'data',
+	];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'data' => AsCollection::class,
-    ];
+	/**
+	 * The attributes that should be cast.
+	 *
+	 * @var array<string, string>
+	 */
+	protected $casts = [
+		'data' => AsCollection::class,
+	];
 
-    /**
-     * Get the article that owns the version.
-     */
-    public function article(): BelongsTo
-    {
-        return $this->belongsTo(Article::class);
-    }
+	/**
+	 * Get the article that owns the version.
+	 */
+	public function article(): BelongsTo
+	{
+		return $this->belongsTo(Article::class);
+	}
 }

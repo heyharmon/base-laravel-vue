@@ -7,132 +7,146 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait HasVersions
 {
-    /**
-     * Boot the trait.
-     */
-    protected static function bootHasVersions()
-    {
-        // Create a new version when a model is updated
-        static::updating(function ($model) {
-            $model->createVersionFromChanges();
-        });
+	/**
+	 * Boot the trait.
+	 */
+	protected static function bootHasVersions()
+	{
+		// Create the initial version when a model is created
+		static::created(function ($model) {
+			$model->createInitialVersion();
+		});
 
-        // Create the initial version when a model is created
-        static::created(function ($model) {
-            $model->createInitialVersion();
-        });
-    }
+		// Create a new version when a model is updated
+		static::updating(function ($model) {
+			$model->createVersionFromChanges();
+		});
+	}
 
-    /**
-     * Create the initial version for a new model.
-     */
-    protected function createInitialVersion()
-    {
-        if ($this->hasVersionableChanges()) {
-            $this->versions()->create([
-                $this->getVersionForeignKey() => $this->id,
-                'data' => $this->getAttributes(),
-            ]);
+	/**
+	 * Create the initial version for a new model.
+	 */
+	protected function createInitialVersion()
+	{
+		if ($this->hasVersionableChanges()) {
+			$this->versions()->create([
+				$this->getVersionForeignKey() => $this->id,
+				'version_number' => 1,
+				'data' => $this->getAttributes(),
+			]);
 
-            $this->saveQuietly();
-        }
-    }
+			$this->current_version = 1;
 
-    /**
-     * Get all versions of this model.
-     */
-    public function versions(): HasMany
-    {
-        return $this->hasMany($this->getVersionModel())->latest();
-    }
+			$this->saveQuietly();
+		}
+	}
 
-    /**
-     * Check if any versionable attributes have changed.
-     */
-    protected function hasVersionableChanges(?array $changes = null)
-    {
-        $changes = $changes ?? $this->getDirty();
+	/**
+	 * Get all versions of this model.
+	 */
+	public function versions(): HasMany
+	{
+		return $this->hasMany($this->getVersionModel())->latest();
+	}
 
-        // Check if any versionable attributes have changed
-        $versionableChanges = array_intersect_key($changes, array_flip($this->versionableAttributes));
+	/**
+	 * Check if any versionable attributes have changed.
+	 */
+	protected function hasVersionableChanges(?array $changes = null)
+	{
+		$changes = $changes ?? $this->getDirty();
 
-        return count($versionableChanges) > 0;
-    }
+		// Check if any versionable attributes have changed
+		$versionableChanges = array_intersect_key($changes, array_flip($this->versionableAttributes));
 
-    /**
-     * Create a version if versionable attributes have changed.
-     */
-    protected function createVersionFromChanges()
-    {
-        $changes = $this->getDirty();
+		return count($versionableChanges) > 0;
+	}
 
-        if ($this->hasVersionableChanges($changes)) {
-            // We need to apply the changes to the attributes before creating the version
-            $attributes = $this->getAttributes();
-            foreach ($changes as $key => $value) {
-                $attributes[$key] = $value;
-            }
+	/**
+	 * Create a version if versionable attributes have changed.
+	 */
+	protected function createVersionFromChanges()
+	{
+		$changes = $this->getDirty();
 
-            $this->versions()->create([
-                $this->getVersionForeignKey() => $this->id,
-                'data' => $attributes,
-            ]);
-        }
-    }
+		if ($this->hasVersionableChanges($changes)) {
+			// Find the highest version number and increment by 1
+			$maxVersionNumber = $this->versions()->max('version_number') ?? 0;
+			$newVersionNumber = $maxVersionNumber + 1;
 
-    /**
-     * Revert to a specific version.
-     */
-    public function revertToVersion($version)
-    {
-        // Ensure the version belongs to this model
-        $foreignKey = $this->getVersionForeignKey();
-        if ($version->{$foreignKey} !== $this->id) {
-            return false;
-        }
+			// We need to apply the changes to the attributes before creating the version
+			$attributes = $this->getAttributes();
+			foreach ($changes as $key => $value) {
+				$attributes[$key] = $value;
+			}
 
-        DB::transaction(function () use ($version) {
-            // Update the model with the version's data
-            $versionData = $version->data->toArray();
+			$this->versions()->create([
+				$this->getVersionForeignKey() => $this->id,
+				'version_number' => $newVersionNumber,
+				'data' => $attributes,
+			]);
 
-            // Only update versionable attributes
-            foreach ($this->versionableAttributes as $attribute) {
-                if (isset($versionData[$attribute])) {
-                    $this->{$attribute} = $versionData[$attribute];
-                }
-            }
+			// Update the current version number
+			$this->current_version = $newVersionNumber;
+		}
+	}
 
-            // Save without triggering another version
-            $this->saveQuietly();
-        });
+	/**
+	 * Revert to a specific version.
+	 */
+	public function revertToVersion($version)
+	{
+		// Ensure the version belongs to this model
+		$foreignKey = $this->getVersionForeignKey();
+		if ($version->{$foreignKey} !== $this->id) {
+			return false;
+		}
 
-        return true;
-    }
+		DB::transaction(function () use ($version) {
+			// Update the model with the version's data
+			$versionData = $version->data->toArray();
 
-    /**
-     * Save the model without triggering versioning.
-     */
-    public function saveQuietly(array $options = [])
-    {
-        return static::withoutEvents(function () use ($options) {
-            return $this->save($options);
-        });
-    }
+			// Only update versionable attributes
+			foreach ($this->versionableAttributes as $attribute) {
+				if (isset($versionData[$attribute])) {
+					$this->{$attribute} = $versionData[$attribute];
+				}
+			}
 
-    /**
-     * Get the version model class name.
-     */
-    protected function getVersionModel(): string
-    {
-        return $this->versionModel ?? (get_class($this) . 'Version');
-    }
+			// Update the current version to the target version number
+			$this->current_version = $version->version_number;
 
-    /**
-     * Get the foreign key for the version relationship.
-     */
-    protected function getVersionForeignKey(): string
-    {
-        $modelClass = class_basename($this);
-        return lcfirst($modelClass) . '_id';
-    }
+			// Save without triggering another version
+			$this->saveQuietly();
+		});
+
+		return true;
+	}
+
+	/**
+	 * Save the model without triggering versioning.
+	 */
+	public function saveQuietly(array $options = [])
+	{
+		return static::withoutEvents(function () use ($options) {
+			return $this->save($options);
+		});
+	}
+
+	/**
+	 * Get the version model class name.
+	 */
+	protected function getVersionModel(): string
+	{
+		return $this->versionModel ?? (get_class($this) . 'Version');
+	}
+
+	/**
+	 * Get the foreign key for the version relationship.
+	 */
+	protected function getVersionForeignKey(): string
+	{
+		$modelClass = class_basename($this);
+		return lcfirst($modelClass) . '_id';
+	}
 }

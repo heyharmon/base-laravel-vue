@@ -82,7 +82,7 @@ export const useArticleStore = defineStore('article', () => {
 			}
 
 			// Refresh the articles list
-			await fetchArticles()
+			// await fetchArticles()
 
 			return response
 		} catch (err) {
@@ -176,7 +176,7 @@ export const useArticleStore = defineStore('article', () => {
 			isSaving.value = true
 
 			try {
-				await api.put(`/articles/${newArticle.id}`, newArticle)
+				const response = await api.put(`/articles/${newArticle.id}`, newArticle)
 				console.log('Article auto-saved successfully')
 			} catch (err) {
 				error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')

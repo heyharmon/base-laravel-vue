@@ -310,7 +310,7 @@ const copyContentToClipboard = async () => {
 								class="flex justify-between items-center p-3 bg-white rounded-md border border-neutral-200 mb-2 last:mb-0"
 							>
 								<div>
-									<div class="text-sm font-medium">Version {{ version.id }}</div>
+									<div class="text-sm font-medium">Version {{ version.version_number }}</div>
 									<div class="text-xs text-neutral-500">{{ formatVersionDate(version.created_at) }}</div>
 								</div>
 								<Button @click="revertToVersion(version.id)" variant="outline" size="xs" :disabled="articleStore.isRevertingVersion">
