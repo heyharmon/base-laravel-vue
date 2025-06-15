@@ -105,7 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Articles
 	Route::resource('articles', ArticleController::class);
-	
+
 	// Article Versions
 	Route::post('articles/{article}/versions/{version}/revert', [ArticleVersionController::class, 'revert']);
 

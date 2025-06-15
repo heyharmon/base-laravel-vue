@@ -30,15 +30,15 @@ class Article extends Model
 	/**
 	 * Attributes that trigger versioning.
 	 */
-	protected $versionableAttributes = ['content'];
+	protected $versionableAttributes = ['title', 'meta_title', 'meta_description', 'schema', 'outline', 'content'];
 
 	/**
 	 * Events the model dispatches.
 	 *
 	 */
-	protected $dispatchesEvents = [
-		'updated' => ArticleUpdated::class,
-	];
+	// protected $dispatchesEvents = [
+	// 	'updated' => ArticleUpdated::class,
+	// ];
 
 	/**
 	 * The version model class name.

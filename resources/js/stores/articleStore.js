@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
-import { watchDebounced } from '@vueuse/core'
+import { useDebounceFn } from '@vueuse/core'
 import api from '@/services/api'
 
 export const useArticleStore = defineStore('article', () => {
@@ -12,7 +12,8 @@ export const useArticleStore = defineStore('article', () => {
 	const isSaving = ref(false)
 
 	// Version-related state
-	const isRevertingVersion = ref(false)
+	const articleVersions = ref([])
+	const isLoadingVersions = ref(false)
 
 	// Chat-related state
 	const chats = ref([])
@@ -70,19 +71,17 @@ export const useArticleStore = defineStore('article', () => {
 	}
 
 	const updateArticle = async (id, articleData) => {
+		console.log('Updating article...')
 		isLoading.value = true
 		error.value = null
 
 		try {
 			const response = await api.put(`/articles/${id}`, articleData)
 
-			// Update the current article if it's loaded
+			// Update article versions ref
 			if (article.value && article.value.id === id) {
-				article.value = response
+				articleVersions.value = response.versions
 			}
-
-			// Refresh the articles list
-			// await fetchArticles()
 
 			return response
 		} catch (err) {
@@ -121,23 +120,14 @@ export const useArticleStore = defineStore('article', () => {
 	 * Revert an article to a specific version
 	 */
 	const revertToVersion = async (articleId, versionId) => {
-		isRevertingVersion.value = true
 		error.value = null
 
 		try {
-			const response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
-
-			// Update the current article with the reverted data
-			if (article.value && article.value.id === articleId) {
-				article.value = response
-			}
-
-			return response
+			let response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
+			window.location.reload()
 		} catch (err) {
 			error.value = err.message || 'Failed to revert to version'
 			throw err
-		} finally {
-			isRevertingVersion.value = false
 		}
 	}
 
@@ -159,32 +149,83 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	// Setup debounced watcher for auto-saving article changes
-	watchDebounced(
+	// Create a debounced save function
+	const saveArticle = async (articleData) => {
+		if (!articleData || !articleData.id) return
+		if (isSaving.value) return
+
+		console.log('Auto-saving article changes...')
+		isSaving.value = true
+
+		try {
+			const response = await api.put(`/articles/${articleData.id}`, articleData)
+			// Only update the versions
+			article.value.versions = response.versions
+			console.log('Article auto-saved successfully')
+		} catch (err) {
+			error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')
+		} finally {
+			isSaving.value = false
+		}
+	}
+
+	// Create a debounced version of the save function (4 second debounce)
+	const debouncedSave = useDebounceFn(saveArticle, 4000)
+
+	// Track previous values of important fields
+	const previousValues = ref({
+		title: '',
+		meta_title: '',
+		meta_description: '',
+		schema: '',
+		content: ''
+	})
+
+	// Setup watcher for auto-saving article changes
+	watch(
 		article,
-		async (newArticle, oldArticle) => {
+		(newArticle, oldArticle) => {
 			// Only proceed if article exists with an ID
 			if (!newArticle || !newArticle.id) return
 
-			// Don't auto-save if we're already in a loading state
-			if (isSaving.value) return
-
 			// Skip initial load
-			if (oldArticle === null) return
+			if (oldArticle === null) {
+				// Initialize previous values
+				previousValues.value = {
+					title: newArticle.title || '',
+					meta_title: newArticle.meta_title || '',
+					meta_description: newArticle.meta_description || '',
+					schema: newArticle.schema || '',
+					content: newArticle.content || ''
+				}
+				return
+			}
 
-			console.log('Auto-saving article changes...')
-			isSaving.value = true
+			// Check if important fields have changed
+			const hasImportantChanges =
+				newArticle.title !== previousValues.value.title ||
+				newArticle.meta_title !== previousValues.value.meta_title ||
+				newArticle.meta_description !== previousValues.value.meta_description ||
+				newArticle.schema !== previousValues.value.schema ||
+				newArticle.content !== previousValues.value.content
 
-			try {
-				const response = await api.put(`/articles/${newArticle.id}`, newArticle)
-				console.log('Article auto-saved successfully')
-			} catch (err) {
-				error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')
-			} finally {
-				isSaving.value = false
+			// Update previous values
+			previousValues.value = {
+				title: newArticle.title || '',
+				meta_title: newArticle.meta_title || '',
+				meta_description: newArticle.meta_description || '',
+				schema: newArticle.schema || '',
+				content: newArticle.content || ''
+			}
+
+			if (hasImportantChanges) {
+				console.log('Important fields changed, triggering auto-save')
+				debouncedSave(newArticle)
+			} else {
+				console.log('No changes to important fields, skipping auto-save')
 			}
 		},
-		{ debounce: 1000, maxWait: 5000, deep: true } // 1 second debounce, max 5 seconds
+		{ deep: true }
 	)
 
 	// Chat-related actions
@@ -273,7 +314,6 @@ export const useArticleStore = defineStore('article', () => {
 		isLoading,
 		isGenerating,
 		isSaving,
-		isRevertingVersion,
 		error,
 		fetchArticles,
 		fetchArticle,
@@ -282,6 +322,10 @@ export const useArticleStore = defineStore('article', () => {
 		deleteArticle,
 		revertToVersion,
 		generateArticle,
+
+		// Version state and actions
+		articleVersions,
+		isLoadingVersions,
 
 		// Chat state and actions
 		chats,

@@ -1,14 +1,11 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch, nextTick, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import moment from 'moment'
 import { usePromptStore } from '@/stores/promptStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
-import CopyIcon from '@/components/icons/CopyIcon.vue'
-import SettingsIcon from '@/components/icons/SettingsIcon.vue'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -28,6 +25,9 @@ const showSettings = ref(false)
 const showVersions = ref(false)
 const messagesContainer = ref(null)
 
+// Dynamically import the ArticleVersionsPanel component
+const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
+
 // Get active jobs related to this article
 const activeArticleJobs = computed(() => {
 	if (!articleStore.article) return []
@@ -38,29 +38,6 @@ const activeArticleJobs = computed(() => {
 			(job.status === 'pending' || job.status === 'processing')
 	)
 })
-
-// Format the version date for display
-const formatVersionDate = (dateString) => {
-	if (!dateString) return ''
-	return moment(dateString).fromNow()
-}
-
-// Handle reverting to a previous version
-const revertToVersion = async (versionId) => {
-	if (!articleStore.article?.id || !versionId) return
-
-	if (confirm('Are you sure you want to revert to this version? Current changes will be lost.')) {
-		try {
-			await articleStore.revertToVersion(articleStore.article.id, versionId)
-			// Update editor content
-			if (editor.value && articleStore.article.content) {
-				editor.value.commands.setContent(articleStore.article.content)
-			}
-		} catch (err) {
-			console.error('Failed to revert to version:', err)
-		}
-	}
-}
 
 const editor = useEditor({
 	content: '',
@@ -115,9 +92,7 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 		articleStore.article.content = e.content
 
 		// Update the editor content if it's different
-		if (editor.value && editor.value.getHTML() !== e.content) {
-			editor.value.commands.setContent(e.content)
-		}
+		editor.value.commands.setContent(e.content)
 	}
 })
 
@@ -142,21 +117,26 @@ watch(
 
 onMounted(async () => {
 	try {
-		if (route.params.id) {
-			fetchArticle()
+		const articleId = route.params.id
+		if (!articleId) return
 
-			// Fetch chats for this article
-			await articleStore.fetchChats(route.params.id)
+		// Load article
+		await articleStore.fetchArticle(articleId)
 
-			// Scroll to bottom after chats are loaded
-			scrollToBottom()
-
-			// Subscribe to real-time updates
-			listen()
+		// Initialize editor content
+		if (editor.value && articleStore.article.content) {
+			editor.value.commands.setContent(articleStore.article.content)
 		}
+
+		isLoading.value = false
+
+		// Fetch chats for this article
+		await articleStore.fetchChats(route.params.id)
+
+		// Scroll to bottom of messages
+		scrollToBottom()
 	} catch (error) {
-		console.error('Error fetching article:', error)
-	} finally {
+		console.error('Error loading article:', error)
 		isLoading.value = false
 	}
 })
@@ -214,13 +194,13 @@ const copyContentToClipboard = async () => {
 			<!-- Chat column -->
 			<div class="flex-1 overflow-hidden flex flex-col h-full">
 				<!-- Messages top bar -->
-				<div class="py-2 px-4">
+				<div class="py-2 px-6">
 					<ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
 				</div>
 
 				<!-- Messages area (scrollable) -->
-				<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin p-4 pb-8 space-y-6 custom-scrollbar">
-					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3 p-2">
+				<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin px-6 pt-4 pb-8 space-y-6 custom-scrollbar">
+					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3">
 						<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
 						<button
 							v-for="(prompt, index) in presetPrompts"
@@ -298,39 +278,8 @@ const copyContentToClipboard = async () => {
 				</div>
 
 				<div v-else class="flex flex-col gap-6">
-					<!-- Versions panel -->
-					<div v-if="showVersions && articleStore.article?.versions?.length > 0" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
-						<h2 class="text-lg font-medium mb-4">Article Versions</h2>
-						<p class="text-sm text-neutral-500 mb-3">Select a version to revert the article to that state.</p>
-
-						<div class="max-h-60 overflow-y-auto custom-scrollbar">
-							<div
-								v-for="version in articleStore.article.versions"
-								:key="version.id"
-								:class="[
-									'flex justify-between items-center p-3 rounded-md border mb-2 last:mb-0',
-									version.version_number === articleStore.article.current_version
-										? 'bg-neutral-100 border-neutral-300'
-										: 'bg-white border-neutral-200'
-								]"
-							>
-								<div>
-									<div class="text-sm font-medium">
-										Version {{ version.version_number }}
-										{{ version.version_number === articleStore.article.current_version ? '(Current version)' : '' }}
-									</div>
-									<div class="text-xs text-neutral-500">{{ formatVersionDate(version.created_at) }}</div>
-								</div>
-								<Button @click="revertToVersion(version.id)" variant="outline" size="xs" :disabled="articleStore.isRevertingVersion">
-									{{ articleStore.isRevertingVersion ? 'Reverting...' : 'Revert' }}
-								</Button>
-							</div>
-						</div>
-
-						<div v-if="articleStore.article?.versions?.length === 0" class="text-sm text-neutral-500 p-2">
-							No versions available yet. Versions are created when you edit the article content.
-						</div>
-					</div>
+					<!-- Versions panel - dynamically loaded -->
+					<ArticleVersionsPanel v-if="showVersions" />
 
 					<!-- Settings panel -->
 					<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
