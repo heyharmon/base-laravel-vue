@@ -69,10 +69,7 @@ const cancelCreate = () => {
         </div>
       </div>
 
-      <!-- Error state -->
-      <div v-if="articleStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-        {{ articleStore.error }}
-      </div>
+
 
       <div class="flex flex-col gap-6">
         <!-- Title input -->

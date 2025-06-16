@@ -8,7 +8,6 @@ export const useArticleStore = defineStore('article', () => {
 	const article = ref(null)
 	const isLoading = ref(false)
 	const isGenerating = ref(false)
-	const error = ref(null)
 	const isSaving = ref(false)
 
 	// Version-related state
@@ -23,14 +22,13 @@ export const useArticleStore = defineStore('article', () => {
 
 	const fetchArticles = async () => {
 		isLoading.value = true
-		error.value = null
 
 		try {
 			const response = await api.get('/articles')
 			articles.value = response
 			return response
 		} catch (err) {
-			error.value = err.message || 'Failed to fetch articles'
+			console.error('Error fetching articles:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -39,7 +37,6 @@ export const useArticleStore = defineStore('article', () => {
 
 	const fetchArticle = async (id) => {
 		isLoading.value = true
-		error.value = null
 
 		try {
 			const response = await api.get(`/articles/${id}`)
@@ -56,14 +53,13 @@ export const useArticleStore = defineStore('article', () => {
 
 	const createArticle = async (articleData) => {
 		isLoading.value = true
-		error.value = null
 
 		try {
 			const response = await api.post('/articles', articleData)
 			await fetchArticles()
 			return response
 		} catch (err) {
-			error.value = err.message || 'Failed to create article'
+			console.error('Error creating article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -73,7 +69,6 @@ export const useArticleStore = defineStore('article', () => {
 	const updateArticle = async (id, articleData) => {
 		console.log('Updating article...')
 		isLoading.value = true
-		error.value = null
 
 		try {
 			const response = await api.put(`/articles/${id}`, articleData)
@@ -85,7 +80,7 @@ export const useArticleStore = defineStore('article', () => {
 
 			return response
 		} catch (err) {
-			error.value = err.message || 'Failed to update article'
+			console.error('Error updating article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -94,7 +89,6 @@ export const useArticleStore = defineStore('article', () => {
 
 	const deleteArticle = async (id) => {
 		isLoading.value = true
-		error.value = null
 
 		try {
 			await api.delete(`/articles/${id}`)
@@ -109,7 +103,7 @@ export const useArticleStore = defineStore('article', () => {
 
 			return true
 		} catch (err) {
-			error.value = err.message || 'Failed to delete article'
+			console.error('Error deleting article:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -120,14 +114,12 @@ export const useArticleStore = defineStore('article', () => {
 	 * Revert an article to a specific version
 	 */
 	const revertToVersion = async (articleId, versionId) => {
-		error.value = null
-
 		try {
 			let response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
 			// window.location.reload()
 			article.value = response
 		} catch (err) {
-			error.value = err.message || 'Failed to revert to version'
+			console.error('Error reverting article version:', err)
 			throw err
 		}
 	}
@@ -137,13 +129,12 @@ export const useArticleStore = defineStore('article', () => {
 	 */
 	const generateArticle = async (promptId) => {
 		isGenerating.value = true
-		error.value = null
 
 		try {
 			const response = await api.post(`/prompts/${promptId}/generate-article`)
 			return response.data
 		} catch (err) {
-			error.value = err.response?.data?.message || 'Failed to generate article'
+			console.error('Error generating article:', err)
 			throw err
 		} finally {
 			isGenerating.value = false
@@ -152,20 +143,13 @@ export const useArticleStore = defineStore('article', () => {
 
 	// Create a debounced save function
 	const saveArticle = async (articleData) => {
-		if (!articleData || !articleData.id) return
 		if (isSaving.value) return
-
-		console.log('Auto-saving article changes...')
 		isSaving.value = true
 
 		try {
 			const response = await api.put(`/articles/${articleData.id}`, articleData)
-			// Only update the versions
-			// article.value.versions = response.versions
 			article.value = response
 			console.log('Article auto-saved successfully')
-		} catch (err) {
-			error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')
 		} finally {
 			isSaving.value = false
 		}
@@ -233,7 +217,6 @@ export const useArticleStore = defineStore('article', () => {
 	// Chat-related actions
 	function setConversationId(id) {
 		conversationId.value = id
-		// Clear chats when changing conversations
 		chats.value = []
 	}
 
@@ -316,7 +299,6 @@ export const useArticleStore = defineStore('article', () => {
 		isLoading,
 		isGenerating,
 		isSaving,
-		error,
 		fetchArticles,
 		fetchArticle,
 		createArticle,
