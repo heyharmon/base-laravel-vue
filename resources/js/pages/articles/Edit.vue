@@ -48,9 +48,6 @@ const editor = useEditor({
 })
 
 const handleEditorCommand = (command, options = {}) => {
-	if (command === 'undo') return editor.value.chain().focus().undo().run()
-	if (command === 'redo') return editor.value.chain().focus().redo().run()
-
 	const commandMap = {
 		bold: () => editor.value.chain().focus().toggleBold().run(),
 		italic: () => editor.value.chain().focus().toggleItalic().run(),
@@ -75,13 +72,6 @@ const activeEditorCommands = computed(() => ({
 	orderedList: editor.value?.isActive('orderedList'),
 	blockquote: editor.value?.isActive('blockquote')
 }))
-
-const fetchArticle = async () => {
-	console.log('Fetching article...')
-	const data = await articleStore.fetchArticle(route.params.id)
-
-	editor.value.commands.setContent(articleStore.article.content) // Set editor content
-}
 
 // Echo channel subscription handlers
 const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
@@ -242,7 +232,6 @@ const copyContentToClipboard = async () => {
 						<div class="flex items-center mr-2 text-sm text-neutral-600">
 							<span v-if="articleStore.isSaving" class="flex items-center">
 								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
-								Saving...
 							</span>
 							<span v-else-if="articleStore.error" class="text-red-600">{{ articleStore.error }}</span>
 						</div>

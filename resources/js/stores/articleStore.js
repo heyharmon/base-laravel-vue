@@ -124,7 +124,8 @@ export const useArticleStore = defineStore('article', () => {
 
 		try {
 			let response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
-			window.location.reload()
+			// window.location.reload()
+			article.value = response
 		} catch (err) {
 			error.value = err.message || 'Failed to revert to version'
 			throw err
@@ -160,7 +161,8 @@ export const useArticleStore = defineStore('article', () => {
 		try {
 			const response = await api.put(`/articles/${articleData.id}`, articleData)
 			// Only update the versions
-			article.value.versions = response.versions
+			// article.value.versions = response.versions
+			article.value = response
 			console.log('Article auto-saved successfully')
 		} catch (err) {
 			error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')
@@ -320,12 +322,12 @@ export const useArticleStore = defineStore('article', () => {
 		createArticle,
 		updateArticle,
 		deleteArticle,
-		revertToVersion,
 		generateArticle,
 
 		// Version state and actions
 		articleVersions,
 		isLoadingVersions,
+		revertToVersion,
 
 		// Chat state and actions
 		chats,
