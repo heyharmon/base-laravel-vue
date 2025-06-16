@@ -79,7 +79,9 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 
 	// Update the article content
 	if (e.id === articleStore.article.id) {
-		articleStore.article.content = e.content
+		// articleStore.article.content = e.content
+		// articleStore.article.versions = e.versions
+		articleStore.article = e
 
 		// Update the editor content if it's different
 		editor.value.commands.setContent(e.content)
@@ -101,6 +103,17 @@ watch(
 	(newLength, oldLength) => {
 		if (newLength > oldLength) {
 			scrollToBottom()
+		}
+	}
+)
+
+// Watch for changes in the article content from the store and update the editor
+watch(
+	() => articleStore.article?.content,
+	(newContent) => {
+		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
+			console.log('Article content updated in store, updating editor')
+			editor.value.commands.setContent(newContent)
 		}
 	}
 )

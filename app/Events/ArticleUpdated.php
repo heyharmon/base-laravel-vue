@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\Article;
+use App\Http\Resources\Article\ArticleResource;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -39,9 +40,9 @@ class ArticleUpdated implements ShouldBroadcastNow
 	 */
 	public function broadcastWith(): array
 	{
-		return [
-			'id' => $this->article->id,
-			'content' => $this->article->content,
-		];
+		// Load the versions relationship to ensure it's included in the resource
+		$this->article->load('versions');
+		
+		return (new ArticleResource($this->article))->resolve();
 	}
 }
