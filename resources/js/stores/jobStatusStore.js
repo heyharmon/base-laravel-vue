@@ -6,8 +6,8 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	// State
 	const jobs = ref([])
 	const batch = ref(null)
-        const loading = ref(false)
-        let refreshTimer = ref(null)
+	const loading = ref(false)
+	let refreshTimer = ref(null)
 
 	// Getters
 	const activeJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'pending' || job.status === 'processing') : []))
@@ -48,31 +48,31 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		startAutoRefresh(1500)
 	}
 
-        async function fetchTeamJobs() {
-                console.log('Fetching team jobs...')
-                loading.value = true
+	async function fetchTeamJobs() {
+		console.log('Fetching team jobs...')
+		loading.value = true
 
 		try {
 			const response = await api.get('/team-jobs')
 			jobs.value = response
 			return jobs.value
-                } catch (err) {
-                        console.error('Error loading team jobs:', err)
-                        throw err
+		} catch (err) {
+			console.error('Error loading team jobs:', err)
+			throw err
 		} finally {
 			loading.value = false
-                }
-        }
+		}
+	}
 
-        async function cancelTeamJobs() {
-                try {
-                        await api.post('/team-jobs/cancel')
-                        await fetchTeamJobs()
-                } catch (err) {
-                        console.error('Error cancelling jobs:', err)
-                        throw err
-                }
-        }
+	async function cancelTeamJobs() {
+		try {
+			await api.post('/team-jobs/cancel')
+			await fetchTeamJobs()
+		} catch (err) {
+			console.error('Error cancelling jobs:', err)
+			throw err
+		}
+	}
 
 	function hasActiveJobs() {
 		return jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
@@ -110,7 +110,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		// State
 		jobs: computed(() => jobs.value),
 		batch: computed(() => batch.value),
-                loading,
+		loading,
 
 		// Getters
 		activeJobs,
@@ -123,10 +123,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		pollTeamJobs,
 		fetchTeamJobs,
 		hasActiveJobs,
-                startAutoRefresh,
-                stopAutoRefresh,
-                getJobById,
-                getBatchById,
-                cancelTeamJobs
-        }
+		startAutoRefresh,
+		stopAutoRefresh,
+		getJobById,
+		getBatchById,
+		cancelTeamJobs
+	}
 })

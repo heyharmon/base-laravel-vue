@@ -8,8 +8,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const organizations = ref([])
 	const currentOrganization = ref(null)
 	const isLoading = ref(false)
-        const visibilityMetrics = ref([])
-        const isLoadingVisibility = ref(false)
+	const visibilityMetrics = ref([])
+	const isLoadingVisibility = ref(false)
 
 	// Other stores
 	const jobStatusStore = useJobStatusStore()
@@ -23,12 +23,11 @@ export const useOrganizationStore = defineStore('organization', () => {
 		console.log('Fetching organizations...')
 		// isLoading.value = true
 
-
 		try {
 			const response = await api.get('/organizations')
 			organizations.value = response
-                } catch (err) {
-                        console.error('Error fetching organizations:', err)
+		} catch (err) {
+			console.error('Error fetching organizations:', err)
 		} finally {
 			// isLoading.value = false
 		}
@@ -38,13 +37,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		console.log('Fetching organization details for organization ID:', organizationId)
 		isLoading.value = true
 
-
 		try {
 			const response = await api.get(`/organizations/${organizationId}`)
 			currentOrganization.value = response
 			return response
-                } catch (err) {
-                        console.error('Error fetching organization details:', err)
+		} catch (err) {
+			console.error('Error fetching organization details:', err)
 		} finally {
 			isLoading.value = false
 		}
@@ -54,13 +52,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		console.log('Creating organization...', organizationData)
 		isLoading.value = true
 
-
 		try {
 			const response = await api.post('/organizations', organizationData)
 			await fetchOrganizations()
 			return response // API interceptor already extracts response.data
-                } catch (err) {
-                        console.error('Error creating organization:', err)
+		} catch (err) {
+			console.error('Error creating organization:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -71,13 +68,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		console.log('Creating and onboarding organization...')
 		isLoading.value = true
 
-
 		try {
 			const response = await api.post('/organizations-onboard', organizationData)
 			await fetchOrganizations()
 			return response // API interceptor already extracts response.data
-                } catch (err) {
-                        console.error('Error creating organization:', err)
+		} catch (err) {
+			console.error('Error creating organization:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -87,7 +83,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 	async function updateOrganization(organizationId, organizationData) {
 		console.log('Updating organization ID:', organizationId)
 		isLoading.value = true
-
 
 		try {
 			const response = await api.put(`/organizations/${organizationId}`, organizationData)
@@ -99,8 +94,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 			}
 
 			return response
-                } catch (err) {
-                        console.error('Error updating organization:', err)
+		} catch (err) {
+			console.error('Error updating organization:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -111,13 +106,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		console.log('Deleting organization ID:', organizationId)
 		// isLoading.value = true
 
-
 		try {
 			const response = await api.delete(`/organizations/${organizationId}`)
 			await fetchOrganizations()
 			return response.data
-                } catch (err) {
-                        console.error('Error deleting organization:', err)
+		} catch (err) {
+			console.error('Error deleting organization:', err)
 			throw err
 		} finally {
 			// isLoading.value = false
@@ -127,7 +121,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 	async function fetchVisibilityMetrics(params = {}) {
 		console.log('Fetching visibility metrics...')
 		isLoadingVisibility.value = true
-
 
 		try {
 			const queryParams = new URLSearchParams()
@@ -140,8 +133,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 			const response = await api.get(url)
 			visibilityMetrics.value = response
 			return response
-                } catch (err) {
-                        console.error('Error fetching organization visibility metrics:', err)
+		} catch (err) {
+			console.error('Error fetching organization visibility metrics:', err)
 		} finally {
 			isLoadingVisibility.value = false
 		}
@@ -151,15 +144,14 @@ export const useOrganizationStore = defineStore('organization', () => {
 		console.log('Finding competitors from past responses...')
 		isLoading.value = true
 
-
 		try {
 			const response = await api.post('/organizations-find-competitors')
 
 			await jobStatusStore.pollTeamJobs()
 
 			return response
-                } catch (err) {
-                        console.error('Error finding competitors:', err)
+		} catch (err) {
+			console.error('Error finding competitors:', err)
 			throw err
 		} finally {
 			isLoading.value = false
@@ -171,8 +163,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 		organizations,
 		currentOrganization,
 		isLoading,
-                isLoadingVisibility,
-                visibilityMetrics,
+		isLoadingVisibility,
+		visibilityMetrics,
 
 		// Getters
 		ownedOrganizations,
