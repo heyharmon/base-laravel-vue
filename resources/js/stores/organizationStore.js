@@ -34,7 +34,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	async function fetchOrganization(organizationId) {
-		console.log('Fetching organization details for organization ID:', organizationId)
 		isLoading.value = true
 
 		try {
@@ -42,6 +41,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 			currentOrganization.value = response
 			return response
 		} catch (err) {
+			window.location.href = '/organizations'
 			console.error('Error fetching organization details:', err)
 		} finally {
 			isLoading.value = false

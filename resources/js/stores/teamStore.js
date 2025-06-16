@@ -40,6 +40,7 @@ export const useTeamStore = defineStore('team', {
 				this.pendingMembers = response.pendingInvitations
 				return response
 			} catch (error) {
+				window.location.href = '/teams'
 				console.error('Error fetching team details:', error)
 			} finally {
 				this.isLoading = false
@@ -193,9 +194,6 @@ export const useTeamStore = defineStore('team', {
 						user.current_team_id = response.team.id
 						localStorage.setItem('user', JSON.stringify(user))
 					}
-
-					// Fetch the team data to ensure we have the latest information
-					await this.fetchTeam(teamId)
 
 					return response
 				}
