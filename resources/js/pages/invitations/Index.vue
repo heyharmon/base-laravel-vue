@@ -51,10 +51,7 @@ const declineInvitation = async (teamId) => {
 				<h1 class="text-2xl font-bold">Team Invitations</h1>
 			</div>
 
-			<!-- Error state -->
-			<div v-if="teamStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-				{{ teamStore.error }}
-			</div>
+
 
 			<!-- Success message -->
 			<div v-if="successMessage" class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">

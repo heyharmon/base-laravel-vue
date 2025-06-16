@@ -115,10 +115,7 @@ const deleteTeam = async () => {
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
 
-			<!-- Error state -->
-			<div v-else-if="teamStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-				{{ teamStore.error }}
-			</div>
+
 
 			<div v-else-if="teamStore.currentTeam">
 				<div class="flex justify-between items-center mb-8">

@@ -6,9 +6,8 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	// State
 	const jobs = ref([])
 	const batch = ref(null)
-	const loading = ref(false)
-	const error = ref(null)
-	let refreshTimer = ref(null)
+        const loading = ref(false)
+        let refreshTimer = ref(null)
 
 	// Getters
 	const activeJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'pending' || job.status === 'processing') : []))
@@ -52,15 +51,14 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
         async function fetchTeamJobs() {
                 console.log('Fetching team jobs...')
                 loading.value = true
-                error.value = null
 
 		try {
 			const response = await api.get('/team-jobs')
 			jobs.value = response
 			return jobs.value
-		} catch (err) {
-			error.value = 'Failed to load team jobs: ' + (err.response?.data?.error || err.message)
-			throw err
+                } catch (err) {
+                        console.error('Error loading team jobs:', err)
+                        throw err
 		} finally {
 			loading.value = false
                 }
@@ -71,7 +69,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
                         await api.post('/team-jobs/cancel')
                         await fetchTeamJobs()
                 } catch (err) {
-                        error.value = 'Failed to cancel jobs: ' + (err.response?.data?.error || err.message)
+                        console.error('Error cancelling jobs:', err)
                         throw err
                 }
         }
@@ -112,8 +110,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		// State
 		jobs: computed(() => jobs.value),
 		batch: computed(() => batch.value),
-		loading,
-		error,
+                loading,
 
 		// Getters
 		activeJobs,

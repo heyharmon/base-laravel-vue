@@ -8,8 +8,7 @@ export const useArticleStore = defineStore('article', () => {
 	const article = ref(null)
 	const isLoading = ref(false)
 	const isGenerating = ref(false)
-	const error = ref(null)
-	const isSaving = ref(false)
+        const isSaving = ref(false)
 
 	// Version-related state
 	const articleVersions = ref([])
@@ -21,59 +20,56 @@ export const useArticleStore = defineStore('article', () => {
 	const conversationId = ref(null)
 	const newMessage = ref('')
 
-	const fetchArticles = async () => {
-		isLoading.value = true
-		error.value = null
+        const fetchArticles = async () => {
+                isLoading.value = true
 
 		try {
 			const response = await api.get('/articles')
 			articles.value = response
 			return response
-		} catch (err) {
-			error.value = err.message || 'Failed to fetch articles'
-			throw err
+                } catch (err) {
+                        console.error('Error fetching articles:', err)
+                        throw err
 		} finally {
 			isLoading.value = false
 		}
 	}
 
-	const fetchArticle = async (id) => {
-		isLoading.value = true
-		error.value = null
+        const fetchArticle = async (id) => {
+                isLoading.value = true
 
 		try {
 			const response = await api.get(`/articles/${id}`)
 			article.value = response
 			return response
-		} catch (err) {
-			window.location.href = '/articles'
-			console.error('Error fetching article:', err)
-			throw err
+                } catch (err) {
+                        window.location.href = '/articles'
+                        console.error('Error fetching article:', err)
+                        throw err
 		} finally {
 			isLoading.value = false
 		}
 	}
 
-	const createArticle = async (articleData) => {
-		isLoading.value = true
-		error.value = null
+        const createArticle = async (articleData) => {
+                isLoading.value = true
 
 		try {
 			const response = await api.post('/articles', articleData)
 			await fetchArticles()
 			return response
-		} catch (err) {
-			error.value = err.message || 'Failed to create article'
-			throw err
+                } catch (err) {
+                        console.error('Error creating article:', err)
+                        throw err
 		} finally {
 			isLoading.value = false
 		}
 	}
 
-	const updateArticle = async (id, articleData) => {
-		console.log('Updating article...')
-		isLoading.value = true
-		error.value = null
+        const updateArticle = async (id, articleData) => {
+                console.log('Updating article...')
+                isLoading.value = true
+
 
 		try {
 			const response = await api.put(`/articles/${id}`, articleData)
@@ -84,17 +80,16 @@ export const useArticleStore = defineStore('article', () => {
 			}
 
 			return response
-		} catch (err) {
-			error.value = err.message || 'Failed to update article'
-			throw err
+                } catch (err) {
+                        console.error('Error updating article:', err)
+                        throw err
 		} finally {
 			isLoading.value = false
 		}
 	}
 
-	const deleteArticle = async (id) => {
-		isLoading.value = true
-		error.value = null
+        const deleteArticle = async (id) => {
+                isLoading.value = true
 
 		try {
 			await api.delete(`/articles/${id}`)
@@ -108,9 +103,9 @@ export const useArticleStore = defineStore('article', () => {
 			await fetchArticles()
 
 			return true
-		} catch (err) {
-			error.value = err.message || 'Failed to delete article'
-			throw err
+                } catch (err) {
+                        console.error('Error deleting article:', err)
+                        throw err
 		} finally {
 			isLoading.value = false
 		}
@@ -119,32 +114,30 @@ export const useArticleStore = defineStore('article', () => {
 	/**
 	 * Revert an article to a specific version
 	 */
-	const revertToVersion = async (articleId, versionId) => {
-		error.value = null
+        const revertToVersion = async (articleId, versionId) => {
 
 		try {
 			let response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
 			// window.location.reload()
 			article.value = response
-		} catch (err) {
-			error.value = err.message || 'Failed to revert to version'
-			throw err
+                } catch (err) {
+                        console.error('Error reverting article version:', err)
+                        throw err
 		}
 	}
 
 	/**
 	 * Generate an article for a prompt
 	 */
-	const generateArticle = async (promptId) => {
-		isGenerating.value = true
-		error.value = null
+        const generateArticle = async (promptId) => {
+                isGenerating.value = true
 
 		try {
 			const response = await api.post(`/prompts/${promptId}/generate-article`)
 			return response.data
-		} catch (err) {
-			error.value = err.response?.data?.message || 'Failed to generate article'
-			throw err
+                } catch (err) {
+                        console.error('Error generating article:', err)
+                        throw err
 		} finally {
 			isGenerating.value = false
 		}
@@ -164,8 +157,8 @@ export const useArticleStore = defineStore('article', () => {
 			// article.value.versions = response.versions
 			article.value = response
 			console.log('Article auto-saved successfully')
-		} catch (err) {
-			error.value = 'Auto-save failed: ' + (err.message || 'Unknown error')
+                } catch (err) {
+                        console.error('Auto-save failed:', err)
 		} finally {
 			isSaving.value = false
 		}
@@ -315,8 +308,7 @@ export const useArticleStore = defineStore('article', () => {
 		article,
 		isLoading,
 		isGenerating,
-		isSaving,
-		error,
+                isSaving,
 		fetchArticles,
 		fetchArticle,
 		createArticle,

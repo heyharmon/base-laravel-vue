@@ -174,10 +174,7 @@ const denyRecommendedTerm = async (termId, termName) => {
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
 
-			<!-- Error state -->
-			<div v-else-if="organizationStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-				{{ organizationStore.error }}
-			</div>
+
 
 			<div v-else class="flex flex-col md:flex-row gap-12">
 				<!-- Left column - Terms section -->

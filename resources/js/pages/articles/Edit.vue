@@ -246,7 +246,7 @@ const copyContentToClipboard = async () => {
 							<span v-if="articleStore.isSaving" class="flex items-center">
 								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
 							</span>
-							<span v-else-if="articleStore.error" class="text-red-600">{{ articleStore.error }}</span>
+                                                        <span v-else class="text-neutral-600"></span>
 						</div>
 
 						<div class="flex gap-2">
@@ -274,10 +274,7 @@ const copyContentToClipboard = async () => {
 					<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 				</div>
 
-				<!-- Error state -->
-				<div v-else-if="articleStore.error" class="bg-red-100 border border-red-400 text-red-700 pl-4 pr-6 py-3 rounded mb-4">
-					{{ articleStore.error }}
-				</div>
+
 
 				<div v-else class="flex flex-col gap-6">
 					<!-- Versions panel - dynamically loaded -->
