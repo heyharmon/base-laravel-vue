@@ -1,10 +1,14 @@
 <script setup>
+import moment from 'moment'
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import moment from 'moment'
+import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import Button from '@/components/ui/Button.vue'
+
+const router = useRouter()
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
@@ -33,18 +37,6 @@ const hasActiveRunPromptJob = computed(() => {
 	return jobs.length > 0
 })
 
-const hasActiveArticleJob = computed(() => {
-	let jobs = jobStatusStore.jobs.filter(
-		(job) =>
-			job.job_class.includes('GenerateArticleJob') &&
-			job.trackable_type === 'App\\Models\\Prompt' &&
-			job.trackable_id === props.prompt.id &&
-			(job.status === 'pending' || job.status === 'processing')
-	)
-
-	return jobs.length > 0
-})
-
 const formattedCreatedAt = computed(() => {
 	if (!props.prompt.created_at) return ''
 	return moment(props.prompt.created_at).fromNow()
@@ -58,25 +50,24 @@ const isNewPrompt = computed(() => {
 const toggleRunMenu = () => {
 	isRunMenuOpen.value = !isRunMenuOpen.value
 }
+
 const closeRunMenu = () => {
 	isRunMenuOpen.value = false
 }
+
 const runPrompt = (count) => {
 	emit('run', props.prompt.id, count)
 	closeRunMenu()
 }
+
 const confirmDelete = () => emit('delete', props.prompt)
 
-const generateArticle = async () => {
-	if (!props.prompt.id) return
-
-	try {
-		await articleStore.generateArticle(props.prompt.id)
-		jobStatusStore.pollTeamJobs()
-		emit('generate-article', props.prompt.id)
-	} catch (error) {
-		console.error('Error generating article:', error)
-	}
+const createNewArticle = async () => {
+	const newArticle = await articleStore.createArticle({
+		title: 'Untitled article',
+		prompt_id: props.prompt.id
+	})
+	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 </script>
 
@@ -108,18 +99,10 @@ const generateArticle = async () => {
 		</div>
 
 		<div class="flex justify-end items-center space-x-2">
-			<!-- Generate article button -->
-			<Button
-				@click.stop="generateArticle"
-				:loading="hasActiveArticleJob"
-				:disabled="hasActiveArticleJob"
-				class="flex items-center gap-2 mr-2"
-				variant="outline"
-				size="sm"
-			>
-				<!-- prettier-ignore -->
-				<svg v-if="!hasActiveArticleJob" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles" ><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4" /><path d="M19 17v4" /><path d="M3 5h4" /><path d="M17 19h4" /></svg>
-				<span>{{ hasActiveArticleJob ? 'Generating article' : 'Generate article' }}</span>
+			<!-- Create article button -->
+			<Button @click.stop="createNewArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
+				<SparkleIcon />
+				Create article
 			</Button>
 
 			<!-- Run prompt button -->

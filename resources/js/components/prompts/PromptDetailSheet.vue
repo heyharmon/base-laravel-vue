@@ -1,11 +1,13 @@
 <script setup>
 import { computed, watch, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
-import { useJobStatusStore } from '@/stores/jobStatusStore'
 import api from '@/services/api.js'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
+import CopyIcon from '@/components/icons/CopyIcon.vue'
+import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 
 const props = defineProps({
 	isOpen: {
@@ -18,11 +20,12 @@ const props = defineProps({
 	}
 })
 
+const router = useRouter()
+
 const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
-const jobStatusStore = useJobStatusStore()
 const isCopied = ref(false)
 
 const promptDetails = computed(() => {
@@ -31,7 +34,7 @@ const promptDetails = computed(() => {
 
 // Get the basic prompt data from the store
 const prompt = computed(() => {
-	return promptStore.prompts.find(p => p.id === Number(props.promptId)) || null
+	return promptStore.prompts.find((p) => p.id === Number(props.promptId)) || null
 })
 
 // Get mentions percentage from either the prompt details or the prompt list
@@ -44,32 +47,15 @@ const mentionsPercentage = computed(() => {
 	return 0
 })
 
-// Check if there is an active article job for this prompt
-const hasActiveArticleJob = computed(() => {
-	let jobs = jobStatusStore.jobs.filter(
-		(job) =>
-			job.job_class.includes('GenerateArticleJob') &&
-			job.trackable_type === 'App\\Models\\Prompt' &&
-			job.trackable_id === props.promptId &&
-			(job.status === 'pending' || job.status === 'processing')
-	)
-
-	return jobs.length > 0
-})
-
-// Watch hasActiveArticleJob and when it changes to false, fetch the prompt details
-watch(hasActiveArticleJob, (newVal) => {
-	if (!newVal) {
-		fetchDetails()
-	}
-})
-
 // Watch isOpen and fetch details when the sheet opens
-watch(() => props.isOpen, (isOpen) => {
-	if (isOpen && props.promptId) {
-		fetchDetails()
+watch(
+	() => props.isOpen,
+	(isOpen) => {
+		if (isOpen && props.promptId) {
+			fetchDetails()
+		}
 	}
-})
+)
 
 // Fetch prompt details when component mounts or promptId changes
 const fetchDetails = async () => {
@@ -98,18 +84,6 @@ const closeSheet = () => {
 	emit('close')
 }
 
-// Generate an article for the current prompt
-const generateArticle = async () => {
-	if (!props.promptId) return
-
-	try {
-		await articleStore.generateArticle(props.promptId)
-		jobStatusStore.pollTeamJobs()
-	} catch (error) {
-		console.error('Error generating article:', error)
-	}
-}
-
 const exportPrompt = async () => {
 	if (!props.promptId) return
 
@@ -123,6 +97,14 @@ const exportPrompt = async () => {
 	} catch (error) {
 		console.error('Error exporting prompt:', error)
 	}
+}
+
+const createNewArticle = async () => {
+	const newArticle = await articleStore.createArticle({
+		title: 'Untitled article',
+		prompt_id: props.promptId
+	})
+	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 
 onMounted(fetchDetails)
@@ -145,15 +127,8 @@ watch(() => props.promptId, fetchDetails)
 					<div class="mb-4">
 						<div class="flex justify-between items-start">
 							<span class="text-neutral-500 text-sm">Content:</span>
-							<Button
-								@click="exportPrompt"
-								variant="outline"
-								class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-neutral-100 hover:bg-neutral-200 transition-colors"
-							>
-								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-									<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-								</svg>
+							<Button @click="exportPrompt" variant="link" size="sm">
+								<CopyIcon />
 								{{ isCopied ? 'Copied!' : 'Export' }}
 							</Button>
 						</div>
@@ -165,9 +140,9 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 					<div class="mb-2 text-sm">
 						<span class="text-neutral-500">Term occurrences:</span>
-						<span class="text-neutral-800 ml-2"
-							>{{ promptDetails.terms?.length || 0 }} {{ promptDetails.terms?.length === 1 ? 'term' : 'terms' }}</span
-						>
+						<span class="text-neutral-800 ml-2">
+							{{ promptDetails.terms?.length || 0 }} {{ promptDetails.terms?.length === 1 ? 'term' : 'terms' }}
+						</span>
 					</div>
 				</div>
 
@@ -176,57 +151,21 @@ watch(() => props.promptId, fetchDetails)
 					<div class="flex items-center justify-between gap-6 mb-6">
 						<div>
 							<h3 class="text-lg font-medium text-neutral-800 mb-1">Articles</h3>
-							<p class="text-neutral-600">Generate an article to optimize visibililty for this prompt</p>
+							<p class="text-neutral-600">Generate an article to optimize visibility for this prompt</p>
 						</div>
-						<Button
-							@click="generateArticle"
-							class="flex items-center gap-2"
-							:class="{ 'bg-green-600 hover:bg-green-700': hasActiveArticleJob }"
-							:disabled="hasActiveArticleJob"
-						>
-							<svg
-								v-if="!hasActiveArticleJob"
-								xmlns="http://www.w3.org/2000/svg"
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								class="lucide lucide-sparkles"
-							>
-								<path
-									d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
-								/>
-								<path d="M5 3v4" />
-								<path d="M19 17v4" />
-								<path d="M3 5h4" />
-								<path d="M17 19h4" />
-							</svg>
-							<div v-else-if="hasActiveArticleJob" class="animate-spin rounded-full h-4 w-4 border-2 border-b-transparent border-white"></div>
-							<svg
-								v-else
-								xmlns="http://www.w3.org/2000/svg"
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								class="lucide lucide-check"
-							>
-								<polyline points="20 6 9 17 4 12"></polyline>
-							</svg>
-							<span>{{ hasActiveArticleJob ? 'Generating...' : hasActiveArticleJob ? 'Processing...' : 'Generate article' }}</span>
+						<Button @click.stop="createNewArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
+							<SparkleIcon />
+							Create article
 						</Button>
 					</div>
 
 					<div v-if="promptDetails.articles && promptDetails.articles.length > 0" class="space-y-4">
-						<div v-for="article in promptDetails.articles" :key="article.id" class="bg-white border border-neutral-200 p-4 rounded-lg">
+						<RouterLink
+							v-for="article in promptDetails.articles"
+							:key="article.id"
+							:to="`/articles/${article.id}/edit`"
+							class="block bg-white border border-neutral-200 p-4 rounded-lg hover:bg-neutral-50 transition-colors"
+						>
 							<div class="flex justify-between items-center mb-3">
 								<h4 class="font-medium text-neutral-800">{{ article.title }}</h4>
 								<span class="text-xs text-neutral-500">{{ new Date(article.created_at).toLocaleDateString() }}</span>
@@ -235,16 +174,7 @@ watch(() => props.promptId, fetchDetails)
 							<div class="text-sm text-neutral-600 mb-3 line-clamp-3">
 								{{ article.content ? article.content.substring(0, 200) + '...' : 'No content available' }}
 							</div>
-
-							<div class="flex justify-end">
-								<RouterLink
-									:to="`/articles/${article.id}/edit`"
-									class="rounded-md py-1 px-2 text-sm border bg-background shadow-xs hover:bg-neutral-50"
-								>
-									View Article
-								</RouterLink>
-							</div>
-						</div>
+						</RouterLink>
 					</div>
 					<div v-else class="text-neutral-500 italic">No articles have been generated for this prompt yet.</div>
 				</div>
