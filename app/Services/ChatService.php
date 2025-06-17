@@ -5,10 +5,12 @@ namespace App\Services;
 use OpenAI\Client;
 use OpenAI;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Response;
+use App\Models\Prompt;
+use App\Models\Organization;
 use App\Models\Conversation;
 use App\Models\Article;
-use App\Models\Prompt;
-use App\Models\Response;
 use App\Events\ArticleUpdated;
 
 class ChatService
@@ -165,6 +167,7 @@ class ChatService
 			->whereNotNull('metadata->response_id')
 			->orderBy('created_at', 'desc')
 			->first();
+
 		if ($lastAssistant && isset($lastAssistant->metadata['response_id'])) {
 			// Continue the conversation by providing the new user query and reference to the last AI response
 			$requestData['input'] = $userMessage;
@@ -172,13 +175,6 @@ class ChatService
 		} else {
 			// Start of a new conversation: include a system message with instructions and context
 			$systemMessage = (string) view('prompts.system');  // Base system prompt from a view/template
-
-			// **Add conversational tool-use instructions to the system prompt**
-			$systemMessage .= "\n\nYou are a conversational AI assistant that can use tools (functions) to help the user. "
-				. "Whenever you use a tool, you **must** explain the result to the user in your next message in a helpful manner.\n"
-				. "- If you edit the article content, summarize the changes you made and suggest further improvements, then ask the user if they want additional changes.\n"
-				. "- If you fetch prompt details, describe what the prompt is about (and any insights from its recent responses) to the user. If the user's request is to improve the article using this prompt, use the prompt information to guide your edits.\n"
-				. "- Always respond with a friendly, conversational tone and ensure the user is informed of any actions you took.";
 
 			// Include current article context if available
 			if ($this->article) {
@@ -349,8 +345,6 @@ class ChatService
 					'title'      => $article->title,
 					'content'    => $article->content,
 					'prompt_id'  => $article->prompt_id,
-					'created_at' => $article->created_at->toDateTimeString(),
-					'updated_at' => $article->updated_at->toDateTimeString(),
 				]
 			];
 		} catch (\Exception $e) {
