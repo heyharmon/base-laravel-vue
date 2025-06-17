@@ -14,6 +14,7 @@ use App\Models\Article;
 use App\Tools\FetchArticleTool;
 use App\Tools\EditArticleContentTool;
 use App\Tools\FetchPromptWithResponsesTool;
+use App\Tools\DeepResearchTool;
 
 class ChatService
 {
@@ -118,7 +119,8 @@ class ChatService
 			['type' => 'web_search'],
 			FetchArticleTool::getSchema(),
 			EditArticleContentTool::getSchema(),
-			FetchPromptWithResponsesTool::getSchema()
+			FetchPromptWithResponsesTool::getSchema(),
+			DeepResearchTool::getSchema()
 		];
 
 		// Build the initial request payload for the OpenAI Responses API
@@ -272,6 +274,11 @@ class ChatService
 			case 'fetch_prompt_with_responses':
 				Log::info("Fetching prompt with responses via tool.");
 				$tool = new FetchPromptWithResponsesTool();
+				return $tool->execute($arguments, $this->article);
+
+			case 'deep_research':
+				Log::info("Initiating deep research via tool.");
+				$tool = new DeepResearchTool();
 				return $tool->execute($arguments, $this->article);
 
 			default:
