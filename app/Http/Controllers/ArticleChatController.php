@@ -62,16 +62,13 @@ class ArticleChatController extends Controller
 		]);
 
 		try {
-			// Get the prompt that belongs to the article, if that prompt exists
-			$prompt = null;
-			if ($article->prompt_id) {
-				$prompt = Prompt::find($article->prompt_id);
-			}
-
 			// Set up the chat service with article and prompt context
 			$this->chatService->withArticle($article);
+			$this->chatService->withOrganization($article->organization);
 
-			if ($prompt) {
+			// Get the prompt that belongs to the article, if that prompt exists
+			if ($article->prompt_id) {
+				$prompt = Prompt::find($article->prompt_id);
 				$this->chatService->withPrompt($prompt);
 			}
 

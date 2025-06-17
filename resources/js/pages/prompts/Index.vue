@@ -119,7 +119,7 @@ onMounted(async () => {
 
 <template>
 	<DefaultLayout>
-		<div class="flex flex-col space-y-6 mt-6">
+		<div class="flex flex-col space-y-6 my-6">
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 

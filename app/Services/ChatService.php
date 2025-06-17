@@ -18,7 +18,7 @@ class ChatService
 	protected Client $client;
 	protected Article $article;
 	protected ?Prompt $prompt = null;
-	// Removed the unused $conversation property (was causing bugs when not set).
+	protected ?Organization $organization = null;
 
 	public function __construct()
 	{
@@ -28,6 +28,12 @@ class ChatService
 	public function withArticle(Article $article): self
 	{
 		$this->article = $article;
+		return $this;
+	}
+
+	public function withOrganization(Organization $organization): self
+	{
+		$this->organization = $organization;
 		return $this;
 	}
 
@@ -181,6 +187,12 @@ class ChatService
 				$systemMessage .= "\n\nThe current article being edited has ID {$this->article->id} and title '{$this->article->title}'.";
 				// (We avoid dumping full article content here to save token space; the agent can fetch it via the tool if needed)
 			}
+
+			// Include organization context if available
+			if ($this->organization) {
+				$systemMessage .= "\n\nThis article is based on organization ID {$this->organization->id} named {$this->organization->name} ({$this->organization->website}).";
+			}
+
 			// Include prompt context if available (note: content may be large, so using only ID or summary)
 			if ($this->prompt) {
 				$systemMessage .= "\n\nThis article is based on prompt ID {$this->prompt->id} ('{$this->prompt->name}').";

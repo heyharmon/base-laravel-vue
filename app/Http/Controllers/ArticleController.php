@@ -32,6 +32,11 @@ class ArticleController extends Controller
 		// Get the users team id
 		$teamId = $request->user()->currentTeam->id;
 
+		// Get the owned organization for this team
+		$ownedOrganization = Organization::where('team_id', $teamId)
+			->where('is_competitor', false)
+			->first();
+
 		$validated = $request->validate([
 			'prompt_id' => 'nullable|exists:prompts,id',
 			'title' => 'required|string|max:255',
@@ -45,6 +50,7 @@ class ArticleController extends Controller
 		$article = request()->user()->currentTeam->articles()->create([
 			...$validated,
 			'team_id' => $teamId,
+			'organization_id' => $ownedOrganization->id,
 		]);
 
 		return response()->json($article, 201);
