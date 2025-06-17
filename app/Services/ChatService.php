@@ -11,7 +11,9 @@ use App\Models\Prompt;
 use App\Models\Organization;
 use App\Models\Conversation;
 use App\Models\Article;
-use App\Events\ArticleUpdated;
+use App\Tools\FetchArticleTool;
+use App\Tools\EditArticleContentTool;
+use App\Tools\FetchPromptWithResponsesTool;
 
 class ChatService
 {
@@ -114,51 +116,9 @@ class ChatService
 		// Prepare the list of tools (functions and web search) available to the model
 		$tools = [
 			['type' => 'web_search'],
-			[
-				'type' => 'function',
-				'name' => 'fetch_article',
-				'description' => 'Fetch the current article content by ID',
-				'parameters' => [
-					'type' => 'object',
-					'properties' => [
-						'article_id' => [
-							'type'        => 'integer',
-							'description' => 'The ID of the article to fetch. If not provided, uses the current article ID.'
-						]
-					],
-					'required' => ['article_id']
-				]
-			],
-			[
-				'type' => 'function',
-				'name' => 'edit_article_content',
-				'description' => 'Edit the content of the current article',
-				'parameters' => [
-					'type' => 'object',
-					'properties' => [
-						'content' => [
-							'type'        => 'string',
-							'description' => 'The new content for the article in HTML format'
-						]
-					],
-					'required' => ['content']
-				]
-			],
-			[
-				'type' => 'function',
-				'name' => 'fetch_prompt_with_responses',
-				'description' => 'Fetch a prompt record with its associated responses',
-				'parameters' => [
-					'type' => 'object',
-					'properties' => [
-						'prompt_id' => [
-							'type'        => 'integer',
-							'description' => 'The ID of the prompt to fetch. If not provided, uses the current article\'s prompt_id.'
-						]
-					]
-					// 'required' is not strictly needed here since prompt_id is optional
-				]
-			]
+			FetchArticleTool::getSchema(),
+			EditArticleContentTool::getSchema(),
+			FetchPromptWithResponsesTool::getSchema()
 		];
 
 		// Build the initial request payload for the OpenAI Responses API
@@ -292,25 +252,27 @@ class ChatService
 	 * Handle a tool function call by executing the corresponding action.
 	 * Returns the result that will be passed back to the AI model.
 	 */
-	private function handleToolCall(string $name, array $arguments)
+	private function handleToolCall(string $name, array $arguments): array
 	{
+		// Log the tool call for debugging
+		Log::info("Tool call: {$name}", ['arguments' => $arguments]);
+
+		// Handle different tool calls
 		switch ($name) {
 			case 'edit_article_content':
-				$content = $arguments['content'] ?? '';
-				Log::info("Editing article content via tool. New content length: " . strlen($content));
-				return $this->editArticleContent($content);
+				Log::info("Editing article content via tool.");
+				$tool = new EditArticleContentTool();
+				return $tool->execute($arguments, $this->article);
 
 			case 'fetch_article':
-				$articleId = $arguments['article_id']
-					?? ($this->article ? $this->article->id : null);
-				Log::info("Fetching article (ID: {$articleId}) via tool.");
-				return $this->fetchArticle($articleId);
+				Log::info("Fetching article via tool.");
+				$tool = new FetchArticleTool();
+				return $tool->execute($arguments, $this->article);
 
 			case 'fetch_prompt_with_responses':
-				$promptId = $arguments['prompt_id']
-					?? ($this->article ? $this->article->prompt_id : null);
-				Log::info("Fetching prompt (ID: {$promptId}) via tool.");
-				return $this->fetchPromptWithResponses($promptId);
+				Log::info("Fetching prompt with responses via tool.");
+				$tool = new FetchPromptWithResponsesTool();
+				return $tool->execute($arguments, $this->article);
 
 			default:
 				Log::warning("Unknown tool call: {$name}");
@@ -321,133 +283,5 @@ class ChatService
 		}
 	}
 
-	/**
-	 * Fetch an article by ID.
-	 * This allows the agent to get the most up-to-date version of the article from the database.
-	 */
-	private function fetchArticle(?int $articleId): array
-	{
-		// If no article ID provided, try to use the current article context
-		if (!$articleId) {
-			if (!$this->article) {
-				Log::error('Cannot fetch article: No article ID provided and no article context available.');
-				return [
-					'success' => false,
-					'message' => 'No article ID provided to fetch.'
-				];
-			}
-			$articleId = $this->article->id;
-		}
 
-		try {
-			// Fetch the article from the database to ensure we have the latest version
-			$article = Article::find($articleId);
-
-			if (!$article) {
-				return [
-					'success' => false,
-					'message' => 'Article not found.'
-				];
-			}
-
-			return [
-				'success' => true,
-				'article' => [
-					'id'         => $article->id,
-					'title'      => $article->title,
-					'content'    => $article->content,
-					'prompt_id'  => $article->prompt_id,
-				]
-			];
-		} catch (\Exception $e) {
-			Log::error('Error fetching article: ' . $e->getMessage());
-			return [
-				'success' => false,
-				'message' => 'Failed to fetch article: ' . $e->getMessage()
-			];
-		}
-	}
-
-	/**
-	 * Edit the content of the current article in the database.
-	 */
-	private function editArticleContent(string $content): array
-	{
-		if (!$this->article) {
-			Log::error('Cannot edit article content: No article context provided.');
-			return [
-				'success' => false,
-				'message' => 'No article context available to edit.'
-			];
-		}
-
-		try {
-			$this->article->content = $content;
-			$this->article->save();
-
-			ArticleUpdated::class::dispatch($this->article);
-
-			return [
-				'success'   => true,
-				'message'   => 'Article content updated successfully.',
-				'article_id' => $this->article->id,
-			];
-		} catch (\Exception $e) {
-			Log::error('Error updating article content: ' . $e->getMessage());
-			return [
-				'success' => false,
-				'message' => 'Failed to update article content: ' . $e->getMessage()
-			];
-		}
-	}
-
-	/**
-	 * Fetch a prompt with its associated recent responses.
-	 */
-	private function fetchPromptWithResponses(?int $promptId): array
-	{
-		if (!$promptId) {
-			Log::error('Cannot fetch prompt: No prompt ID provided.');
-			return [
-				'success' => false,
-				'message' => 'No prompt ID provided to fetch.'
-			];
-		}
-
-		try {
-			$prompt = Prompt::with(['responses' => function ($query) {
-				$query->latest()->limit(5);
-			}])->find($promptId);
-
-			if (!$prompt) {
-				return [
-					'success' => false,
-					'message' => 'Prompt not found.'
-				];
-			}
-
-			return [
-				'success'    => true,
-				'prompt'     => [
-					'id'          => $prompt->id,
-					'name'        => $prompt->name,
-					'content'     => $prompt->content,
-					'description' => $prompt->description,
-					'responses'   => $prompt->responses->map(function ($response) {
-						return [
-							'id'        => $response->id,
-							'content'   => $response->content,
-							'created_at' => $response->created_at->toDateTimeString()
-						];
-					})->toArray()
-				]
-			];
-		} catch (\Exception $e) {
-			Log::error('Error fetching prompt with responses: ' . $e->getMessage());
-			return [
-				'success' => false,
-				'message' => 'Failed to fetch prompt: ' . $e->getMessage()
-			];
-		}
-	}
 }
