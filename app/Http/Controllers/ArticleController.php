@@ -57,6 +57,8 @@ class ArticleController extends Controller
 			return response()->json(['message' => 'Unauthorized'], 403);
 		}
 
+		$article->load('versions');
+
 		return response()->json($article);
 	}
 
@@ -82,6 +84,8 @@ class ArticleController extends Controller
 		]);
 
 		$article->update($validated);
+
+		$article->load('versions');
 
 		return response()->json($article);
 	}

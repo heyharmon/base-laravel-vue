@@ -15,12 +15,12 @@ const renderMarkdown = (content) => {
 
 <template>
 	<div :class="['flex', props.chat.role === 'user' ? 'justify-end' : 'justify-start']">
-		<div :class="['max-w-[80%] rounded-lg p-3', props.chat.role === 'user' ? 'bg-neutral-200' : 'bg-neutral-300']">
+		<div :class="['max-w-[90%] rounded-lg p-3', props.chat.role === 'user' ? 'bg-neutral-200/60' : 'border border-neutral-200']">
 			<!-- Chat content -->
 			<div class="markdown-content" v-html="renderMarkdown(chat.content)"></div>
 
 			<!-- Citations section if annotations exist -->
-			<div v-if="chat.annotations && chat.annotations.length > 0" class="mt-3 pt-2 border-t border-neutral-400">
+			<div v-if="chat.annotations && chat.annotations.length > 0" class="mt-3 pt-2 border-t border-neutral-200">
 				<p class="text-xs font-semibold mb-1">Sources:</p>
 				<ul class="text-xs space-y-1">
 					<li v-for="(annotation, index) in chat.annotations" :key="index">
@@ -57,7 +57,7 @@ const renderMarkdown = (content) => {
 	margin-bottom: 0.5rem;
 }
 
-.markdown-content p {
+.markdown-content p:not(:last-of-type) {
 	margin-bottom: 0.75rem;
 }
 

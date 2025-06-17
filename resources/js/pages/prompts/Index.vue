@@ -182,8 +182,7 @@ onMounted(async () => {
 	<!-- Prompt Detail Sheet -->
 	<PromptDetailSheet
 		:is-open="isPromptDetailSheetOpen"
-		:prompt="selectedPrompt"
-		:prompt-id="selectedPrompt?.id"
+		:prompt-id="selectedPromptId"
 		@close="
 			() => {
 				isPromptDetailSheetOpen = false

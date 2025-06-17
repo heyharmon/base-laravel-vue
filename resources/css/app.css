@@ -79,4 +79,27 @@
 		-ms-overflow-style: none;
 		scrollbar-width: none;
 	}
+
+	/* Custom minimal scrollbar - only shows rounded drag bar */
+	.custom-scrollbar {
+		scrollbar-gutter: stable; /* Prevents layout shift */
+		margin-right: 3px;
+	}
+
+	/* Webkit scrollbar styling */
+	.custom-scrollbar::-webkit-scrollbar {
+		width: 7px; /* Width of the scrollbar */
+		height: 7px; /* Height for horizontal scrollbar */
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-track {
+		background: #ffffff;
+		background: transparent; /* Transparent track background */
+		border: none; /* No border */
+	}
+
+	.custom-scrollbar::-webkit-scrollbar-thumb {
+		background-color: #d5d5d5; /* Neutral thumb color */
+		border-radius: 9999px; /* Rounded thumb */
+	}
 }

@@ -9,15 +9,13 @@ export const useTeamStore = defineStore('team', {
 		currentTeam: null,
 		members: [],
 		pendingMembers: [],
-		isLoading: false,
-		error: null
+		isLoading: false
 	}),
 
 	actions: {
 		async fetchTeams() {
 			console.log('Fetching teams...')
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.get('/teams')
@@ -25,7 +23,6 @@ export const useTeamStore = defineStore('team', {
 				this.joinedTeams = response.joinedTeams
 				this.pendingInvitations = response.pendingInvitations
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to fetch teams'
 				console.error('Error fetching teams:', error)
 			} finally {
 				this.isLoading = false
@@ -35,7 +32,6 @@ export const useTeamStore = defineStore('team', {
 		async fetchTeam(teamId) {
 			console.log('Fetching team details for team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.get(`/teams/${teamId}`)
@@ -44,7 +40,7 @@ export const useTeamStore = defineStore('team', {
 				this.pendingMembers = response.pendingInvitations
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to fetch team details'
+				window.location.href = '/teams'
 				console.error('Error fetching team details:', error)
 			} finally {
 				this.isLoading = false
@@ -54,14 +50,12 @@ export const useTeamStore = defineStore('team', {
 		async createTeam(teamData) {
 			console.log('Creating team...')
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.post('/teams', teamData)
 				await this.fetchTeams()
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to create team'
 				console.error('Error creating team:', error)
 				throw error
 			} finally {
@@ -72,14 +66,12 @@ export const useTeamStore = defineStore('team', {
 		async updateTeam(teamId, teamData) {
 			console.log('Updating team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.put(`/teams/${teamId}`, teamData)
 				await this.fetchTeam(teamId)
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to update team'
 				console.error('Error updating team:', error)
 				throw error
 			} finally {
@@ -90,14 +82,12 @@ export const useTeamStore = defineStore('team', {
 		async inviteUser(teamId, userData) {
 			console.log('Inviting user to team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.post(`/teams/${teamId}/invite`, userData)
 				await this.fetchTeam(teamId)
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to invite user'
 				console.error('Error inviting user:', error)
 				throw error
 			} finally {
@@ -108,7 +98,6 @@ export const useTeamStore = defineStore('team', {
 		async acceptInvitation(teamId) {
 			console.log('Accepting invitation for team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.post(`/teams/${teamId}/accept-invitation`)
@@ -116,7 +105,6 @@ export const useTeamStore = defineStore('team', {
 				this.pendingInvitations = this.pendingInvitations.filter((invitation) => invitation.id !== teamId)
 				await this.switchTeam(teamId)
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to accept invitation'
 				console.error('Error accepting invitation:', error)
 				throw error
 			} finally {
@@ -127,14 +115,12 @@ export const useTeamStore = defineStore('team', {
 		async declineInvitation(teamId) {
 			console.log('Declining invitation for team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.post(`/teams/${teamId}/decline-invitation`)
 				await this.fetchTeams()
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to decline invitation'
 				console.error('Error declining invitation:', error)
 				throw error
 			} finally {
@@ -145,14 +131,12 @@ export const useTeamStore = defineStore('team', {
 		async removeMember(teamId, userId) {
 			console.log('Removing member from team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.delete(`/teams/${teamId}/members/${userId}`)
 				await this.fetchTeam(teamId)
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to remove member'
 				console.error('Error removing member:', error)
 				throw error
 			} finally {
@@ -163,7 +147,6 @@ export const useTeamStore = defineStore('team', {
 		async deleteTeam(teamId) {
 			console.log('Deleting team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.delete(`/teams/${teamId}`)
@@ -175,7 +158,6 @@ export const useTeamStore = defineStore('team', {
 				}
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to delete team'
 				console.error('Error deleting team:', error)
 				throw error
 			} finally {
@@ -186,14 +168,12 @@ export const useTeamStore = defineStore('team', {
 		async updateMemberRole(teamId, userId, roleData) {
 			console.log('Updating member role for team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.put(`/teams/${teamId}/members/${userId}/role`, roleData)
 				await this.fetchTeam(teamId)
 				return response
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to update member role'
 				console.error('Error updating member role:', error)
 				throw error
 			} finally {
@@ -204,7 +184,6 @@ export const useTeamStore = defineStore('team', {
 		async switchTeam(teamId) {
 			console.log('Switching to team ID:', teamId)
 			this.isLoading = true
-			this.error = null
 
 			try {
 				const response = await api.post(`/teams/${teamId}/switch`)
@@ -216,14 +195,10 @@ export const useTeamStore = defineStore('team', {
 						localStorage.setItem('user', JSON.stringify(user))
 					}
 
-					// Fetch the team data to ensure we have the latest information
-					await this.fetchTeam(teamId)
-
 					return response
 				}
 				return null
 			} catch (error) {
-				this.error = error.response?.data?.message || 'Failed to switch team'
 				console.error('Error switching team:', error)
 				throw error
 			} finally {

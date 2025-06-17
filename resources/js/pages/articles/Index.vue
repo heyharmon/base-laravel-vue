@@ -79,19 +79,19 @@ const deleteArticle = async (id) => {
 			<!-- Top bar -->
 			<div class="flex justify-between items-center mb-8">
 				<h1 class="text-2xl font-bold">Articles</h1>
-				<Button @click="createNewArticle">
+				<!-- <Button @click="createNewArticle">
 					<div class="flex items-center gap-2">
 						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 						</svg>
 						New Article
 					</div>
-				</Button>
+				</Button> -->
 			</div>
 
 			<!-- Active jobs message -->
-			<div
-				v-if="!articleStore.error && activeArticleGenerationJobs.length > 0"
+                        <div
+                                v-if="activeArticleGenerationJobs.length > 0"
 				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 			>
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
@@ -103,10 +103,7 @@ const deleteArticle = async (id) => {
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
 
-			<!-- Error state -->
-			<div v-else-if="articleStore.error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-				{{ articleStore.error }}
-			</div>
+
 
 			<!-- No articles -->
 			<div v-else-if="articleStore.articles.length === 0" class="text-center py-16 border border-neutral-200 rounded-xl">

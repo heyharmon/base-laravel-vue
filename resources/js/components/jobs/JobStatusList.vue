@@ -1,8 +1,6 @@
 <template>
 	<div>
-		<div v-if="error" class="bg-red-100 p-3 rounded text-red-700">
-			{{ error }}
-		</div>
+
 
 		<div>
 			<!-- No jobs -->
@@ -122,7 +120,6 @@ const props = defineProps({
 const jobStatusStore = useJobStatusStore()
 const jobs = computed(() => jobStatusStore.jobs)
 const loading = computed(() => jobStatusStore.loading)
-const error = computed(() => jobStatusStore.error)
 
 // Process jobs into batches and non-batched jobs
 const processedBatches = computed(() => {

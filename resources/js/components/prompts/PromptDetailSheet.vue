@@ -15,10 +15,6 @@ const props = defineProps({
 	promptId: {
 		type: [Number, String],
 		default: null
-	},
-	prompt: {
-		type: Object,
-		default: null
 	}
 })
 
@@ -31,6 +27,21 @@ const isCopied = ref(false)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
+})
+
+// Get the basic prompt data from the store
+const prompt = computed(() => {
+	return promptStore.prompts.find(p => p.id === Number(props.promptId)) || null
+})
+
+// Get mentions percentage from either the prompt details or the prompt list
+const mentionsPercentage = computed(() => {
+	if (promptDetails.value?.mentions_percentage !== undefined) {
+		return promptDetails.value.mentions_percentage
+	} else if (prompt.value?.mentions_percentage !== undefined) {
+		return prompt.value.mentions_percentage
+	}
+	return 0
 })
 
 // Check if there is an active article job for this prompt
@@ -49,6 +60,13 @@ const hasActiveArticleJob = computed(() => {
 // Watch hasActiveArticleJob and when it changes to false, fetch the prompt details
 watch(hasActiveArticleJob, (newVal) => {
 	if (!newVal) {
+		fetchDetails()
+	}
+})
+
+// Watch isOpen and fetch details when the sheet opens
+watch(() => props.isOpen, (isOpen) => {
+	if (isOpen && props.promptId) {
 		fetchDetails()
 	}
 })
@@ -143,7 +161,7 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 					<div class="mb-1 text-sm">
 						<span class="text-neutral-500">Mentioned:</span>
-						<span class="text-neutral-800 ml-2">{{ prompt.mentions_percentage }}% of the time</span>
+						<span class="text-neutral-800 ml-2">{{ mentionsPercentage }}% of the time</span>
 					</div>
 					<div class="mb-2 text-sm">
 						<span class="text-neutral-500">Term occurrences:</span>

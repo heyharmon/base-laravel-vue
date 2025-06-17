@@ -62,9 +62,7 @@ const loadTeams = async () => {
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
-		// delay for half a second before reloading the page
-		// await new Promise((resolve) => setTimeout(resolve, 500))
-		window.location.reload()
+		window.location.href = '/'
 	} catch (error) {
 		console.error('Error switching team:', error)
 	}
@@ -79,7 +77,7 @@ onMounted(async () => {
 
 <template>
 	<nav class="bg-neutral-900 text-white">
-		<div class="container mx-auto px-4 py-3 flex items-center justify-between">
+		<div class="mx-auto px-6 py-3 flex items-center justify-between">
 			<div class="flex items-center space-x-4">
 				<router-link to="/" class="text-xl font-bold">Paraloom</router-link>
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
