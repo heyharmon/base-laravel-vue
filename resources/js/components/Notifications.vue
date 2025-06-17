@@ -3,7 +3,7 @@
 		<div
 			v-for="notification in notificationStore.notifications"
 			:key="notification.id"
-			class="flex items-center min-w-[250px] mb-2 py-3 px-4 gap-5 rounded text-white font-medium"
+			class="flex items-center min-w-[250px] max-w-[460px] mb-2 py-3 px-4 gap-5 rounded text-white font-medium"
 			:class="{
 				'bg-red-500': notification.type === 'error',
 				'bg-green-500': notification.type === 'success',

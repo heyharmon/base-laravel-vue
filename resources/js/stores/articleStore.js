@@ -127,19 +127,19 @@ export const useArticleStore = defineStore('article', () => {
 	/**
 	 * Generate an article for a prompt
 	 */
-	const generateArticle = async (promptId) => {
-		isGenerating.value = true
+	// const generateArticle = async (promptId) => {
+	// 	isGenerating.value = true
 
-		try {
-			const response = await api.post(`/prompts/${promptId}/generate-article`)
-			return response.data
-		} catch (err) {
-			console.error('Error generating article:', err)
-			throw err
-		} finally {
-			isGenerating.value = false
-		}
-	}
+	// 	try {
+	// 		const response = await api.post(`/prompts/${promptId}/generate-article`)
+	// 		return response.data
+	// 	} catch (err) {
+	// 		console.error('Error generating article:', err)
+	// 		throw err
+	// 	} finally {
+	// 		isGenerating.value = false
+	// 	}
+	// }
 
 	// Create a debounced save function
 	const saveArticle = async (articleData) => {
@@ -304,7 +304,7 @@ export const useArticleStore = defineStore('article', () => {
 		createArticle,
 		updateArticle,
 		deleteArticle,
-		generateArticle,
+		// generateArticle,
 
 		// Version state and actions
 		articleVersions,

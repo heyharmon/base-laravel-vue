@@ -23,6 +23,7 @@ class ArticleGeneratorController extends Controller
 	 */
 	public function generate(Request $request, Prompt $prompt): JsonResponse
 	{
+		// Get the users team id
 		$teamId = $request->user()->currentTeam->id;
 
 		// Get the owned organization for this team

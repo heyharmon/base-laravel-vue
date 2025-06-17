@@ -102,7 +102,18 @@ onMounted(() => {
 					</button>
 				</div>
 
-				<div>
+				<div class="flex items-center gap-1">
+					<Button
+						as="a"
+						variant="link"
+						size="sm"
+						href="https://sites.google.com/bloomcu.com/paraloom-instruction-templates"
+						target="_blank"
+						class="underline text-neutral-500 hover:text-neutral-700"
+					>
+						Instruction templates
+					</Button>
+
 					<!-- Microphone button -->
 					<button v-if="showOptions" type="button" class="p-2 text-neutral-500 hover:text-neutral-700">
 						<MicrophoneIcon />

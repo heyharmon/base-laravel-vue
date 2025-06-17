@@ -77,75 +77,75 @@ class Team extends Model
 	/**
 	 * Get the organizations that belong to the team.
 	 */
-        public function organizations(): HasMany
-        {
-                return $this->hasMany(Organization::class);
-        }
-        
-        /**
-         * Get the articles that belong to the team.
-         */
-        public function articles(): HasMany
-        {
-                return $this->hasMany(Article::class);
-        }
-        
-        /**
-         * Get the conversations that belong to the team.
-         */
-        public function conversations(): HasMany
-        {
-                return $this->hasMany(Conversation::class);
-        }
+	public function organizations(): HasMany
+	{
+		return $this->hasMany(Organization::class);
+	}
 
-        /**
-         * Get the job statuses that belong to the team.
-         */
-        public function jobStatuses(): HasMany
-        {
-                return $this->hasMany(JobStatus::class);
-        }
+	/**
+	 * Get the articles that belong to the team.
+	 */
+	public function articles(): HasMany
+	{
+		return $this->hasMany(Article::class);
+	}
 
-        /**
-         * The "booted" method of the model.
-         * Remove related data and queued jobs when deleting a team.
-         */
-        protected static function booted()
-        {
-                static::deleting(function (Team $team) {
-                        // Detach all users from the team
-                        $team->users()->detach();
+	/**
+	 * Get the conversations that belong to the team.
+	 */
+	public function conversations(): HasMany
+	{
+		return $this->hasMany(Conversation::class);
+	}
 
-                        // Delete related models via Eloquent so model events fire
-                        $team->prompts()->get()->each->delete();
-                        $team->terms()->get()->each->delete();
-                        $team->organizations()->get()->each->delete();
-                        $team->conversations()->get()->each->delete();
+	/**
+	 * Get the job statuses that belong to the team.
+	 */
+	public function jobStatuses(): HasMany
+	{
+		return $this->hasMany(JobStatus::class);
+	}
 
-                        // Remove queued job data
-                        $jobIds = $team->jobStatuses()->pluck('job_id')->toArray();
-                        $batchIds = $team->jobStatuses()->whereNotNull('job_batch_id')->pluck('job_batch_id')->toArray();
+	/**
+	 * The "booted" method of the model.
+	 * Remove related data and queued jobs when deleting a team.
+	 */
+	protected static function booted()
+	{
+		static::deleting(function (Team $team) {
+			// Detach all users from the team
+			$team->users()->detach();
 
-                        // Delete job status records
-                        $team->jobStatuses()->delete();
+			// Delete related models via Eloquent so model events fire
+			$team->prompts()->get()->each->delete();
+			$team->terms()->get()->each->delete();
+			$team->organizations()->get()->each->delete();
+			$team->conversations()->get()->each->delete();
 
-                        if (!empty($jobIds)) {
-                                DB::table('jobs')->where(function ($query) use ($jobIds) {
-                                        foreach ($jobIds as $id) {
-                                                $query->orWhere('payload', 'like', '%' . $id . '%');
-                                        }
-                                })->delete();
+			// Remove queued job data
+			$jobIds = $team->jobStatuses()->pluck('job_id')->toArray();
+			$batchIds = $team->jobStatuses()->whereNotNull('job_batch_id')->pluck('job_batch_id')->toArray();
 
-                                DB::table('failed_jobs')->where(function ($query) use ($jobIds) {
-                                        foreach ($jobIds as $id) {
-                                                $query->orWhere('payload', 'like', '%' . $id . '%');
-                                        }
-                                })->delete();
-                        }
+			// Delete job status records
+			$team->jobStatuses()->delete();
 
-                        if (!empty($batchIds)) {
-                                DB::table('job_batches')->whereIn('id', $batchIds)->delete();
-                        }
-                });
-        }
+			if (!empty($jobIds)) {
+				DB::table('jobs')->where(function ($query) use ($jobIds) {
+					foreach ($jobIds as $id) {
+						$query->orWhere('payload', 'like', '%' . $id . '%');
+					}
+				})->delete();
+
+				DB::table('failed_jobs')->where(function ($query) use ($jobIds) {
+					foreach ($jobIds as $id) {
+						$query->orWhere('payload', 'like', '%' . $id . '%');
+					}
+				})->delete();
+			}
+
+			if (!empty($batchIds)) {
+				DB::table('job_batches')->whereIn('id', $batchIds)->delete();
+			}
+		});
+	}
 }

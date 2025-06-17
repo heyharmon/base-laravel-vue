@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\Organization;
 use App\Models\Article;
 
 class ArticleController extends Controller
@@ -28,8 +29,15 @@ class ArticleController extends Controller
 	 */
 	public function store(Request $request): JsonResponse
 	{
+		// Get the users team id
+		$teamId = $request->user()->currentTeam->id;
+
+		// Get the owned organization for this team
+		$ownedOrganization = Organization::where('team_id', $teamId)
+			->where('is_competitor', false)
+			->first();
+
 		$validated = $request->validate([
-			'organization_id' => 'nullable|exists:organizations,id',
 			'prompt_id' => 'nullable|exists:prompts,id',
 			'title' => 'required|string|max:255',
 			'meta_title' => 'nullable|string|max:255',
@@ -41,7 +49,8 @@ class ArticleController extends Controller
 
 		$article = request()->user()->currentTeam->articles()->create([
 			...$validated,
-			'team_id' => request()->user()->currentTeam->id,
+			'team_id' => $teamId,
+			'organization_id' => $ownedOrganization->id,
 		]);
 
 		return response()->json($article, 201);
@@ -73,7 +82,6 @@ class ArticleController extends Controller
 		}
 
 		$validated = $request->validate([
-			'organization_id' => 'sometimes|nullable|exists:organizations,id',
 			'prompt_id' => 'sometimes|nullable|exists:prompts,id',
 			'title' => 'sometimes|required|string|max:255',
 			'meta_title' => 'sometimes|nullable|string|max:255',

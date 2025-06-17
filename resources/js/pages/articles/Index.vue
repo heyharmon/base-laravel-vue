@@ -9,36 +9,9 @@ import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
 const articleStore = useArticleStore()
-const jobStatusStore = useJobStatusStore()
-
-// Get active article generation jobs
-const activeArticleGenerationJobs = computed(() => {
-	return jobStatusStore.jobs.filter((job) => job.job_class.includes('GenerateArticleJob') && (job.status === 'pending' || job.status === 'processing'))
-})
-
-// Watch for article job completions
-watch(
-	() => jobStatusStore.jobs,
-	(newJobs, oldJobs) => {
-		// Check if any article job has just completed
-		const completedArticleJob = newJobs.some(
-			(job) =>
-				job.job_class.includes('GenerateArticleJob') &&
-				job.status === 'completed' &&
-				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
-		)
-
-		if (completedArticleJob) {
-			console.log('Article job completed, refreshing articles')
-			articleStore.fetchArticles()
-		}
-	},
-	{ deep: true }
-)
 
 onMounted(async () => {
 	await articleStore.fetchArticles()
-	// await jobStatusStore.pollTeamJobs()
 })
 
 const formatDate = (dateString) => {
@@ -46,16 +19,10 @@ const formatDate = (dateString) => {
 }
 
 const createNewArticle = async () => {
-	try {
-		const newArticle = await articleStore.createArticle({
-			title: 'Untitled Article',
-			content: '',
-			outline: ''
-		})
-		router.push({ name: 'articles.edit', params: { id: newArticle.id } })
-	} catch (error) {
-		console.error('Error creating article:', error)
-	}
+	const newArticle = await articleStore.createArticle({
+		title: 'Untitled article'
+	})
+	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 
 const editArticle = (id) => {
@@ -79,31 +46,20 @@ const deleteArticle = async (id) => {
 			<!-- Top bar -->
 			<div class="flex justify-between items-center mb-8">
 				<h1 class="text-2xl font-bold">Articles</h1>
-				<!-- <Button @click="createNewArticle">
+				<Button @click="createNewArticle">
 					<div class="flex items-center gap-2">
 						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 						</svg>
-						New Article
+						Create article
 					</div>
-				</Button> -->
-			</div>
-
-			<!-- Active jobs message -->
-                        <div
-                                v-if="activeArticleGenerationJobs.length > 0"
-				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
-			>
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span> Generating {{ activeArticleGenerationJobs.length }} {{ activeArticleGenerationJobs.length === 1 ? 'article' : 'articles' }}. </span>
+				</Button>
 			</div>
 
 			<!-- Loading state -->
 			<div v-if="articleStore.isLoading" class="flex justify-center py-8">
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
-
-
 
 			<!-- No articles -->
 			<div v-else-if="articleStore.articles.length === 0" class="text-center py-16 border border-neutral-200 rounded-xl">
@@ -123,7 +79,7 @@ const deleteArticle = async (id) => {
 				</svg>
 				<div class="text-neutral-500 text-lg mb-2">No articles yet</div>
 				<div class="text-neutral-400 text-sm mb-6">Create your first article to get started</div>
-				<Button @click="createNewArticle">Create Article</Button>
+				<Button @click="createNewArticle">Create article</Button>
 			</div>
 
 			<!-- Articles list -->
