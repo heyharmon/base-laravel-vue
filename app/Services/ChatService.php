@@ -61,7 +61,7 @@ class ChatService
 		$finalResponse = $this->getAiResponse($conversation, $userMessage);
 
 		// Log the final AI response for debugging
-		Log::info('AI Final Response: ' . json_encode($finalResponse));
+		// Log::info('AI Final Response: ' . json_encode($finalResponse));
 
 		// Parse the final response to extract assistant message content and any annotations (citations)
 		$responseContent = '';
@@ -168,11 +168,11 @@ class ChatService
 			];
 		}
 
-		Log::info('Initial Request Data: ' . json_encode($requestData));
+		// Log::info('Initial Request Data: ' . json_encode($requestData));
 
 		// Send the first request to OpenAI
 		$response = $this->client->responses()->create($requestData);
-		Log::info('Initial Response: ' . json_encode($response));
+		// Log::info('Initial Response: ' . json_encode($response));
 
 		// Process the response, handling any function calls in a loop
 		$responseData = $response->toArray();
@@ -206,9 +206,9 @@ class ChatService
 				$callId   = $call['call_id'] ?? null;
 				$args     = isset($call['arguments']) ? json_decode($call['arguments'], true) : [];
 
-				Log::info("Handling function call: {$funcName} with args: " . json_encode($args));
+				// Log::info("Handling function call: {$funcName} with args: " . json_encode($args));
 				$toolResult = $this->handleToolCall($funcName, $args);
-				Log::info("Tool result for {$funcName}: " . json_encode($toolResult));
+				// Log::info("Tool result for {$funcName}: " . json_encode($toolResult));
 
 				if ($callId) {
 					// Append the function result as a function_call_output message for the model
@@ -230,9 +230,9 @@ class ChatService
 					'input'               => $functionCallOutputs,
 					'previous_response_id' => $prevResponseId,
 				];
-				Log::info('Follow-up Request (with function outputs): ' . json_encode($followUpRequest));
+				// Log::info('Follow-up Request (with function outputs): ' . json_encode($followUpRequest));
 				$currentResponse = $this->client->responses()->create($followUpRequest);
-				Log::info('Follow-up Response: ' . json_encode($currentResponse));
+				// Log::info('Follow-up Response: ' . json_encode($currentResponse));
 
 				// Prepare for next loop iteration
 				$responseData = $currentResponse->toArray();
@@ -289,6 +289,4 @@ class ChatService
 				];
 		}
 	}
-
-
 }

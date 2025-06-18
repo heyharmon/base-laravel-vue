@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Services\PerplexityService;
 use App\Models\Organization;
 use App\Models\Article;
 
@@ -111,5 +113,29 @@ class ArticleController extends Controller
 		$article->delete();
 
 		return response()->json(null, 204);
+	}
+
+	/**
+	 * Get the Perplexity completion response for the article.
+	 */
+	public function getPerplexityResponse(Article $article, PerplexityService $perplexityService): JsonResponse
+	{
+		// Ensure the article belongs to the current team
+		if ($article->team_id !== request()->user()->currentTeam->id) {
+			return response()->json(['message' => 'Unauthorized'], 403);
+		}
+
+		// Check if the article has a perplexity_request_id
+		if (!$article->perplexity_request_id) {
+			return response()->json(['message' => 'No Perplexity request found for this article'], 404);
+		}
+
+		try {
+			// Get the completion status from the Perplexity API
+			$response = $perplexityService->getAsyncChatCompletionStatus($article->perplexity_request_id);
+			return response()->json($response);
+		} catch (\Exception $e) {
+			return response()->json(['message' => 'Failed to fetch Perplexity response: ' . $e->getMessage()], 500);
+		}
 	}
 }

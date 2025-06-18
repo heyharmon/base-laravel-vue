@@ -42,7 +42,28 @@ class ArticleUpdated implements ShouldBroadcastNow
 	{
 		// Load the versions relationship to ensure it's included in the resource
 		$this->article->load('versions');
-		
+
 		return (new ArticleResource($this->article))->resolve();
+
+		// Create a lightweight version of the article without the full content
+		// return [
+		// 	'id' => $this->article->id,
+		// 	'team_id' => $this->article->team_id,
+		// 	'organization_id' => $this->article->organization_id,
+		// 	'title' => $this->article->title,
+		// 	'current_version' => $this->article->current_version,
+		// 	'updated_at' => $this->article->updated_at,
+		// 	'created_at' => $this->article->created_at,
+		// 	// Include a content_updated flag instead of the full content
+		// 	'content_updated' => true,
+		// 	// Include versions but not the full article content
+		// 	'versions' => $this->article->versions->map(function ($version) {
+		// 		return [
+		// 			'id' => $version->id,
+		// 			'version_number' => $version->version_number,
+		// 			'created_at' => $version->created_at
+		// 		];
+		// 	})
+		// ];
 	}
 }

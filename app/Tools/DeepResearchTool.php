@@ -2,9 +2,11 @@
 
 namespace App\Tools;
 
+use Illuminate\Support\Facades\Log;
+use App\Services\JobDispatcherService;
 use App\Models\Article;
 use App\Jobs\GenerateArticleFromDeepResearchJob;
-use Illuminate\Support\Facades\Log;
+use App\Events\ArticleUpdated;
 
 class DeepResearchTool
 {
@@ -44,28 +46,37 @@ class DeepResearchTool
 			];
 		}
 
-		try {
-			// Check if the article has a prompt
-			if (!$currentArticle->prompt_id) {
-				return [
-					'success' => false,
-					'message' => 'The article must have an associated prompt to use deep research.'
-				];
-			}
+		// Check if the article has a prompt
+		if (!$currentArticle->prompt_id) {
+			return [
+				'success' => false,
+				'message' => 'The article must have an associated prompt to use deep research.'
+			];
+		}
 
-			// Check if the article already has content
-			if ($currentArticle->content && strlen(trim($currentArticle->content)) > 100) {
-				return [
-					'success' => false,
-					'message' => 'This article already has substantial content. Deep research is intended for articles with no content.'
-				];
-			}
+		// Check if the article already has content
+		// if ($currentArticle->content && strlen(trim($currentArticle->content)) > 100) {
+		// 	return [
+		// 		'success' => false,
+		// 		'message' => 'This article already has substantial content. Deep research is intended for articles with no content.'
+		// 	];
+		// }
+
+		try {
+			// Reset article perplexity request id and status
+			$currentArticle->perplexity_request_id = null;
+			$currentArticle->perplexity_status = null;
+			$currentArticle->save();
 
 			// Get the team ID from the article
 			$teamId = $currentArticle->team_id;
 
 			// Dispatch the job
-			GenerateArticleFromDeepResearchJob::dispatch($currentArticle, $teamId);
+			$jobDispatcher = app(JobDispatcherService::class);
+			$jobDispatcher->dispatch($currentArticle, new GenerateArticleFromDeepResearchJob($currentArticle, $teamId));
+
+			// Dispatch ArticleUpdated event to update article in real-time
+			ArticleUpdated::dispatch($currentArticle);
 
 			return [
 				'success'   => true,

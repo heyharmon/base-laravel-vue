@@ -5,6 +5,7 @@ import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { usePromptStore } from '@/stores/promptStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
+import PerplexityResponseModal from '@/components/articles/PerplexityResponseModal.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
@@ -88,6 +89,17 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 	}
 })
 
+// Listen for deep research updates
+listen('ArticleDeepResearchUpdated', (e) => {
+	console.log('Deep research completed for article ID:', e.article_id)
+	
+	// Refresh the article data when deep research is completed
+	if (e.article_id === articleStore.article.id) {
+		console.log('Refreshing article data after deep research completion')
+		articleStore.fetchArticle(e.article_id)
+	}
+})
+
 // Function to scroll to the bottom of the messages container
 const scrollToBottom = () => {
 	nextTick(() => {
@@ -151,11 +163,13 @@ onUnmounted(() => {
 
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
+const isPerplexityResponseModalOpen = ref(false)
 const promptStore = usePromptStore()
 
 // Preset prompts for empty chat
 const presetPrompts = [
-	'🧠 Summarize this article for me',
+	'🧠 Use deep research to write this article',
+	'💬 Summarize this article for me',
 	'🔗 List sources mentioned in prompt responses',
 	'✨ Suggest improvements for this article',
 	'🌐 Search the web for information related to this article'
@@ -227,12 +241,31 @@ const copyContentToClipboard = async () => {
 
 		<template #right-column>
 			<!-- Active jobs message -->
-			<div v-if="activeArticleJobs.length > 0" class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
+			<!-- <div
+				v-if="activeArticleJobs.length > 0"
+				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 mr-6"
+			>
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
 				<span>
 					{{ activeArticleJobs.length }}
 					{{ activeArticleJobs.length === 1 ? 'job is running for this article' : 'jobs are running for this article' }}
 				</span>
+			</div> -->
+
+			<!-- Deep research statuses -->
+			<div
+				v-if="articleStore.article?.perplexity_status === 'CREATED' || articleStore.article?.perplexity_status === 'IN_PROGRESS'"
+				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 mr-6"
+			>
+				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+				Deep research is in progress...
+			</div>
+
+			<div
+				v-if="articleStore.article?.perplexity_status === 'FAILED'"
+				class="p-4 my-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2 mr-6"
+			>
+				Deep research failed
 			</div>
 
 			<div class="pt-4">
@@ -246,7 +279,7 @@ const copyContentToClipboard = async () => {
 							<span v-if="articleStore.isSaving" class="flex items-center">
 								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
 							</span>
-                                                        <span v-else class="text-neutral-600"></span>
+							<span v-else class="text-neutral-600"></span>
 						</div>
 
 						<div class="flex gap-2">
@@ -265,6 +298,15 @@ const copyContentToClipboard = async () => {
 							<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="outline" size="sm"
 								>Prompt</Button
 							>
+
+							<Button 
+								v-if="articleStore.article && articleStore.article.perplexity_request_id" 
+								@click="isPerplexityResponseModalOpen = true" 
+								variant="outline" 
+								size="sm"
+							>
+								Deep Research
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -273,8 +315,6 @@ const copyContentToClipboard = async () => {
 				<div v-if="isLoading" class="flex justify-center py-8">
 					<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 				</div>
-
-
 
 				<div v-else class="flex flex-col gap-6">
 					<!-- Versions panel - dynamically loaded -->
@@ -356,5 +396,13 @@ const copyContentToClipboard = async () => {
 		:is-open="isPromptDetailSheetOpen"
 		:prompt-id="articleStore.article.prompt_id"
 		@close="isPromptDetailSheetOpen = false"
+	/>
+
+	<!-- Perplexity Response Modal -->
+	<PerplexityResponseModal
+		v-if="articleStore.article?.perplexity_request_id"
+		:is-open="isPerplexityResponseModalOpen"
+		:article-id="articleStore.article?.id"
+		@close="isPerplexityResponseModalOpen = false"
 	/>
 </template>

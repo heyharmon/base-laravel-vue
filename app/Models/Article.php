@@ -25,6 +25,7 @@ class Article extends Model
 		'schema',
 		'outline',
 		'content',
+		'perplexity_checks',
 	];
 
 	/**

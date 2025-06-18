@@ -105,6 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Articles
 	Route::resource('articles', ArticleController::class);
+	Route::get('articles/{article}/perplexity-response', [ArticleController::class, 'getPerplexityResponse']);
 
 	// Article Versions
 	Route::post('articles/{article}/versions/{version}/revert', [ArticleVersionController::class, 'revert']);
