@@ -3,6 +3,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import api from '@/services/api'
 import Modal from '@/components/ui/Modal.vue'
 import Button from '@/components/ui/Button.vue'
+import { useArticleStore } from '@/stores/articleStore'
 
 const props = defineProps({
 	isOpen: {
@@ -20,6 +21,10 @@ const emit = defineEmits(['close'])
 const response = ref(null)
 const isLoading = ref(false)
 const error = ref(null)
+const isCopying = ref(false)
+const copySuccess = ref(false)
+
+const articleStore = useArticleStore()
 
 const fetchPerplexityResponse = async () => {
 	if (!props.articleId) return
@@ -57,6 +62,36 @@ watch(
 
 const closeModal = () => {
 	emit('close')
+}
+
+const copyToArticleContent = async () => {
+	if (!formattedContent.value || !props.articleId) return
+	
+	isCopying.value = true
+	copySuccess.value = false
+	
+	try {
+		// Update the article with the formatted content
+		await api.put(`/articles/${props.articleId}`, {
+			content: formattedContent.value
+		})
+		
+		// Update the local article store
+		if (articleStore.article && articleStore.article.id === props.articleId) {
+			articleStore.article.content = formattedContent.value
+		}
+		
+		copySuccess.value = true
+		
+		// Reset success message after 3 seconds
+		setTimeout(() => {
+			copySuccess.value = false
+		}, 3000)
+	} catch (err) {
+		error.value = err.response?.data?.message || 'Failed to update article content'
+	} finally {
+		isCopying.value = false
+	}
 }
 
 // Format the response content for better display
@@ -122,7 +157,20 @@ const isComplete = computed(() => {
 		</div>
 
 		<template #footer>
-			<Button @click="closeModal" variant="outline" class="mt-4"> Close </Button>
+			<div class="flex justify-between w-full">
+				<Button @click="closeModal" variant="outline" class="mt-4"> Close </Button>
+				<Button 
+					v-if="isComplete && formattedContent" 
+					@click="copyToArticleContent" 
+					:disabled="isCopying || copySuccess" 
+					variant="primary" 
+					class="mt-4"
+				>
+					<span v-if="copySuccess">Copied!</span>
+					<span v-else-if="isCopying">Copying...</span>
+					<span v-else>Copy to Article</span>
+				</Button>
+			</div>
 		</template>
 	</Modal>
 </template>

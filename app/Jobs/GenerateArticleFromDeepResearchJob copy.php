@@ -5,20 +5,14 @@ namespace App\Jobs;
 use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Bus\Queueable;
 use Illuminate\Bus\Batchable;
-use App\Services\PerplexityService;
 use App\Models\Article;
-use App\Events\ArticleUpdated;
 use App\Events\ArticleDeepResearchUpdated;
+use App\Services\PerplexityService;
 
-class GenerateArticleFromDeepResearchJob implements ShouldQueue
+class GenerateArticleFromDeepResearchJob extends TrackableJob
 {
-	use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+	use Batchable;
 
 	/**
 	 * The number of times the job may be attempted.
@@ -77,6 +71,8 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 	 */
 	public function handle()
 	{
+		if ($this->isCancelled()) return;
+
 		try {
 			// Check if we already have a request ID (polling scenario)
 			if ($this->model->perplexity_request_id) {
@@ -87,7 +83,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 			}
 		} catch (Throwable $exception) {
 			$errorMessage = $exception->getMessage();
-			Log::error('GenerateArticleFromDeepResearchJob failed: ' . $errorMessage);
+			$this->markJobAsFailed(new \Exception($errorMessage));
 			throw $exception;
 		}
 	}
@@ -99,7 +95,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 	 */
 	protected function startResearch()
 	{
-		Log::info('Initiating deep research for article: ' . $this->model->title);
+		$this->markJobAsStarted('Initiating deep research for article: ' . $this->model->title);
 
 		// Load related models for context
 		$this->model->load(['prompt', 'organization']);
@@ -138,7 +134,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 			$this->model->perplexity_checks = 1;
 			$this->model->save();
 
-			Log::info('Perplexity deep research initiated. Request ID: ' . $requestId);
+			$this->updateJobProgress(10, 'Perplexity deep research initiated. Request ID: ' . $requestId);
 
 			// Re-queue the job to check status with a 10-second delay
 			self::dispatch($this->model, $this->teamId)->delay(now()->addSeconds(10));
@@ -155,7 +151,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 	protected function checkResearchStatus()
 	{
 		$requestId = $this->model->perplexity_request_id;
-		Log::info('Checking Perplexity deep research status for request: ' . $requestId);
+		$this->updateJobProgress(20, 'Checking Perplexity deep research status for request: ' . $requestId);
 
 		try {
 			// Use PerplexityService to check async chat completion status
@@ -166,23 +162,24 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 			$this->model->perplexity_status = $status;
 			$this->model->save();
 
-			// Dispatch ArticleDeepResearchUpdated event to notify frontend to refresh article
-			ArticleDeepResearchUpdated::dispatch($this->model);
-
 			if ($status === 'COMPLETED') {
 				// Log the response structure to understand where the content is located
 				Log::info('Perplexity completed response structure: ' . json_encode($data));
-				Log::info('Article content updated with deep research results.');
-				Log::info('Deep research completed and article updated.');
+
+				// Dispatch ArticleDeepResearchUpdated event to notify frontend to refresh article
+				ArticleDeepResearchUpdated::dispatch($this->model);
+
+				$this->updateJobProgress(100, 'Article content updated with deep research results.');
+				$this->markJobAsCompleted('Deep research completed and article updated.');
 			} elseif ($status === 'IN_PROGRESS') {
 				// Check if we've reached the maximum number of checks
 				if ($this->model->perplexity_checks >= 60) {
-					Log::error('Exceeded maximum number of perplexity checks (60)');
-					throw new \Exception('Exceeded maximum number of perplexity checks (60)');
+					$this->markJobAsFailed(new \Exception('Exceeded maximum number of perplexity checks (60)'));
+					return;
 				}
 
-				// Still processing, log status and re-queue
-				Log::info('Perplexity deep research still in progress. Re-queuing check.');
+				// Still processing, update progress and re-queue
+				$this->updateJobProgress(40, 'Perplexity deep research still in progress. Re-queuing check.');
 
 				// Increment the perplexity_checks counter
 				$this->model->increment('perplexity_checks');
@@ -192,11 +189,11 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 			} else {
 				// Check if we've reached the maximum number of checks
 				if ($this->model->perplexity_checks >= 50) {
-					Log::error('Exceeded maximum number of perplexity checks (50)');
-					throw new \Exception('Exceeded maximum number of perplexity checks (50)');
+					$this->markJobAsFailed(new \Exception('Exceeded maximum number of perplexity checks (50)'));
+					return;
 				}
 
-				Log::info('Perplexity deep research status: ' . $status . '. Re-queuing check.');
+				$this->updateJobProgress(30, 'Perplexity deep research status: ' . $status . '. Re-queuing check.');
 
 				// Increment the perplexity_checks counter
 				$this->model->increment('perplexity_checks');
@@ -242,19 +239,5 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 		$query .= "The article should be structured with appropriate headings, be comprehensive, and include specific facts, figures, and examples where relevant.";
 
 		return $query;
-	}
-
-	/**
-	 * Handle a job failure.
-	 *
-	 * @param  \Throwable  $exception
-	 * @return void
-	 */
-	public function failed(Throwable $exception)
-	{
-		Log::error('GenerateArticleFromDeepResearchJob failed: ' . $exception->getMessage());
-
-		// You can add additional failure handling here if needed
-		// For example, updating the article status or sending notifications
 	}
 }

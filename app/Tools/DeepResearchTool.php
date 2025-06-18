@@ -3,7 +3,6 @@
 namespace App\Tools;
 
 use Illuminate\Support\Facades\Log;
-use App\Services\JobDispatcherService;
 use App\Models\Article;
 use App\Jobs\GenerateArticleFromDeepResearchJob;
 use App\Events\ArticleUpdated;
@@ -54,14 +53,6 @@ class DeepResearchTool
 			];
 		}
 
-		// Check if the article already has content
-		// if ($currentArticle->content && strlen(trim($currentArticle->content)) > 100) {
-		// 	return [
-		// 		'success' => false,
-		// 		'message' => 'This article already has substantial content. Deep research is intended for articles with no content.'
-		// 	];
-		// }
-
 		try {
 			// Reset article perplexity request id and status
 			$currentArticle->perplexity_request_id = null;
@@ -71,9 +62,8 @@ class DeepResearchTool
 			// Get the team ID from the article
 			$teamId = $currentArticle->team_id;
 
-			// Dispatch the job
-			$jobDispatcher = app(JobDispatcherService::class);
-			$jobDispatcher->dispatch($currentArticle, new GenerateArticleFromDeepResearchJob($currentArticle, $teamId));
+			// Dispatch the job using standard Laravel dispatch
+			GenerateArticleFromDeepResearchJob::dispatch($currentArticle, $teamId);
 
 			// Dispatch ArticleUpdated event to update article in real-time
 			ArticleUpdated::dispatch($currentArticle);

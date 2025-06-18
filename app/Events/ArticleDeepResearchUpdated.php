@@ -14,37 +14,37 @@ use Illuminate\Queue\SerializesModels;
 
 class ArticleDeepResearchUpdated implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+	use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(
-        public Article $article
-    ) {}
+	/**
+	 * Create a new event instance.
+	 */
+	public function __construct(
+		public Article $article
+	) {}
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
-    {
-        return [
-            new PrivateChannel('article.' . $this->article->id),
-        ];
-    }
+	/**
+	 * Get the channels the event should broadcast on.
+	 *
+	 * @return array<int, \Illuminate\Broadcasting\Channel>
+	 */
+	public function broadcastOn(): array
+	{
+		return [
+			new PrivateChannel('article.' . $this->article->id),
+		];
+	}
 
-    /**
-     * Get the data to broadcast.
-     *
-     * @return array
-     */
-    public function broadcastWith(): array
-    {
-        return [
-            'article_id' => $this->article->id,
-            'updated_at' => $this->article->updated_at->toIso8601String()
-        ];
-    }
+	/**
+	 * Get the data to broadcast.
+	 *
+	 * @return array
+	 */
+	public function broadcastWith(): array
+	{
+		return [
+			'article_id' => $this->article->id,
+			'updated_at' => $this->article->updated_at,
+		];
+	}
 }

@@ -92,11 +92,12 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 // Listen for deep research updates
 listen('ArticleDeepResearchUpdated', (e) => {
 	console.log('Deep research completed for article ID:', e.article_id)
-	
+
 	// Refresh the article data when deep research is completed
 	if (e.article_id === articleStore.article.id) {
 		console.log('Refreshing article data after deep research completion')
 		articleStore.fetchArticle(e.article_id)
+		isPerplexityResponseModalOpen.value = true
 	}
 })
 
@@ -262,13 +263,13 @@ const copyContentToClipboard = async () => {
 					Deep research is in progress...
 				</div>
 				<div class="w-full bg-green-200 rounded-full h-2.5 mt-2">
-					<div 
-						class="bg-green-600 h-2.5 rounded-full transition-all duration-500 ease-in-out" 
-						:style="{ width: `${Math.min((articleStore.article?.perplexity_checks || 0) / 60 * 100, 100)}%` }"
+					<div
+						class="bg-green-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
+						:style="{ width: `${Math.min(((articleStore.article?.perplexity_checks || 0) / 60) * 100, 100)}%` }"
 					></div>
 				</div>
 				<div class="text-xs text-green-800 mt-1 text-right">
-					{{ Math.min(Math.round((articleStore.article?.perplexity_checks || 0) / 60 * 100), 100) }}% completed
+					{{ Math.min(Math.round(((articleStore.article?.perplexity_checks || 0) / 60) * 100), 100) }}% completed
 				</div>
 			</div>
 
@@ -310,10 +311,10 @@ const copyContentToClipboard = async () => {
 								>Prompt</Button
 							>
 
-							<Button 
-								v-if="articleStore.article && articleStore.article.perplexity_request_id" 
-								@click="isPerplexityResponseModalOpen = true" 
-								variant="outline" 
+							<Button
+								v-if="articleStore.article && articleStore.article.perplexity_request_id"
+								@click="isPerplexityResponseModalOpen = true"
+								variant="outline"
 								size="sm"
 							>
 								Deep Research
