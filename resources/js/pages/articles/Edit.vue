@@ -272,6 +272,33 @@ const copyContentToClipboard = async () => {
 					{{ Math.min(Math.round(((articleStore.article?.perplexity_checks || 0) / 60) * 100), 100) }}% completed
 				</div>
 			</div>
+			<div
+				v-if="articleStore.article?.perplexity_status === 'COMPLETED' && articleStore.article?.perplexity_request_id"
+				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
+			>
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<span class="h-4 w-4 mr-2 flex items-center justify-center">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+								<polyline points="22 4 12 14.01 9 11.01"></polyline>
+							</svg>
+						</span>
+						Deep research completed
+					</div>
+					<Button @click="isPerplexityResponseModalOpen = true" variant="success" size="sm"> View Deep Research </Button>
+				</div>
+			</div>
 
 			<div
 				v-if="articleStore.article?.perplexity_status === 'FAILED'"
@@ -310,15 +337,6 @@ const copyContentToClipboard = async () => {
 							<Button v-if="articleStore.article && articleStore.article.prompt_id" @click="showPromptDetails" variant="outline" size="sm"
 								>Prompt</Button
 							>
-
-							<Button
-								v-if="articleStore.article && articleStore.article.perplexity_request_id"
-								@click="isPerplexityResponseModalOpen = true"
-								variant="outline"
-								size="sm"
-							>
-								Deep Research
-							</Button>
 						</div>
 					</div>
 				</div>
