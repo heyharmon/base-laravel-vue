@@ -255,10 +255,21 @@ const copyContentToClipboard = async () => {
 			<!-- Deep research statuses -->
 			<div
 				v-if="articleStore.article?.perplexity_status === 'CREATED' || articleStore.article?.perplexity_status === 'IN_PROGRESS'"
-				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 mr-6"
+				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
 			>
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				Deep research is in progress...
+				<div class="flex items-center gap-2 mb-2">
+					<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+					Deep research is in progress...
+				</div>
+				<div class="w-full bg-green-200 rounded-full h-2.5 mt-2">
+					<div 
+						class="bg-green-600 h-2.5 rounded-full transition-all duration-500 ease-in-out" 
+						:style="{ width: `${Math.min((articleStore.article?.perplexity_checks || 0) / 60 * 100, 100)}%` }"
+					></div>
+				</div>
+				<div class="text-xs text-green-800 mt-1 text-right">
+					{{ Math.min(Math.round((articleStore.article?.perplexity_checks || 0) / 60 * 100), 100) }}% completed
+				</div>
 			</div>
 
 			<div

@@ -29,7 +29,7 @@ const fetchPerplexityResponse = async () => {
 
 	try {
 		let data = await api.get(`/articles/${props.articleId}/perplexity-response`)
-		console.log(data)
+		// console.log(data)
 		response.value = data
 	} catch (err) {
 		error.value = err.response?.data?.message || 'Failed to fetch Perplexity response'
@@ -107,7 +107,7 @@ const isComplete = computed(() => {
 
 				<div v-if="isComplete" class="prose max-w-none">
 					<div class="bg-neutral-50 p-4 rounded-lg border border-neutral-200 overflow-auto max-h-[60vh]">
-						<div v-html="formattedContent"></div>
+						<div class="ProseMirror" v-html="formattedContent"></div>
 					</div>
 				</div>
 

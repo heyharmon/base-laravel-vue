@@ -118,11 +118,11 @@ class GenerateArticleFromDeepResearchJob extends TrackableJob
 		try {
 			// Use PerplexityService to create async chat completion
 			$data = $this->perplexityService->createAsyncChatCompletion(
-				$messages,
-				'sonar-deep-research',
-				0.7,
-				10000,
-				'medium'
+				messages: $messages,
+				model: 'sonar-deep-research',
+				temperature: 0.7,
+				maxTokens: 10000,
+				reasoningEffort: 'medium'
 			);
 
 			$requestId = $data['id'];
@@ -185,12 +185,8 @@ class GenerateArticleFromDeepResearchJob extends TrackableJob
 					return;
 				}
 
-				// Format the content as HTML if needed
-				// $formattedContent = $this->formatContentAsHtml($content);
-				$formattedContent = $content;
-
 				// Update article with the research content
-				$this->model->content = $formattedContent;
+				$this->model->content = $content;
 				$this->model->save();
 
 				// Dispatch ArticleDeepResearchUpdated event to notify frontend to refresh article
