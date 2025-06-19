@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
-class AddAdminesToAllTeams extends Command
+class AddAdminsToAllTeams extends Command
 {
 	/**
 	 * The name and signature of the console command.
@@ -28,7 +28,7 @@ class AddAdminesToAllTeams extends Command
 	 */
 	public function handle()
 	{
-		$userEmails = ['derik.krauss@metrifi.com', 'ryan.harmon@metrifi.com'];
+		$userEmails = ['derik.krauss@metrifi.com', 'ryan.harmon@metrifi.com', 'elisha@bloomcu.com'];
 		$teams = Team::all();
 		$now = Carbon::now();
 		$addedCount = 0;
@@ -55,7 +55,7 @@ class AddAdminesToAllTeams extends Command
 
 			foreach ($teamsToAdd as $team) {
 				$team->users()->attach($user->id, [
-					'role' => 'member',
+					'role' => 'admin',
 					'invitation_accepted' => true,
 					'joined_at' => $now,
 					'created_at' => $now,
