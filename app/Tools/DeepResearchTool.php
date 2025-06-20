@@ -17,7 +17,7 @@ class DeepResearchTool
 		return [
 			'type' => 'function',
 			'name' => 'deep_research',
-			'description' => 'Generate comprehensive article content using Perplexity Deep Research API. Use this tool when an article has no content and needs in-depth research.',
+			'description' => 'Generate comprehensive article content using Perplexity Deep Research API.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
