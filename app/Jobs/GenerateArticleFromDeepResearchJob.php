@@ -116,7 +116,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 			],
 			[
 				'role' => 'user',
-				'content' => $query . ' IMPORTANT: Write the article content in HTML format using where necessary <h1>, <h2>, <h3>, <h4>, <p>, <b>, <i>, <ul>, <li>, <blockquote>, <table> and <a> tags.'
+				'content' => $query
 			]
 		];
 
@@ -127,7 +127,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 				model: 'sonar-deep-research',
 				temperature: 0.7,
 				maxTokens: 10000,
-				reasoningEffort: 'medium'
+				reasoningEffort: 'high'
 			);
 
 			$requestId = $data['id'];
@@ -230,11 +230,11 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 		$query = "I want to improve my visibility in LLM responses for a specific organization and topic. \n";
 
 		$query .= "**Organization name:** \n";
-		$query .= $organization->name;
+		$query .= $organization->name . "\n\n";
 		$query .= "**Organization website:** \n";
-		$query .= $organization->website;
+		$query .= $organization->website . "\n\n";
 		$query .= "**Topic (the prompt given to LLMs):** \n";
-		$query .= $prompt->content;
+		$query .= $prompt->content . "\n\n";
 		$query .= "**LLM response data I've collected:** \n";
 		$query .= $responseData . "\n\n";
 
@@ -248,14 +248,15 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 		$query .= "   - Where I should publish it (e.g. URL, internal links, directories)\n";
 		$query .= "3. Write the full content I should publish inside a single code block for easy copy and paste.\n";
 		$query .= "4. Evaluate the likelihood that this content will increase my visibility in LLM responses for the given prompt. Tell me how to **maximize** that likelihood (e.g. schema, backlinks, structure, freshness).\n";
-		$query .= "Make the output strategic, accurate, and thorough. Use LLM optimization best practices.\n";
+		$query .= "Make the output strategic, accurate, and thorough. Use LLM optimization best practices.\n\n";
 
-		$query .= "\n\n";
-
-		$query .= "use Deep Research to write a new version the article that is 10x more detailed and thorough. Make sure to link back to relevant pages on my website.\n\n";
+		$query .= "Use Deep Research to write a new version the article that is 10x more detailed and thorough. Make sure to link back to relevant pages on my website.\n\n";
 		$query .= "If you mention competitors, make sure to emphasize why people should choose my organization over the competitors.\n\n";
 		$query .= "Most importantly, remember that the purpose of the article is help people find and choose to work with my organization. Make sure to portray my organization in a positive light, accurately explain my products and services and how we can help our customers (or members). Lastly, make certain that the article is built around thoroughly answering the original prompt I gave you:\n\n";
 		$query .= $prompt->content;
+
+		$query .= "\n\n";
+		$query .= "IMPORTANT: Write the article content in HTML format using where necessary <h1>, <h2>, <h3>, <h4>, <p>, <b>, <i>, <ul>, <li>, <blockquote>, <table> and <a> tags.";
 
 		// Log this query
 		Log::info('Deep Research query: ' . $query);
