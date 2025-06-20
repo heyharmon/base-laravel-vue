@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Bus\Batchable;
 use App\Services\PerplexityService;
+use App\Models\Prompt;
 use App\Models\Article;
 use App\Events\ArticleUpdated;
 use App\Events\ArticleDeepResearchUpdated;
@@ -191,7 +192,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 				self::dispatch($this->model, $this->teamId)->delay(now()->addSeconds(10));
 			} else {
 				// Check if we've reached the maximum number of checks
-				if ($this->model->perplexity_checks >= 50) {
+				if ($this->model->perplexity_checks >= 100) {
 					Log::error('Exceeded maximum number of perplexity checks (50)');
 					throw new \Exception('Exceeded maximum number of perplexity checks (50)');
 				}
@@ -217,29 +218,47 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 	protected function buildResearchQuery()
 	{
 		$organization = $this->model->organization;
-		$prompt = $this->model->prompt;
 
-		$query = "Generate a comprehensive, well-researched article that answers this prompt: \"{$prompt->content}\". ";
+		$prompt = Prompt::with(['responses' => function ($query) {
+			$query->latest()->limit(8);
+		}])->find($this->model->prompt->id);
 
-		if ($organization) {
-			$query .= "Include information about {$organization->name} ";
+		$responseData = $prompt->responses->map(function ($response) {
+			return "\n- {$response->content}";
+		});
 
-			if ($organization->website) {
-				$query .= "({$organization->website}) ";
-			}
+		$query = "I want to improve my visibility in LLM responses for a specific organization and topic. \n";
 
-			$query .= "where appropriate, but make the article primarily focused on answering the prompt with factual, up-to-date information. ";
+		$query .= "**Organization name:** \n";
+		$query .= $organization->name;
+		$query .= "**Organization website:** \n";
+		$query .= $organization->website;
+		$query .= "**Topic (the prompt given to LLMs):** \n";
+		$query .= $prompt->content;
+		$query .= "**LLM response data I've collected:** \n";
+		$query .= $responseData . "\n\n";
 
-			if ($organization->industry) {
-				$query .= "The article should be relevant to the {$organization->industry} industry. ";
-			}
+		$query .= "**Article draft:** \n";
+		$query .= $this->model->content . "\n\n";
 
-			if ($organization->description) {
-				$query .= "Additional context about the organization: {$organization->description}. ";
-			}
-		}
+		$query .= "Please do the following:\n";
+		$query .= "1. Analyze the LLM response data thoroughly and identify what organizations or sources are being surfaced, what type of content is showing up, and why the content and those organizations are showing up.\n";
+		$query .= "2. Recommend the **single most impactful thing** I should do to get my organization to show up in LLM responses. Specifically tell me:\n";
+		$query .= "   - What type of content I should publish\n";
+		$query .= "   - Where I should publish it (e.g. URL, internal links, directories)\n";
+		$query .= "3. Write the full content I should publish inside a single code block for easy copy and paste.\n";
+		$query .= "4. Evaluate the likelihood that this content will increase my visibility in LLM responses for the given prompt. Tell me how to **maximize** that likelihood (e.g. schema, backlinks, structure, freshness).\n";
+		$query .= "Make the output strategic, accurate, and thorough. Use LLM optimization best practices.\n";
 
-		$query .= "The article should be structured with appropriate headings, be comprehensive, and include specific facts, figures, and examples where relevant.";
+		$query .= "\n\n";
+
+		$query .= "use Deep Research to write a new version the article that is 10x more detailed and thorough. Make sure to link back to relevant pages on my website.\n\n";
+		$query .= "If you mention competitors, make sure to emphasize why people should choose my organization over the competitors.\n\n";
+		$query .= "Most importantly, remember that the purpose of the article is help people find and choose to work with my organization. Make sure to portray my organization in a positive light, accurately explain my products and services and how we can help our customers (or members). Lastly, make certain that the article is built around thoroughly answering the original prompt I gave you:\n\n";
+		$query .= $prompt->content;
+
+		// Log this query
+		Log::info('Deep Research query: ' . $query);
 
 		return $query;
 	}

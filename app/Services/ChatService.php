@@ -257,7 +257,7 @@ class ChatService
 	private function handleToolCall(string $name, array $arguments): array
 	{
 		// Log the tool call for debugging
-		Log::info("Tool call: {$name}", ['arguments' => $arguments]);
+		// Log::info("Tool call: {$name}", ['arguments' => $arguments]);
 
 		// Handle different tool calls
 		switch ($name) {
