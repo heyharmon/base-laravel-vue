@@ -127,7 +127,7 @@ class GenerateArticleFromDeepResearchJob implements ShouldQueue
 				model: 'sonar-deep-research',
 				temperature: 0.7,
 				maxTokens: 10000,
-				reasoningEffort: 'high'
+				reasoningEffort: 'medium'
 			);
 
 			$requestId = $data['id'];
