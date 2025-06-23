@@ -19,8 +19,6 @@ use App\Http\Controllers\OrganizationOnboardController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\JobStatusController;
-use App\Http\Controllers\ConversationController;
-use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ArticleConversationController;
@@ -48,10 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('analytics/terms', [AnalyticsController::class, 'termStats']);
 	Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
 	Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
-
-	// Conversations
-	Route::resource('conversations', ConversationController::class);
-	Route::resource('conversations/{conversation}/chats', ChatController::class);
 
 	// Organizations
 	Route::resource('organizations', OrganizationController::class);

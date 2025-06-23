@@ -3,7 +3,6 @@ import { ref, onMounted, computed, onUnmounted, watch, nextTick, defineAsyncComp
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import { usePromptStore } from '@/stores/promptStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import ArticleDeepResearchResponseModal from '@/components/articles/ArticleDeepResearchResponseModal.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
@@ -28,17 +27,6 @@ const messagesContainer = ref(null)
 
 // Dynamically import the ArticleVersionsPanel component
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
-
-// Get active jobs related to this article
-const activeArticleJobs = computed(() => {
-	if (!articleStore.article) return []
-	return jobStatusStore.jobs.filter(
-		(job) =>
-			job.trackable_type === 'App\\Models\\Article' &&
-			job.trackable_id === articleStore.article.id &&
-			(job.status === 'pending' || job.status === 'processing')
-	)
-})
 
 const editor = useEditor({
 	content: '',
@@ -165,7 +153,6 @@ onUnmounted(() => {
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const isArticleDeepResearchResponseModalOpen = ref(false)
-const promptStore = usePromptStore()
 
 // Preset prompts for empty chat
 const presetPrompts = [
@@ -265,25 +252,7 @@ const copyContentToClipboard = async () => {
 				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
 			>
 				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="h-4 w-4 mr-2 flex items-center justify-center">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-								<polyline points="22 4 12 14.01 9 11.01"></polyline>
-							</svg>
-						</span>
-						Deep research completed
-					</div>
+					<div class="flex items-center gap-2">✅ Deep research completed</div>
 					<Button @click="isArticleDeepResearchResponseModalOpen = true" variant="success" size="sm"> View Deep Research </Button>
 				</div>
 			</div>
