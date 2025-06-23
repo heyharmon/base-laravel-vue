@@ -6,6 +6,7 @@ import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
+import TrashIcon from '@/components/icons/TrashIcon.vue'
 import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
@@ -20,7 +21,7 @@ const props = defineProps({
 	jobs: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['select', 'run', 'delete', 'generate-article'])
+const emit = defineEmits(['select', 'run', 'delete'])
 const isRunMenuOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
@@ -62,7 +63,7 @@ const runPrompt = (count) => {
 
 const confirmDelete = () => emit('delete', props.prompt)
 
-const createNewArticle = async () => {
+const createArticle = async () => {
 	const newArticle = await articleStore.createArticle({
 		title: 'Untitled article',
 		prompt_id: props.prompt.id
@@ -100,7 +101,7 @@ const createNewArticle = async () => {
 
 		<div class="flex justify-end items-center space-x-2">
 			<!-- Create article button -->
-			<Button @click.stop="createNewArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
+			<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
 				<SparkleIcon />
 				Create article
 			</Button>
@@ -133,13 +134,7 @@ const createNewArticle = async () => {
 				class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
 				aria-label="Delete prompt"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-					<path
-						fill-rule="evenodd"
-						d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-						clip-rule="evenodd"
-					/>
-				</svg>
+				<TrashIcon />
 			</button>
 		</div>
 	</div>

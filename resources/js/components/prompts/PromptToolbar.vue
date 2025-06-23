@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { usePromptStore } from '@/stores/promptStore'
+import ChevronDownIcon from '../icons/ChevronDownIcon.vue'
+import LightningIcon from '../icons/LightningIcon.vue'
 
 const promptStore = usePromptStore()
 
@@ -37,13 +39,7 @@ const runAll = (count) => {
 				<option value="mentions-asc">Mentions (low to high)</option>
 			</select>
 			<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-neutral-700">
-				<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-					<path
-						fill-rule="evenodd"
-						d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-						clip-rule="evenodd"
-					/>
-				</svg>
+				<ChevronDownIcon />
 			</div>
 		</div>
 
@@ -84,9 +80,7 @@ const runAll = (count) => {
 			@click="$emit('generate')"
 			class="flex items-center space-x-1 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-				<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-			</svg>
+			<LightningIcon />
 			<span>Generate prompts</span>
 		</button>
 	</div>

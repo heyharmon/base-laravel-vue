@@ -3,7 +3,6 @@ import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
 // Import pages
-import Chat from '@/pages/Chat.vue'
 import Dashboard from '@/pages/Dashboard.vue'
 import Analytics from '@/pages/Analytics.vue'
 import Login from '@/pages/auth/Login.vue'
@@ -25,12 +24,6 @@ const routes = [
 		path: '/',
 		name: 'home',
 		component: Dashboard,
-		meta: { requiresAuth: true }
-	},
-	{
-		path: '/chat',
-		name: 'chat',
-		component: Chat,
 		meta: { requiresAuth: true }
 	},
 	{

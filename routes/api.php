@@ -19,11 +19,8 @@ use App\Http\Controllers\OrganizationOnboardController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\JobStatusController;
-use App\Http\Controllers\ConversationController;
-use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ArticleGeneratorController;
 use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
@@ -49,10 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('analytics/terms', [AnalyticsController::class, 'termStats']);
 	Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
 	Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
-
-	// Conversations
-	Route::resource('conversations', ConversationController::class);
-	Route::resource('conversations/{conversation}/chats', ChatController::class);
 
 	// Organizations
 	Route::resource('organizations', OrganizationController::class);
@@ -83,7 +76,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::resource('prompts', PromptController::class);
 	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
-	Route::post('prompts/{prompt}/generate-article', [ArticleGeneratorController::class, 'generate']);
 	Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
 
 	// Running prompts
