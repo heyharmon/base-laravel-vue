@@ -5,15 +5,15 @@ import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { usePromptStore } from '@/stores/promptStore'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
-import PerplexityResponseModal from '@/components/articles/PerplexityResponseModal.vue'
+import ArticleDeepResearchResponseModal from '@/components/articles/ArticleDeepResearchResponseModal.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import ChatMessage from '@/components/ChatMessage.vue'
-import ChatInput from '@/components/ChatInput.vue'
-import ArticleConversationDropdown from '@/components/conversations/ArticleConversationDropdown.vue'
-import ChatLoadingIndicator from '@/components/ChatLoadingIndicator.vue'
+import ChatMessage from '@/components/chat/ChatMessage.vue'
+import ChatInput from '@/components/chat/ChatInput.vue'
+import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
+import ChatLoadingIndicator from '@/components/chat/ChatLoadingIndicator.vue'
 import EditorMenu from '@/components/editor/EditorMenu.vue'
 import { useEcho } from '@laravel/echo-vue'
 
@@ -97,7 +97,7 @@ listen('ArticleDeepResearchUpdated', (e) => {
 	if (e.article_id === articleStore.article.id) {
 		console.log('Refreshing article data after deep research completion')
 		articleStore.fetchArticle(e.article_id)
-		isPerplexityResponseModalOpen.value = true
+		isArticleDeepResearchResponseModalOpen.value = true
 	}
 })
 
@@ -164,7 +164,7 @@ onUnmounted(() => {
 
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
-const isPerplexityResponseModalOpen = ref(false)
+const isArticleDeepResearchResponseModalOpen = ref(false)
 const promptStore = usePromptStore()
 
 // Preset prompts for empty chat
@@ -213,7 +213,7 @@ const copyContentToClipboard = async () => {
 			<div class="flex-1 overflow-hidden flex flex-col h-full">
 				<!-- Messages top bar -->
 				<div class="py-2 px-6">
-					<ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
+					<ChatsDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
 				</div>
 
 				<!-- Messages area (scrollable) -->
@@ -241,18 +241,6 @@ const copyContentToClipboard = async () => {
 		</template>
 
 		<template #right-column>
-			<!-- Active jobs message -->
-			<!-- <div
-				v-if="activeArticleJobs.length > 0"
-				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 mr-6"
-			>
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span>
-					{{ activeArticleJobs.length }}
-					{{ activeArticleJobs.length === 1 ? 'job is running for this article' : 'jobs are running for this article' }}
-				</span>
-			</div> -->
-
 			<!-- Deep research statuses -->
 			<div
 				v-if="articleStore.article?.perplexity_status === 'CREATED' || articleStore.article?.perplexity_status === 'IN_PROGRESS'"
@@ -296,7 +284,7 @@ const copyContentToClipboard = async () => {
 						</span>
 						Deep research completed
 					</div>
-					<Button @click="isPerplexityResponseModalOpen = true" variant="success" size="sm"> View Deep Research </Button>
+					<Button @click="isArticleDeepResearchResponseModalOpen = true" variant="success" size="sm"> View Deep Research </Button>
 				</div>
 			</div>
 
@@ -429,10 +417,10 @@ const copyContentToClipboard = async () => {
 	/>
 
 	<!-- Perplexity Response Modal -->
-	<PerplexityResponseModal
+	<ArticleDeepResearchResponseModal
 		v-if="articleStore.article?.perplexity_request_id"
-		:is-open="isPerplexityResponseModalOpen"
+		:is-open="isArticleDeepResearchResponseModalOpen"
 		:article-id="articleStore.article?.id"
-		@close="isPerplexityResponseModalOpen = false"
+		@close="isArticleDeepResearchResponseModalOpen = false"
 	/>
 </template>
