@@ -10,7 +10,6 @@ import TermCreateModal from '@/components/terms/TermCreateModal.vue'
 import GenerateTermsModal from '@/components/organizations/GenerateTermsModal.vue'
 import TermNotification from '@/components/terms/TermNotification.vue'
 import TermListItem from '@/components/terms/TermListItem.vue'
-import RecommendedTermItem from '@/components/terms/RecommendedTermItem.vue'
 import OrganizationForm from '@/components/organizations/OrganizationForm.vue'
 
 const route = useRoute()
@@ -115,30 +114,6 @@ const handleDeleteTerm = (termId, termName) => {
 		deletedTermMessage.value = null
 	}, 10000)
 }
-
-const acceptRecommendedTerm = async (termId) => {
-	try {
-		await termStore.acceptRecommendedTerm(route.params.id, termId)
-		deletedTermMessage.value = 'Term added to your organization.'
-		setTimeout(() => {
-			deletedTermMessage.value = null
-		}, 10000)
-	} catch (error) {
-		console.error('Error accepting recommended term:', error)
-	}
-}
-
-const denyRecommendedTerm = async (termId, termName) => {
-	try {
-		await termStore.denyRecommendedTerm(route.params.id, termId)
-		deletedTermMessage.value = `The term "${termName}" recommendation has been removed.`
-		setTimeout(() => {
-			deletedTermMessage.value = null
-		}, 10000)
-	} catch (error) {
-		console.error('Error denying recommended term:', error)
-	}
-}
 </script>
 
 <template>
@@ -173,8 +148,6 @@ const denyRecommendedTerm = async (termId, termName) => {
 			<div v-if="isLoading" class="flex justify-center py-8">
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
-
-
 
 			<div v-else class="flex flex-col md:flex-row gap-12">
 				<!-- Left column - Terms section -->
@@ -226,23 +199,6 @@ const denyRecommendedTerm = async (termId, termName) => {
 								@select="showTermDetails"
 								@delete="(kw) => handleDeleteTerm(kw.id, kw.name)"
 							/>
-						</div>
-
-						<!-- Recommended Terms Section -->
-						<div v-if="termStore.recommendedTerms.length > 0">
-							<h3 class="text-lg font-semibold mb-4">Recommended terms</h3>
-							<div v-if="termStore.isLoadingRecommended" class="flex justify-center py-8">
-								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-							</div>
-							<div v-else class="space-y-3">
-								<RecommendedTermItem
-									v-for="term in termStore.recommendedTerms"
-									:key="term.id"
-									:term="term"
-									@accept="(kw) => acceptRecommendedTerm(kw.id)"
-									@deny="(kw) => denyRecommendedTerm(kw.id, kw.name)"
-								/>
-							</div>
 						</div>
 					</div>
 				</div>

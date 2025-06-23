@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\TermResponsesController;
-use App\Http\Controllers\TermRecommendationsController;
 use App\Http\Controllers\TermGeneratorController;
 use App\Http\Controllers\TermController;
 use App\Http\Controllers\TeamController;
@@ -66,11 +65,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::resource('organizations/{organization}/terms', TermController::class);
 	Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
-
-	// Term Recommendations
-	Route::get('organizations/{organization}/term-recommendations', [TermRecommendationsController::class, 'index']);
-	Route::put('organizations/{organization}/term-recommendations/{id}/accept', [TermRecommendationsController::class, 'accept']);
-	Route::delete('organizations/{organization}/term-recommendations/{id}/deny', [TermRecommendationsController::class, 'deny']);
 
 	// Prompts
 	Route::resource('prompts', PromptController::class);
