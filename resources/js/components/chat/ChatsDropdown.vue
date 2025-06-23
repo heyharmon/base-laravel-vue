@@ -80,7 +80,6 @@ watch(
 	{ immediate: true }
 )
 
-
 const dropdownRef = ref(null)
 const onClickOutside = (event) => {
 	if (isOpen.value && dropdownRef.value && !dropdownRef.value.contains(event.target)) {
@@ -116,26 +115,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 							v-for="conversation in conversations"
 							:key="conversation.id"
 							@click="setActiveConversation(conversation.id)"
-							class="flex items-center justify-between w-full gap-2 px-3 py-2 text-left rounded-md hover:bg-neutral-100"
+							:class="{ 'bg-neutral-100': conversation.id === activeConversationId }"
+							class="flex items-center justify-between w-full gap-2 px-3 py-2 text-left rounded-md cursor-pointer hover:bg-neutral-100"
 							type="button"
 						>
 							<div class="flex-1 min-w-0">
 								<div class="font-medium truncate">{{ conversation.title || 'Untitled' }}</div>
 								<div class="text-xs text-neutral-500 truncate">{{ moment(conversation.created_at).format('M/D/YYYY, h:mm:ss A') }}</div>
 							</div>
-							<svg
-								v-if="conversation.id === activeConversationId"
-								xmlns="http://www.w3.org/2000/svg"
-								class="size-4 text-neutral-900"
-								viewBox="0 0 20 20"
-								fill="currentColor"
-							>
-								<path
-									fill-rule="evenodd"
-									d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-									clip-rule="evenodd"
-								/>
-							</svg>
 						</button>
 					</div>
 				</div>

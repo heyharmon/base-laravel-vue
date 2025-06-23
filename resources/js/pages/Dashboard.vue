@@ -4,6 +4,7 @@ import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import TrashIcon from '../components/icons/TrashIcon.vue'
 
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
@@ -120,14 +121,7 @@ const deleteOrganization = async (organizationId) => {
 									@click="deleteOrganization(org.id)"
 									class="float-right group-hover:block hidden text-neutral-300 hover:text-red-500 focus:outline-none cursor-pointer"
 								>
-									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-										/>
-									</svg>
+									<TrashIcon />
 								</button>
 							</td>
 						</tr>

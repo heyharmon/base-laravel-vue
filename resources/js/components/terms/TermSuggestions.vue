@@ -2,6 +2,7 @@
 import { ref, watch, onMounted } from 'vue'
 import api from '@/services/api'
 import { useTermStore } from '@/stores/termStore'
+import CloseIcon from '../icons/CloseIcon.vue'
 
 const props = defineProps({
 	domain: {
@@ -103,21 +104,7 @@ defineExpose({ GenerateOrganizationKeywords })
 							class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
 							type="button"
 						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								class="h-4 w-4"
-							>
-								<path d="M18 6 6 18" />
-								<path d="m6 6 12 12" />
-							</svg>
+							<CloseIcon class="h-4 w-4" />
 						</button>
 					</li>
 				</ul>
@@ -137,16 +124,9 @@ defineExpose({ GenerateOrganizationKeywords })
 			<button
 				v-if="generatedTerms.length > 0"
 				@click="GenerateOrganizationKeywords"
-				class="flex items-center gap-2 text-neutral-600 text-sm rounded-md cursor-pointer hover:text-neutral-900"
+				class="text-neutral-600 text-sm rounded-md cursor-pointer hover:text-neutral-900"
 				:disabled="isLoadingTerms || !domain"
 			>
-				<svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-					/>
-				</svg>
 				Regenerate terms
 			</button>
 		</div>

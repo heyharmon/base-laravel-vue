@@ -6,9 +6,7 @@ import api from '@/services/api'
 export const useTermStore = defineStore('terms', () => {
 	// State
 	const terms = ref([])
-	const recommendedTerms = ref([])
 	const isLoading = ref(false)
-	const isLoadingRecommended = ref(false)
 	const isLoadingDetails = ref(false)
 	const isLoadingTermResponses = ref(false)
 	const selectedTermDetails = ref(null)
@@ -24,7 +22,6 @@ export const useTermStore = defineStore('terms', () => {
 
 		try {
 			terms.value = await api.get(`organizations/${organizationId}/terms`)
-			recommendedTerms.value = await api.get(`organizations/${organizationId}/term-recommendations`)
 		} catch (error) {
 			console.error('Error fetching terms:', error)
 		} finally {
@@ -88,40 +85,10 @@ export const useTermStore = defineStore('terms', () => {
 		}
 	}
 
-	async function acceptRecommendedTerm(organizationId, id) {
-		console.log('Accepting recommended term ID:', id, 'for organization ID:', organizationId)
-		try {
-			const term = await api.put(`organizations/${organizationId}/term-recommendations/${id}/accept`)
-			// Remove from recommended list
-			recommendedTerms.value = recommendedTerms.value.filter((k) => k.id !== id)
-			// Add to regular terms list
-			terms.value.unshift(term)
-
-			return term
-		} catch (error) {
-			console.error('Error accepting recommended term:', error)
-			throw error
-		}
-	}
-
-	async function denyRecommendedTerm(organizationId, id) {
-		console.log('Denying recommended term ID:', id, 'for organization ID:', organizationId)
-		try {
-			await api.delete(`organizations/${organizationId}/term-recommendations/${id}/deny`)
-			// Remove from recommended list
-			recommendedTerms.value = recommendedTerms.value.filter((k) => k.id !== id)
-		} catch (error) {
-			console.error('Error denying recommended term:', error)
-			throw error
-		}
-	}
-
 	return {
 		// State
 		terms: computed(() => terms.value),
-		recommendedTerms: computed(() => recommendedTerms.value),
 		isLoading,
-		isLoadingRecommended,
 		isLoadingDetails,
 		isLoadingTermResponses,
 		selectedTermDetails: computed(() => selectedTermDetails.value),
@@ -129,8 +96,6 @@ export const useTermStore = defineStore('terms', () => {
 
 		// Actions
 		fetchTerms,
-		acceptRecommendedTerm,
-		denyRecommendedTerm,
 		showTerm,
 		createTerm,
 		deleteTerm,
