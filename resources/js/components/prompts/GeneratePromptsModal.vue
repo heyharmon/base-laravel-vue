@@ -1,6 +1,7 @@
 <script setup>
 import { ref, nextTick, watch, onMounted } from 'vue';
 import Modal from '@/components/ui/Modal.vue';
+import CloseIcon from '@/components/icons/CloseIcon.vue';
 import api from '@/services/api';
 import { usePromptStore } from '@/stores/promptStore';
 import { useOrganizationStore } from '@/stores/organizationStore';
@@ -160,10 +161,7 @@ const createPrompts = async () => {
                   class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
                   type="button"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
-                    <path d="M18 6 6 18"/>
-                    <path d="m6 6 12 12"/>
-                  </svg>
+                  <CloseIcon />
                 </button>
               </li>
             </ul>

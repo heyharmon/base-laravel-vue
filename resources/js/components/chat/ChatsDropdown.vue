@@ -3,6 +3,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import api from '@/services/api'
 import Button from '@/components/ui/Button.vue'
+import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 import moment from 'moment'
 
 const props = defineProps({
@@ -100,13 +101,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 				@click="isOpen = !isOpen"
 				type="button"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 20 20" fill="currentColor">
-					<path
-						fill-rule="evenodd"
-						d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-						clip-rule="evenodd"
-					/>
-				</svg>
+				<ChevronDownIcon class="size-5" />
 				<span class="truncate">{{ activeConversationTitle }}</span>
 			</button>
 
