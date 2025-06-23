@@ -5,6 +5,7 @@ import { useOrganizationStore } from '@/stores/organizationStore'
 import { useTermStore } from '@/stores/termStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
+import LightningIcon from '@/components/icons/LightningIcon.vue'
 import TermDetailSheet from '@/components/terms/TermDetailSheet.vue'
 import TermCreateModal from '@/components/terms/TermCreateModal.vue'
 import GenerateTermsModal from '@/components/organizations/GenerateTermsModal.vue'
@@ -161,9 +162,7 @@ const handleDeleteTerm = (termId, termName) => {
 								@click="isGenerateTermsModalOpen = true"
 								class="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-									<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-								</svg>
+								<LightningIcon />
 								<span>Generate terms</span>
 							</button>
 							<button
