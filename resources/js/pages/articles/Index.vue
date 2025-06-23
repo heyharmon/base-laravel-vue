@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
-import { useJobStatusStore } from '@/stores/jobStatusStore'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -13,10 +12,6 @@ const articleStore = useArticleStore()
 onMounted(async () => {
 	await articleStore.fetchArticles()
 })
-
-const formatDate = (dateString) => {
-	return moment(dateString).format('MMM D, YYYY')
-}
 
 const createArticle = async () => {
 	const newArticle = await articleStore.createArticle({
@@ -101,7 +96,7 @@ const deleteArticle = async (id) => {
 							</div>
 						</div>
 						<div class="col-span-3 text-neutral-500 text-sm flex items-center">
-							{{ formatDate(article.updated_at) }}
+							{{ moment(article.updated_at).format('MMM D, YYYY') }}
 						</div>
 						<div class="col-span-3 text-right flex justify-end gap-2">
 							<button @click="editArticle(article.id)" class="text-neutral-500 hover:text-neutral-700 p-1" title="Edit">

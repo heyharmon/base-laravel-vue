@@ -3,6 +3,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import api from '@/services/api'
 import Button from '@/components/ui/Button.vue'
+import moment from 'moment'
 
 const props = defineProps({
 	articleId: {
@@ -78,9 +79,6 @@ watch(
 	{ immediate: true }
 )
 
-const formatDate = (dateString) => {
-	return new Date(dateString).toLocaleString()
-}
 
 const dropdownRef = ref(null)
 const onClickOutside = (event) => {
@@ -128,7 +126,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
 						>
 							<div class="flex-1 min-w-0">
 								<div class="font-medium truncate">{{ conversation.title || 'Untitled' }}</div>
-								<div class="text-xs text-neutral-500 truncate">{{ formatDate(conversation.created_at) }}</div>
+								<div class="text-xs text-neutral-500 truncate">{{ moment(conversation.created_at).format('M/D/YYYY, h:mm:ss A') }}</div>
 							</div>
 							<svg
 								v-if="conversation.id === activeConversationId"
