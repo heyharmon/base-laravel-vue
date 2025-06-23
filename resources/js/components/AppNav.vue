@@ -6,6 +6,8 @@ import { useTeamStore } from '@/stores/teamStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui'
 import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue'
+import SpinnerIcon from '@/components/icons/SpinnerIcon.vue'
+import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const router = useRouter()
 const teamStore = useTeamStore()
@@ -97,21 +99,7 @@ onMounted(async () => {
 						class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded hover:bg-neutral-800"
 					>
 						<div class="relative size-5">
-							<svg class="animate-spin absolute inset-0" viewBox="0 0 24 24">
-								<circle class="text-neutral-800" stroke="currentColor" fill="transparent" stroke-width="2" cx="12" cy="12" r="11"></circle>
-								<circle
-									class="text-neutral-400"
-									stroke="currentColor"
-									fill="transparent"
-									stroke-width="2"
-									stroke-dasharray="17.27875959474386 51.83627878423158"
-									stroke-dashoffset="0"
-									stroke-linecap="butt"
-									cx="12"
-									cy="12"
-									r="11"
-								></circle>
-							</svg>
+							<SpinnerIcon class="absolute inset-0" />
 							<div class="absolute inset-0 flex items-center justify-center">
 								<span class="text-xs font-bold">{{ jobStatusStore.activeJobs.length }}</span>
 							</div>
@@ -129,20 +117,7 @@ onMounted(async () => {
 						<PopoverTrigger as-child>
 							<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
 								<span class="text-sm font-medium">{{ currentTeam?.name || 'Select Team' }}</span>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									class="h-4 w-4"
-								>
-									<path d="m6 9 6 6 6-6" />
-								</svg>
+								<ChevronDownIcon />
 							</div>
 						</PopoverTrigger>
 						<PopoverPortal>
