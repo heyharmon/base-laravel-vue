@@ -18,7 +18,7 @@ const formatDate = (dateString) => {
 	return moment(dateString).format('MMM D, YYYY')
 }
 
-const createNewArticle = async () => {
+const createArticle = async () => {
 	const newArticle = await articleStore.createArticle({
 		title: 'Untitled article'
 	})
@@ -46,7 +46,7 @@ const deleteArticle = async (id) => {
 			<!-- Top bar -->
 			<div class="flex justify-between items-center mb-8">
 				<h1 class="text-2xl font-bold">Articles</h1>
-				<Button @click="createNewArticle">
+				<Button @click="createArticle">
 					<div class="flex items-center gap-2">
 						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -79,7 +79,7 @@ const deleteArticle = async (id) => {
 				</svg>
 				<div class="text-neutral-500 text-lg mb-2">No articles yet</div>
 				<div class="text-neutral-400 text-sm mb-6">Create your first article to get started</div>
-				<Button @click="createNewArticle">Create article</Button>
+				<Button @click="createArticle">Create article</Button>
 			</div>
 
 			<!-- Articles list -->

@@ -23,7 +23,6 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ArticleGeneratorController;
 use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
@@ -83,7 +82,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::resource('prompts', PromptController::class);
 	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
-	Route::post('prompts/{prompt}/generate-article', [ArticleGeneratorController::class, 'generate']);
 	Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
 
 	// Running prompts

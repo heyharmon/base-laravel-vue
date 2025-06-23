@@ -20,7 +20,7 @@ const props = defineProps({
 	jobs: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['select', 'run', 'delete', 'generate-article'])
+const emit = defineEmits(['select', 'run', 'delete'])
 const isRunMenuOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
@@ -62,7 +62,7 @@ const runPrompt = (count) => {
 
 const confirmDelete = () => emit('delete', props.prompt)
 
-const createNewArticle = async () => {
+const createArticle = async () => {
 	const newArticle = await articleStore.createArticle({
 		title: 'Untitled article',
 		prompt_id: props.prompt.id
@@ -100,7 +100,7 @@ const createNewArticle = async () => {
 
 		<div class="flex justify-end items-center space-x-2">
 			<!-- Create article button -->
-			<Button @click.stop="createNewArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
+			<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
 				<SparkleIcon />
 				Create article
 			</Button>
