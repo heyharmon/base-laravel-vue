@@ -4,7 +4,6 @@ import auth from '@/services/auth'
 
 // Import pages
 import Dashboard from '@/pages/Dashboard.vue'
-import Analytics from '@/pages/Analytics.vue'
 import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
 import ForgotPassword from '@/pages/auth/ForgotPassword.vue'
@@ -30,11 +29,6 @@ const routes = [
 		path: '/dashboard',
 		name: 'dashboard',
 		component: Dashboard
-	},
-	{
-		path: '/analytics',
-		name: 'analytics',
-		component: Analytics
 	},
 	{
 		path: '/login',
