@@ -1,18 +1,12 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 import { useTeamStore } from '@/stores/teamStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 
-const router = useRouter()
 const teamStore = useTeamStore()
 const isSubmitting = ref(false)
 const successMessage = ref('')
-
-onMounted(async () => {
-	await teamStore.fetchTeams()
-})
 
 const acceptInvitation = async (teamId) => {
 	isSubmitting.value = true
@@ -50,8 +44,6 @@ const declineInvitation = async (teamId) => {
 			<div class="flex justify-between items-center mb-8">
 				<h1 class="text-2xl font-bold">Team Invitations</h1>
 			</div>
-
-
 
 			<!-- Success message -->
 			<div v-if="successMessage" class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
