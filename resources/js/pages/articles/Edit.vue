@@ -9,10 +9,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import ChatMessage from '@/components/chat/ChatMessage.vue'
-import ChatInput from '@/components/chat/ChatInput.vue'
-import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
-import ChatLoadingIndicator from '@/components/chat/ChatLoadingIndicator.vue'
+import ChatInterface from '@/components/chat/ChatInterface.vue'
 import EditorMenu from '@/components/editor/EditorMenu.vue'
 import { useEcho } from '@laravel/echo-vue'
 
@@ -23,7 +20,6 @@ const jobStatusStore = useJobStatusStore()
 const isLoading = ref(true)
 const showSettings = ref(false)
 const showVersions = ref(false)
-const messagesContainer = ref(null)
 
 // Dynamically import the ArticleVersionsPanel component
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
@@ -89,25 +85,6 @@ listen('ArticleDeepResearchUpdated', (e) => {
 	}
 })
 
-// Function to scroll to the bottom of the messages container
-const scrollToBottom = () => {
-	nextTick(() => {
-		if (messagesContainer.value) {
-			messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-		}
-	})
-}
-
-// Watch for changes in the chats array to scroll to bottom when new messages are added
-watch(
-	() => articleStore.chats.length,
-	(newLength, oldLength) => {
-		if (newLength > oldLength) {
-			scrollToBottom()
-		}
-	}
-)
-
 // Watch for changes in the article content from the store and update the editor
 watch(
 	() => articleStore.article?.content,
@@ -136,9 +113,6 @@ onMounted(async () => {
 
 		// Fetch chats for this article
 		await articleStore.fetchChats(route.params.id)
-
-		// Scroll to bottom of messages
-		scrollToBottom()
 	} catch (error) {
 		console.error('Error loading article:', error)
 		isLoading.value = false
@@ -153,23 +127,6 @@ onUnmounted(() => {
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const isArticleDeepResearchResponseModalOpen = ref(false)
-
-// Preset prompts for empty chat
-const presetPrompts = [
-	'🧠 Use deep research to write this article',
-	'💬 Summarize this article for me',
-	'🔗 List sources mentioned in prompt responses',
-	'✨ Suggest improvements for this article',
-	'🌐 Search the web for information related to this article'
-]
-
-// Handle conversation selection from dropdown
-const handleConversationChanged = async (conversationId) => {
-	if (conversationId) {
-		articleStore.setConversationId(conversationId)
-		await articleStore.fetchChats()
-	}
-}
 
 // Open the prompt detail sheet
 const showPromptDetails = () => {
@@ -196,35 +153,8 @@ const copyContentToClipboard = async () => {
 <template>
 	<TwoColumnLayout>
 		<template #left-column>
-			<!-- Chat column -->
-			<div class="flex-1 overflow-hidden flex flex-col h-full">
-				<!-- Messages top bar -->
-				<div class="py-2 px-6">
-					<ChatsDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
-				</div>
-
-				<!-- Messages area (scrollable) -->
-				<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin px-6 pt-4 pb-8 space-y-6 custom-scrollbar">
-					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3">
-						<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
-						<button
-							v-for="(prompt, index) in presetPrompts"
-							:key="index"
-							@click="articleStore.sendMessage(prompt)"
-							class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
-						>
-							{{ prompt }}
-						</button>
-					</div>
-					<ChatMessage v-for="(chat, index) in articleStore.chats" :key="index" :chat="chat" />
-					<ChatLoadingIndicator v-if="articleStore.isLoadingChats" />
-				</div>
-
-				<!-- Input area (fixed at bottom) -->
-				<div class="px-4 pb-4 bg-transparent -mt-4">
-					<ChatInput v-model="articleStore.newMessage" @send="articleStore.sendMessage" :disabled="articleStore.isLoadingChats" />
-				</div>
-			</div>
+			<!-- Chat Interface Component -->
+			<ChatInterface />
 		</template>
 
 		<template #right-column>
