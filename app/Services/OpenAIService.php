@@ -10,6 +10,13 @@ use App\Models\Article;
 
 class OpenAIService
 {
+	/**
+	 * The team ID for scoping tool operations.
+	 *
+	 * @var int|null
+	 */
+	protected $teamId;
+
 	protected $tools = [
 		[
 			'type' => 'function',
@@ -203,11 +210,18 @@ class OpenAIService
 
 	public function processMessageAsync(Conversation $conversation, string $userMessage, array $context = [])
 	{
+		// Capture the team ID before dispatching the job
+		$teamId = $this->getTeamId();
+
 		// Process in background
-		dispatch(function () use ($conversation, $userMessage, $context) {
+		dispatch(function () use ($conversation, $userMessage, $context, $teamId) {
 			try {
+				// Create a new service instance with the team ID
+				$service = new self();
+				$service->withTeamId($teamId);
+
 				// Build and send request
-				$request = $this->buildRequest($conversation, $userMessage, $context);
+				$request = $service->buildRequest($conversation, $userMessage, $context);
 				$response = OpenAI::responses()->create($request);
 
 				Log::info('OpenAI Service: Received async response', [
@@ -216,7 +230,7 @@ class OpenAIService
 				]);
 
 				// Process the response
-				$this->processResponse($conversation, $response);
+				$service->processResponse($conversation, $response);
 			} catch (\Exception $e) {
 				Log::error('OpenAI Service: Async processing failed', [
 					'conversation_id' => $conversation->id,
@@ -425,7 +439,11 @@ class OpenAIService
 
 		switch ($functionName) {
 			case 'list_articles':
-				$teamId = Auth::user()->current_team_id;
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
 
 				$page = $arguments['page'] ?? 1;
 				$perPage = min($arguments['per_page'] ?? 20, 100);
@@ -447,14 +465,32 @@ class OpenAIService
 				]);
 
 			case 'view_article':
-				$article = Article::find($arguments['article_id']);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
+
 				if (!$article) {
 					return json_encode(['error' => 'Article not found']);
 				}
+
 				return json_encode($article->toArray());
 
 			case 'create_article':
-				$article = Article::create(['title' => $arguments['title']]);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::create([
+					'title' => $arguments['title'],
+					'team_id' => $teamId
+				]);
+
 				return json_encode([
 					'success' => true,
 					'message' => 'Article created successfully',
@@ -462,7 +498,13 @@ class OpenAIService
 				]);
 
 			case 'edit_article_title':
-				$article = Article::find($arguments['article_id']);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
 				if (!$article) {
 					return json_encode(['error' => 'Article not found']);
 				}
@@ -480,7 +522,13 @@ class OpenAIService
 				]);
 
 			case 'append_content':
-				$article = Article::find($arguments['article_id']);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
 				if (!$article) {
 					return json_encode(['error' => 'Article not found']);
 				}
@@ -510,7 +558,13 @@ class OpenAIService
 				]);
 
 			case 'prepend_content':
-				$article = Article::find($arguments['article_id']);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
 				if (!$article) {
 					return json_encode(['error' => 'Article not found']);
 				}
@@ -540,7 +594,13 @@ class OpenAIService
 				]);
 
 			case 'replace_content':
-				$article = Article::find($arguments['article_id']);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
 				if (!$article) {
 					return json_encode(['error' => 'Article not found']);
 				}
@@ -585,7 +645,13 @@ class OpenAIService
 				]);
 
 			case 'insert_content':
-				$article = Article::find($arguments['article_id']);
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
 				if (!$article) {
 					return json_encode(['error' => 'Article not found']);
 				}
@@ -708,5 +774,36 @@ class OpenAIService
 			default:
 				return 'Executing tool...';
 		}
+	}
+
+	/**
+	 * Set the team ID for this service instance.
+	 *
+	 * @param int $teamId
+	 * @return $this
+	 */
+	public function withTeamId(int $teamId): self
+	{
+		$this->teamId = $teamId;
+		return $this;
+	}
+
+	/**
+	 * Get the team ID, falling back to Auth if not set.
+	 *
+	 * @return int|null
+	 */
+	protected function getTeamId(): ?int
+	{
+		if ($this->teamId) {
+			return $this->teamId;
+		}
+
+		// Fallback to Auth if available (for synchronous operations)
+		if (Auth::check()) {
+			return Auth::user()->current_team_id;
+		}
+
+		return null;
 	}
 }

@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch, nextTick, defineAsyncComponent } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import { useDebounceFn } from '@vueuse/core'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import ArticleDeepResearchResponseModal from '@/components/articles/ArticleDeepResearchResponseModal.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
@@ -37,7 +38,9 @@ const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
-		articleStore.article.content = editor.getHTML()
+		if (articleStore.article) {
+			articleStore.article.content = editor.getHTML()
+		}
 	},
 	onSelectionUpdate: ({ editor }) => {
 		// Get selected text when user selects text in editor
@@ -50,6 +53,52 @@ const editor = useEditor({
 		}
 	}
 })
+
+// Auto-save content changes with debounce
+const debouncedAutoSaveContent = useDebounceFn(async (content) => {
+	if (articleStore.article?.id && content) {
+		try {
+			await articleStore.autoSaveContent(articleStore.article.id, content)
+		} catch (error) {
+			console.error('Auto-save failed:', error)
+		}
+	}
+}, 2000)
+
+// Watch for content changes and auto-save
+watch(
+	() => articleStore.article?.content,
+	(newContent, oldContent) => {
+		// Skip if this is the initial load or if content hasn't actually changed
+		if (!oldContent || newContent === oldContent) return
+
+		// Only auto-save if we have a valid article ID and content
+		if (articleStore.article?.id && newContent) {
+			console.log('Content changed, triggering auto-save')
+			debouncedAutoSaveContent(newContent)
+		}
+	}
+)
+
+// Manual save for non-content fields
+const saveArticle = async () => {
+	if (!articleStore.article?.id) return
+
+	try {
+		const response = await articleStore.updateArticle(articleStore.article.id, {
+			title: articleStore.article.title,
+			meta_title: articleStore.article.meta_title,
+			meta_description: articleStore.article.meta_description,
+			schema: articleStore.article.schema
+		})
+
+		showSettings.value = false
+
+		console.log('Article metadata saved successfully')
+	} catch (error) {
+		console.error('Failed to save article:', error)
+	}
+}
 
 const handleEditorCommand = (command, options = {}) => {
 	const commandMap = {
@@ -83,8 +132,6 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 
 	// Update the article content
 	if (e.id === articleStore.article.id) {
-		// articleStore.article.content = e.content
-		// articleStore.article.versions = e.versions
 		articleStore.article = e
 
 		// Update the editor content if it's different
@@ -230,10 +277,11 @@ const handleResponseReceived = () => {
 					<h1 class="text-xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
 
 					<div class="flex items-center justify-end gap-2">
-						<!-- Auto-save indicator -->
+						<!-- Auto-save indicator for content -->
 						<div class="flex items-center mr-2 text-sm text-neutral-600">
 							<span v-if="articleStore.isSaving" class="flex items-center">
 								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
+								Auto-saving content...
 							</span>
 							<span v-else class="text-neutral-600"></span>
 						</div>
@@ -269,7 +317,12 @@ const handleResponseReceived = () => {
 
 					<!-- Settings panel -->
 					<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
-						<h2 class="text-lg font-medium mb-4">Article Settings</h2>
+						<div class="flex items-center justify-between mb-4">
+							<h2 class="text-lg font-medium">Article Settings</h2>
+							<Button @click="saveArticle" variant="primary" size="sm" :disabled="articleStore.isLoading">
+								{{ articleStore.isLoading ? 'Saving...' : 'Save Changes' }}
+							</Button>
+						</div>
 
 						<div class="flex flex-col gap-4">
 							<!-- Title input -->

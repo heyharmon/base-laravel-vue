@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Services\OpenAIService;
 use App\Models\Article;
@@ -87,11 +88,12 @@ class ArticleChatController extends Controller
 			]);
 
 			// Process message asynchronously with context
-			$this->openAIService->processMessage(
-				$conversation,
-				$request->input('content'),
-				$request->input('context', [])
-			);
+			$this->openAIService
+				->processMessageAsync(
+					$conversation,
+					$request->input('content'),
+					$request->input('context', [])
+				);
 
 			return response()->json([
 				'conversation' => $conversation->fresh(),

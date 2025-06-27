@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch, computed } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+import { ref, computed } from 'vue'
 import api from '@/services/api'
 
 export const useArticleStore = defineStore('article', () => {
@@ -124,78 +123,28 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	// Create a debounced save function
-	const saveArticle = async (articleData) => {
+	// Auto-save content only (to be called from components)
+	const autoSaveContent = async (articleId, content) => {
 		if (isSaving.value) return
 		isSaving.value = true
 
 		try {
-			const response = await api.put(`/articles/${articleData.id}`, articleData)
-			article.value = response
-			console.log('Article auto-saved successfully')
+			const response = await api.put(`/articles/${articleId}`, { content })
+			// Update only the content and versions, preserve other local changes
+			if (article.value && article.value.id === articleId) {
+				article.value.content = response.content
+				article.value.current_version = response.current_version
+				article.value.versions = response.versions
+			}
+			console.log('Article content auto-saved successfully')
+			return response
+		} catch (err) {
+			console.error('Error auto-saving article content:', err)
+			throw err
 		} finally {
 			isSaving.value = false
 		}
 	}
-
-	// Create a debounced version of the save function (4 second debounce)
-	const debouncedSave = useDebounceFn(saveArticle, 4000)
-
-	// Track previous values of important fields
-	const previousValues = ref({
-		title: '',
-		meta_title: '',
-		meta_description: '',
-		schema: '',
-		content: ''
-	})
-
-	// Setup watcher for auto-saving article changes
-	watch(
-		article,
-		(newArticle, oldArticle) => {
-			// Only proceed if article exists with an ID
-			if (!newArticle || !newArticle.id) return
-
-			// Skip initial load
-			if (oldArticle === null) {
-				// Initialize previous values
-				previousValues.value = {
-					title: newArticle.title || '',
-					meta_title: newArticle.meta_title || '',
-					meta_description: newArticle.meta_description || '',
-					schema: newArticle.schema || '',
-					content: newArticle.content || ''
-				}
-				return
-			}
-
-			// Check if important fields have changed
-			const hasImportantChanges =
-				newArticle.title !== previousValues.value.title ||
-				newArticle.meta_title !== previousValues.value.meta_title ||
-				newArticle.meta_description !== previousValues.value.meta_description ||
-				newArticle.schema !== previousValues.value.schema ||
-				newArticle.content !== previousValues.value.content
-
-			// Update previous values
-			previousValues.value = {
-				title: newArticle.title || '',
-				meta_title: newArticle.meta_title || '',
-				meta_description: newArticle.meta_description || '',
-				schema: newArticle.schema || '',
-				content: newArticle.content || ''
-			}
-
-			if (hasImportantChanges) {
-				console.log('Important fields changed, triggering auto-save')
-				debouncedSave(newArticle)
-			} else {
-				console.log('No changes to important fields, skipping auto-save')
-			}
-		},
-		{ deep: true }
-	)
 
 	// Chat-related actions
 	function setConversationId(id) {
@@ -279,6 +228,7 @@ export const useArticleStore = defineStore('article', () => {
 		createArticle,
 		updateArticle,
 		deleteArticle,
+		autoSaveContent,
 
 		// Version state and actions
 		articleVersions,

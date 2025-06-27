@@ -31,7 +31,7 @@ const textareaRef = ref(null)
 
 // Preset prompts for empty chat
 const presetPrompts = [
-	'🧠 Use deep research to write this article',
+	// '🧠 Use deep research to write this article',
 	'💬 Summarize this article for me',
 	'🔗 List sources mentioned in prompt responses',
 	'✨ Suggest improvements for this article',
