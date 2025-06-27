@@ -16,6 +16,12 @@ use App\Models\Article;
 
 Broadcast::channel('article.{id}', function ($user, $id) {
 	// Allow access if the user has access to the article
-	// You may want to add more specific authorization logic here
+	// Add your authorization logic here
+	return true;
+});
+
+Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
+	// Allow access if the user has access to the conversation
+	// Add your authorization logic here
 	return true;
 });

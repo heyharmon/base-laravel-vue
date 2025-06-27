@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch, computed } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
+import { ref, computed } from 'vue'
 import api from '@/services/api'
 
 export const useArticleStore = defineStore('article', () => {
@@ -19,6 +18,10 @@ export const useArticleStore = defineStore('article', () => {
 	const isLoadingChats = ref(false)
 	const conversationId = ref(null)
 	const newMessage = ref('')
+
+	// Polling state
+	const isPolling = ref(false)
+	const pollingInterval = ref(null)
 
 	const fetchArticles = async () => {
 		isLoading.value = true
@@ -124,78 +127,28 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	// Create a debounced save function
-	const saveArticle = async (articleData) => {
+	// Auto-save content only (to be called from components)
+	const autoSaveContent = async (articleId, content) => {
 		if (isSaving.value) return
 		isSaving.value = true
 
 		try {
-			const response = await api.put(`/articles/${articleData.id}`, articleData)
-			article.value = response
-			console.log('Article auto-saved successfully')
+			const response = await api.put(`/articles/${articleId}`, { content })
+			// Update only the content and versions, preserve other local changes
+			if (article.value && article.value.id === articleId) {
+				article.value.content = response.content
+				article.value.current_version = response.current_version
+				article.value.versions = response.versions
+			}
+			console.log('Article content auto-saved successfully')
+			return response
+		} catch (err) {
+			console.error('Error auto-saving article content:', err)
+			throw err
 		} finally {
 			isSaving.value = false
 		}
 	}
-
-	// Create a debounced version of the save function (4 second debounce)
-	const debouncedSave = useDebounceFn(saveArticle, 4000)
-
-	// Track previous values of important fields
-	const previousValues = ref({
-		title: '',
-		meta_title: '',
-		meta_description: '',
-		schema: '',
-		content: ''
-	})
-
-	// Setup watcher for auto-saving article changes
-	watch(
-		article,
-		(newArticle, oldArticle) => {
-			// Only proceed if article exists with an ID
-			if (!newArticle || !newArticle.id) return
-
-			// Skip initial load
-			if (oldArticle === null) {
-				// Initialize previous values
-				previousValues.value = {
-					title: newArticle.title || '',
-					meta_title: newArticle.meta_title || '',
-					meta_description: newArticle.meta_description || '',
-					schema: newArticle.schema || '',
-					content: newArticle.content || ''
-				}
-				return
-			}
-
-			// Check if important fields have changed
-			const hasImportantChanges =
-				newArticle.title !== previousValues.value.title ||
-				newArticle.meta_title !== previousValues.value.meta_title ||
-				newArticle.meta_description !== previousValues.value.meta_description ||
-				newArticle.schema !== previousValues.value.schema ||
-				newArticle.content !== previousValues.value.content
-
-			// Update previous values
-			previousValues.value = {
-				title: newArticle.title || '',
-				meta_title: newArticle.meta_title || '',
-				meta_description: newArticle.meta_description || '',
-				schema: newArticle.schema || '',
-				content: newArticle.content || ''
-			}
-
-			if (hasImportantChanges) {
-				console.log('Important fields changed, triggering auto-save')
-				debouncedSave(newArticle)
-			} else {
-				console.log('No changes to important fields, skipping auto-save')
-			}
-		},
-		{ deep: true }
-	)
 
 	// Chat-related actions
 	function setConversationId(id) {
@@ -208,7 +161,6 @@ export const useArticleStore = defineStore('article', () => {
 		if (!id) return
 
 		try {
-			let url = `/articles/${id}/chats`
 			let params = {}
 
 			// If we have a specific conversation ID, add it as a parameter
@@ -216,7 +168,7 @@ export const useArticleStore = defineStore('article', () => {
 				params.conversation_id = conversationId.value
 			}
 
-			const response = await api.get(url, { params })
+			const response = await api.get(`/articles/${id}/chats`, { params })
 			// Ensure we handle the response format correctly
 			chats.value = Array.isArray(response) ? response : []
 			// Make sure each chat has the expected properties
@@ -232,8 +184,67 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	async function sendMessage(content) {
+	// Polling functions
+	const startPolling = () => {
+		if (isPolling.value) return // Already polling
+
+		isPolling.value = true
+		let attempts = 0
+		const maxAttempts = 60 // 60 attempts max (about 2-3 minutes)
+		const initialChatCount = chats.value.length
+
+		const poll = async () => {
+			attempts++
+
+			try {
+				const previousCount = chats.value.length
+				await fetchChats()
+
+				// Check if we got new chats (assistant response added)
+				const hasNewAssistantMessage = chats.value.length > previousCount && chats.value[chats.value.length - 1].role === 'assistant'
+
+				// Stop if we've reached max attempts
+				if (attempts >= maxAttempts) {
+					console.log('Polling timeout reached')
+					stopPolling()
+					return
+				}
+
+				// Continue polling with progressive backoff
+				let delay
+				if (attempts <= 5) {
+					delay = 1000 // First 5 attempts: 1 second
+				} else if (attempts <= 15) {
+					delay = 2000 // Next 10 attempts: 2 seconds
+				} else {
+					delay = 3000 // Remaining attempts: 3 seconds
+				}
+
+				pollingInterval.value = setTimeout(poll, delay)
+			} catch (error) {
+				console.error('Error during polling:', error)
+				stopPolling()
+			}
+		}
+
+		// Start polling after a short initial delay
+		pollingInterval.value = setTimeout(poll, 1000)
+	}
+
+	const stopPolling = () => {
+		if (pollingInterval.value) {
+			clearTimeout(pollingInterval.value)
+			pollingInterval.value = null
+		}
+		isPolling.value = false
+		isLoadingChats.value = false
+	}
+
+	async function sendMessage(content, context = null) {
 		if (!article.value || !article.value.id) return
+
+		// Stop any existing polling
+		stopPolling()
 
 		isLoadingChats.value = true
 		newMessage.value = ''
@@ -245,7 +256,6 @@ export const useArticleStore = defineStore('article', () => {
 		})
 
 		try {
-			let url = `/articles/${article.value.id}/chats`
 			let payload = { content }
 
 			// If we have a specific conversation ID, include it in the payload
@@ -253,26 +263,30 @@ export const useArticleStore = defineStore('article', () => {
 				payload.conversation_id = conversationId.value
 			}
 
-			const response = await api.post(url, payload)
+			// Add context if provided
+			if (context) {
+				payload.context = context
+			}
 
-			// Add AI response to chat with all fields from the updated ChatService
-			chats.value.push({
-				id: response.id,
-				role: response.role,
-				content: response.content,
-				created_at: response.created_at,
-				annotations: response.annotations
-			})
+			const response = await api.post(`/articles/${article.value.id}/chats`, payload)
+
+			// Start polling for the assistant's response
+			console.log('Message sent, starting polling for response...')
+			startPolling()
 		} catch (error) {
 			console.error('Error sending message:', error)
+			stopPolling()
 			// Add error message
 			chats.value.push({
 				role: 'assistant',
 				content: 'Sorry, there was an error processing your request.'
 			})
-		} finally {
-			isLoadingChats.value = false
 		}
+	}
+
+	// Cleanup polling on store destruction
+	const cleanup = () => {
+		stopPolling()
 	}
 
 	return {
@@ -287,6 +301,7 @@ export const useArticleStore = defineStore('article', () => {
 		createArticle,
 		updateArticle,
 		deleteArticle,
+		autoSaveContent,
 
 		// Version state and actions
 		articleVersions,
@@ -300,6 +315,12 @@ export const useArticleStore = defineStore('article', () => {
 		newMessage,
 		setConversationId,
 		fetchChats,
-		sendMessage
+		sendMessage,
+
+		// Polling state and actions
+		isPolling: computed(() => isPolling.value),
+		startPolling,
+		stopPolling,
+		cleanup
 	}
 })

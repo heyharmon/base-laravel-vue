@@ -39,7 +39,7 @@ const register = async () => {
 
 		await auth.register(registrationData)
 
-		router.push({ name: 'home' })
+		router.push({ name: 'teams.create' })
 	} catch (err) {
 		error.value = err.message || 'Registration failed. Please try again.'
 	} finally {

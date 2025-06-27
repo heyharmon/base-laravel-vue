@@ -1,18 +1,16 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch, nextTick, defineAsyncComponent } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import { useDebounceFn } from '@vueuse/core'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import ArticleDeepResearchResponseModal from '@/components/articles/ArticleDeepResearchResponseModal.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import ChatMessage from '@/components/chat/ChatMessage.vue'
-import ChatInput from '@/components/chat/ChatInput.vue'
-import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
-import ChatLoadingIndicator from '@/components/chat/ChatLoadingIndicator.vue'
+import ChatInterface from '@/components/chat/ChatInterface.vue'
 import EditorMenu from '@/components/editor/EditorMenu.vue'
 import { useEcho } from '@laravel/echo-vue'
 
@@ -23,18 +21,85 @@ const jobStatusStore = useJobStatusStore()
 const isLoading = ref(true)
 const showSettings = ref(false)
 const showVersions = ref(false)
-const messagesContainer = ref(null)
+const selectedContent = ref(null)
 
 // Dynamically import the ArticleVersionsPanel component
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
+
+const context = computed(() => {
+	return {
+		viewing_article_id: articleStore.article?.id || null,
+		viewing_article_title: articleStore.article?.title || null,
+		id_of_prompt_belonging_to_article: articleStore.article?.prompt_id || null,
+		selected_content: selectedContent.value || null
+	}
+})
 
 const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
-		articleStore.article.content = editor.getHTML()
+		if (articleStore.article) {
+			articleStore.article.content = editor.getHTML()
+		}
+	},
+	onSelectionUpdate: ({ editor }) => {
+		// Get selected text when user selects text in editor
+		const { from, to } = editor.state.selection
+		if (from !== to) {
+			const selectedText = editor.state.doc.textBetween(from, to)
+			if (selectedText.trim()) {
+				selectedContent.value = selectedText.trim()
+			}
+		}
 	}
 })
+
+// Auto-save content changes with debounce
+const debouncedAutoSaveContent = useDebounceFn(async (content) => {
+	if (articleStore.article?.id && content) {
+		try {
+			await articleStore.autoSaveContent(articleStore.article.id, content)
+		} catch (error) {
+			console.error('Auto-save failed:', error)
+		}
+	}
+}, 2000)
+
+// Watch for content changes and auto-save
+watch(
+	() => articleStore.article?.content,
+	(newContent, oldContent) => {
+		// Skip if this is the initial load or if content hasn't actually changed
+		if (!oldContent || newContent === oldContent) return
+
+		// Only auto-save if we have a valid article ID and content
+		if (articleStore.article?.id && newContent) {
+			console.log('Content changed, triggering auto-save')
+			debouncedAutoSaveContent(newContent)
+		}
+	}
+)
+
+// Manual save for non-content fields
+const saveArticle = async () => {
+	if (!articleStore.article?.id) return
+
+	try {
+		const response = await articleStore.updateArticle(articleStore.article.id, {
+			title: articleStore.article.title,
+			meta_title: articleStore.article.meta_title,
+			meta_description: articleStore.article.meta_description,
+			schema: articleStore.article.schema
+		})
+
+		showSettings.value = false
+
+		console.log('Article metadata saved successfully')
+	} catch (error) {
+		console.error('Failed to save article:', error)
+	}
+}
 
 const handleEditorCommand = (command, options = {}) => {
 	const commandMap = {
@@ -68,13 +133,14 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 
 	// Update the article content
 	if (e.id === articleStore.article.id) {
-		// articleStore.article.content = e.content
-		// articleStore.article.versions = e.versions
 		articleStore.article = e
 
 		// Update the editor content if it's different
 		editor.value.commands.setContent(e.content)
 	}
+
+	// Reload the chat
+	// articleStore.fetchChats(route.params.id)
 })
 
 // Listen for deep research updates
@@ -88,25 +154,6 @@ listen('ArticleDeepResearchUpdated', (e) => {
 		isArticleDeepResearchResponseModalOpen.value = true
 	}
 })
-
-// Function to scroll to the bottom of the messages container
-const scrollToBottom = () => {
-	nextTick(() => {
-		if (messagesContainer.value) {
-			messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-		}
-	})
-}
-
-// Watch for changes in the chats array to scroll to bottom when new messages are added
-watch(
-	() => articleStore.chats.length,
-	(newLength, oldLength) => {
-		if (newLength > oldLength) {
-			scrollToBottom()
-		}
-	}
-)
 
 // Watch for changes in the article content from the store and update the editor
 watch(
@@ -136,9 +183,6 @@ onMounted(async () => {
 
 		// Fetch chats for this article
 		await articleStore.fetchChats(route.params.id)
-
-		// Scroll to bottom of messages
-		scrollToBottom()
 	} catch (error) {
 		console.error('Error loading article:', error)
 		isLoading.value = false
@@ -153,23 +197,6 @@ onUnmounted(() => {
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const isArticleDeepResearchResponseModalOpen = ref(false)
-
-// Preset prompts for empty chat
-const presetPrompts = [
-	'🧠 Use deep research to write this article',
-	'💬 Summarize this article for me',
-	'🔗 List sources mentioned in prompt responses',
-	'✨ Suggest improvements for this article',
-	'🌐 Search the web for information related to this article'
-]
-
-// Handle conversation selection from dropdown
-const handleConversationChanged = async (conversationId) => {
-	if (conversationId) {
-		articleStore.setConversationId(conversationId)
-		await articleStore.fetchChats()
-	}
-}
 
 // Open the prompt detail sheet
 const showPromptDetails = () => {
@@ -191,40 +218,24 @@ const copyContentToClipboard = async () => {
 		console.error('Failed to copy content:', error)
 	}
 }
+
+// Clear selected content
+const clearSelectedContent = () => {
+	selectedContent.value = null
+}
+
+// Handle response received from chat
+const handleResponseReceived = () => {
+	// You can add any logic here when assistant responds
+	// console.log('Assistant response received')
+}
 </script>
 
 <template>
 	<TwoColumnLayout>
 		<template #left-column>
-			<!-- Chat column -->
-			<div class="flex-1 overflow-hidden flex flex-col h-full">
-				<!-- Messages top bar -->
-				<div class="py-2 px-6">
-					<ChatsDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
-				</div>
-
-				<!-- Messages area (scrollable) -->
-				<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin px-6 pt-4 pb-8 space-y-6 custom-scrollbar">
-					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3">
-						<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
-						<button
-							v-for="(prompt, index) in presetPrompts"
-							:key="index"
-							@click="articleStore.sendMessage(prompt)"
-							class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
-						>
-							{{ prompt }}
-						</button>
-					</div>
-					<ChatMessage v-for="(chat, index) in articleStore.chats" :key="index" :chat="chat" />
-					<ChatLoadingIndicator v-if="articleStore.isLoadingChats" />
-				</div>
-
-				<!-- Input area (fixed at bottom) -->
-				<div class="px-4 pb-4 bg-transparent -mt-4">
-					<ChatInput v-model="articleStore.newMessage" @send="articleStore.sendMessage" :disabled="articleStore.isLoadingChats" />
-				</div>
-			</div>
+			<!-- Chat Interface Component -->
+			<ChatInterface :context="context" @response-received="handleResponseReceived" @clear-selected-content="clearSelectedContent" />
 		</template>
 
 		<template #right-column>
@@ -270,10 +281,11 @@ const copyContentToClipboard = async () => {
 					<h1 class="text-xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
 
 					<div class="flex items-center justify-end gap-2">
-						<!-- Auto-save indicator -->
+						<!-- Auto-save indicator for content -->
 						<div class="flex items-center mr-2 text-sm text-neutral-600">
 							<span v-if="articleStore.isSaving" class="flex items-center">
 								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
+								Auto-saving content...
 							</span>
 							<span v-else class="text-neutral-600"></span>
 						</div>
@@ -309,7 +321,12 @@ const copyContentToClipboard = async () => {
 
 					<!-- Settings panel -->
 					<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
-						<h2 class="text-lg font-medium mb-4">Article Settings</h2>
+						<div class="flex items-center justify-between mb-4">
+							<h2 class="text-lg font-medium">Article Settings</h2>
+							<Button @click="saveArticle" variant="primary" size="sm" :disabled="articleStore.isLoading">
+								{{ articleStore.isLoading ? 'Saving...' : 'Save Changes' }}
+							</Button>
+						</div>
 
 						<div class="flex flex-col gap-4">
 							<!-- Title input -->

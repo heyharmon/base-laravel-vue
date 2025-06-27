@@ -15,6 +15,7 @@ class Conversation extends Model
 
 	protected $fillable = [
 		'team_id',
+		'openai_response_id',
 		'title',
 		'conversable_type',
 		'conversable_id',
