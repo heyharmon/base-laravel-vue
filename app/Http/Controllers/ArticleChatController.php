@@ -87,7 +87,7 @@ class ArticleChatController extends Controller
 			]);
 
 			// Process message asynchronously with context
-			$this->openAIService->processMessageAsync(
+			$this->openAIService->processMessage(
 				$conversation,
 				$request->input('content'),
 				$request->input('context', [])

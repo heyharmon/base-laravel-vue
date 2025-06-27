@@ -176,38 +176,33 @@ class OpenAIService
 
 	public function processMessage(Conversation $conversation, string $userMessage, array $context = [])
 	{
-		Log::info('OpenAI Service: Processing message', [
-			'conversation_id' => $conversation->id,
-			'message_length' => strlen($userMessage),
-			'context' => $context
-		]);
+		try {
+			// Build and send request
+			$request = $this->buildRequest($conversation, $userMessage, $context);
+			$response = OpenAI::responses()->create($request);
 
-		// Save user message
-		$conversation->chats()->create([
-			'role' => 'user',
-			'content' => $userMessage
-		]);
+			Log::info('OpenAI Service: Received response', [
+				'response' => $response,
+			]);
 
-		// Build and send request
-		$request = $this->buildRequest($conversation, $userMessage, $context);
-		$response = OpenAI::responses()->create($request);
+			// Process the response
+			return $this->processResponse($conversation, $response);
+		} catch (\Exception $e) {
+			Log::error('OpenAI Service: Processing message failed', [
+				'conversation_id' => $conversation->id,
+				'error' => $e->getMessage()
+			]);
 
-		Log::info('OpenAI Service: Received response', [
-			'response' => $response,
-		]);
-
-		// Process the response
-		return $this->processResponse($conversation, $response);
+			// Create error message in chat
+			$conversation->chats()->create([
+				'role' => 'assistant',
+				'content' => 'Sorry, I encountered an error processing your message. Please try again.'
+			]);
+		}
 	}
 
 	public function processMessageAsync(Conversation $conversation, string $userMessage, array $context = [])
 	{
-		Log::info('OpenAI Service: Processing message asynchronously', [
-			'conversation_id' => $conversation->id,
-			'message_length' => strlen($userMessage),
-			'context' => $context
-		]);
-
 		// Process in background
 		dispatch(function () use ($conversation, $userMessage, $context) {
 			try {
@@ -313,7 +308,7 @@ class OpenAIService
 
 		// You might want to format or summarize the reasoning here
 		$conversation->chats()->create([
-			'role' => 'reasoning',
+			'type' => 'reasoning',
 			'content' => '',
 		]);
 	}
