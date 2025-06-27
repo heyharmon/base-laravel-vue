@@ -24,7 +24,6 @@ use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
 use App\Http\Controllers\ArticleVersionController;
-use App\Http\Controllers\AnalyticsController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -40,11 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	});
 
 	Route::post('/logout', [AuthController::class, 'logout']);
-
-	// Analytics endpoints
-	Route::get('analytics/terms', [AnalyticsController::class, 'termStats']);
-	Route::get('analytics/prompts', [AnalyticsController::class, 'promptStats']);
-	Route::get('analytics/timeseries', [AnalyticsController::class, 'timeSeriesData']);
 
 	// Organizations
 	Route::resource('organizations', OrganizationController::class);

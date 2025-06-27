@@ -1,10 +1,10 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import auth from '@/services/auth'
 import { useTeamStore } from '@/stores/teamStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui'
+import auth from '@/services/auth'
 import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue'
 import SpinnerIcon from '@/components/icons/SpinnerIcon.vue'
 import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
@@ -13,7 +13,6 @@ const router = useRouter()
 const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
-const user = computed(() => auth.getUser())
 
 // Use computed properties to directly reference store values
 const teams = computed(() => ({
@@ -43,24 +42,6 @@ const logout = async () => {
 	router.push('/login')
 }
 
-const loadTeams = async () => {
-	if (isAuthenticated.value) {
-		try {
-			await teamStore.fetchTeams()
-			// No need to manually update teams.value as it's now a computed property
-
-			// If we have a current team ID from the user but no current team loaded yet
-			if (user.value?.current_team_id && !teamStore.currentTeam) {
-				await teamStore.fetchTeam(user.value.current_team_id)
-			}
-		} catch (error) {
-			console.error('Error loading teams:', error)
-		}
-	}
-}
-
-// updateCurrentTeam function removed as currentTeam is now a computed property
-
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
@@ -71,7 +52,6 @@ const switchTeam = async (teamId) => {
 }
 
 onMounted(async () => {
-	await loadTeams()
 	jobStatusStore.pollTeamJobs()
 	isTeamDropdownOpen.value = false
 })

@@ -1,10 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
 // Import pages
 import Dashboard from '@/pages/Dashboard.vue'
-import Analytics from '@/pages/Analytics.vue'
 import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
 import ForgotPassword from '@/pages/auth/ForgotPassword.vue'
@@ -30,11 +28,6 @@ const routes = [
 		path: '/dashboard',
 		name: 'dashboard',
 		component: Dashboard
-	},
-	{
-		path: '/analytics',
-		name: 'analytics',
-		component: Analytics
 	},
 	{
 		path: '/login',
@@ -148,23 +141,6 @@ router.beforeEach(async (to, from, next) => {
 	// Skip team check for invitations.index route
 	if (to.name === 'invitations.index') {
 		return next()
-	}
-
-	// Check if user has teams
-	const teamStore = useTeamStore()
-
-	// Load teams if not already loaded
-	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-		try {
-			await teamStore.fetchTeams()
-		} catch (error) {
-			console.error('Error fetching teams in router guard:', error)
-		}
-	}
-
-	// Redirect to teams.create if user has no teams
-	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-		return next({ name: 'teams.create' })
 	}
 
 	// Allow navigation
