@@ -186,12 +186,11 @@ export const useArticleStore = defineStore('article', () => {
 
 	// Polling functions
 	const startPolling = () => {
-		if (isPolling.value) return // Already polling
+		if (isPolling.value) return
 
 		isPolling.value = true
 		let attempts = 0
-		const maxAttempts = 60 // 60 attempts max (about 2-3 minutes)
-		const initialChatCount = chats.value.length
+		const maxAttempts = 60
 
 		const poll = async () => {
 			attempts++
@@ -200,8 +199,17 @@ export const useArticleStore = defineStore('article', () => {
 				const previousCount = chats.value.length
 				await fetchChats()
 
-				// Check if we got new chats (assistant response added)
-				const hasNewAssistantMessage = chats.value.length > previousCount && chats.value[chats.value.length - 1].role === 'assistant'
+				// Check if we have at least 2 consecutive assistant messages at the end
+				if (chats.value.length >= 2) {
+					const lastTwo = chats.value.slice(-2)
+					const hasTwoConsecutiveAssistantMessages = lastTwo.every((msg) => msg.role === 'assistant')
+
+					if (hasTwoConsecutiveAssistantMessages) {
+						console.log('Two consecutive assistant messages detected, stopping polling')
+						stopPolling()
+						return
+					}
+				}
 
 				// Stop if we've reached max attempts
 				if (attempts >= maxAttempts) {
@@ -210,16 +218,7 @@ export const useArticleStore = defineStore('article', () => {
 					return
 				}
 
-				// Continue polling with progressive backoff
-				let delay
-				if (attempts <= 5) {
-					delay = 1000 // First 5 attempts: 1 second
-				} else if (attempts <= 15) {
-					delay = 2000 // Next 10 attempts: 2 seconds
-				} else {
-					delay = 3000 // Remaining attempts: 3 seconds
-				}
-
+				let delay = attempts <= 5 ? 1000 : attempts <= 15 ? 2000 : 3000
 				pollingInterval.value = setTimeout(poll, delay)
 			} catch (error) {
 				console.error('Error during polling:', error)
@@ -227,7 +226,6 @@ export const useArticleStore = defineStore('article', () => {
 			}
 		}
 
-		// Start polling after a short initial delay
 		pollingInterval.value = setTimeout(poll, 1000)
 	}
 
