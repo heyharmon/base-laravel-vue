@@ -208,7 +208,6 @@ export const useArticleStore = defineStore('article', () => {
 		if (!id) return
 
 		try {
-			let url = `/articles/${id}/chats`
 			let params = {}
 
 			// If we have a specific conversation ID, add it as a parameter
@@ -216,7 +215,7 @@ export const useArticleStore = defineStore('article', () => {
 				params.conversation_id = conversationId.value
 			}
 
-			const response = await api.get(url, { params })
+			const response = await api.get(`/articles/${id}/chats`, { params })
 			// Ensure we handle the response format correctly
 			chats.value = Array.isArray(response) ? response : []
 			// Make sure each chat has the expected properties
@@ -232,7 +231,7 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	async function sendMessage(content) {
+	async function sendMessage(content, context = null) {
 		if (!article.value || !article.value.id) return
 
 		isLoadingChats.value = true
@@ -245,7 +244,6 @@ export const useArticleStore = defineStore('article', () => {
 		})
 
 		try {
-			let url = `/articles/${article.value.id}/chats`
 			let payload = { content }
 
 			// If we have a specific conversation ID, include it in the payload
@@ -253,16 +251,14 @@ export const useArticleStore = defineStore('article', () => {
 				payload.conversation_id = conversationId.value
 			}
 
-			const response = await api.post(url, payload)
+			// Add context if provided
+			if (context) {
+				payload.context = context
+			}
 
-			// Add AI response to chat with all fields from the updated ChatService
-			chats.value.push({
-				id: response.id,
-				role: response.role,
-				content: response.content,
-				created_at: response.created_at,
-				annotations: response.annotations
-			})
+			console.log('Sending message:', payload)
+
+			const response = await api.post(`/articles/${article.value.id}/chats`, payload)
 		} catch (error) {
 			console.error('Error sending message:', error)
 			// Add error message
@@ -270,8 +266,6 @@ export const useArticleStore = defineStore('article', () => {
 				role: 'assistant',
 				content: 'Sorry, there was an error processing your request.'
 			})
-		} finally {
-			isLoadingChats.value = false
 		}
 	}
 

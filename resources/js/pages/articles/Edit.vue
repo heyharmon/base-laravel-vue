@@ -20,15 +20,34 @@ const jobStatusStore = useJobStatusStore()
 const isLoading = ref(true)
 const showSettings = ref(false)
 const showVersions = ref(false)
+const selectedContent = ref(null)
 
 // Dynamically import the ArticleVersionsPanel component
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
+
+const context = computed(() => {
+	return {
+		viewing_article_id: articleStore.article?.id || null,
+		viewing_article_title: articleStore.article?.title || null,
+		selected_content: selectedContent.value || null
+	}
+})
 
 const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
 		articleStore.article.content = editor.getHTML()
+	},
+	onSelectionUpdate: ({ editor }) => {
+		// Get selected text when user selects text in editor
+		const { from, to } = editor.state.selection
+		if (from !== to) {
+			const selectedText = editor.state.doc.textBetween(from, to)
+			if (selectedText.trim()) {
+				selectedContent.value = selectedText.trim()
+			}
+		}
 	}
 })
 
@@ -148,13 +167,24 @@ const copyContentToClipboard = async () => {
 		console.error('Failed to copy content:', error)
 	}
 }
+
+// Clear selected content
+const clearSelectedContent = () => {
+	selectedContent.value = null
+}
+
+// Handle response received from chat
+const handleResponseReceived = () => {
+	// You can add any logic here when assistant responds
+	console.log('Assistant response received')
+}
 </script>
 
 <template>
 	<TwoColumnLayout>
 		<template #left-column>
 			<!-- Chat Interface Component -->
-			<ChatInterface />
+			<ChatInterface :context="context" @response-received="handleResponseReceived" @clear-selected-content="clearSelectedContent" />
 		</template>
 
 		<template #right-column>

@@ -6,10 +6,28 @@ import Button from '@/components/ui/Button.vue'
 import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
 import ArrowUpIcon from '@/components/icons/ArrowUpIcon.vue'
 
+const emit = defineEmits(['responseReceived', 'clearSelectedContent'])
+
+const props = defineProps({
+	context: {
+		type: Object,
+		default: null
+	}
+})
+
 const articleStore = useArticleStore()
 const newMessage = ref('')
 const messagesContainer = ref(null)
 const textareaRef = ref(null)
+
+// Compute context from props
+// const context = computed(() => {
+// 	return {
+// 		viewing_article_id: props.currentArticle?.id || null,
+// 		viewing_article_title: props.currentArticle?.title || null,
+// 		selected_content: props.selectedContent || null
+// 	}
+// })
 
 // Preset prompts for empty chat
 const presetPrompts = [
@@ -72,8 +90,10 @@ const sendMessage = async () => {
 	})
 
 	try {
-		await articleStore.sendMessage(message)
+		// Send message with current context
+		await articleStore.sendMessage(message, props.context)
 		scrollToBottom()
+		emit('responseReceived')
 	} catch (error) {
 		console.error('Error sending message:', error)
 		newMessage.value = message // Restore message on error
@@ -82,11 +102,17 @@ const sendMessage = async () => {
 
 const sendPresetPrompt = async (prompt) => {
 	try {
-		await articleStore.sendMessage(prompt)
+		await articleStore.sendMessage(prompt, props.context)
 		scrollToBottom()
+		emit('responseReceived')
 	} catch (error) {
 		console.error('Error sending preset prompt:', error)
 	}
+}
+
+// Clear selected content
+const clearSelectedContent = () => {
+	emit('clearSelectedContent')
 }
 
 // Handle conversation selection from dropdown
@@ -138,7 +164,7 @@ function handleInput() {
 			<div v-for="chat in articleStore.chats" :key="chat.id" :class="['flex', chat.role === 'user' ? 'justify-end' : 'justify-start']">
 				<div :class="['max-w-[90%] rounded-lg p-3', chat.role === 'user' ? 'bg-neutral-200/60' : 'border border-neutral-200']">
 					<!-- Role label -->
-					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-gray-500">
+					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-neutral-500">
 						{{ getRoleLabel(chat.role) }}
 					</div>
 
@@ -161,12 +187,10 @@ function handleInput() {
 
 			<!-- Loading indicator -->
 			<div v-if="articleStore.isLoadingChats" class="flex justify-start">
-				<div class="bg-white shadow-sm rounded-lg px-4 py-2">
-					<div class="flex items-center space-x-2">
-						<div class="animate-bounce w-2 h-2 bg-gray-400 rounded-full"></div>
-						<div class="animate-bounce w-2 h-2 bg-gray-400 rounded-full" style="animation-delay: 0.1s"></div>
-						<div class="animate-bounce w-2 h-2 bg-gray-400 rounded-full" style="animation-delay: 0.2s"></div>
-					</div>
+				<div class="bg-neutral-300 dark:bg-neutral-700 rounded-lg p-3 flex items-center space-x-2">
+					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse"></div>
+					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.2s"></div>
+					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.4s"></div>
 				</div>
 			</div>
 		</div>
@@ -174,7 +198,7 @@ function handleInput() {
 		<!-- Input area (fixed at bottom) -->
 		<div class="px-4 pb-4 bg-transparent -mt-4">
 			<div class="relative max-w-full mx-auto">
-				<form @submit.prevent="sendMessage" class="border border-gray-300 bg-white rounded-3xl">
+				<form @submit.prevent="sendMessage" class="border border-neutral-300 bg-white rounded-2xl overflow-hidden">
 					<textarea
 						v-model="newMessage"
 						placeholder="Type your message here..."
@@ -190,16 +214,16 @@ function handleInput() {
 
 					<div class="flex items-center justify-between px-2 pb-2">
 						<div class="flex items-center gap-1">
-							<Button
+							<a
 								as="a"
 								variant="link"
 								size="sm"
 								href="https://sites.google.com/bloomcu.com/paraloom-instruction-templates"
 								target="_blank"
-								class="underline text-neutral-500 hover:text-neutral-700"
+								class="underline-offset-4 underline text-neutral-500 text-sm font-medium hover:text-neutral-700 pl-2"
 							>
 								Instruction templates
-							</Button>
+							</a>
 						</div>
 
 						<div class="flex items-center gap-1">
@@ -211,6 +235,31 @@ function handleInput() {
 								:disabled="!newMessage.trim() || articleStore.isLoadingChats"
 							>
 								<ArrowUpIcon />
+							</button>
+						</div>
+					</div>
+
+					<!-- Context Indicators -->
+					<div
+						v-if="context.viewing_article_id || context.selected_content"
+						class="px-4 py-2 flex flex-col gap-2 bg-neutral-100 border-t border-neutral-200"
+					>
+						<div v-if="context.viewing_article_id" class="text-sm text-neutral-600">
+							<span class="font-semibold">Viewing:</span>
+							{{ context.viewing_article_title }}
+						</div>
+						<div v-if="context.selected_content" class="flex gap-2">
+							<div class="text-sm text-neutral-600">
+								<span class="font-semibold">Selected:</span> "{{
+									context.selected_content.length > 100 ? context.selected_content.substring(0, 100) + '...' : context.selected_content
+								}}"
+							</div>
+							<button
+								@click="clearSelectedContent"
+								class="size-5 p-1 flex items-center justify-center bg-white border border-neutral-200 rounded-md text-neutral-400 hover:text-neutral-600 text-sm cursor-pointer"
+								title="Clear selected content"
+							>
+								✕
 							</button>
 						</div>
 					</div>
