@@ -37,9 +37,9 @@ class Article extends Model
 	 * Events the model dispatches.
 	 *
 	 */
-	// protected $dispatchesEvents = [
-	// 	'updated' => ArticleUpdated::class,
-	// ];
+	protected $dispatchesEvents = [
+		'updated' => ArticleUpdated::class,
+	];
 
 	/**
 	 * The version model class name.

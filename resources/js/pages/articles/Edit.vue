@@ -137,6 +137,9 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 		// Update the editor content if it's different
 		editor.value.commands.setContent(e.content)
 	}
+
+	// Reload the chat
+	// articleStore.fetchChats(route.params.id)
 })
 
 // Listen for deep research updates
@@ -223,7 +226,7 @@ const clearSelectedContent = () => {
 // Handle response received from chat
 const handleResponseReceived = () => {
 	// You can add any logic here when assistant responds
-	console.log('Assistant response received')
+	// console.log('Assistant response received')
 }
 </script>
 

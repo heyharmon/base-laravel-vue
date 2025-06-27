@@ -39,6 +39,8 @@ const getRoleLabel = (role) => {
 			return 'You'
 		case 'assistant':
 			return 'Assistant'
+		case 'tool_call':
+			return 'Tool'
 		default:
 			return role
 	}
@@ -153,7 +155,13 @@ function handleInput() {
 
 			<!-- Chat messages -->
 			<div v-for="chat in articleStore.chats" :key="chat.id" :class="['flex', chat.role === 'user' ? 'justify-end' : 'justify-start']">
-				<div :class="['max-w-[90%] rounded-lg p-3', chat.role === 'user' ? 'bg-neutral-200/60' : 'border border-neutral-200']">
+				<div
+					v-if="chat.role == 'tool_call'"
+					class="w-full whitespace-nowrap overflow-hidden text-ellipsis text-xs font-semibold text-neutral-500 rounded-lg px-2 py-1 border border-neutral-200"
+				>
+					{{ chat.content }}
+				</div>
+				<div v-else :class="['max-w-[90%] rounded-lg p-3', chat.role === 'user' ? 'bg-neutral-200/60' : 'border border-neutral-200']">
 					<!-- Role label -->
 					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-neutral-500">
 						{{ getRoleLabel(chat.role) }}
