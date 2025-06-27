@@ -1,6 +1,6 @@
 <script setup>
 import { marked } from 'marked'
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import Button from '@/components/ui/Button.vue'
 import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
@@ -19,15 +19,6 @@ const articleStore = useArticleStore()
 const newMessage = ref('')
 const messagesContainer = ref(null)
 const textareaRef = ref(null)
-
-// Compute context from props
-// const context = computed(() => {
-// 	return {
-// 		viewing_article_id: props.currentArticle?.id || null,
-// 		viewing_article_title: props.currentArticle?.title || null,
-// 		selected_content: props.selectedContent || null
-// 	}
-// })
 
 // Preset prompts for empty chat
 const presetPrompts = [
