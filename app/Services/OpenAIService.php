@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use OpenAI\Laravel\Facades\OpenAI;
-use App\Models\Article;
-use App\Models\Conversation;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Conversation;
+use App\Models\Article;
 
 class OpenAIService
 {
@@ -429,10 +430,13 @@ class OpenAIService
 
 		switch ($functionName) {
 			case 'list_articles':
+				$teamId = Auth::user()->current_team_id;
+
 				$page = $arguments['page'] ?? 1;
 				$perPage = min($arguments['per_page'] ?? 20, 100);
 
-				$paginatedArticles = Article::select(['id', 'title', 'created_at'])
+				$paginatedArticles = Article::where('team_id', $teamId)
+					->select(['id', 'title', 'created_at'])
 					->orderBy('created_at', 'desc')
 					->paginate($perPage, ['*'], 'page', $page);
 

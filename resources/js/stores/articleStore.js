@@ -256,8 +256,6 @@ export const useArticleStore = defineStore('article', () => {
 				payload.context = context
 			}
 
-			console.log('Sending message:', payload)
-
 			const response = await api.post(`/articles/${article.value.id}/chats`, payload)
 		} catch (error) {
 			console.error('Error sending message:', error)
