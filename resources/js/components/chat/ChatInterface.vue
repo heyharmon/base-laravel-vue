@@ -1,6 +1,6 @@
 <script setup>
 import { marked } from 'marked'
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, onUnmounted } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import Button from '@/components/ui/Button.vue'
 import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
@@ -28,6 +28,11 @@ const presetPrompts = [
 	'✨ Suggest improvements for this article',
 	'🌐 Search the web for information related to this article'
 ]
+
+// Cleanup polling when component is unmounted
+onUnmounted(() => {
+	articleStore.cleanup()
+})
 
 const renderMarkdown = (content) => {
 	return marked.parse(content || '')
@@ -65,6 +70,20 @@ watch(
 	}
 )
 
+// Watch for polling state changes to emit responseReceived when polling stops
+watch(
+	() => articleStore.isPolling,
+	(isPolling, wasPolling) => {
+		// If polling just stopped and we have chats, emit responseReceived
+		if (wasPolling && !isPolling && articleStore.chats.length > 0) {
+			const lastMessage = articleStore.chats[articleStore.chats.length - 1]
+			if (lastMessage && lastMessage.role === 'assistant') {
+				emit('responseReceived')
+			}
+		}
+	}
+)
+
 function resizeTextarea() {
 	if (!textareaRef.value) return
 	textareaRef.value.style.height = 'auto'
@@ -83,10 +102,9 @@ const sendMessage = async () => {
 	})
 
 	try {
-		// Send message with current context
+		// Send message with current context - polling will start automatically
 		await articleStore.sendMessage(message, props.context)
 		scrollToBottom()
-		emit('responseReceived')
 	} catch (error) {
 		console.error('Error sending message:', error)
 		newMessage.value = message // Restore message on error
@@ -97,7 +115,6 @@ const sendPresetPrompt = async (prompt) => {
 	try {
 		await articleStore.sendMessage(prompt, props.context)
 		scrollToBottom()
-		emit('responseReceived')
 	} catch (error) {
 		console.error('Error sending preset prompt:', error)
 	}
@@ -111,6 +128,8 @@ const clearSelectedContent = () => {
 // Handle conversation selection from dropdown
 const handleConversationChanged = async (conversationId) => {
 	if (conversationId) {
+		// Stop any ongoing polling when switching conversations
+		articleStore.stopPolling()
 		articleStore.setConversationId(conversationId)
 		await articleStore.fetchChats()
 		scrollToBottom()
@@ -184,8 +203,8 @@ function handleInput() {
 				</div>
 			</div>
 
-			<!-- Loading indicator -->
-			<div v-if="articleStore.isLoadingChats" class="flex justify-start">
+			<!-- Loading/Polling indicator -->
+			<div v-if="articleStore.isLoadingChats || articleStore.isPolling" class="flex justify-start">
 				<div class="bg-neutral-300 dark:bg-neutral-700 rounded-lg p-3 flex items-center space-x-2">
 					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse"></div>
 					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.2s"></div>
@@ -206,7 +225,7 @@ function handleInput() {
 						ref="textareaRef"
 						@input="handleInput"
 						@keydown="handleKeydown"
-						:disabled="articleStore.isLoadingChats"
+						:disabled="articleStore.isLoadingChats || articleStore.isPolling"
 						class="w-full pt-3 px-4 resize-none focus:outline-none disabled:opacity-50"
 						style="min-height: 44px; max-height: 200px"
 					/>
@@ -231,7 +250,7 @@ function handleInput() {
 								@click="sendMessage"
 								type="submit"
 								class="p-2 bg-black text-white rounded-full cursor-pointer hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
-								:disabled="!newMessage.trim() || articleStore.isLoadingChats"
+								:disabled="!newMessage.trim() || articleStore.isLoadingChats || articleStore.isPolling"
 							>
 								<ArrowUpIcon />
 							</button>
