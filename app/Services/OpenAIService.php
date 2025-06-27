@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Conversation;
 use App\Models\Article;
+use App\Models\Prompt;
 
 class OpenAIService
 {
@@ -176,6 +177,21 @@ class OpenAIService
 					]
 				],
 				'required' => ['article_id', 'after_text', 'content']
+			]
+		],
+		[
+			'type' => 'function',
+			'name' => 'fetch_prompt_with_responses',
+			'description' => 'Explore sources/citations/insights about the prompt that belongs to the article. This tool allows you to fetch the prompt and its associated responses',
+			'parameters' => [
+				'type' => 'object',
+				'properties' => [
+					'prompt_id' => [
+						'type' => 'integer',
+						'description' => 'The ID of the prompt to fetch. Use the frontend context "id_of_prompt_belonging_to_article"'
+					]
+				],
+				'required' => ['prompt_id']
 			]
 		],
 		['type' => 'web_search']
@@ -691,6 +707,58 @@ class OpenAIService
 					]
 				]);
 
+			case 'fetch_prompt_with_responses':
+				$teamId = $this->getTeamId();
+
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$promptId = $arguments['prompt_id'];
+
+				try {
+					$prompt = Prompt::where('team_id', $teamId)
+						->with(['responses' => function ($query) {
+							$query->latest()->limit(8);
+						}])
+						->find($promptId);
+
+					if (!$prompt) {
+						return json_encode([
+							'success' => false,
+							'message' => 'Prompt not found'
+						]);
+					}
+
+					return json_encode([
+						'success' => true,
+						'prompt' => [
+							'id' => $prompt->id,
+							'name' => $prompt->name,
+							'content' => $prompt->content,
+							'description' => $prompt->description,
+							'responses' => $prompt->responses->map(function ($response) {
+								return [
+									'id' => $response->id,
+									'content' => $response->content,
+									'created_at' => $response->created_at->toDateTimeString()
+								];
+							})->toArray()
+						]
+					]);
+				} catch (\Exception $e) {
+					Log::error('OpenAI Service: Error fetching prompt with responses', [
+						'prompt_id' => $promptId,
+						'team_id' => $teamId,
+						'error' => $e->getMessage()
+					]);
+
+					return json_encode([
+						'success' => false,
+						'message' => 'Failed to fetch prompt: ' . $e->getMessage()
+					]);
+				}
+
 			case 'web_search':
 				return; // Handled by OpenAI
 
@@ -767,6 +835,11 @@ class OpenAIService
 					$arguments['after_text'];
 				$wordCount = str_word_count($arguments['content']);
 				return "Inserting {$wordCount} words after \"{$afterTextPreview}\" in article \"{$title}\"...";
+
+			case 'fetch_prompt_with_responses':
+				$prompt = Prompt::find($arguments['prompt_id']);
+				$name = $prompt ? $prompt->name : 'Unknown';
+				return "Fetching prompt: \"{$name}\" with recent responses...";
 
 			case 'web_search':
 				return "Searching for: \"{$arguments['query']}\"";

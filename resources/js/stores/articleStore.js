@@ -203,12 +203,6 @@ export const useArticleStore = defineStore('article', () => {
 				// Check if we got new chats (assistant response added)
 				const hasNewAssistantMessage = chats.value.length > previousCount && chats.value[chats.value.length - 1].role === 'assistant'
 
-				if (hasNewAssistantMessage) {
-					console.log('New assistant message received, stopping polling')
-					stopPolling()
-					return
-				}
-
 				// Stop if we've reached max attempts
 				if (attempts >= maxAttempts) {
 					console.log('Polling timeout reached')

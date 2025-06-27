@@ -30,6 +30,7 @@ const context = computed(() => {
 	return {
 		viewing_article_id: articleStore.article?.id || null,
 		viewing_article_title: articleStore.article?.title || null,
+		id_of_prompt_belonging_to_article: articleStore.article?.prompt_id || null,
 		selected_content: selectedContent.value || null
 	}
 })
