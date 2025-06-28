@@ -202,7 +202,7 @@ function handleInput() {
 					</div>
 				</div>
 				<!-- User -->
-				<div v-else :class="['max-w-[90%] rounded-lg p-3', chat.role === 'user' ? 'bg-neutral-200/60' : 'border border-neutral-200']">
+				<div v-else class="max-w-[90%] rounded-lg p-3 border border-neutral-200">
 					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-neutral-500">
 						{{ getRoleLabel(chat.role) }}
 					</div>
