@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button.vue'
 import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
 import ArrowUpIcon from '@/components/icons/ArrowUpIcon.vue'
 
-const emit = defineEmits(['responseReceived', 'clearSelectedContent'])
+const emit = defineEmits(['clearSelectedContent'])
 
 const props = defineProps({
 	context: {
@@ -28,10 +28,6 @@ const presetPrompts = [
 	'✨ Suggest improvements for this article',
 	'🌐 Search the web for information related to this article'
 ]
-
-onUnmounted(() => {
-	articleStore.stopPolling()
-})
 
 const renderMarkdown = (content) => {
 	return marked.parse(content || '')
@@ -65,20 +61,6 @@ watch(
 	(newLength, oldLength) => {
 		if (newLength > oldLength) {
 			scrollToBottom()
-		}
-	}
-)
-
-// Watch for polling state changes to emit responseReceived when polling stops
-watch(
-	() => articleStore.isPolling,
-	(isPolling, wasPolling) => {
-		// If polling just stopped and we have chats, emit responseReceived
-		if (wasPolling && !isPolling && articleStore.chats.length > 0) {
-			const lastMessage = articleStore.chats[articleStore.chats.length - 1]
-			if (lastMessage && lastMessage.role === 'assistant') {
-				emit('responseReceived')
-			}
 		}
 	}
 )
@@ -147,6 +129,10 @@ function handleKeydown(event) {
 function handleInput() {
 	resizeTextarea()
 }
+
+onUnmounted(() => {
+	articleStore.stopPolling()
+})
 </script>
 
 <template>
@@ -174,10 +160,7 @@ function handleInput() {
 			<!-- Chat messages -->
 			<div v-for="chat in articleStore.chats" :key="chat.id" :class="['flex', chat.role === 'user' ? 'justify-end' : 'justify-start']">
 				<!-- Tool Call -->
-				<div
-					v-if="chat.role === 'tool_call'"
-					class="whitespace-nowrap overflow-hidden text-ellipsis text-xs font-semibold text-neutral-500 rounded-lg px-2 py-1 border border-neutral-200"
-				>
+				<div v-if="chat.role === 'tool_call'" class="whitespace-nowrap overflow-hidden text-ellipsis text-sm rounded-lg p-2 border border-neutral-300">
 					{{ chat.content }}
 				</div>
 				<!-- Assistant -->
@@ -202,7 +185,7 @@ function handleInput() {
 					</div>
 				</div>
 				<!-- User -->
-				<div v-else class="max-w-[90%] rounded-lg p-3 border border-neutral-200">
+				<div v-else class="max-w-[90%] rounded-lg p-3 bg-neutral-200/60">
 					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-neutral-500">
 						{{ getRoleLabel(chat.role) }}
 					</div>

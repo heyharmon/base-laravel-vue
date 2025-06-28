@@ -838,8 +838,8 @@ class OpenAIService
 
 			case 'fetch_prompt_with_responses':
 				$prompt = Prompt::find($arguments['prompt_id']);
-				$name = $prompt ? $prompt->name : 'Unknown';
-				return "Fetching prompt: \"{$name}\" with recent responses...";
+				$contentPreview = substr($prompt->content, 0, 30) . '...';
+				return "Fetching prompt: \"{$contentPreview}\" with recent responses...";
 
 			case 'web_search':
 				return "Searching for: \"{$arguments['query']}\"";

@@ -223,19 +223,13 @@ const copyContentToClipboard = async () => {
 const clearSelectedContent = () => {
 	selectedContent.value = null
 }
-
-// Handle response received from chat
-const handleResponseReceived = () => {
-	// You can add any logic here when assistant responds
-	// console.log('Assistant response received')
-}
 </script>
 
 <template>
 	<TwoColumnLayout>
 		<template #left-column>
 			<!-- Chat Interface Component -->
-			<ChatInterface :context="context" @response-received="handleResponseReceived" @clear-selected-content="clearSelectedContent" />
+			<ChatInterface :context="context" @clear-selected-content="clearSelectedContent" />
 		</template>
 
 		<template #right-column>
