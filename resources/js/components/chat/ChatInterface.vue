@@ -29,9 +29,8 @@ const presetPrompts = [
 	'🌐 Search the web for information related to this article'
 ]
 
-// Cleanup polling when component is unmounted
 onUnmounted(() => {
-	articleStore.cleanup()
+	articleStore.stopPolling()
 })
 
 const renderMarkdown = (content) => {
@@ -174,14 +173,36 @@ function handleInput() {
 
 			<!-- Chat messages -->
 			<div v-for="chat in articleStore.chats" :key="chat.id" :class="['flex', chat.role === 'user' ? 'justify-end' : 'justify-start']">
+				<!-- Tool Call -->
 				<div
-					v-if="chat.role == 'tool_call'"
-					class="w-full whitespace-nowrap overflow-hidden text-ellipsis text-xs font-semibold text-neutral-500 rounded-lg px-2 py-1 border border-neutral-200"
+					v-if="chat.role === 'tool_call'"
+					class="whitespace-nowrap overflow-hidden text-ellipsis text-xs font-semibold text-neutral-500 rounded-lg px-2 py-1 border border-neutral-200"
 				>
 					{{ chat.content }}
 				</div>
+				<!-- Assistant -->
+				<div v-else-if="chat.role === 'assistant'" class="max-w-[90%]">
+					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-neutral-500">
+						{{ getRoleLabel(chat.role) }}
+					</div>
+
+					<!-- Chat content -->
+					<div class="markdown-content" v-html="renderMarkdown(chat.content)"></div>
+
+					<!-- Citations section if annotations exist -->
+					<div v-if="chat.annotations && chat.annotations.length > 0" class="mt-3 pt-2 border-t border-neutral-200">
+						<p class="text-xs font-semibold mb-1">Sources:</p>
+						<ul class="text-xs space-y-1">
+							<li v-for="(annotation, index) in chat.annotations" :key="index">
+								<a :href="annotation.url" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+									{{ annotation.title || annotation.url }}
+								</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<!-- User -->
 				<div v-else :class="['max-w-[90%] rounded-lg p-3', chat.role === 'user' ? 'bg-neutral-200/60' : 'border border-neutral-200']">
-					<!-- Role label -->
 					<div v-if="chat.role !== 'user'" class="text-xs font-semibold mb-2 text-neutral-500">
 						{{ getRoleLabel(chat.role) }}
 					</div>

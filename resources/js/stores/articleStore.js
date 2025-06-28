@@ -197,17 +197,8 @@ export const useArticleStore = defineStore('article', () => {
 			attempts++
 
 			try {
-				const previousCount = chats.value.length
+				// const previousCount = chats.value.length
 				await fetchChats()
-
-				// Check if we got new chats (assistant response added)
-				const hasNewAssistantMessage = chats.value.length > previousCount && chats.value[chats.value.length - 1].role === 'assistant'
-
-				if (hasNewAssistantMessage) {
-					console.log('New assistant message received, stopping polling')
-					stopPolling()
-					return
-				}
 
 				// Stop if we've reached max attempts
 				if (attempts >= maxAttempts) {
@@ -216,17 +207,7 @@ export const useArticleStore = defineStore('article', () => {
 					return
 				}
 
-				// Continue polling with progressive backoff
-				let delay
-				if (attempts <= 5) {
-					delay = 1000 // First 5 attempts: 1 second
-				} else if (attempts <= 15) {
-					delay = 2000 // Next 10 attempts: 2 seconds
-				} else {
-					delay = 3000 // Remaining attempts: 3 seconds
-				}
-
-				pollingInterval.value = setTimeout(poll, delay)
+				pollingInterval.value = setTimeout(poll, 1000)
 			} catch (error) {
 				console.error('Error during polling:', error)
 				stopPolling()
@@ -290,11 +271,6 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	// Cleanup polling on store destruction
-	const cleanup = () => {
-		stopPolling()
-	}
-
 	return {
 		// Article state
 		articles,
@@ -326,7 +302,6 @@ export const useArticleStore = defineStore('article', () => {
 		// Polling state and actions
 		isPolling: computed(() => isPolling.value),
 		startPolling,
-		stopPolling,
-		cleanup
+		stopPolling
 	}
 })
