@@ -33,33 +33,19 @@ const presetPrompts = [
 	'🌐 Search the web for information related to this article'
 ]
 
-const renderMarkdown = (content) => {
-	return marked.parse(content || '')
-}
+onMounted(async () => {
+	await articleStore.fetchChats(route.params.id)
+})
 
-const getRoleLabel = (role) => {
-	switch (role) {
-		case 'user':
-			return 'You'
-		case 'assistant':
-			return 'Assistant'
-		case 'tool_call':
-			return 'Tool'
-		default:
-			return role
+// Listen for new chat events on the article
+useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
+	if (e.role !== 'user') {
+		console.log('Received new chat with ID:', e.id)
+		articleStore.chats.push(e)
 	}
-}
+})
 
-// Function to scroll to the bottom of the messages container
-const scrollToBottom = () => {
-	nextTick(() => {
-		if (messagesContainer.value) {
-			messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-		}
-	})
-}
-
-// Watch for changes in the chats array to scroll to bottom when new messages are added
+// Watch for changes in the chats array
 watch(
 	() => articleStore.chats.length,
 	(newLength, oldLength) => {
@@ -68,12 +54,6 @@ watch(
 		}
 	}
 )
-
-function resizeTextarea() {
-	if (!textareaRef.value) return
-	textareaRef.value.style.height = 'auto'
-	textareaRef.value.style.height = textareaRef.value.scrollHeight + 'px'
-}
 
 const sendMessage = async () => {
 	if (!newMessage.value.trim() || articleStore.isLoadingChats) return
@@ -87,7 +67,7 @@ const sendMessage = async () => {
 	})
 
 	try {
-		// Send message with current context - polling will start automatically
+		// Send message with current context
 		await articleStore.sendMessage(message, props.context)
 		scrollToBottom()
 	} catch (error) {
@@ -105,20 +85,37 @@ const sendPresetPrompt = async (prompt) => {
 	}
 }
 
+// Handle conversation selection from dropdown
+const handleConversationChanged = async (conversationId) => {
+	if (conversationId) {
+		articleStore.setConversationId(conversationId)
+		await articleStore.fetchChats()
+		scrollToBottom()
+	}
+}
+
 // Clear selected content
 const clearSelectedContent = () => {
 	emit('clearSelectedContent')
 }
 
-// Handle conversation selection from dropdown
-const handleConversationChanged = async (conversationId) => {
-	if (conversationId) {
-		// Stop any ongoing polling when switching conversations
-		articleStore.stopPolling()
-		articleStore.setConversationId(conversationId)
-		await articleStore.fetchChats()
-		scrollToBottom()
-	}
+const renderMarkdown = (content) => {
+	return marked.parse(content || '')
+}
+
+// Function to scroll to the bottom of the messages container
+const scrollToBottom = () => {
+	nextTick(() => {
+		if (messagesContainer.value) {
+			messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+		}
+	})
+}
+
+function resizeTextarea() {
+	if (!textareaRef.value) return
+	textareaRef.value.style.height = 'auto'
+	textareaRef.value.style.height = textareaRef.value.scrollHeight + 'px'
 }
 
 // Handle keyboard events - submit on Enter but not on Shift+Enter
@@ -134,21 +131,18 @@ function handleInput() {
 	resizeTextarea()
 }
 
-useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
-	if (e.role !== 'user') {
-		console.log('Received new chat with ID:', e.id)
-		articleStore.chats.push(e)
+const getRoleLabel = (role) => {
+	switch (role) {
+		case 'user':
+			return 'You'
+		case 'assistant':
+			return 'Assistant'
+		case 'tool_call':
+			return 'Tool'
+		default:
+			return role
 	}
-})
-
-onMounted(async () => {
-	// Fetch chats for this article
-	await articleStore.fetchChats(route.params.id)
-})
-
-onUnmounted(() => {
-	articleStore.stopPolling()
-})
+}
 </script>
 
 <template>
@@ -223,8 +217,8 @@ onUnmounted(() => {
 				</div>
 			</div>
 
-			<!-- Loading/Polling indicator -->
-			<div v-if="articleStore.isLoadingChats || articleStore.isPolling" class="flex justify-start">
+			<!-- Loading indicator -->
+			<div v-if="articleStore.isLoadingChats" class="flex justify-start">
 				<div class="bg-neutral-300 dark:bg-neutral-700 rounded-lg p-3 flex items-center space-x-2">
 					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse"></div>
 					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.2s"></div>
@@ -245,7 +239,7 @@ onUnmounted(() => {
 						ref="textareaRef"
 						@input="handleInput"
 						@keydown="handleKeydown"
-						:disabled="articleStore.isLoadingChats || articleStore.isPolling"
+						:disabled="articleStore.isLoadingChats"
 						class="w-full pt-3 px-4 resize-none focus:outline-none disabled:opacity-50"
 						style="min-height: 44px; max-height: 200px"
 					/>
@@ -270,7 +264,7 @@ onUnmounted(() => {
 								@click="sendMessage"
 								type="submit"
 								class="p-2 bg-black text-white rounded-full cursor-pointer hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
-								:disabled="!newMessage.trim() || articleStore.isLoadingChats || articleStore.isPolling"
+								:disabled="!newMessage.trim() || articleStore.isLoadingChats"
 							>
 								<ArrowUpIcon />
 							</button>

@@ -19,10 +19,6 @@ export const useArticleStore = defineStore('article', () => {
 	const conversationId = ref(null)
 	const newMessage = ref('')
 
-	// Polling state
-	const isPolling = ref(false)
-	const pollingInterval = ref(null)
-
 	const fetchArticles = async () => {
 		isLoading.value = true
 
@@ -184,48 +180,8 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	// Polling functions
-	const startPolling = () => {
-		// if (isPolling.value) return // Already polling
-		// isPolling.value = true
-		// let attempts = 0
-		// const maxAttempts = 60 // 60 attempts max (about 2-3 minutes)
-		// const initialChatCount = chats.value.length
-		// const poll = async () => {
-		// 	attempts++
-		// 	try {
-		// 		// const previousCount = chats.value.length
-		// 		await fetchChats()
-		// 		// Stop if we've reached max attempts
-		// 		if (attempts >= maxAttempts) {
-		// 			console.log('Polling timeout reached')
-		// 			stopPolling()
-		// 			return
-		// 		}
-		// 		pollingInterval.value = setTimeout(poll, 1000)
-		// 	} catch (error) {
-		// 		console.error('Error during polling:', error)
-		// 		stopPolling()
-		// 	}
-		// }
-		// // Start polling after a short initial delay
-		// pollingInterval.value = setTimeout(poll, 1000)
-	}
-
-	const stopPolling = () => {
-		if (pollingInterval.value) {
-			clearTimeout(pollingInterval.value)
-			pollingInterval.value = null
-		}
-		isPolling.value = false
-		isLoadingChats.value = false
-	}
-
 	async function sendMessage(content, context = null) {
 		if (!article.value || !article.value.id) return
-
-		// Stop any existing polling
-		// stopPolling()
 
 		isLoadingChats.value = true
 		newMessage.value = ''
@@ -250,13 +206,9 @@ export const useArticleStore = defineStore('article', () => {
 			}
 
 			const response = await api.post(`/articles/${article.value.id}/chats`, payload)
-
-			// Start polling for the assistant's response
-			// console.log('Message sent, starting polling for response...')
-			// startPolling()
 		} catch (error) {
 			console.error('Error sending message:', error)
-			// stopPolling()
+
 			// Add error message
 			chats.value.push({
 				role: 'assistant',
@@ -291,11 +243,6 @@ export const useArticleStore = defineStore('article', () => {
 		newMessage,
 		setConversationId,
 		fetchChats,
-		sendMessage,
-
-		// Polling state and actions
-		isPolling: computed(() => isPolling.value),
-		startPolling,
-		stopPolling
+		sendMessage
 	}
 })
