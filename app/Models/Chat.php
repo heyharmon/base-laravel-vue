@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Events\ChatCreated;
+use App\Events\ArticleChatCreated;
 
 class Chat extends Model
 {
@@ -28,9 +29,26 @@ class Chat extends Model
 	 *
 	 * @var array
 	 */
-	protected $dispatchesEvents = [
-		'created' => ChatCreated::class,
-	];
+	// protected $dispatchesEvents = [
+	// 	'created' => ChatCreated::class,
+	// ];
+
+	/**
+	 * Boot the model.
+	 */
+	protected static function boot()
+	{
+		parent::boot();
+
+		static::created(function ($chat) {
+			$conversation = $chat->conversation;
+
+			if ($conversation && $conversation->conversable_type === 'App\\Models\\Article') {
+				$article = $conversation->conversable;
+				event(new ArticleChatCreated($article, $chat));
+			}
+		});
+	}
 
 	public function conversation(): BelongsTo
 	{

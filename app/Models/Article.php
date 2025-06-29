@@ -63,6 +63,6 @@ class Article extends Model
 
 	public function conversations(): MorphMany
 	{
-		return $this->morphMany(Conversation::class, 'conversable');
+		return $this->morphMany(Conversation::class, 'conversable')->latest();
 	}
 }

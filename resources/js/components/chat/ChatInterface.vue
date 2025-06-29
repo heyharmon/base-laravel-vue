@@ -134,20 +134,12 @@ function handleInput() {
 	resizeTextarea()
 }
 
-// Watch articleStore.conversationId and use echo to subscribe
-watch(
-	() => articleStore.conversationId,
-	(conversationId) => {
-		if (conversationId) {
-			useEcho(`conversation.${conversationId}`, 'ChatCreated', (e) => {
-				if (e.role !== 'user') {
-					console.log('Received new chat with ID:', e.id)
-					articleStore.chats.push(e)
-				}
-			})
-		}
+useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
+	if (e.role !== 'user') {
+		console.log('Received new chat with ID:', e.id)
+		articleStore.chats.push(e)
 	}
-)
+})
 
 onMounted(async () => {
 	// Fetch chats for this article
