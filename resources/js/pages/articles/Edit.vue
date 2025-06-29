@@ -128,7 +128,7 @@ const activeEditorCommands = computed(() => ({
 }))
 
 // Echo channel subscription handlers
-const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
+useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
 	console.log('Received update for article ID:', e.id)
 
 	// Update the article content
@@ -138,29 +138,25 @@ const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleU
 		// Update the editor content if it's different
 		editor.value.commands.setContent(e.content)
 	}
-
-	// Reload the chat
-	// articleStore.fetchChats(route.params.id)
 })
 
 // Listen for deep research updates
-listen('ArticleDeepResearchUpdated', (e) => {
-	console.log('Deep research completed for article ID:', e.article_id)
+// listen('ArticleDeepResearchUpdated', (e) => {
+// 	console.log('Deep research completed for article ID:', e.article_id)
 
-	// Refresh the article data when deep research is completed
-	if (e.article_id === articleStore.article.id) {
-		console.log('Refreshing article data after deep research completion')
-		articleStore.fetchArticle(e.article_id)
-		isArticleDeepResearchResponseModalOpen.value = true
-	}
-})
+// 	// Refresh the article data when deep research is completed
+// 	if (e.article_id === articleStore.article.id) {
+// 		console.log('Refreshing article data after deep research completion')
+// 		articleStore.fetchArticle(e.article_id)
+// 		isArticleDeepResearchResponseModalOpen.value = true
+// 	}
+// })
 
 // Watch for changes in the article content from the store and update the editor
 watch(
 	() => articleStore.article?.content,
 	(newContent) => {
 		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
-			console.log('Article content updated in store, updating editor')
 			editor.value.commands.setContent(newContent)
 		}
 	}
@@ -180,19 +176,16 @@ onMounted(async () => {
 		}
 
 		isLoading.value = false
-
-		// Fetch chats for this article
-		await articleStore.fetchChats(route.params.id)
 	} catch (error) {
 		console.error('Error loading article:', error)
 		isLoading.value = false
 	}
 })
 
-onUnmounted(() => {
-	// Leave the Echo channel when component is unmounted
-	leaveChannel()
-})
+// onUnmounted(() => {
+// 	// Leave the Echo channel when component is unmounted
+// 	leaveChannel()
+// })
 
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
@@ -389,18 +382,18 @@ const clearSelectedContent = () => {
 	</TwoColumnLayout>
 
 	<!-- Prompt Detail Sheet -->
-	<PromptDetailSheet
+	<!--<PromptDetailSheet
 		v-if="articleStore.article?.prompt_id"
 		:is-open="isPromptDetailSheetOpen"
 		:prompt-id="articleStore.article.prompt_id"
 		@close="isPromptDetailSheetOpen = false"
-	/>
+	/>-->
 
 	<!-- Perplexity Response Modal -->
-	<ArticleDeepResearchResponseModal
+	<!-- <ArticleDeepResearchResponseModal
 		v-if="articleStore.article?.perplexity_request_id"
 		:is-open="isArticleDeepResearchResponseModalOpen"
 		:article-id="articleStore.article?.id"
 		@close="isArticleDeepResearchResponseModalOpen = false"
-	/>
+	/> -->
 </template>

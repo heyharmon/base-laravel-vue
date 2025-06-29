@@ -204,10 +204,6 @@ class OpenAIService
 			$request = $this->buildRequest($conversation, $userMessage, $context);
 			$response = OpenAI::responses()->create($request);
 
-			Log::info('OpenAI Service: Received response', [
-				'response' => $response,
-			]);
-
 			// Process the response
 			return $this->processResponse($conversation, $response);
 		} catch (\Exception $e) {
@@ -239,11 +235,6 @@ class OpenAIService
 				// Build and send request
 				$request = $service->buildRequest($conversation, $userMessage, $context);
 				$response = OpenAI::responses()->create($request);
-
-				Log::info('OpenAI Service: Received async response', [
-					'conversation_id' => $conversation->id,
-					'response' => $response,
-				]);
 
 				// Process the response
 				$service->processResponse($conversation, $response);
@@ -316,10 +307,6 @@ class OpenAIService
 
 		// Check for annotations in the response
 		if (isset($item->content[0]->annotations) && !empty($item->content[0]->annotations)) {
-			Log::info('OpenAI Service: Assistant message with annotations', [
-				'annotations' => $item->content[0]->annotations,
-			]);
-
 			$chatData['annotations'] = $item->content[0]->annotations;
 		}
 
@@ -330,11 +317,6 @@ class OpenAIService
 	{
 		// Extract reasoning content - adjust based on the actual structure of $item
 		// $reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
-
-		// Log the resoning content
-		// Log::info('OpenAI Service: Reasoning message', [
-		//     'item' => $item,
-		// ]);
 
 		// You might want to format or summarize the reasoning here
 		$conversation->chats()->create([

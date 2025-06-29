@@ -1,10 +1,12 @@
 <script setup>
+import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
-import { ref, nextTick, watch, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import Button from '@/components/ui/Button.vue'
 import ChatsDropdown from '@/components/chat/ChatsDropdown.vue'
 import ArrowUpIcon from '@/components/icons/ArrowUpIcon.vue'
+import { useEcho } from '@laravel/echo-vue'
 
 const emit = defineEmits(['clearSelectedContent'])
 
@@ -14,6 +16,8 @@ const props = defineProps({
 		default: null
 	}
 })
+
+const route = useRoute()
 
 const articleStore = useArticleStore()
 const newMessage = ref('')
@@ -129,6 +133,26 @@ function handleKeydown(event) {
 function handleInput() {
 	resizeTextarea()
 }
+
+// Watch articleStore.conversationId and use echo to subscribe
+watch(
+	() => articleStore.conversationId,
+	(conversationId) => {
+		if (conversationId) {
+			useEcho(`conversation.${conversationId}`, 'ChatCreated', (e) => {
+				if (e.role !== 'user') {
+					console.log('Received new chat with ID:', e.id)
+					articleStore.chats.push(e)
+				}
+			})
+		}
+	}
+)
+
+onMounted(async () => {
+	// Fetch chats for this article
+	await articleStore.fetchChats(route.params.id)
+})
 
 onUnmounted(() => {
 	articleStore.stopPolling()

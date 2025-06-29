@@ -28,21 +28,10 @@ class ChatCreated implements ShouldBroadcastNow
 	}
 
 	/**
-	 * The event's broadcast name.
-	 */
-	public function broadcastAs(): string
-	{
-		return 'ChatCreated';
-	}
-
-	/**
 	 * Get the data to broadcast.
 	 */
 	public function broadcastWith(): array
 	{
-		// Load the chat with any necessary relationships
-		$this->chat->load(['conversation']);
-
 		return [
 			'id' => $this->chat->id,
 			'conversation_id' => $this->chat->conversation_id,
