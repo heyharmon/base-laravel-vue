@@ -183,6 +183,7 @@ export const useArticleStore = defineStore('article', () => {
 	async function sendMessage(content, context = null) {
 		if (!article.value || !article.value.id) return
 
+		// Set loading state immediately when sending
 		isLoadingChats.value = true
 		newMessage.value = ''
 
@@ -206,8 +207,14 @@ export const useArticleStore = defineStore('article', () => {
 			}
 
 			const response = await api.post(`/articles/${article.value.id}/chats`, payload)
+
+			// Note: Don't set isLoadingChats to false here
+			// It will be reset by the ArticleChatProcessingComplete event
 		} catch (error) {
 			console.error('Error sending message:', error)
+
+			// Reset loading state on API error
+			isLoadingChats.value = false
 
 			// Add error message
 			chats.value.push({
@@ -238,8 +245,8 @@ export const useArticleStore = defineStore('article', () => {
 
 		// Chat state and actions
 		chats,
-		isLoadingChats: computed(() => isLoadingChats.value),
-		conversationId: computed(() => conversationId.value),
+		isLoadingChats,
+		conversationId,
 		newMessage,
 		setConversationId,
 		fetchChats,

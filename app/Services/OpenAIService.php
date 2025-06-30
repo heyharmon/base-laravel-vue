@@ -5,9 +5,10 @@ namespace App\Services;
 use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Prompt;
 use App\Models\Conversation;
 use App\Models\Article;
-use App\Models\Prompt;
+use App\Events\ArticleChatProcessingComplete;
 
 class OpenAIService
 {
@@ -205,7 +206,12 @@ class OpenAIService
 			$response = OpenAI::responses()->create($request);
 
 			// Process the response
-			return $this->processResponse($conversation, $response);
+			$result = $this->processResponse($conversation, $response);
+
+			// Emit completion event
+			$this->emitCompletionEvent($conversation, true);
+
+			return $result;
 		} catch (\Exception $e) {
 			Log::error('OpenAI Service: Processing message failed', [
 				'conversation_id' => $conversation->id,
@@ -217,6 +223,9 @@ class OpenAIService
 				'role' => 'assistant',
 				'content' => 'Sorry, I encountered an error processing your message. Please try again.'
 			]);
+
+			// Emit completion event with error
+			$this->emitCompletionEvent($conversation, false, $e->getMessage());
 		}
 	}
 
@@ -238,6 +247,9 @@ class OpenAIService
 
 				// Process the response
 				$service->processResponse($conversation, $response);
+
+				// Emit completion event
+				$service->emitCompletionEvent($conversation, true);
 			} catch (\Exception $e) {
 				Log::error('OpenAI Service: Async processing failed', [
 					'conversation_id' => $conversation->id,
@@ -249,6 +261,11 @@ class OpenAIService
 					'role' => 'assistant',
 					'content' => 'Sorry, I encountered an error processing your message. Please try again.'
 				]);
+
+				// Emit completion event with error
+				$service = new self();
+				$service->withTeamId($teamId);
+				$service->emitCompletionEvent($conversation, false, $e->getMessage());
 			}
 		});
 	}
@@ -860,5 +877,30 @@ class OpenAIService
 		}
 
 		return null;
+	}
+
+	/**
+	 * Emit completion event for the conversation.
+	 *
+	 * @param Conversation $conversation
+	 * @param bool $success
+	 * @param string|null $error
+	 * @return void
+	 */
+	protected function emitCompletionEvent(Conversation $conversation, bool $success = true, ?string $error = null): void
+	{
+		try {
+			if ($conversation->conversable_type === 'App\\Models\\Article') {
+				$article = $conversation->conversable;
+				if ($article) {
+					event(new ArticleChatProcessingComplete($article, $conversation, $success, $error));
+				}
+			}
+		} catch (\Exception $e) {
+			Log::error('OpenAI Service: Failed to emit completion event', [
+				'conversation_id' => $conversation->id,
+				'error' => $e->getMessage()
+			]);
+		}
 	}
 }

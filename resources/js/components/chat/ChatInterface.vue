@@ -45,6 +45,23 @@ useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
 	}
 })
 
+// Listen for chat processing completion events
+useEcho(`article.${route.params.id}`, 'ArticleChatProcessingComplete', (e) => {
+	console.log('Chat processing completed:', e)
+
+	// Reset loading state
+	articleStore.isLoadingChats = false
+
+	// Handle errors if needed
+	if (!e.success && e.error) {
+		console.error('Chat processing failed:', e.error)
+		// Optionally show user-friendly error message
+	}
+
+	// Scroll to bottom to show any new messages
+	scrollToBottom()
+})
+
 // Watch for changes in the chats array
 watch(
 	() => articleStore.chats.length,

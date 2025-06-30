@@ -182,11 +182,6 @@ onMounted(async () => {
 	}
 })
 
-// onUnmounted(() => {
-// 	// Leave the Echo channel when component is unmounted
-// 	leaveChannel()
-// })
-
 const isCopied = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const isArticleDeepResearchResponseModalOpen = ref(false)
@@ -382,18 +377,18 @@ const clearSelectedContent = () => {
 	</TwoColumnLayout>
 
 	<!-- Prompt Detail Sheet -->
-	<!--<PromptDetailSheet
+	<PromptDetailSheet
 		v-if="articleStore.article?.prompt_id"
 		:is-open="isPromptDetailSheetOpen"
 		:prompt-id="articleStore.article.prompt_id"
 		@close="isPromptDetailSheetOpen = false"
-	/>-->
+	/>
 
 	<!-- Perplexity Response Modal -->
-	<!-- <ArticleDeepResearchResponseModal
+	<ArticleDeepResearchResponseModal
 		v-if="articleStore.article?.perplexity_request_id"
 		:is-open="isArticleDeepResearchResponseModalOpen"
 		:article-id="articleStore.article?.id"
 		@close="isArticleDeepResearchResponseModalOpen = false"
-	/> -->
+	/>
 </template>

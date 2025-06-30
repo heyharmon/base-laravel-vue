@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Events\ChatCreated;
 use App\Events\ArticleChatCreated;
 
 class Chat extends Model
@@ -23,15 +22,6 @@ class Chat extends Model
 		'metadata' => 'array',
 		'annotations' => 'array',
 	];
-
-	/**
-	 * The event map for the model.
-	 *
-	 * @var array
-	 */
-	// protected $dispatchesEvents = [
-	// 	'created' => ChatCreated::class,
-	// ];
 
 	/**
 	 * Boot the model.
