@@ -130,12 +130,21 @@ export const useArticleStore = defineStore('article', () => {
 
 		try {
 			const response = await api.put(`/articles/${articleId}`, { content })
-			// Update only the content and versions, preserve other local changes
+
+			// Only update if the article exists and the content is actually different
 			if (article.value && article.value.id === articleId) {
-				article.value.content = response.content
+				// Only update content if it's actually different (shouldn't happen for auto-save)
+				if (article.value.content !== response.content) {
+					article.value.content = response.content
+				}
+
+				// Only update fields that might have changed on the server
+				// Don't update content since it should already match what we sent
 				article.value.current_version = response.current_version
 				article.value.versions = response.versions
+				article.value.updated_at = response.updated_at
 			}
+
 			console.log('Article content auto-saved successfully')
 			return response
 		} catch (err) {

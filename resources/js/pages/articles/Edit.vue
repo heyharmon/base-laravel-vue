@@ -22,6 +22,7 @@ const isArticleDeepResearchResponseModalOpen = ref(false)
 
 const selectedContent = ref(null)
 const isCopied = ref(false)
+const isUpdatingFromAutoSave = ref(false)
 
 // Dynamically import components
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
@@ -42,7 +43,7 @@ const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
-		if (articleStore.article) {
+		if (articleStore.article && !isUpdatingFromAutoSave.value) {
 			articleStore.article.content = editor.getHTML()
 		}
 	},
@@ -62,9 +63,15 @@ const editor = useEditor({
 const debouncedAutoSaveContent = useDebounceFn(async (content) => {
 	if (articleStore.article?.id && content) {
 		try {
+			isUpdatingFromAutoSave.value = true
 			await articleStore.autoSaveContent(articleStore.article.id, content)
 		} catch (error) {
 			console.error('Auto-save failed:', error)
+		} finally {
+			// Reset the flag after a short delay to ensure the watcher doesn't trigger
+			setTimeout(() => {
+				isUpdatingFromAutoSave.value = false
+			}, 100)
 		}
 	}
 }, 2000)
@@ -85,10 +92,11 @@ watch(
 )
 
 // Watch for changes in the article content from the store and update the editor
+// Only update if the content actually differs AND it's not from our own auto-save
 watch(
 	() => articleStore.article?.content,
 	(newContent) => {
-		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
+		if (editor.value && newContent && editor.value.getHTML() !== newContent && !isUpdatingFromAutoSave.value) {
 			editor.value.commands.setContent(newContent)
 		}
 	}
@@ -100,10 +108,17 @@ useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
 
 	// Update the article content
 	if (e.id === articleStore.article.id) {
+		isUpdatingFromAutoSave.value = true
 		articleStore.article = e
 
 		// Update the editor content if it's different
-		editor.value.commands.setContent(e.content)
+		if (editor.value.getHTML() !== e.content) {
+			editor.value.commands.setContent(e.content)
+		}
+
+		setTimeout(() => {
+			isUpdatingFromAutoSave.value = false
+		}, 100)
 	}
 })
 
