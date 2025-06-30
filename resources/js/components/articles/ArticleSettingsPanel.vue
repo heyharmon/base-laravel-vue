@@ -1,16 +1,8 @@
 <template>
 	<div class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
-		<div class="flex items-center justify-between mb-4">
-			<h2 class="text-lg font-medium">Article Settings</h2>
-			<div class="flex gap-2">
-				<Button @click="closePanel" variant="outline" size="sm"> Cancel </Button>
-				<Button @click="saveArticle" variant="primary" size="sm" :disabled="articleStore.isLoading">
-					{{ articleStore.isLoading ? 'Saving...' : 'Save Changes' }}
-				</Button>
-			</div>
-		</div>
+		<h2 class="text-lg font-medium mb-4">Article Settings</h2>
 
-		<div class="flex flex-col gap-4">
+		<div class="flex flex-col gap-4 mb-3">
 			<!-- Title input -->
 			<div>
 				<label for="title" class="block text-sm font-medium text-neutral-700 mb-1">Title</label>
@@ -58,6 +50,13 @@
 					placeholder="JSON-LD structured data schema"
 				></textarea>
 			</div>
+		</div>
+
+		<div class="flex gap-2">
+			<Button @click="saveArticle" variant="primary" size="sm" :disabled="articleStore.isLoading">
+				{{ articleStore.isLoading ? 'Saving...' : 'Save Changes' }}
+			</Button>
+			<Button @click="closePanel" variant="outline" size="sm"> Cancel </Button>
 		</div>
 	</div>
 </template>
