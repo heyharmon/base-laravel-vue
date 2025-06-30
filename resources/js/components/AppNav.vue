@@ -13,6 +13,8 @@ const router = useRouter()
 const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
+const user = computed(() => auth.getUser())
+const isSuperAdmin = computed(() => user.value?.role === 'super_admin')
 
 // Use computed properties to directly reference store values
 const teams = computed(() => ({
@@ -67,6 +69,7 @@ onMounted(async () => {
 					<router-link to="/prompts" class="text-sm hover:text-neutral-300">Prompts</router-link>
 					<router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
 					<router-link to="/articles" class="text-sm hover:text-neutral-300">Articles</router-link>
+					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
 				</div>
 			</div>
 

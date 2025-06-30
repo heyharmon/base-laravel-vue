@@ -18,6 +18,7 @@ use App\Http\Controllers\OrganizationOnboardController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\OrganizationIndustryController;
+use App\Http\Controllers\SuperAdminOrganizationController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
@@ -101,4 +102,10 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Article Conversations
 	Route::get('articles/{article}/conversations', [ArticleConversationController::class, 'index']);
 	Route::post('articles/{article}/conversations', [ArticleConversationController::class, 'store']);
+
+	// Super Admin routes
+	Route::prefix('super-admin')->middleware('super_admin')->group(function () {
+		Route::get('/organizations', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'index']);
+		Route::get('/organizations/stats', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'stats']);
+	});
 });

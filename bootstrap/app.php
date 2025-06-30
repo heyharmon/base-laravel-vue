@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
 		$middleware->api([
 			Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
 		]);
+		
+		$middleware->alias([
+			'super_admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
+		]);
 	})
 	->withExceptions(function (Exceptions $exceptions) {
 		//
