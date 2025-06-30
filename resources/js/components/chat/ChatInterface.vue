@@ -256,7 +256,6 @@ const getRoleLabel = (role) => {
 						ref="textareaRef"
 						@input="handleInput"
 						@keydown="handleKeydown"
-						:disabled="articleStore.isLoadingChats"
 						class="w-full pt-3 px-4 resize-none focus:outline-none disabled:opacity-50"
 						style="min-height: 44px; max-height: 200px"
 					/>
