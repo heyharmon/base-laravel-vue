@@ -3,8 +3,6 @@ import { ref, onMounted, computed, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useDebounceFn } from '@vueuse/core'
-import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
-import ArticleDeepResearchResponseModal from '@/components/articles/ArticleDeepResearchResponseModal.vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
@@ -25,8 +23,11 @@ const isArticleDeepResearchResponseModalOpen = ref(false)
 const selectedContent = ref(null)
 const isCopied = ref(false)
 
-// Dynamically import the ArticleVersionsPanel component
+// Dynamically import components
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
+const ArticleSettingsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleSettingsPanel.vue'))
+const ArticleDeepResearchResponseModal = defineAsyncComponent(() => import('@/components/articles/ArticleDeepResearchResponseModal.vue'))
+const PromptDetailSheet = defineAsyncComponent(() => import('@/components/prompts/PromptDetailSheet.vue'))
 
 const context = computed(() => {
 	return {
@@ -83,25 +84,15 @@ watch(
 	}
 )
 
-// Manual save for non-content fields
-const saveArticle = async () => {
-	if (!articleStore.article?.id) return
-
-	try {
-		const response = await articleStore.updateArticle(articleStore.article.id, {
-			title: articleStore.article.title,
-			meta_title: articleStore.article.meta_title,
-			meta_description: articleStore.article.meta_description,
-			schema: articleStore.article.schema
-		})
-
-		isSettingsOpen.value = false
-
-		console.log('Article metadata saved successfully')
-	} catch (error) {
-		console.error('Failed to save article:', error)
+// Watch for changes in the article content from the store and update the editor
+watch(
+	() => articleStore.article?.content,
+	(newContent) => {
+		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
+			editor.value.commands.setContent(newContent)
+		}
 	}
-}
+)
 
 // Listen for article updates
 useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
@@ -126,16 +117,6 @@ useEcho(`article.${route.params.id}`, 'ArticleDeepResearchUpdated', (e) => {
 		isArticleDeepResearchResponseModalOpen.value = true
 	}
 })
-
-// Watch for changes in the article content from the store and update the editor
-watch(
-	() => articleStore.article?.content,
-	(newContent) => {
-		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
-			editor.value.commands.setContent(newContent)
-		}
-	}
-)
 
 onMounted(async () => {
 	try {
@@ -273,64 +254,7 @@ const clearSelectedContent = () => {
 					<ArticleVersionsPanel v-if="isVersionsOpen" />
 
 					<!-- Settings panel -->
-					<div v-if="isSettingsOpen" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
-						<div class="flex items-center justify-between mb-4">
-							<h2 class="text-lg font-medium">Article Settings</h2>
-							<Button @click="saveArticle" variant="primary" size="sm" :disabled="articleStore.isLoading">
-								{{ articleStore.isLoading ? 'Saving...' : 'Save Changes' }}
-							</Button>
-						</div>
-
-						<div class="flex flex-col gap-4">
-							<!-- Title input -->
-							<div>
-								<label for="title" class="block text-sm font-medium text-neutral-700 mb-1">Title</label>
-								<input
-									id="title"
-									v-model="articleStore.article.title"
-									type="text"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-									placeholder="Article title"
-								/>
-							</div>
-
-							<!-- Meta Title input -->
-							<div>
-								<label for="meta_title" class="block text-sm font-medium text-neutral-700 mb-1">Meta Title</label>
-								<input
-									id="meta_title"
-									v-model="articleStore.article.meta_title"
-									type="text"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-									placeholder="Meta title for SEO"
-								/>
-							</div>
-
-							<!-- Meta Description input -->
-							<div>
-								<label for="meta_description" class="block text-sm font-medium text-neutral-700 mb-1">Meta Description</label>
-								<textarea
-									id="meta_description"
-									v-model="articleStore.article.meta_description"
-									rows="3"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-									placeholder="Meta description for SEO"
-								></textarea>
-							</div>
-
-							<!-- Schema input -->
-							<div>
-								<label for="schema" class="block text-sm font-medium text-neutral-700 mb-1">Schema</label>
-								<textarea
-									id="schema"
-									v-model="articleStore.article.schema"
-									rows="5"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500 font-mono text-sm"
-									placeholder="JSON-LD structured data schema"
-								></textarea>
-							</div>
-						</div>
-					</div>
+					<ArticleSettingsPanel v-if="isSettingsOpen" @close="isSettingsOpen = false" />
 
 					<!-- Rich text editor -->
 					<div class="flex flex-col overflow-hidden">
@@ -347,17 +271,17 @@ const clearSelectedContent = () => {
 		</template>
 	</TwoColumnLayout>
 
-	<!-- Prompt Detail Sheet -->
+	<!-- Prompt Detail Sheet - now async loaded -->
 	<PromptDetailSheet
-		v-if="articleStore.article?.prompt_id"
+		v-if="articleStore.article?.prompt_id && isPromptDetailSheetOpen"
 		:is-open="isPromptDetailSheetOpen"
 		:prompt-id="articleStore.article.prompt_id"
 		@close="isPromptDetailSheetOpen = false"
 	/>
 
-	<!-- Perplexity Response Modal -->
+	<!-- Perplexity Response Modal - now async loaded -->
 	<ArticleDeepResearchResponseModal
-		v-if="articleStore.article?.perplexity_request_id"
+		v-if="articleStore.article?.perplexity_request_id && isArticleDeepResearchResponseModalOpen"
 		:is-open="isArticleDeepResearchResponseModalOpen"
 		:article-id="articleStore.article?.id"
 		@close="isArticleDeepResearchResponseModalOpen = false"
