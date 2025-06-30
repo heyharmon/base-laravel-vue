@@ -77,6 +77,11 @@ class User extends Authenticatable
         return $this->teams()->wherePivot('invitation_accepted', true);
     }
 
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
     /**
      * Get the pending team invitations for the user.
      */

@@ -16,6 +16,8 @@ import OrganizationEdit from '@/pages/organizations/Edit.vue'
 import PromptsIndex from '@/pages/prompts/Index.vue'
 import ArticlesIndex from '@/pages/articles/Index.vue'
 import ArticleEdit from '@/pages/articles/Edit.vue'
+// Super Admin
+
 
 const routes = [
 	{
@@ -101,12 +103,18 @@ const routes = [
 		component: ArticlesIndex,
 		meta: { requiresAuth: true }
 	},
-	{
-		path: '/articles/:id/edit',
-		name: 'articles.edit',
-		component: ArticleEdit,
-		meta: { requiresAuth: true }
-	}
+        {
+                path: '/articles/:id/edit',
+                name: 'articles.edit',
+                component: ArticleEdit,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/super-admin/organizations',
+                name: 'super-admin.organizations',
+                component: () => import('@/pages/super-admin/Organizations.vue'),
+                meta: { requiresAuth: true }
+        }
 ]
 
 const router = createRouter({
