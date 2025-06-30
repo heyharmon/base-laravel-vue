@@ -53,7 +53,7 @@ class Organization extends Model
 	/**
 	 * Get the industry that owns the organization.
 	 */
-	public function organizationIndustry(): BelongsTo
+	public function industry(): BelongsTo
 	{
 		return $this->belongsTo(OrganizationIndustry::class, 'industry_id');
 	}

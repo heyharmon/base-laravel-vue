@@ -81,8 +81,8 @@ class GenerateOrganizationKeywords extends TrackableJob
 			}
 
 			// Add industry if available
-			if (!empty($this->model->industry)) {
-				$organizationContext .= " in the " . $this->model->industry . " industry";
+			if ($this->model->industry) {
+				$organizationContext .= " in the " . $this->model->industry->name . " industry";
 			}
 
 			// Add description if available

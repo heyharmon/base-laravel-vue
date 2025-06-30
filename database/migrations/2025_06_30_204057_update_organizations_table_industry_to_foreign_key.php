@@ -61,10 +61,10 @@ return new class extends Migration
 		});
 
 		// Copy industry names back from the relationship
-		$organizations = Organization::with('organizationIndustry')->get();
+		$organizations = Organization::with('industry')->get();
 		foreach ($organizations as $organization) {
-			if ($organization->organizationIndustry) {
-				$organization->update(['industry' => $organization->organizationIndustry->name]);
+			if ($organization->industry) {
+				$organization->update(['industry' => $organization->industry->name]);
 			}
 		}
 

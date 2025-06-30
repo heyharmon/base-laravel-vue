@@ -78,7 +78,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			// Skip if team already has 50 competitors
 			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
 
-			if ($competitorCount >= 50) {
+			if ($competitorCount >= 10) {
 				$this->markJobAsCompleted('Skipping prompt, max 50 competitors reached');
 				return;
 			}

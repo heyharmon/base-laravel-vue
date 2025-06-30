@@ -38,19 +38,31 @@ class DetermineOrganizationIndustries extends Command
             return;
         }
 
+        // Get existing industries to provide as options
+        $existingIndustries = OrganizationIndustry::orderBy('name')->pluck('name')->toArray();
+        $industryList = empty($existingIndustries) ? 'None yet' : implode(', ', $existingIndustries);
+
         $this->info("Found {$organizations->count()} organizations to process.");
+        $this->info("Existing industries in database: {$industryList}");
 
         $progressBar = $this->output->createProgressBar($organizations->count());
         $progressBar->start();
 
         foreach ($organizations as $organization) {
             try {
+                $prompt = "Look at {$organization->website} and determine what industry they should be classified under.\n\n";
+                $prompt .= "Here are the existing industries in our database: {$industryList}\n\n";
+                $prompt .= "Please consider if any of these existing industries is a great fit for this organization. ";
+                $prompt .= "If one of the existing industries is a perfect match, return exactly that industry name. ";
+                $prompt .= "If none of the existing industries are a good fit, suggest the best industry name for this organization.\n\n";
+                $prompt .= "Just return the industry name only.";
+
                 $response = OpenAI::chat()->create([
                     'model' => 'gpt-4o',
                     'messages' => [
                         [
                             'role' => 'user',
-                            'content' => "Look at {$organization->website} and tell me what industry they should be classified under. Just return the industry."
+                            'content' => $prompt
                         ]
                     ],
                     'max_tokens' => 50,

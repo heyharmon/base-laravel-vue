@@ -10,6 +10,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const isLoading = ref(false)
 	const visibilityMetrics = ref([])
 	const isLoadingVisibility = ref(false)
+	const industries = ref([])
+	const isLoadingIndustries = ref(false)
 
 	// Other stores
 	const jobStatusStore = useJobStatusStore()
@@ -158,6 +160,35 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
+	async function fetchIndustries() {
+		console.log('Fetching industries...')
+		isLoadingIndustries.value = true
+
+		try {
+			const response = await api.get('/organization-industries')
+			industries.value = response
+			return response
+		} catch (err) {
+			console.error('Error fetching industries:', err)
+			throw err
+		} finally {
+			isLoadingIndustries.value = false
+		}
+	}
+
+	async function createIndustry(industryData) {
+		console.log('Creating industry...', industryData)
+
+		try {
+			const response = await api.post('/organization-industries', industryData)
+			await fetchIndustries()
+			return response
+		} catch (err) {
+			console.error('Error creating industry:', err)
+			throw err
+		}
+	}
+
 	return {
 		// State
 		organizations,
@@ -165,6 +196,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 		isLoading,
 		isLoadingVisibility,
 		visibilityMetrics,
+		industries,
+		isLoadingIndustries,
 
 		// Getters
 		ownedOrganizations,
@@ -178,6 +211,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
-		findCompetitors
+		findCompetitors,
+		fetchIndustries,
+		createIndustry
 	}
 })

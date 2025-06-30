@@ -87,9 +87,9 @@ So, again pretend you are given the keyword, \"car loan\" and the location is \"
             }
 
             // Add industry message conditionally if industry is available
-            if (isset($this->model->industry) && !empty($this->model->industry)) {
-                $messages[] = new UserMessage("You also need to incorporate the industry \"" . $this->model->industry . "\" in the prompt when it makes sense.
-For example, if the keyword is related to the " . $this->model->industry . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
+            if ($this->model->industry) {
+                $messages[] = new UserMessage("You also need to incorporate the industry \"" . $this->model->industry->name . "\" in the prompt when it makes sense.
+For example, if the keyword is related to the " . $this->model->industry->name . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
             }
 
             // Add description message conditionally if description is available
