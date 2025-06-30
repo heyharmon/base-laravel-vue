@@ -30,7 +30,7 @@ const presetPrompts = [
 	'💬 Summarize this article for me',
 	'🔗 List sources mentioned in prompt responses',
 	'✨ Suggest improvements for this article',
-	'🌐 Search the web for information related to this article'
+	'🌐 Search web for info related to this article'
 ]
 
 onMounted(async () => {

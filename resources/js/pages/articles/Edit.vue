@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch, defineAsyncComponent } from 'vue'
+import { ref, onMounted, computed, watch, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
-import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useDebounceFn } from '@vueuse/core'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import ArticleDeepResearchResponseModal from '@/components/articles/ArticleDeepResearchResponseModal.vue'
@@ -16,12 +15,15 @@ import { useEcho } from '@laravel/echo-vue'
 
 const route = useRoute()
 const articleStore = useArticleStore()
-const jobStatusStore = useJobStatusStore()
 
 const isLoading = ref(true)
-const showSettings = ref(false)
-const showVersions = ref(false)
+const isSettingsOpen = ref(false)
+const isVersionsOpen = ref(false)
+const isPromptDetailSheetOpen = ref(false)
+const isArticleDeepResearchResponseModalOpen = ref(false)
+
 const selectedContent = ref(null)
+const isCopied = ref(false)
 
 // Dynamically import the ArticleVersionsPanel component
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
@@ -93,7 +95,7 @@ const saveArticle = async () => {
 			schema: articleStore.article.schema
 		})
 
-		showSettings.value = false
+		isSettingsOpen.value = false
 
 		console.log('Article metadata saved successfully')
 	} catch (error) {
@@ -101,33 +103,7 @@ const saveArticle = async () => {
 	}
 }
 
-const handleEditorCommand = (command, options = {}) => {
-	const commandMap = {
-		bold: () => editor.value.chain().focus().toggleBold().run(),
-		italic: () => editor.value.chain().focus().toggleItalic().run(),
-		heading: ({ level }) => editor.value.chain().focus().toggleHeading({ level }).run(),
-		bulletList: () => editor.value.chain().focus().toggleBulletList().run(),
-		orderedList: () => editor.value.chain().focus().toggleOrderedList().run(),
-		blockquote: () => editor.value.chain().focus().toggleBlockquote().run()
-	}
-
-	if (commandMap[command]) {
-		commandMap[command](options)
-	}
-}
-
-const activeEditorCommands = computed(() => ({
-	bold: editor.value?.isActive('bold'),
-	italic: editor.value?.isActive('italic'),
-	heading: {
-		level: [1, 2, 3, 4].find((level) => editor.value?.isActive('heading', { level }))
-	},
-	bulletList: editor.value?.isActive('bulletList'),
-	orderedList: editor.value?.isActive('orderedList'),
-	blockquote: editor.value?.isActive('blockquote')
-}))
-
-// Echo channel subscription handlers
+// Listen for article updates
 useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
 	console.log('Received update for article ID:', e.id)
 
@@ -141,16 +117,15 @@ useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
 })
 
 // Listen for deep research updates
-// listen('ArticleDeepResearchUpdated', (e) => {
-// 	console.log('Deep research completed for article ID:', e.article_id)
+useEcho(`article.${route.params.id}`, 'ArticleDeepResearchUpdated', (e) => {
+	console.log('Deep research completed for article ID:', e.article_id)
 
-// 	// Refresh the article data when deep research is completed
-// 	if (e.article_id === articleStore.article.id) {
-// 		console.log('Refreshing article data after deep research completion')
-// 		articleStore.fetchArticle(e.article_id)
-// 		isArticleDeepResearchResponseModalOpen.value = true
-// 	}
-// })
+	// Refresh the article data when deep research is completed
+	if (e.id === articleStore.article.id) {
+		articleStore.fetchArticle(e.article_id)
+		isArticleDeepResearchResponseModalOpen.value = true
+	}
+})
 
 // Watch for changes in the article content from the store and update the editor
 watch(
@@ -181,10 +156,6 @@ onMounted(async () => {
 		isLoading.value = false
 	}
 })
-
-const isCopied = ref(false)
-const isPromptDetailSheetOpen = ref(false)
-const isArticleDeepResearchResponseModalOpen = ref(false)
 
 // Open the prompt detail sheet
 const showPromptDetails = () => {
@@ -273,12 +244,12 @@ const clearSelectedContent = () => {
 						</div>
 
 						<div class="flex gap-2">
-							<Button @click="showSettings = !showSettings" variant="outline" size="sm">
-								{{ showSettings ? 'Hide Settings' : 'Settings' }}
+							<Button @click="isSettingsOpen = !isSettingsOpen" variant="outline" size="sm">
+								{{ isSettingsOpen ? 'Hide Settings' : 'Settings' }}
 							</Button>
 
-							<Button @click="showVersions = !showVersions" variant="outline" size="sm">
-								{{ showVersions ? 'Hide Versions' : 'Versions' }}
+							<Button @click="isVersionsOpen = !isVersionsOpen" variant="outline" size="sm">
+								{{ isVersionsOpen ? 'Hide Versions' : 'Versions' }}
 							</Button>
 
 							<Button @click="copyContentToClipboard" variant="outline" size="sm" :disabled="isCopied">
@@ -299,10 +270,10 @@ const clearSelectedContent = () => {
 
 				<div v-else class="flex flex-col gap-6">
 					<!-- Versions panel - dynamically loaded -->
-					<ArticleVersionsPanel v-if="showVersions" />
+					<ArticleVersionsPanel v-if="isVersionsOpen" />
 
 					<!-- Settings panel -->
-					<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
+					<div v-if="isSettingsOpen" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
 						<div class="flex items-center justify-between mb-4">
 							<h2 class="text-lg font-medium">Article Settings</h2>
 							<Button @click="saveArticle" variant="primary" size="sm" :disabled="articleStore.isLoading">
@@ -364,7 +335,7 @@ const clearSelectedContent = () => {
 					<!-- Rich text editor -->
 					<div class="flex flex-col overflow-hidden">
 						<!-- Editor menu -->
-						<EditorMenu @command="handleEditorCommand" :active-commands="activeEditorCommands" />
+						<EditorMenu :editor="editor" />
 
 						<!-- Editor content -->
 						<div class="pl-2 pr-6 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">

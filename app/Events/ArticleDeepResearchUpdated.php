@@ -43,7 +43,7 @@ class ArticleDeepResearchUpdated implements ShouldBroadcastNow
 	public function broadcastWith(): array
 	{
 		return [
-			'article_id' => $this->article->id,
+			'id' => $this->article->id,
 			'updated_at' => $this->article->updated_at,
 		];
 	}
