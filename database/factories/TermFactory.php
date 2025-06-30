@@ -18,7 +18,6 @@ class TermFactory extends Factory
         return [
             'team_id' => Team::factory(),
             'name' => $this->faker->word(),
-            'description' => $this->faker->optional()->sentence(),
         ];
     }
 }
