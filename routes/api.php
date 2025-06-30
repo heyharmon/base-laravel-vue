@@ -99,13 +99,13 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('articles/{article}/chats', [ArticleChatController::class, 'index']);
 	Route::post('articles/{article}/chats', [ArticleChatController::class, 'store']);
 
-        // Article Conversations
-        Route::get('articles/{article}/conversations', [ArticleConversationController::class, 'index']);
-        Route::post('articles/{article}/conversations', [ArticleConversationController::class, 'store']);
+	// Article Conversations
+	Route::get('articles/{article}/conversations', [ArticleConversationController::class, 'index']);
+	Route::post('articles/{article}/conversations', [ArticleConversationController::class, 'store']);
 
-        // Super Admin routes
-        Route::prefix('super-admin')->group(function () {
-                Route::get('/organizations', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'index']);
-                Route::get('/organizations/stats', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'stats']);
-        });
+	// Super Admin routes
+	Route::prefix('super-admin')->middleware('super_admin')->group(function () {
+		Route::get('/organizations', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'index']);
+		Route::get('/organizations/stats', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'stats']);
+	});
 });
