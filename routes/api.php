@@ -6,6 +6,8 @@ use App\Http\Controllers\TermResponsesController;
 use App\Http\Controllers\TermGeneratorController;
 use App\Http\Controllers\TermController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\SuperAdminOrganizationExportController;
+use App\Http\Controllers\SuperAdminOrganizationController;
 use App\Http\Controllers\PromptRunController;
 use App\Http\Controllers\PromptRunBatchController;
 use App\Http\Controllers\PromptResponsesController;
@@ -15,17 +17,16 @@ use App\Http\Controllers\PromptController;
 use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
+use App\Http\Controllers\OrganizationIndustryController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
-use App\Http\Controllers\OrganizationIndustryController;
-use App\Http\Controllers\SuperAdminOrganizationController;
 use App\Http\Controllers\JobStatusController;
 use App\Http\Controllers\AuthPasswordController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ArticleVersionController;
 use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
-use App\Http\Controllers\ArticleVersionController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -105,7 +106,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Super Admin routes
 	Route::prefix('super-admin')->middleware('super_admin')->group(function () {
-		Route::get('/organizations', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'index']);
-		Route::get('/organizations/stats', [\App\Http\Controllers\SuperAdminOrganizationController::class, 'stats']);
+		Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
+		Route::get('/organizations/stats', [SuperAdminOrganizationController::class, 'stats']);
+		Route::post('/organizations/export', [SuperAdminOrganizationExportController::class, 'export']);
 	});
 });
