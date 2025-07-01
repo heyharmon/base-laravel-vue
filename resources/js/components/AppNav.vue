@@ -14,7 +14,7 @@ const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
 const user = computed(() => auth.getUser())
-const isSuperAdmin = computed(() => user.value?.role === 'super_admin')
+const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
 // Use computed properties to directly reference store values
 const teams = computed(() => ({

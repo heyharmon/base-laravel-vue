@@ -15,7 +15,7 @@ class SuperAdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->role !== 'super_admin') {
+        if (!$request->user() || !$request->user()->is_super_admin) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
