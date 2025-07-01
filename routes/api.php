@@ -108,6 +108,9 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::prefix('super-admin')->middleware('super_admin')->group(function () {
 		Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
 		Route::get('/organizations/stats', [SuperAdminOrganizationController::class, 'stats']);
+		Route::get('/organizations/teams', [SuperAdminOrganizationController::class, 'teams']);
+
+		// Export organizations data
 		Route::post('/organizations/export', [SuperAdminOrganizationExportController::class, 'export']);
 	});
 });

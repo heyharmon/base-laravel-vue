@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Organization;
 use App\Models\Response;
 use App\Models\Term;
+use App\Models\Team;
 use Illuminate\Http\Request;
 
 class SuperAdminOrganizationController extends Controller
@@ -17,6 +18,7 @@ class SuperAdminOrganizationController extends Controller
 		// Validate request parameters
 		$request->validate([
 			'industry_id' => 'nullable|exists:organization_industries,id',
+			'team_id' => 'nullable|exists:teams,id',
 			'is_competitor' => 'nullable|in:owned,competitor,all',
 			'search' => 'nullable|string|max:255',
 			'sort_by' => 'nullable|in:name,team_name,visibility,industry_name,website',
@@ -31,6 +33,10 @@ class SuperAdminOrganizationController extends Controller
 		// Apply filters
 		if ($request->has('industry_id') && $request->industry_id) {
 			$query->where('industry_id', $request->industry_id);
+		}
+
+		if ($request->has('team_id') && $request->team_id) {
+			$query->where('team_id', $request->team_id);
 		}
 
 		if ($request->has('is_competitor') && $request->is_competitor !== 'all') {
@@ -151,5 +157,19 @@ class SuperAdminOrganizationController extends Controller
 		];
 
 		return response()->json($stats);
+	}
+
+	/**
+	 * Get all teams for filtering dropdown.
+	 */
+	public function teams(Request $request)
+	{
+		// TODO: Add proper authorization check for super admin
+
+		$teams = Team::select('id', 'name')
+			->orderBy('name')
+			->get();
+
+		return response()->json($teams);
 	}
 }

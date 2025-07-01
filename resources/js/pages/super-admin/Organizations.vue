@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input.vue'
 // State
 const organizations = ref([])
 const industries = ref([])
+const teams = ref([])
 const isLoading = ref(false)
 const isExporting = ref(false)
 const selectedOrganizations = ref(new Set())
@@ -23,6 +24,7 @@ const stats = ref({
 // Filters
 const filters = ref({
 	industry_id: '',
+	team_id: '',
 	is_competitor: 'owned',
 	search: '',
 	sort_by: 'visibility',
@@ -86,6 +88,16 @@ const fetchIndustries = async () => {
 	}
 }
 
+// Fetch teams for filter
+const fetchTeams = async () => {
+	try {
+		const response = await api.get('/super-admin/organizations/teams')
+		teams.value = response
+	} catch (error) {
+		console.error('Error fetching teams:', error)
+	}
+}
+
 // Fetch statistics
 const fetchStats = async () => {
 	try {
@@ -110,7 +122,7 @@ watch(
 	}
 )
 
-watch([() => filters.value.industry_id, () => filters.value.is_competitor], () => {
+watch([() => filters.value.industry_id, () => filters.value.team_id, () => filters.value.is_competitor], () => {
 	pagination.value.current_page = 1
 	fetchOrganizations()
 })
@@ -208,7 +220,7 @@ const exportSelected = async () => {
 
 // Lifecycle
 onMounted(async () => {
-	await Promise.all([fetchOrganizations(), fetchIndustries(), fetchStats()])
+	await Promise.all([fetchOrganizations(), fetchIndustries(), fetchTeams(), fetchStats()])
 })
 </script>
 
@@ -242,7 +254,7 @@ onMounted(async () => {
 
 			<!-- Filters -->
 			<div class="bg-white p-4 rounded-lg border border-neutral-200 mb-6">
-				<div class="grid grid-cols-3 gap-4">
+				<div class="grid grid-cols-4 gap-4">
 					<!-- Search -->
 					<div>
 						<label class="block text-sm font-medium text-neutral-700 mb-1">Search by name</label>
@@ -252,6 +264,20 @@ onMounted(async () => {
 							placeholder="Search organizations..."
 							class="w-full px-3 py-1.5 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 						/>
+					</div>
+
+					<!-- Team Filter -->
+					<div>
+						<label class="block text-sm font-medium text-neutral-700 mb-1">Team</label>
+						<select
+							v-model="filters.team_id"
+							class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+						>
+							<option value="">All Teams</option>
+							<option v-for="team in teams" :key="team.id" :value="team.id">
+								{{ team.name }}
+							</option>
+						</select>
 					</div>
 
 					<!-- Industry Filter -->
