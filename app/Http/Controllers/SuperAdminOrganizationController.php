@@ -21,7 +21,7 @@ class SuperAdminOrganizationController extends Controller
 			'team_id' => 'nullable|exists:teams,id',
 			'is_competitor' => 'nullable|in:owned,competitor,all',
 			'search' => 'nullable|string|max:255',
-			'sort_by' => 'nullable|in:name,team_name,visibility,industry_name,website',
+			'sort_by' => 'nullable|in:name,team_name,visibility,industry_name,website,type',
 			'sort_order' => 'nullable|in:asc,desc',
 			'page' => 'nullable|integer|min:1',
 			'per_page' => 'nullable|integer|min:1|max:100',
@@ -118,6 +118,10 @@ class SuperAdminOrganizationController extends Controller
 					break;
 				case 'website':
 					$compareValue = strcasecmp($a['website'] ?? '', $b['website'] ?? '');
+					break;
+				case 'type':
+					// Sort by is_competitor: false (Owned) first, then true (Competitor)
+					$compareValue = $a['is_competitor'] <=> $b['is_competitor'];
 					break;
 			}
 

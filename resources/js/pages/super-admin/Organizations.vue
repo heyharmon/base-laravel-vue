@@ -377,7 +377,12 @@ onMounted(async () => {
 									</button>
 								</th>
 								<th class="px-4 py-3 text-left">
-									<span class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</span>
+									<button
+										@click="sort('type')"
+										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
+									>
+										Type {{ getSortIcon('type') }}
+									</button>
 								</th>
 							</tr>
 						</thead>
