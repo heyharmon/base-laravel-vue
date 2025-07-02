@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch, defineAsyncComponent } from 'vue'
+import { ref, onMounted, computed, watch, defineAsyncComponent, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useDebounceFn } from '@vueuse/core'
@@ -23,6 +23,11 @@ const isArticleDeepResearchResponseModalOpen = ref(false)
 const selectedContent = ref(null)
 const isCopied = ref(false)
 const isUpdatingFromAutoSave = ref(false)
+
+// Tooltip state
+const showTooltip = ref(false)
+const tooltipPosition = ref({ top: 0, left: 0 })
+const currentSelection = ref(null)
 
 // Dynamically import components
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
@@ -53,9 +58,69 @@ const editor = useEditor({
 		if (from !== to) {
 			const selectedText = editor.state.doc.textBetween(from, to)
 			if (selectedText.trim()) {
-				selectedContent.value = selectedText.trim()
+				// Store the current selection but don't set selectedContent yet
+				currentSelection.value = selectedText.trim()
+				showSelectionTooltip()
+			} else {
+				hideTooltip()
 			}
+		} else {
+			hideTooltip()
 		}
+	}
+})
+
+// Show tooltip at the selection position
+const showSelectionTooltip = () => {
+	if (!editor.value) return
+
+	// Get the selection coordinates
+	const { from, to } = editor.value.state.selection
+	const start = editor.value.view.coordsAtPos(from)
+	const end = editor.value.view.coordsAtPos(to)
+
+	// Calculate position (centered above the selection)
+	const left = (start.left + end.left) / 2
+	const top = start.top - 10 // 10px above the selection
+
+	tooltipPosition.value = {
+		top: top + window.scrollY,
+		left: left
+	}
+
+	showTooltip.value = true
+}
+
+// Hide tooltip
+const hideTooltip = () => {
+	showTooltip.value = false
+	currentSelection.value = null
+}
+
+// Add selected text to chat
+const addToChat = () => {
+	if (currentSelection.value) {
+		selectedContent.value = currentSelection.value
+		hideTooltip()
+	}
+}
+
+// Handle clicks outside the editor and tooltip
+onMounted(() => {
+	const handleClickOutside = (event) => {
+		const editorElement = document.querySelector('.ProseMirror')
+		const tooltipElement = document.querySelector('.selection-tooltip')
+
+		if (editorElement && !editorElement.contains(event.target) && tooltipElement && !tooltipElement.contains(event.target)) {
+			hideTooltip()
+		}
+	}
+
+	document.addEventListener('click', handleClickOutside)
+
+	// Cleanup
+	return () => {
+		document.removeEventListener('click', handleClickOutside)
 	}
 })
 
@@ -263,7 +328,7 @@ const clearSelectedContent = () => {
 					<ArticleSettingsPanel v-if="isSettingsOpen" @close="isSettingsOpen = false" />
 
 					<!-- Rich text editor -->
-					<div class="flex flex-col overflow-hidden">
+					<div class="flex flex-col overflow-hidden relative">
 						<!-- Editor menu -->
 						<EditorMenu :editor="editor" />
 
@@ -271,6 +336,26 @@ const clearSelectedContent = () => {
 						<div class="pl-2 pr-6 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
 							<EditorContent :editor="editor" />
 						</div>
+
+						<!-- Selection Tooltip -->
+						<Teleport to="body">
+							<div
+								v-if="showTooltip"
+								class="selection-tooltip fixed z-50 bg-black text-white px-3 py-2 rounded-md shadow-lg transform -translate-x-1/2 -translate-y-full"
+								:style="{
+									top: `${tooltipPosition.top}px`,
+									left: `${tooltipPosition.left}px`
+								}"
+							>
+								<button @click="addToChat" class="text-sm font-medium hover:text-gray-200 transition-colors">Add to chat</button>
+								<!-- Arrow pointing down -->
+								<div class="absolute left-1/2 transform -translate-x-1/2 top-full">
+									<div
+										class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-black"
+									></div>
+								</div>
+							</div>
+						</Teleport>
 					</div>
 				</div>
 			</div>
@@ -293,3 +378,21 @@ const clearSelectedContent = () => {
 		@close="isArticleDeepResearchResponseModalOpen = false"
 	/>
 </template>
+
+<style>
+/* Add styles for the tooltip animation */
+.selection-tooltip {
+	animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -90%);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -100%);
+	}
+}
+</style>
