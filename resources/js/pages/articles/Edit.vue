@@ -348,7 +348,7 @@ const clearSelectedContent = () => {
 								}"
 							>
 								<button @click="addToChat" class="px-3 py-2 text-sm font-medium hover:text-gray-200 transition-colors cursor-pointer">
-									Edit with AI
+									Add to chat
 								</button>
 								<!-- Arrow pointing down -->
 								<div class="absolute left-1/2 transform -translate-x-1/2 top-full">
