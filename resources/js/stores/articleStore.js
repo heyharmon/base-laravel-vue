@@ -151,7 +151,9 @@ export const useArticleStore = defineStore('article', () => {
 			console.error('Error auto-saving article content:', err)
 			throw err
 		} finally {
-			isSaving.value = false
+			setTimeout(() => {
+				isSaving.value = false
+			}, 500)
 		}
 	}
 
