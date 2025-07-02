@@ -341,13 +341,15 @@ const clearSelectedContent = () => {
 						<Teleport to="body">
 							<div
 								v-if="showTooltip"
-								class="selection-tooltip fixed z-50 bg-black text-white px-3 py-2 rounded-md shadow-lg transform -translate-x-1/2 -translate-y-full"
+								class="selection-tooltip fixed z-50 bg-black text-white rounded-md shadow-lg transform -translate-x-1/2 -translate-y-full"
 								:style="{
 									top: `${tooltipPosition.top}px`,
 									left: `${tooltipPosition.left}px`
 								}"
 							>
-								<button @click="addToChat" class="text-sm font-medium hover:text-gray-200 transition-colors">Add to chat</button>
+								<button @click="addToChat" class="px-3 py-2 text-sm font-medium hover:text-gray-200 transition-colors cursor-pointer">
+									Add to chat
+								</button>
 								<!-- Arrow pointing down -->
 								<div class="absolute left-1/2 transform -translate-x-1/2 top-full">
 									<div
