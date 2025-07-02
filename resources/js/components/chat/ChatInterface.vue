@@ -87,6 +87,9 @@ const sendMessage = async () => {
 		// Send message with current context
 		await articleStore.sendMessage(message, props.context)
 		scrollToBottom()
+
+		// Clear selected content after sending
+		clearSelectedContent()
 	} catch (error) {
 		console.error('Error sending message:', error)
 		newMessage.value = message // Restore message on error
@@ -97,6 +100,9 @@ const sendPresetPrompt = async (prompt) => {
 	try {
 		await articleStore.sendMessage(prompt, props.context)
 		scrollToBottom()
+
+		// Clear selected content after sending
+		clearSelectedContent()
 	} catch (error) {
 		console.error('Error sending preset prompt:', error)
 	}
