@@ -288,14 +288,7 @@ const getRoleLabel = (role) => {
 					</div>
 
 					<!-- Context Indicators -->
-					<div
-						v-if="context.viewing_article_id || context.selected_content"
-						class="px-4 py-2 flex flex-col gap-2 bg-neutral-100 border-t border-neutral-200"
-					>
-						<div v-if="context.viewing_article_id" class="text-sm text-neutral-600">
-							<span class="font-semibold">Viewing:</span>
-							{{ context.viewing_article_title }}
-						</div>
+					<div v-if="context.selected_content" class="px-4 py-2 flex flex-col gap-2 bg-neutral-100 border-t border-neutral-200">
 						<div v-if="context.selected_content" class="flex gap-2">
 							<div class="text-sm text-neutral-600">
 								<span class="font-semibold">Selected:</span> "{{
