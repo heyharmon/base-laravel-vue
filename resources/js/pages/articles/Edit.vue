@@ -230,14 +230,6 @@ const clearSelectedContent = () => {
 					<h1 class="text-xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
 
 					<div class="flex items-center justify-end gap-2">
-						<!-- Auto-save indicator for content -->
-						<!-- <div class="flex items-center mr-2 text-sm text-neutral-600">
-							<span v-if="articleStore.isSaving" class="flex items-center">
-								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
-							</span>
-							<span v-else class="text-neutral-600"></span>
-						</div> -->
-
 						<div class="flex gap-2">
 							<Button @click="isSettingsOpen = !isSettingsOpen" variant="outline" size="sm">
 								{{ isSettingsOpen ? 'Hide Settings' : 'Settings' }}
