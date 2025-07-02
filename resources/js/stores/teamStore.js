@@ -22,6 +22,15 @@ export const useTeamStore = defineStore('team', {
 				this.ownedTeams = response.ownedTeams
 				this.joinedTeams = response.joinedTeams
 				this.pendingInvitations = response.pendingInvitations
+
+				// Set current team based on user's current_team_id
+				const user = JSON.parse(localStorage.getItem('user'))
+				if (user && user.current_team_id) {
+					this.currentTeam = this.getCurrentTeam({
+						ownedTeams: this.ownedTeams,
+						joinedTeams: this.joinedTeams
+					}, user)
+				}
 			} catch (error) {
 				console.error('Error fetching teams:', error)
 			} finally {
@@ -194,6 +203,9 @@ export const useTeamStore = defineStore('team', {
 						user.current_team_id = response.team.id
 						localStorage.setItem('user', JSON.stringify(user))
 					}
+
+					// Set current team in store
+					this.currentTeam = response.team
 
 					return response
 				}
