@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import api from '@/services/api'
-import Spinner from '@/components/ui/Spinner.vue'
+import SpinnerIcon from './icons/SpinnerIcon.vue'
 
 const props = defineProps({
 	label: {
@@ -158,8 +158,8 @@ const createFromDomain = () => {
 				:placeholder="placeholder"
 				@keydown.enter="isDomain ? createFromDomain() : null"
 			/>
-			<div v-if="isSearching" class="absolute right-3 top-2">
-				<Spinner class="h-5 w-5" />
+			<div v-if="isSearching" class="absolute right-3 top-3">
+				<SpinnerIcon class="h-5 w-5" />
 			</div>
 		</div>
 

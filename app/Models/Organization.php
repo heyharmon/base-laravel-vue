@@ -2,15 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasJobStatus;
 use App\Models\Article;
+use App\Models\OrganizationIndustry;
 
 class Organization extends Model
 {
@@ -50,5 +48,13 @@ class Organization extends Model
 	public function articles(): HasMany
 	{
 		return $this->hasMany(Article::class);
+	}
+
+	/**
+	 * Get the industry that owns the organization.
+	 */
+	public function industry(): BelongsTo
+	{
+		return $this->belongsTo(OrganizationIndustry::class, 'industry_id');
 	}
 }

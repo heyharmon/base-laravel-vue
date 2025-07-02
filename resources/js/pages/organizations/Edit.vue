@@ -5,12 +5,12 @@ import { useOrganizationStore } from '@/stores/organizationStore'
 import { useTermStore } from '@/stores/termStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
+import LightningIcon from '@/components/icons/LightningIcon.vue'
 import TermDetailSheet from '@/components/terms/TermDetailSheet.vue'
 import TermCreateModal from '@/components/terms/TermCreateModal.vue'
 import GenerateTermsModal from '@/components/organizations/GenerateTermsModal.vue'
 import TermNotification from '@/components/terms/TermNotification.vue'
 import TermListItem from '@/components/terms/TermListItem.vue'
-import RecommendedTermItem from '@/components/terms/RecommendedTermItem.vue'
 import OrganizationForm from '@/components/organizations/OrganizationForm.vue'
 
 const route = useRoute()
@@ -23,7 +23,7 @@ const organization = ref({
 	founded: '',
 	employee_count: '',
 	location: '',
-	industry: '',
+	industry_id: null,
 	description: '',
 	is_competitor: false
 })
@@ -33,7 +33,7 @@ const originalOrganization = ref({
 	founded: '',
 	employee_count: '',
 	location: '',
-	industry: '',
+	industry_id: null,
 	description: '',
 	is_competitor: false
 })
@@ -67,7 +67,7 @@ const hasChanges = computed(() => {
 		organization.value.employee_count !== originalOrganization.value.employee_count ||
 		organization.value.is_competitor !== originalOrganization.value.is_competitor ||
 		organization.value.location !== originalOrganization.value.location ||
-		organization.value.industry !== originalOrganization.value.industry ||
+		organization.value.industry_id !== originalOrganization.value.industry_id ||
 		organization.value.description !== originalOrganization.value.description
 	)
 })
@@ -115,30 +115,6 @@ const handleDeleteTerm = (termId, termName) => {
 		deletedTermMessage.value = null
 	}, 10000)
 }
-
-const acceptRecommendedTerm = async (termId) => {
-	try {
-		await termStore.acceptRecommendedTerm(route.params.id, termId)
-		deletedTermMessage.value = 'Term added to your organization.'
-		setTimeout(() => {
-			deletedTermMessage.value = null
-		}, 10000)
-	} catch (error) {
-		console.error('Error accepting recommended term:', error)
-	}
-}
-
-const denyRecommendedTerm = async (termId, termName) => {
-	try {
-		await termStore.denyRecommendedTerm(route.params.id, termId)
-		deletedTermMessage.value = `The term "${termName}" recommendation has been removed.`
-		setTimeout(() => {
-			deletedTermMessage.value = null
-		}, 10000)
-	} catch (error) {
-		console.error('Error denying recommended term:', error)
-	}
-}
 </script>
 
 <template>
@@ -174,8 +150,6 @@ const denyRecommendedTerm = async (termId, termName) => {
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
 
-
-
 			<div v-else class="flex flex-col md:flex-row gap-12">
 				<!-- Left column - Terms section -->
 				<div class="w-full md:w-2/3">
@@ -188,9 +162,7 @@ const denyRecommendedTerm = async (termId, termName) => {
 								@click="isGenerateTermsModalOpen = true"
 								class="flex items-center gap-2 px-3 py-1.5 bg-neutral-800 text-white rounded-md text-xs font-medium hover:bg-neutral-700 transition-colors cursor-pointer"
 							>
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
-									<path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-								</svg>
+								<LightningIcon />
 								<span>Generate terms</span>
 							</button>
 							<button
@@ -226,23 +198,6 @@ const denyRecommendedTerm = async (termId, termName) => {
 								@select="showTermDetails"
 								@delete="(kw) => handleDeleteTerm(kw.id, kw.name)"
 							/>
-						</div>
-
-						<!-- Recommended Terms Section -->
-						<div v-if="termStore.recommendedTerms.length > 0">
-							<h3 class="text-lg font-semibold mb-4">Recommended terms</h3>
-							<div v-if="termStore.isLoadingRecommended" class="flex justify-center py-8">
-								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
-							</div>
-							<div v-else class="space-y-3">
-								<RecommendedTermItem
-									v-for="term in termStore.recommendedTerms"
-									:key="term.id"
-									:term="term"
-									@accept="(kw) => acceptRecommendedTerm(kw.id)"
-									@deny="(kw) => denyRecommendedTerm(kw.id, kw.name)"
-								/>
-							</div>
 						</div>
 					</div>
 				</div>

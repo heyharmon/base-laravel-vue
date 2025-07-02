@@ -1,17 +1,20 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import auth from '@/services/auth'
 import { useTeamStore } from '@/stores/teamStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui'
+import auth from '@/services/auth'
 import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue'
+import SpinnerIcon from '@/components/icons/SpinnerIcon.vue'
+import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const router = useRouter()
 const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
 const user = computed(() => auth.getUser())
+const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
 // Use computed properties to directly reference store values
 const teams = computed(() => ({
@@ -41,24 +44,6 @@ const logout = async () => {
 	router.push('/login')
 }
 
-const loadTeams = async () => {
-	if (isAuthenticated.value) {
-		try {
-			await teamStore.fetchTeams()
-			// No need to manually update teams.value as it's now a computed property
-
-			// If we have a current team ID from the user but no current team loaded yet
-			if (user.value?.current_team_id && !teamStore.currentTeam) {
-				await teamStore.fetchTeam(user.value.current_team_id)
-			}
-		} catch (error) {
-			console.error('Error loading teams:', error)
-		}
-	}
-}
-
-// updateCurrentTeam function removed as currentTeam is now a computed property
-
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
@@ -69,7 +54,6 @@ const switchTeam = async (teamId) => {
 }
 
 onMounted(async () => {
-	await loadTeams()
 	jobStatusStore.pollTeamJobs()
 	isTeamDropdownOpen.value = false
 })
@@ -85,6 +69,7 @@ onMounted(async () => {
 					<router-link to="/prompts" class="text-sm hover:text-neutral-300">Prompts</router-link>
 					<router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
 					<router-link to="/articles" class="text-sm hover:text-neutral-300">Articles</router-link>
+					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
 				</div>
 			</div>
 
@@ -97,21 +82,7 @@ onMounted(async () => {
 						class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded hover:bg-neutral-800"
 					>
 						<div class="relative size-5">
-							<svg class="animate-spin absolute inset-0" viewBox="0 0 24 24">
-								<circle class="text-neutral-800" stroke="currentColor" fill="transparent" stroke-width="2" cx="12" cy="12" r="11"></circle>
-								<circle
-									class="text-neutral-400"
-									stroke="currentColor"
-									fill="transparent"
-									stroke-width="2"
-									stroke-dasharray="17.27875959474386 51.83627878423158"
-									stroke-dashoffset="0"
-									stroke-linecap="butt"
-									cx="12"
-									cy="12"
-									r="11"
-								></circle>
-							</svg>
+							<SpinnerIcon class="absolute inset-0" />
 							<div class="absolute inset-0 flex items-center justify-center">
 								<span class="text-xs font-bold">{{ jobStatusStore.activeJobs.length }}</span>
 							</div>
@@ -129,20 +100,7 @@ onMounted(async () => {
 						<PopoverTrigger as-child>
 							<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
 								<span class="text-sm font-medium">{{ currentTeam?.name || 'Select Team' }}</span>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									width="16"
-									height="16"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									class="h-4 w-4"
-								>
-									<path d="m6 9 6 6 6-6" />
-								</svg>
+								<ChevronDownIcon />
 							</div>
 						</PopoverTrigger>
 						<PopoverPortal>

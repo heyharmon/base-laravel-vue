@@ -26,6 +26,7 @@ class User extends Authenticatable
         'email',
         'password',
         'current_team_id',
+        'is_super_admin',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
         ];
     }
 
@@ -75,6 +77,11 @@ class User extends Authenticatable
     public function joinedTeams(): BelongsToMany
     {
         return $this->teams()->wherePivot('invitation_accepted', true);
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->is_super_admin;
     }
 
     /**

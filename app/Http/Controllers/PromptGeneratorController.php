@@ -42,9 +42,9 @@ So, again pretend you are given the term term, \"car loan\" and the location is 
 			}
 
 			// Add industry message conditionally if industry is available
-			if (isset($organization->industry) && !empty($organization->industry)) {
-				$messages[] = new UserMessage("You also need to incorporate the industry \"" . $organization->industry . "\" in the prompts when it makes sense.
-For example, if the keyword is related to the " . $organization->industry . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
+			if ($organization->industry) {
+				$messages[] = new UserMessage("You also need to incorporate the industry \"" . $organization->industry->name . "\" in the prompts when it makes sense.
+For example, if the keyword is related to the " . $organization->industry->name . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
 			}
 
 			// Add description message conditionally if description is available

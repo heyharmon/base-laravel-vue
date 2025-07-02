@@ -42,7 +42,7 @@ class ArticleUpdated implements ShouldBroadcastNow
 	{
 		// Load the versions relationship to ensure it's included in the resource
 		$this->article->load('versions');
-		
+
 		return (new ArticleResource($this->article))->resolve();
 	}
 }

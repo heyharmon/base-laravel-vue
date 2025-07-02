@@ -1,122 +1,202 @@
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch, nextTick, defineAsyncComponent } from 'vue'
+import { ref, onMounted, computed, watch, defineAsyncComponent, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
-import { useJobStatusStore } from '@/stores/jobStatusStore'
-import { usePromptStore } from '@/stores/promptStore'
-import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import ChatMessage from '@/components/ChatMessage.vue'
-import ChatInput from '@/components/ChatInput.vue'
-import ArticleConversationDropdown from '@/components/conversations/ArticleConversationDropdown.vue'
-import ChatLoadingIndicator from '@/components/ChatLoadingIndicator.vue'
+import ChatInterface from '@/components/chat/ChatInterface.vue'
 import EditorMenu from '@/components/editor/EditorMenu.vue'
 import { useEcho } from '@laravel/echo-vue'
 
 const route = useRoute()
 const articleStore = useArticleStore()
-const jobStatusStore = useJobStatusStore()
 
 const isLoading = ref(true)
-const showSettings = ref(false)
-const showVersions = ref(false)
-const messagesContainer = ref(null)
+const isSettingsOpen = ref(false)
+const isVersionsOpen = ref(false)
+const isPromptDetailSheetOpen = ref(false)
+const isArticleDeepResearchResponseModalOpen = ref(false)
 
-// Dynamically import the ArticleVersionsPanel component
+const selectedContent = ref(null)
+const isCopied = ref(false)
+const isUpdatingFromAutoSave = ref(false)
+
+// Tooltip state
+const showTooltip = ref(false)
+const tooltipPosition = ref({ top: 0, left: 0 })
+const currentSelection = ref(null)
+
+// Dynamically import components
 const ArticleVersionsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleVersionsPanel.vue'))
+const ArticleSettingsPanel = defineAsyncComponent(() => import('@/components/articles/ArticleSettingsPanel.vue'))
+const ArticleDeepResearchResponseModal = defineAsyncComponent(() => import('@/components/articles/ArticleDeepResearchResponseModal.vue'))
+const PromptDetailSheet = defineAsyncComponent(() => import('@/components/prompts/PromptDetailSheet.vue'))
 
-// Get active jobs related to this article
-const activeArticleJobs = computed(() => {
-	if (!articleStore.article) return []
-	return jobStatusStore.jobs.filter(
-		(job) =>
-			job.trackable_type === 'App\\Models\\Article' &&
-			job.trackable_id === articleStore.article.id &&
-			(job.status === 'pending' || job.status === 'processing')
-	)
+const context = computed(() => {
+	return {
+		viewing_article_id: articleStore.article?.id || null,
+		viewing_article_title: articleStore.article?.title || null,
+		id_of_prompt_belonging_to_article: articleStore.article?.prompt_id || null,
+		selected_content: selectedContent.value || null
+	}
 })
 
 const editor = useEditor({
 	content: '',
 	extensions: [StarterKit],
 	onUpdate: ({ editor }) => {
-		articleStore.article.content = editor.getHTML()
-	}
-})
-
-const handleEditorCommand = (command, options = {}) => {
-	const commandMap = {
-		bold: () => editor.value.chain().focus().toggleBold().run(),
-		italic: () => editor.value.chain().focus().toggleItalic().run(),
-		heading: ({ level }) => editor.value.chain().focus().toggleHeading({ level }).run(),
-		bulletList: () => editor.value.chain().focus().toggleBulletList().run(),
-		orderedList: () => editor.value.chain().focus().toggleOrderedList().run(),
-		blockquote: () => editor.value.chain().focus().toggleBlockquote().run()
-	}
-
-	if (commandMap[command]) {
-		commandMap[command](options)
-	}
-}
-
-const activeEditorCommands = computed(() => ({
-	bold: editor.value?.isActive('bold'),
-	italic: editor.value?.isActive('italic'),
-	heading: {
-		level: [1, 2, 3, 4].find((level) => editor.value?.isActive('heading', { level }))
-	},
-	bulletList: editor.value?.isActive('bulletList'),
-	orderedList: editor.value?.isActive('orderedList'),
-	blockquote: editor.value?.isActive('blockquote')
-}))
-
-// Echo channel subscription handlers
-const { leaveChannel, listen } = useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
-	console.log('Received update for article ID:', e.id)
-
-	// Update the article content
-	if (e.id === articleStore.article.id) {
-		// articleStore.article.content = e.content
-		// articleStore.article.versions = e.versions
-		articleStore.article = e
-
-		// Update the editor content if it's different
-		editor.value.commands.setContent(e.content)
-	}
-})
-
-// Function to scroll to the bottom of the messages container
-const scrollToBottom = () => {
-	nextTick(() => {
-		if (messagesContainer.value) {
-			messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+		if (articleStore.article && !isUpdatingFromAutoSave.value) {
+			articleStore.article.content = editor.getHTML()
 		}
-	})
+	},
+	onSelectionUpdate: ({ editor }) => {
+		// Get selected text when user selects text in editor
+		const { from, to } = editor.state.selection
+		if (from !== to) {
+			const selectedText = editor.state.doc.textBetween(from, to)
+			if (selectedText.trim()) {
+				// Store the current selection but don't set selectedContent yet
+				currentSelection.value = selectedText.trim()
+				showSelectionTooltip()
+			} else {
+				hideTooltip()
+			}
+		} else {
+			hideTooltip()
+		}
+	}
+})
+
+// Show tooltip at the selection position
+const showSelectionTooltip = () => {
+	if (!editor.value) return
+
+	// Get the selection coordinates
+	const { from, to } = editor.value.state.selection
+	const start = editor.value.view.coordsAtPos(from)
+	const end = editor.value.view.coordsAtPos(to)
+
+	// Calculate position (centered above the selection)
+	const left = (start.left + end.left) / 2
+	const top = start.top - 10 // 10px above the selection
+
+	tooltipPosition.value = {
+		top: top + window.scrollY,
+		left: left
+	}
+
+	showTooltip.value = true
 }
 
-// Watch for changes in the chats array to scroll to bottom when new messages are added
+// Hide tooltip
+const hideTooltip = () => {
+	showTooltip.value = false
+	currentSelection.value = null
+}
+
+// Add selected text to chat
+const addToChat = () => {
+	if (currentSelection.value) {
+		selectedContent.value = currentSelection.value
+		hideTooltip()
+	}
+}
+
+// Handle clicks outside the editor and tooltip
+onMounted(() => {
+	const handleClickOutside = (event) => {
+		const editorElement = document.querySelector('.ProseMirror')
+		const tooltipElement = document.querySelector('.selection-tooltip')
+
+		if (editorElement && !editorElement.contains(event.target) && tooltipElement && !tooltipElement.contains(event.target)) {
+			hideTooltip()
+		}
+	}
+
+	document.addEventListener('click', handleClickOutside)
+
+	// Cleanup
+	return () => {
+		document.removeEventListener('click', handleClickOutside)
+	}
+})
+
+// Auto-save content changes with debounce
+const debouncedAutoSaveContent = useDebounceFn(async (content) => {
+	if (articleStore.article?.id && content) {
+		try {
+			isUpdatingFromAutoSave.value = true
+			await articleStore.autoSaveContent(articleStore.article.id, content)
+		} catch (error) {
+			console.error('Auto-save failed:', error)
+		} finally {
+			// Reset the flag after a short delay to ensure the watcher doesn't trigger
+			setTimeout(() => {
+				isUpdatingFromAutoSave.value = false
+			}, 100)
+		}
+	}
+}, 2000)
+
+// Watch for content changes and auto-save
 watch(
-	() => articleStore.chats.length,
-	(newLength, oldLength) => {
-		if (newLength > oldLength) {
-			scrollToBottom()
+	() => articleStore.article?.content,
+	(newContent, oldContent) => {
+		// Skip if this is the initial load or if content hasn't actually changed
+		if (!oldContent || newContent === oldContent) return
+
+		// Only auto-save if we have a valid article ID and content
+		if (articleStore.article?.id && newContent) {
+			console.log('Content changed, triggering auto-save')
+			debouncedAutoSaveContent(newContent)
 		}
 	}
 )
 
 // Watch for changes in the article content from the store and update the editor
+// Only update if the content actually differs AND it's not from our own auto-save
 watch(
 	() => articleStore.article?.content,
 	(newContent) => {
-		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
-			console.log('Article content updated in store, updating editor')
+		if (editor.value && newContent && editor.value.getHTML() !== newContent && !isUpdatingFromAutoSave.value) {
 			editor.value.commands.setContent(newContent)
 		}
 	}
 )
+
+// Listen for article updates
+useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
+	console.log('Received update for article ID:', e.id)
+
+	// Update the article content
+	if (e.id === articleStore.article.id) {
+		isUpdatingFromAutoSave.value = true
+		articleStore.article = e
+
+		// Update the editor content if it's different
+		if (editor.value.getHTML() !== e.content) {
+			editor.value.commands.setContent(e.content)
+		}
+
+		setTimeout(() => {
+			isUpdatingFromAutoSave.value = false
+		}, 100)
+	}
+})
+
+// Listen for deep research updates
+useEcho(`article.${route.params.id}`, 'ArticleDeepResearchUpdated', (e) => {
+	console.log('Deep research completed for article ID:', e.article_id)
+
+	// Refresh the article data when deep research is completed
+	if (e.id === articleStore.article.id) {
+		articleStore.fetchArticle(e.article_id)
+		isArticleDeepResearchResponseModalOpen.value = true
+	}
+})
 
 onMounted(async () => {
 	try {
@@ -132,42 +212,11 @@ onMounted(async () => {
 		}
 
 		isLoading.value = false
-
-		// Fetch chats for this article
-		await articleStore.fetchChats(route.params.id)
-
-		// Scroll to bottom of messages
-		scrollToBottom()
 	} catch (error) {
 		console.error('Error loading article:', error)
 		isLoading.value = false
 	}
 })
-
-onUnmounted(() => {
-	// Leave the Echo channel when component is unmounted
-	leaveChannel()
-})
-
-const isCopied = ref(false)
-const isPromptDetailSheetOpen = ref(false)
-const promptStore = usePromptStore()
-
-// Preset prompts for empty chat
-const presetPrompts = [
-	'🧠 Summarize this article for me',
-	'🔗 List sources mentioned in prompt responses',
-	'✨ Suggest improvements for this article',
-	'🌐 Search the web for information related to this article'
-]
-
-// Handle conversation selection from dropdown
-const handleConversationChanged = async (conversationId) => {
-	if (conversationId) {
-		articleStore.setConversationId(conversationId)
-		await articleStore.fetchChats()
-	}
-}
 
 // Open the prompt detail sheet
 const showPromptDetails = () => {
@@ -189,50 +238,55 @@ const copyContentToClipboard = async () => {
 		console.error('Failed to copy content:', error)
 	}
 }
+
+// Clear selected content
+const clearSelectedContent = () => {
+	selectedContent.value = null
+}
 </script>
 
 <template>
 	<TwoColumnLayout>
 		<template #left-column>
-			<!-- Chat column -->
-			<div class="flex-1 overflow-hidden flex flex-col h-full">
-				<!-- Messages top bar -->
-				<div class="py-2 px-6">
-					<ArticleConversationDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
-				</div>
-
-				<!-- Messages area (scrollable) -->
-				<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin px-6 pt-4 pb-8 space-y-6 custom-scrollbar">
-					<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3">
-						<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
-						<button
-							v-for="(prompt, index) in presetPrompts"
-							:key="index"
-							@click="articleStore.sendMessage(prompt)"
-							class="cursor-pointer text-left p-3 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
-						>
-							{{ prompt }}
-						</button>
-					</div>
-					<ChatMessage v-for="(chat, index) in articleStore.chats" :key="index" :chat="chat" />
-					<ChatLoadingIndicator v-if="articleStore.isLoadingChats" />
-				</div>
-
-				<!-- Input area (fixed at bottom) -->
-				<div class="px-4 pb-4 bg-transparent -mt-4">
-					<ChatInput v-model="articleStore.newMessage" @send="articleStore.sendMessage" :disabled="articleStore.isLoadingChats" />
-				</div>
-			</div>
+			<!-- Chat Interface Component -->
+			<ChatInterface :context="context" @clear-selected-content="clearSelectedContent" />
 		</template>
 
 		<template #right-column>
-			<!-- Active jobs message -->
-			<div v-if="activeArticleJobs.length > 0" class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
-				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span>
-					{{ activeArticleJobs.length }}
-					{{ activeArticleJobs.length === 1 ? 'job is running for this article' : 'jobs are running for this article' }}
-				</span>
+			<!-- Deep research statuses -->
+			<div
+				v-if="articleStore.article?.perplexity_status === 'CREATED' || articleStore.article?.perplexity_status === 'IN_PROGRESS'"
+				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
+			>
+				<div class="flex items-center gap-2 mb-2">
+					<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+					Deep research is in progress...
+				</div>
+				<div class="w-full bg-green-200 rounded-full h-2.5 mt-2">
+					<div
+						class="bg-green-600 h-2.5 rounded-full transition-all duration-500 ease-in-out"
+						:style="{ width: `${Math.min(((articleStore.article?.perplexity_checks || 0) / 60) * 100, 100)}%` }"
+					></div>
+				</div>
+				<div class="text-xs text-green-800 mt-1 text-right">
+					{{ Math.min(Math.round(((articleStore.article?.perplexity_checks || 0) / 60) * 100), 100) }}% completed
+				</div>
+			</div>
+			<div
+				v-if="articleStore.article?.perplexity_status === 'COMPLETED' && articleStore.article?.perplexity_request_id"
+				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
+			>
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">✅ Deep research completed</div>
+					<Button @click="isArticleDeepResearchResponseModalOpen = true" variant="success" size="sm"> View Deep Research </Button>
+				</div>
+			</div>
+
+			<div
+				v-if="articleStore.article?.perplexity_status === 'FAILED'"
+				class="p-4 my-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2 mr-6"
+			>
+				Deep research failed
 			</div>
 
 			<div class="pt-4">
@@ -241,21 +295,13 @@ const copyContentToClipboard = async () => {
 					<h1 class="text-xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
 
 					<div class="flex items-center justify-end gap-2">
-						<!-- Auto-save indicator -->
-						<div class="flex items-center mr-2 text-sm text-neutral-600">
-							<span v-if="articleStore.isSaving" class="flex items-center">
-								<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-neutral-600 rounded-full"></span>
-							</span>
-                                                        <span v-else class="text-neutral-600"></span>
-						</div>
-
 						<div class="flex gap-2">
-							<Button @click="showSettings = !showSettings" variant="outline" size="sm">
-								{{ showSettings ? 'Hide Settings' : 'Settings' }}
+							<Button @click="isSettingsOpen = !isSettingsOpen" variant="outline" size="sm">
+								{{ isSettingsOpen ? 'Hide Settings' : 'Settings' }}
 							</Button>
 
-							<Button @click="showVersions = !showVersions" variant="outline" size="sm">
-								{{ showVersions ? 'Hide Versions' : 'Versions' }}
+							<Button @click="isVersionsOpen = !isVersionsOpen" variant="outline" size="sm">
+								{{ isVersionsOpen ? 'Hide Versions' : 'Versions' }}
 							</Button>
 
 							<Button @click="copyContentToClipboard" variant="outline" size="sm" :disabled="isCopied">
@@ -274,87 +320,81 @@ const copyContentToClipboard = async () => {
 					<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 				</div>
 
-
-
 				<div v-else class="flex flex-col gap-6">
 					<!-- Versions panel - dynamically loaded -->
-					<ArticleVersionsPanel v-if="showVersions" />
+					<ArticleVersionsPanel v-if="isVersionsOpen" />
 
 					<!-- Settings panel -->
-					<div v-if="showSettings" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
-						<h2 class="text-lg font-medium mb-4">Article Settings</h2>
-
-						<div class="flex flex-col gap-4">
-							<!-- Title input -->
-							<div>
-								<label for="title" class="block text-sm font-medium text-neutral-700 mb-1">Title</label>
-								<input
-									id="title"
-									v-model="articleStore.article.title"
-									type="text"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-									placeholder="Article title"
-								/>
-							</div>
-
-							<!-- Meta Title input -->
-							<div>
-								<label for="meta_title" class="block text-sm font-medium text-neutral-700 mb-1">Meta Title</label>
-								<input
-									id="meta_title"
-									v-model="articleStore.article.meta_title"
-									type="text"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-									placeholder="Meta title for SEO"
-								/>
-							</div>
-
-							<!-- Meta Description input -->
-							<div>
-								<label for="meta_description" class="block text-sm font-medium text-neutral-700 mb-1">Meta Description</label>
-								<textarea
-									id="meta_description"
-									v-model="articleStore.article.meta_description"
-									rows="3"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500"
-									placeholder="Meta description for SEO"
-								></textarea>
-							</div>
-
-							<!-- Schema input -->
-							<div>
-								<label for="schema" class="block text-sm font-medium text-neutral-700 mb-1">Schema</label>
-								<textarea
-									id="schema"
-									v-model="articleStore.article.schema"
-									rows="5"
-									class="bg-white w-full px-4 py-2 border border-neutral-300 rounded-md shadow-sm focus:ring-neutral-500 focus:border-neutral-500 font-mono text-sm"
-									placeholder="JSON-LD structured data schema"
-								></textarea>
-							</div>
-						</div>
-					</div>
+					<ArticleSettingsPanel v-if="isSettingsOpen" @close="isSettingsOpen = false" />
 
 					<!-- Rich text editor -->
-					<div class="flex flex-col overflow-hidden">
+					<div class="flex flex-col overflow-hidden relative">
 						<!-- Editor menu -->
-						<EditorMenu @command="handleEditorCommand" :active-commands="activeEditorCommands" />
+						<EditorMenu :editor="editor" />
 
 						<!-- Editor content -->
 						<div class="pl-2 pr-6 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
 							<EditorContent :editor="editor" />
 						</div>
+
+						<!-- Selection Tooltip -->
+						<Teleport to="body">
+							<div
+								v-if="showTooltip"
+								class="selection-tooltip fixed z-50 bg-black text-white rounded-md shadow-lg transform -translate-x-1/2 -translate-y-full"
+								:style="{
+									top: `${tooltipPosition.top}px`,
+									left: `${tooltipPosition.left}px`
+								}"
+							>
+								<button @click="addToChat" class="px-3 py-2 text-sm font-medium hover:text-gray-200 transition-colors cursor-pointer">
+									Add to chat
+								</button>
+								<!-- Arrow pointing down -->
+								<div class="absolute left-1/2 transform -translate-x-1/2 top-full">
+									<div
+										class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-black"
+									></div>
+								</div>
+							</div>
+						</Teleport>
 					</div>
 				</div>
 			</div>
 		</template>
 	</TwoColumnLayout>
 
-	<!-- Prompt Detail Sheet -->
+	<!-- Prompt Detail Sheet - now async loaded -->
 	<PromptDetailSheet
-		v-if="articleStore.article?.prompt_id"
+		v-if="articleStore.article?.prompt_id && isPromptDetailSheetOpen"
 		:is-open="isPromptDetailSheetOpen"
 		:prompt-id="articleStore.article.prompt_id"
 		@close="isPromptDetailSheetOpen = false"
 	/>
+
+	<!-- Perplexity Response Modal - now async loaded -->
+	<ArticleDeepResearchResponseModal
+		v-if="articleStore.article?.perplexity_request_id && isArticleDeepResearchResponseModalOpen"
+		:is-open="isArticleDeepResearchResponseModalOpen"
+		:article-id="articleStore.article?.id"
+		@close="isArticleDeepResearchResponseModalOpen = false"
+	/>
 </template>
+
+<style>
+/* Add styles for the tooltip animation */
+.selection-tooltip {
+	animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -90%);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -100%);
+	}
+}
+</style>

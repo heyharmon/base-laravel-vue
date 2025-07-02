@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Article;
-use App\Models\Prompt;
-use App\Services\ChatService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Services\OpenAIService;
+use App\Models\Article;
 
 class ArticleChatController extends Controller
 {
-	protected ChatService $chatService;
+	protected $openAIService;
 
-	public function __construct(ChatService $chatService)
+	public function __construct(OpenAIService $openAIService)
 	{
-		$this->chatService = $chatService;
+		$this->openAIService = $openAIService;
 	}
 
 	/**
@@ -58,20 +58,11 @@ class ArticleChatController extends Controller
 	{
 		$request->validate([
 			'content' => 'required|string',
+			'context' => 'sometimes|array',
 			'conversation_id' => 'nullable|integer|exists:conversations,id'
 		]);
 
 		try {
-			// Set up the chat service with article and prompt context
-			$this->chatService->withArticle($article);
-			$this->chatService->withOrganization($article->organization);
-
-			// Get the prompt that belongs to the article, if that prompt exists
-			if ($article->prompt_id) {
-				$prompt = Prompt::find($article->prompt_id);
-				$this->chatService->withPrompt($prompt);
-			}
-
 			// Get or create a conversation for this article
 			$conversation = null;
 
@@ -83,18 +74,33 @@ class ArticleChatController extends Controller
 					return response()->json(['error' => 'Conversation not found for this article'], 404);
 				}
 			} else {
-				// Get or create a default conversation
+				// Get or create a conversation
 				$conversation = $article->conversations()->firstOrCreate([
 					'team_id' => $article->team_id,
 					'title' => 'Chat for article: ' . $article->title
 				]);
 			}
 
-			// Generate response
-			$response = $this->chatService->generateResponse($conversation, $request->content);
+			// Store user message immediately
+			$conversation->chats()->create([
+				'role' => 'user',
+				'content' => $request->input('content')
+			]);
 
-			return response()->json($response);
+			// Process message asynchronously with context
+			$this->openAIService
+				->processMessageAsync(
+					$conversation,
+					$request->input('content'),
+					$request->input('context', [])
+				);
+
+			return response()->json([
+				'conversation' => $conversation->fresh(),
+				'chats' => $conversation->chats
+			]);
 		} catch (\Exception $e) {
+
 			Log::error('Error generating article chat response: ' . $e->getMessage());
 			return response()->json(['error' => 'Failed to generate response'], 500);
 		}

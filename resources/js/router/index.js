@@ -1,11 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
 // Import pages
-import Chat from '@/pages/Chat.vue'
 import Dashboard from '@/pages/Dashboard.vue'
-import Analytics from '@/pages/Analytics.vue'
 import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
 import ForgotPassword from '@/pages/auth/ForgotPassword.vue'
@@ -19,6 +16,7 @@ import OrganizationEdit from '@/pages/organizations/Edit.vue'
 import PromptsIndex from '@/pages/prompts/Index.vue'
 import ArticlesIndex from '@/pages/articles/Index.vue'
 import ArticleEdit from '@/pages/articles/Edit.vue'
+// Super Admin
 
 const routes = [
 	{
@@ -28,20 +26,9 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/chat',
-		name: 'chat',
-		component: Chat,
-		meta: { requiresAuth: true }
-	},
-	{
 		path: '/dashboard',
 		name: 'dashboard',
 		component: Dashboard
-	},
-	{
-		path: '/analytics',
-		name: 'analytics',
-		component: Analytics
 	},
 	{
 		path: '/login',
@@ -120,6 +107,12 @@ const routes = [
 		name: 'articles.edit',
 		component: ArticleEdit,
 		meta: { requiresAuth: true }
+	},
+	{
+		path: '/super-admin/organizations',
+		name: 'super-admin.organizations',
+		component: () => import('@/pages/super-admin/Organizations.vue'),
+		meta: { requiresAuth: true }
 	}
 ]
 
@@ -155,23 +148,6 @@ router.beforeEach(async (to, from, next) => {
 	// Skip team check for invitations.index route
 	if (to.name === 'invitations.index') {
 		return next()
-	}
-
-	// Check if user has teams
-	const teamStore = useTeamStore()
-
-	// Load teams if not already loaded
-	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-		try {
-			await teamStore.fetchTeams()
-		} catch (error) {
-			console.error('Error fetching teams in router guard:', error)
-		}
-	}
-
-	// Redirect to teams.create if user has no teams
-	if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-		return next({ name: 'teams.create' })
 	}
 
 	// Allow navigation

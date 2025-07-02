@@ -25,6 +25,7 @@ class Article extends Model
 		'schema',
 		'outline',
 		'content',
+		'perplexity_checks',
 	];
 
 	/**
@@ -36,9 +37,9 @@ class Article extends Model
 	 * Events the model dispatches.
 	 *
 	 */
-	// protected $dispatchesEvents = [
-	// 	'updated' => ArticleUpdated::class,
-	// ];
+	protected $dispatchesEvents = [
+		'updated' => ArticleUpdated::class,
+	];
 
 	/**
 	 * The version model class name.
@@ -62,6 +63,6 @@ class Article extends Model
 
 	public function conversations(): MorphMany
 	{
-		return $this->morphMany(Conversation::class, 'conversable');
+		return $this->morphMany(Conversation::class, 'conversable')->latest();
 	}
 }

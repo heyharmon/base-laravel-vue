@@ -38,26 +38,26 @@ abstract class TrackableJob implements ShouldQueue
 	 *
 	 * @return \App\Models\JobStatus|null
 	 */
-    protected function getJobStatus()
-    {
-        if (!$this->jobStatusId) {
-            return null;
-        }
+	protected function getJobStatus()
+	{
+		if (!$this->jobStatusId) {
+			return null;
+		}
 
-        return JobStatus::where('job_id', $this->jobStatusId)->first();
-    }
+		return JobStatus::where('job_id', $this->jobStatusId)->first();
+	}
 
-    /**
-     * Determine if the job has been cancelled.
-     *
-     * @return bool
-     */
-    protected function isCancelled()
-    {
-        $status = $this->getJobStatus();
+	/**
+	 * Determine if the job has been cancelled.
+	 *
+	 * @return bool
+	 */
+	protected function isCancelled()
+	{
+		$status = $this->getJobStatus();
 
-        return $status && $status->status === 'cancelled';
-    }
+		return $status && $status->status === 'cancelled';
+	}
 
 	/**
 	 * Update the job status.
@@ -142,6 +142,9 @@ abstract class TrackableJob implements ShouldQueue
 	 */
 	public function failed(Throwable $exception)
 	{
-		$this->markJobAsFailed($exception);
+		$this->updateJobStatus([
+			'status' => 'failed',
+			'error' => $exception->getMessage(),
+		]);
 	}
 }

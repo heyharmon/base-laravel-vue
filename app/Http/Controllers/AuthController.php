@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SuperAdminNewUserNotification;
 use App\Models\InvitationToken;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -30,6 +32,11 @@ class AuthController extends Controller
 			'email' => $request->email,
 			'password' => Hash::make($request->password),
 		]);
+
+		// Send notification to super admins in production environment
+		if (app()->environment('production')) {
+			$this->notifySuperAdmins($user);
+		}
 
 		$token = $user->createToken('auth_token')->plainTextToken;
 
@@ -148,5 +155,22 @@ class AuthController extends Controller
 			'user' => $user,
 			'token' => $token
 		], 201);
+	}
+
+	/**
+	 * Send notification to all super admins about new user registration.
+	 *
+	 * @param User $newUser
+	 * @return void
+	 */
+	protected function notifySuperAdmins(User $newUser)
+	{
+		// Get all super admin users
+		$superAdmins = User::where('is_super_admin', true)->get();
+
+		// Send email to each super admin
+		foreach ($superAdmins as $superAdmin) {
+			Mail::to($superAdmin->email)->send(new SuperAdminNewUserNotification($newUser));
+		}
 	}
 }
