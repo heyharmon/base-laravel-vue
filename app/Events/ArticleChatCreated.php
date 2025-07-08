@@ -39,7 +39,7 @@ class ArticleChatCreated implements ShouldBroadcastNow
 			'conversation_id' => $this->chat->conversation_id,
 			'role' => $this->chat->role,
 			'content' => $this->chat->content,
-			'metadata' => $this->chat->metadata,
+			// 'metadata' => $this->chat->metadata,
 			'annotations' => $this->chat->annotations,
 			'created_at' => $this->chat->created_at,
 			'updated_at' => $this->chat->updated_at,
