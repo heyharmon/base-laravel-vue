@@ -63,7 +63,7 @@ const deleteOrganization = async (organizationId) => {
 		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
 			<div class="flex items-center gap-4 mb-2">
 				<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span class="font-semibold">Setting up your team</span>
+				<span class="font-semibold">Working</span>
 			</div>
 			<div class="pl-8 space-y-1">
 				<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
@@ -85,7 +85,11 @@ const deleteOrganization = async (organizationId) => {
 
 		<!-- Simplified Date Filter -->
 		<div class="mt-6">
-			<DateFilterDropdown :start-date="organizationStore.currentDateRange.startDate" :end-date="organizationStore.currentDateRange.endDate" @date-range-changed="handleDateRangeChange" />
+			<DateFilterDropdown
+				:start-date="organizationStore.currentDateRange.startDate"
+				:end-date="organizationStore.currentDateRange.endDate"
+				@date-range-changed="handleDateRangeChange"
+			/>
 		</div>
 
 		<!-- Rankings -->

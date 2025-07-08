@@ -72,27 +72,27 @@ onMounted(async () => {
 				</div>
 			</div>
 
-			<div class="flex items-center">
+			<div class="flex items-center gap-4">
 				<template v-if="isAuthenticated">
 					<!-- Jobs status button -->
 					<button
 						v-if="jobStatusStore.activeJobs.length > 0"
 						@click="isJobStatusSheetOpen = true"
-						class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded hover:bg-neutral-800"
+						class="flex items-center space-x-2 cursor-pointer -mr-1 px-2 py-1 rounded hover:bg-neutral-800"
 					>
 						<div class="relative size-5">
 							<SpinnerIcon class="absolute inset-0" />
 							<div class="absolute inset-0 flex items-center justify-center">
-								<span class="text-xs font-bold">{{ jobStatusStore.activeJobs.length }}</span>
+								<span class="text-xs font-medium">{{ jobStatusStore.activeJobs.length }}</span>
 							</div>
 						</div>
-						<span class="text-sm font-medium">Runs</span>
+						<span class="text-sm">Runs</span>
 					</button>
 
-					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm mr-4 hover:text-neutral-300">Super Admin</router-link>
+					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
 
 					<!-- Team settings link -->
-					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="text-sm mr-4 hover:text-neutral-300"> Team settings </router-link>
+					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="text-sm hover:text-neutral-300"> Team settings </router-link>
 
 					<!-- Teams dropdown -->
 					<PopoverRoot>
