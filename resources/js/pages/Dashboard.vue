@@ -12,42 +12,35 @@ import TrashIcon from '../components/icons/TrashIcon.vue'
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
-// Date filtering state - this is the single source of truth
-const selectedTimeframe = ref('last_30_days')
+// Simplified state - only track what we actually need
+const currentDateRange = ref({
+	startDate: moment().subtract(30, 'days').format('YYYY-MM-DD'),
+	endDate: moment().format('YYYY-MM-DD')
+})
 
-// Initialize with this month's dates
-const now = moment()
-const customStartDate = ref(now.clone().subtract(30, 'days').format('YYYY-MM-DD'))
-const customEndDate = ref(now.format('YYYY-MM-DD'))
+// Extract data fetching to a reusable function
+const fetchVisibilityData = (dateRange = currentDateRange.value) => {
+	console.log('Fetching visibility metrics with date range:', dateRange)
+	organizationStore.fetchVisibilityMetrics(dateRange)
+}
 
-// Handle date range changes from the dropdown component
+// Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-	const params = {}
-	if (dateRange.startDate) params.startDate = dateRange.startDate
-	if (dateRange.endDate) params.endDate = dateRange.endDate
-
-	console.log('Fetching visibility metrics with date range:', params)
-	organizationStore.fetchVisibilityMetrics(params)
+	currentDateRange.value = dateRange
+	fetchVisibilityData(dateRange)
 }
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
-// Watch for job status changes
+// Watch for job completions and refresh data
 watch(
-	() => jobStatusStore.jobs,
-	() => {
-		// Check if there are any newly completed jobs
-		const hasCompletedJobs = jobStatusStore.completedJobs.length > 0
-		if (hasCompletedJobs) {
+	() => jobStatusStore.completedJobs.length,
+	(newCount, oldCount) => {
+		if (newCount > oldCount) {
 			console.log('Jobs completed, refreshing visibility metrics')
-			// Use current date range for refresh
-			const params = {}
-			if (customStartDate.value) params.startDate = customStartDate.value
-			if (customEndDate.value) params.endDate = customEndDate.value
-			organizationStore.fetchVisibilityMetrics(params)
+			fetchVisibilityData()
 		}
-	},
-	{ deep: true }
+	}
 )
 
 // Computed property for the owned organization
@@ -56,23 +49,16 @@ const ownedOrg = computed(() => {
 	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
 })
 
-onMounted(async () => {
-	// Fetch visibility metrics with the already initialized dates
-	console.log('Initial fetch with dates:', customStartDate.value, customEndDate.value)
-	await organizationStore.fetchVisibilityMetrics({
-		startDate: customStartDate.value,
-		endDate: customEndDate.value
-	})
+onMounted(() => {
+	// Initial fetch will be handled by the DateFilterDropdown component
+	// No need to duplicate the logic here
 })
 
 const deleteOrganization = async (organizationId) => {
 	try {
 		await organizationStore.deleteOrganization(organizationId)
 		// Refresh with current date range
-		const params = {}
-		if (customStartDate.value) params.startDate = customStartDate.value
-		if (customEndDate.value) params.endDate = customEndDate.value
-		await organizationStore.fetchVisibilityMetrics(params)
+		fetchVisibilityData()
 	} catch (error) {
 		console.error('Error deleting organization:', error)
 	}
@@ -105,14 +91,9 @@ const deleteOrganization = async (organizationId) => {
 		<!-- Visibility score -->
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
-		<!-- Date Filter Dropdown -->
+		<!-- Simplified Date Filter -->
 		<div class="mt-6">
-			<DateFilterDropdown
-				v-model:selected-timeframe="selectedTimeframe"
-				v-model:custom-start-date="customStartDate"
-				v-model:custom-end-date="customEndDate"
-				@date-range-changed="handleDateRangeChange"
-			/>
+			<DateFilterDropdown :start-date="currentDateRange.startDate" :end-date="currentDateRange.endDate" @date-range-changed="handleDateRangeChange" />
 		</div>
 
 		<!-- Rankings -->

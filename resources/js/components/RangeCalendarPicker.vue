@@ -23,7 +23,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:startDate', 'update:endDate'])
 
-const currentDate = ref(moment())
+// Initialize current date properly in setup
+const currentDate = ref(props.startDate ? moment(props.startDate) : moment())
+
 const selectedStartDate = computed({
 	get: () => (props.startDate ? moment(props.startDate) : null),
 	set: (value) => {
@@ -38,6 +40,29 @@ const selectedEndDate = computed({
 	}
 })
 
+const isDateDisabled = (date) => {
+	if (props.minDate && date.isBefore(moment(props.minDate))) return true
+	if (props.maxDate && date.isAfter(moment(props.maxDate))) return true
+	return false
+}
+
+// Extract calendar day generation to reduce duplication
+const createCalendarDay = (date, monthDate) => {
+	const isStart = selectedStartDate.value && date.isSame(selectedStartDate.value, 'day')
+	const isEnd = selectedEndDate.value && date.isSame(selectedEndDate.value, 'day')
+	const isInRange = selectedStartDate.value && selectedEndDate.value && date.isBetween(selectedStartDate.value, selectedEndDate.value, 'day', '[]')
+
+	return {
+		date: date.clone(),
+		isCurrentMonth: date.isSame(monthDate, 'month'),
+		isToday: date.isSame(moment(), 'day'),
+		isStart,
+		isEnd,
+		isInRange,
+		isDisabled: isDateDisabled(date)
+	}
+}
+
 // Generate calendar days for a specific month
 const generateCalendarDays = (monthDate) => {
 	const start = monthDate.clone().startOf('month').startOf('week')
@@ -46,45 +71,17 @@ const generateCalendarDays = (monthDate) => {
 
 	let day = start.clone()
 	while (day.isSameOrBefore(end, 'day')) {
-		const isStart = selectedStartDate.value && day.isSame(selectedStartDate.value, 'day')
-		const isEnd = selectedEndDate.value && day.isSame(selectedEndDate.value, 'day')
-		const isInRange = selectedStartDate.value && selectedEndDate.value && day.isBetween(selectedStartDate.value, selectedEndDate.value, 'day', '[]')
-
-		days.push({
-			date: day.clone(),
-			isCurrentMonth: day.isSame(monthDate, 'month'),
-			isToday: day.isSame(moment(), 'day'),
-			isStart,
-			isEnd,
-			isInRange,
-			isDisabled: isDateDisabled(day)
-		})
+		days.push(createCalendarDay(day, monthDate))
 		day.add(1, 'day')
 	}
 
 	return days
 }
 
-// Left month calendar days (previous month)
-const leftCalendarDays = computed(() => {
-	return generateCalendarDays(currentDate.value.clone().subtract(1, 'month'))
-})
-
-// Right month calendar days (current month)
-const rightCalendarDays = computed(() => {
-	return generateCalendarDays(currentDate.value)
-})
-
-// Get the previous month date for display
-const previousMonthDate = computed(() => {
-	return currentDate.value.clone().subtract(1, 'month')
-})
-
-const isDateDisabled = (date) => {
-	if (props.minDate && date.isBefore(moment(props.minDate))) return true
-	if (props.maxDate && date.isAfter(moment(props.maxDate))) return true
-	return false
-}
+// Calendar computeds
+const previousMonthDate = computed(() => currentDate.value.clone().subtract(1, 'month'))
+const leftCalendarDays = computed(() => generateCalendarDays(previousMonthDate.value))
+const rightCalendarDays = computed(() => generateCalendarDays(currentDate.value))
 
 const selectDate = (day) => {
 	if (day.isDisabled) return
@@ -114,9 +111,24 @@ const nextMonth = () => {
 	currentDate.value = currentDate.value.clone().add(1, 'month')
 }
 
-// Initialize current date to selected date if available
-if (selectedStartDate.value) {
-	currentDate.value = selectedStartDate.value.clone()
+// Shared day button classes
+const getDayClasses = (day) => {
+	const baseClasses = 'w-8 h-8 text-xs flex items-center justify-center transition-colors'
+
+	const conditionalClasses = {
+		'text-neutral-300': !day.isCurrentMonth,
+		'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
+		'bg-blue-600 text-white': day.isStart || day.isEnd,
+		'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
+		'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
+		'cursor-not-allowed opacity-50': day.isDisabled,
+		'cursor-pointer': !day.isDisabled,
+		'rounded-l-md': day.isStart && day.isInRange,
+		'rounded-r-md': day.isEnd && day.isInRange,
+		'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
+	}
+
+	return [baseClasses, conditionalClasses]
 }
 </script>
 
@@ -162,19 +174,7 @@ if (selectedStartDate.value) {
 						v-for="day in leftCalendarDays"
 						:key="day.date.format('YYYY-MM-DD')"
 						@click="selectDate(day)"
-						:class="{
-							'text-neutral-300': !day.isCurrentMonth,
-							'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
-							'bg-blue-600 text-white': day.isStart || day.isEnd,
-							'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
-							'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
-							'cursor-not-allowed opacity-50': day.isDisabled,
-							'cursor-pointer': !day.isDisabled,
-							'rounded-l-md': day.isStart && day.isInRange,
-							'rounded-r-md': day.isEnd && day.isInRange,
-							'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
-						}"
-						class="w-8 h-8 text-xs flex items-center justify-center transition-colors"
+						:class="getDayClasses(day)"
 						:disabled="day.isDisabled"
 					>
 						{{ day.date.date() }}
@@ -197,19 +197,7 @@ if (selectedStartDate.value) {
 						v-for="day in rightCalendarDays"
 						:key="day.date.format('YYYY-MM-DD')"
 						@click="selectDate(day)"
-						:class="{
-							'text-neutral-300': !day.isCurrentMonth,
-							'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
-							'bg-blue-600 text-white': day.isStart || day.isEnd,
-							'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
-							'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
-							'cursor-not-allowed opacity-50': day.isDisabled,
-							'cursor-pointer': !day.isDisabled,
-							'rounded-l-md': day.isStart && day.isInRange,
-							'rounded-r-md': day.isEnd && day.isInRange,
-							'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
-						}"
-						class="w-8 h-8 text-xs flex items-center justify-center transition-colors"
+						:class="getDayClasses(day)"
 						:disabled="day.isDisabled"
 					>
 						{{ day.date.date() }}
