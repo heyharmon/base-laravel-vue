@@ -27,10 +27,8 @@ const isUpdatingProgrammatically = ref(false)
 const timeframeOptions = [
 	{ value: 'today', label: 'Today' },
 	{ value: 'yesterday', label: 'Yesterday' },
-	{ value: 'this_week', label: 'This week' },
-	{ value: 'last_week', label: 'Last week' },
-	{ value: 'this_month', label: 'This month' },
-	{ value: 'last_month', label: 'Last month' },
+	{ value: 'last_7_days', label: 'Last 7 days' },
+	{ value: 'last_30_days', label: 'Last 30 days' },
 	{ value: 'this_year', label: 'This year' },
 	{ value: 'last_year', label: 'Last year' },
 	{ value: 'all_time', label: 'All time' }
@@ -51,25 +49,15 @@ const getDateRangeForTimeframe = (timeframe) => {
 				startDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD'),
 				endDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD')
 			}
-		case 'this_week':
+		case 'last_7_days':
 			return {
-				startDate: now.clone().startOf('week').format('YYYY-MM-DD'),
+				startDate: now.clone().subtract(7, 'days').format('YYYY-MM-DD'),
 				endDate: now.format('YYYY-MM-DD')
 			}
-		case 'last_week':
+		case 'last_30_days':
 			return {
-				startDate: now.clone().subtract(1, 'week').startOf('week').format('YYYY-MM-DD'),
-				endDate: now.clone().subtract(1, 'week').endOf('week').format('YYYY-MM-DD')
-			}
-		case 'this_month':
-			return {
-				startDate: now.clone().startOf('month').format('YYYY-MM-DD'),
+				startDate: now.clone().subtract(30, 'days').format('YYYY-MM-DD'),
 				endDate: now.format('YYYY-MM-DD')
-			}
-		case 'last_month':
-			return {
-				startDate: now.clone().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
-				endDate: now.clone().subtract(1, 'month').endOf('month').format('YYYY-MM-DD')
 			}
 		case 'this_year':
 			return {

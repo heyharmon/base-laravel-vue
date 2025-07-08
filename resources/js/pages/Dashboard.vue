@@ -13,11 +13,11 @@ const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
 // Date filtering state - this is the single source of truth
-const selectedTimeframe = ref('this_month')
+const selectedTimeframe = ref('last_30_days')
 
 // Initialize with this month's dates
 const now = moment()
-const customStartDate = ref(now.clone().startOf('month').format('YYYY-MM-DD'))
+const customStartDate = ref(now.clone().subtract(30, 'days').format('YYYY-MM-DD'))
 const customEndDate = ref(now.format('YYYY-MM-DD'))
 
 // Handle date range changes from the dropdown component
