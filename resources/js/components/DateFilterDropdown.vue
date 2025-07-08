@@ -57,13 +57,35 @@ const selectTimeframe = (value) => {
 	isDropdownOpen.value = false
 }
 
-const updateCustomDate = (startDate, endDate) => {
+// Fixed: Handle date updates separately and more carefully
+const handleStartDateUpdate = (startDate) => {
 	customStartDate.value = startDate
+	selectedTimeframe.value = 'custom'
+
+	// Emit when we have both dates
+	if (startDate && customEndDate.value) {
+		emit('dateRangeChanged', {
+			startDate: startDate,
+			endDate: customEndDate.value
+		})
+	}
+}
+
+const handleEndDateUpdate = (endDate) => {
 	customEndDate.value = endDate
 	selectedTimeframe.value = 'custom'
 
-	if (startDate && endDate) {
-		emit('dateRangeChanged', { startDate, endDate })
+	// Emit when we have both dates OR when we're completing a range selection
+	if (customStartDate.value && endDate) {
+		emit('dateRangeChanged', {
+			startDate: customStartDate.value,
+			endDate: endDate
+		})
+	}
+	// Also emit when end date is cleared (null) so parent knows the state changed
+	else if (customStartDate.value && endDate === null) {
+		// Don't emit here as we're in the middle of selecting a new range
+		// The parent will get the update when both dates are selected
 	}
 }
 
@@ -149,8 +171,8 @@ watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 						:start-date="customStartDate"
 						:end-date="customEndDate"
 						:max-date="moment().format('YYYY-MM-DD')"
-						@update:start-date="(date) => updateCustomDate(date, customEndDate)"
-						@update:end-date="(date) => updateCustomDate(customStartDate, date)"
+						@update:start-date="handleStartDateUpdate"
+						@update:end-date="handleEndDateUpdate"
 					/>
 				</div>
 			</div>

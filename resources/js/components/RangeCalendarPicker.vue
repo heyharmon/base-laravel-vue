@@ -26,19 +26,24 @@ const emit = defineEmits(['update:startDate', 'update:endDate'])
 // Initialize current date to show the end date's month (or current month if no end date)
 const currentDate = ref(props.endDate ? moment(props.endDate) : moment())
 
-const selectedStartDate = computed({
-	get: () => (props.startDate ? moment(props.startDate) : null),
-	set: (value) => {
-		emit('update:startDate', value ? value.format('YYYY-MM-DD') : null)
-	}
-})
+// Use local reactive state instead of computed properties
+const localStartDate = ref(props.startDate ? moment(props.startDate) : null)
+const localEndDate = ref(props.endDate ? moment(props.endDate) : null)
 
-const selectedEndDate = computed({
-	get: () => (props.endDate ? moment(props.endDate) : null),
-	set: (value) => {
-		emit('update:endDate', value ? value.format('YYYY-MM-DD') : null)
+// Watch props and update local state
+watch(
+	() => props.startDate,
+	(newStartDate) => {
+		localStartDate.value = newStartDate ? moment(newStartDate) : null
 	}
-})
+)
+
+watch(
+	() => props.endDate,
+	(newEndDate) => {
+		localEndDate.value = newEndDate ? moment(newEndDate) : null
+	}
+)
 
 const isDateDisabled = (date) => {
 	if (props.minDate && date.isBefore(moment(props.minDate))) return true
@@ -48,9 +53,9 @@ const isDateDisabled = (date) => {
 
 // Extract calendar day generation to reduce duplication
 const createCalendarDay = (date, monthDate) => {
-	const isStart = selectedStartDate.value && date.isSame(selectedStartDate.value, 'day')
-	const isEnd = selectedEndDate.value && date.isSame(selectedEndDate.value, 'day')
-	const isInRange = selectedStartDate.value && selectedEndDate.value && date.isBetween(selectedStartDate.value, selectedEndDate.value, 'day', '[]')
+	const isStart = localStartDate.value && date.isSame(localStartDate.value, 'day')
+	const isEnd = localEndDate.value && date.isSame(localEndDate.value, 'day')
+	const isInRange = localStartDate.value && localEndDate.value && date.isBetween(localStartDate.value, localEndDate.value, 'day', '[]')
 
 	return {
 		date: date.clone(),
@@ -97,18 +102,23 @@ const selectDate = (day) => {
 	if (day.isDisabled) return
 
 	// If no start date or both dates are set, start a new selection
-	if (!selectedStartDate.value || (selectedStartDate.value && selectedEndDate.value)) {
-		selectedStartDate.value = day.date
-		selectedEndDate.value = null
+	if (!localStartDate.value || (localStartDate.value && localEndDate.value)) {
+		localStartDate.value = day.date
+		localEndDate.value = null
+		emit('update:startDate', day.date.format('YYYY-MM-DD'))
+		emit('update:endDate', null)
 	}
 	// If start date is set but no end date
-	else if (selectedStartDate.value && !selectedEndDate.value) {
+	else if (localStartDate.value && !localEndDate.value) {
 		// If clicked date is before start date, make it the new start date
-		if (day.date.isBefore(selectedStartDate.value)) {
-			selectedEndDate.value = selectedStartDate.value
-			selectedStartDate.value = day.date
+		if (day.date.isBefore(localStartDate.value)) {
+			localEndDate.value = localStartDate.value
+			localStartDate.value = day.date
+			emit('update:startDate', day.date.format('YYYY-MM-DD'))
+			emit('update:endDate', localEndDate.value.format('YYYY-MM-DD'))
 		} else {
-			selectedEndDate.value = day.date
+			localEndDate.value = day.date
+			emit('update:endDate', day.date.format('YYYY-MM-DD'))
 		}
 	}
 }
@@ -123,19 +133,17 @@ const nextMonth = () => {
 
 // Shared day button classes
 const getDayClasses = (day) => {
-	const baseClasses = 'w-8 h-8 text-xs flex items-center justify-center transition-colors'
+	const baseClasses = 'p-4 mb-2 text-xs flex items-center justify-center transition-colors'
 
 	const conditionalClasses = {
 		'text-neutral-300': !day.isCurrentMonth,
 		'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
 		'bg-blue-600 text-white': day.isStart || day.isEnd,
-		'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
+		'bg-blue-50 text-blue-600 font-semibold': day.isInRange && day.isCurrentMonth && !day.isStart && !day.isEnd,
 		'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
 		'cursor-not-allowed opacity-50': day.isDisabled,
 		'cursor-pointer': !day.isDisabled,
-		'rounded-l-md': day.isStart && day.isInRange,
-		'rounded-r-md': day.isEnd && day.isInRange,
-		'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
+		'rounded-md': (day.isStart || day.isEnd) && day.isInRange
 	}
 
 	return [baseClasses, conditionalClasses]
@@ -172,14 +180,14 @@ const getDayClasses = (day) => {
 			<!-- Left Month Calendar -->
 			<div class="flex-1">
 				<!-- Calendar Days Header -->
-				<div class="grid grid-cols-7 gap-1 mb-2">
-					<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center p-2 font-medium">
+				<div class="grid grid-cols-7 mb-2">
+					<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center font-medium">
 						{{ day }}
 					</div>
 				</div>
 
 				<!-- Calendar Days -->
-				<div class="grid grid-cols-7 gap-1">
+				<div class="grid grid-cols-7 gap-0">
 					<button
 						v-for="day in leftCalendarDays"
 						:key="day.date.format('YYYY-MM-DD')"
@@ -195,14 +203,14 @@ const getDayClasses = (day) => {
 			<!-- Right Month Calendar -->
 			<div class="flex-1">
 				<!-- Calendar Days Header -->
-				<div class="grid grid-cols-7 gap-1 mb-2">
-					<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center p-2 font-medium">
+				<div class="grid grid-cols-7 mb-2">
+					<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center font-medium">
 						{{ day }}
 					</div>
 				</div>
 
 				<!-- Calendar Days -->
-				<div class="grid grid-cols-7 gap-1">
+				<div class="grid grid-cols-7 gap-0">
 					<button
 						v-for="day in rightCalendarDays"
 						:key="day.date.format('YYYY-MM-DD')"
