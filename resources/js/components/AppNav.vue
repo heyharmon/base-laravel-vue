@@ -69,7 +69,6 @@ onMounted(async () => {
 					<router-link to="/prompts" class="text-sm hover:text-neutral-300">Prompts</router-link>
 					<router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
 					<router-link to="/articles" class="text-sm hover:text-neutral-300">Articles</router-link>
-					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
 				</div>
 			</div>
 
@@ -90,10 +89,10 @@ onMounted(async () => {
 						<span class="text-sm font-medium">Runs</span>
 					</button>
 
+					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm mr-4 hover:text-neutral-300">Super Admin</router-link>
+
 					<!-- Team settings link -->
-					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="px-3 py-1 mr-2.5 rounded hover:bg-neutral-800 text-sm">
-						Team settings
-					</router-link>
+					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="text-sm mr-4 hover:text-neutral-300"> Team settings </router-link>
 
 					<!-- Teams dropdown -->
 					<PopoverRoot>
