@@ -4,7 +4,7 @@ import moment from 'moment'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
-import CalendarPicker from '@/components/CalendarPicker.vue'
+import RangeCalendarPicker from '@/components/RangeCalendarPicker.vue'
 import Button from '@/components/ui/Button.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
@@ -277,18 +277,15 @@ const deleteOrganization = async (organizationId) => {
 						</div>
 					</div>
 
-					<!-- Right Column - Calendar Pickers -->
-					<div class="flex-1 p-4">
-						<div class="flex gap-4">
-							<div class="flex-1">
-								<div class="mb-2 text-sm font-medium text-neutral-700">Start Date</div>
-								<CalendarPicker v-model="customStartDate" :max-date="customEndDate || moment().format('YYYY-MM-DD')" />
-							</div>
-							<div class="flex-1">
-								<div class="mb-2 text-sm font-medium text-neutral-700">End Date</div>
-								<CalendarPicker v-model="customEndDate" :min-date="customStartDate" :max-date="moment().format('YYYY-MM-DD')" />
-							</div>
-						</div>
+					<!-- Right Column - Calendar Picker -->
+					<div class="flex-1 p-4 flex justify-center">
+						<RangeCalendarPicker
+							:start-date="customStartDate"
+							:end-date="customEndDate"
+							:max-date="moment().format('YYYY-MM-DD')"
+							@update:start-date="customStartDate = $event"
+							@update:end-date="customEndDate = $event"
+						/>
 					</div>
 				</div>
 			</div>
