@@ -10,8 +10,8 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use App\Models\Article;
 use App\Models\Conversation;
 
-// Event broadcasted when article chat processing is complete
-class ArticleChatProcessingComplete implements ShouldBroadcastNow
+// Event broadcasted when article chat agent is finished
+class ArticleChatAgentFinished implements ShouldBroadcastNow
 {
 	use Dispatchable, InteractsWithSockets, SerializesModels;
 

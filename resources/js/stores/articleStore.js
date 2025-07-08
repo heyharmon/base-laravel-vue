@@ -220,7 +220,7 @@ export const useArticleStore = defineStore('article', () => {
 			const response = await api.post(`/articles/${article.value.id}/chats`, payload)
 
 			// Note: Don't set isLoadingChats to false here
-			// It will be reset by the ArticleChatProcessingComplete event
+			// It will be reset by the ArticleChatAgentFinished event
 		} catch (error) {
 			console.error('Error sending message:', error)
 

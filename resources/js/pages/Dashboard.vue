@@ -1,13 +1,104 @@
 <script setup>
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed, ref } from 'vue'
+import moment from 'moment'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
+import DatePicker from '@/components/DatePicker.vue'
+import Button from '@/components/ui/Button.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
 
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+
+// Date filtering state
+const selectedTimeframe = ref('last_28_days')
+const customStartDate = ref(null)
+const customEndDate = ref(null)
+
+// Timeframe options
+const timeframeOptions = [
+	{ value: 'last_7_days', label: 'Last 7 days' },
+	{ value: 'last_14_days', label: 'Last 14 days' },
+	{ value: 'last_28_days', label: 'Last 28 days' },
+	{ value: 'last_90_days', label: 'Last 90 days' },
+	{ value: 'this_year', label: 'This year' },
+	{ value: 'custom', label: 'Custom range' }
+]
+
+// Computed date range based on selected timeframe
+const dateRange = computed(() => {
+	const now = moment()
+
+	switch (selectedTimeframe.value) {
+		case 'last_7_days':
+			return {
+				startDate: now.clone().subtract(7, 'days').format('YYYY-MM-DD'),
+				endDate: now.format('YYYY-MM-DD')
+			}
+		case 'last_14_days':
+			return {
+				startDate: now.clone().subtract(14, 'days').format('YYYY-MM-DD'),
+				endDate: now.format('YYYY-MM-DD')
+			}
+		case 'last_28_days':
+			return {
+				startDate: now.clone().subtract(28, 'days').format('YYYY-MM-DD'),
+				endDate: now.format('YYYY-MM-DD')
+			}
+		case 'last_90_days':
+			return {
+				startDate: now.clone().subtract(90, 'days').format('YYYY-MM-DD'),
+				endDate: now.format('YYYY-MM-DD')
+			}
+		case 'this_year':
+			return {
+				startDate: now.clone().startOf('year').format('YYYY-MM-DD'),
+				endDate: now.format('YYYY-MM-DD')
+			}
+		case 'custom':
+			return {
+				startDate: customStartDate.value,
+				endDate: customEndDate.value
+			}
+		default:
+			return {
+				startDate: null,
+				endDate: null
+			}
+	}
+})
+
+// Fetch visibility metrics with date filters
+const fetchVisibilityMetrics = async () => {
+	const params = {}
+	if (dateRange.value.startDate) params.startDate = dateRange.value.startDate
+	if (dateRange.value.endDate) params.endDate = dateRange.value.endDate
+
+	await organizationStore.fetchVisibilityMetrics(params)
+}
+
+// Watch for timeframe changes
+watch(selectedTimeframe, () => {
+	if (selectedTimeframe.value !== 'custom') {
+		fetchVisibilityMetrics()
+	}
+})
+
+// Watch for custom date changes
+watch([customStartDate, customEndDate], () => {
+	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
+		fetchVisibilityMetrics()
+	}
+})
+
+// Apply custom date range
+const applyCustomDateRange = () => {
+	if (customStartDate.value && customEndDate.value) {
+		fetchVisibilityMetrics()
+	}
+}
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
@@ -19,7 +110,7 @@ watch(
 		const hasCompletedJobs = jobStatusStore.completedJobs.length > 0
 		if (hasCompletedJobs) {
 			console.log('Jobs completed, refreshing visibility metrics')
-			organizationStore.fetchVisibilityMetrics()
+			fetchVisibilityMetrics()
 		}
 	},
 	{ deep: true }
@@ -32,13 +123,13 @@ const ownedOrg = computed(() => {
 })
 
 onMounted(async () => {
-	await organizationStore.fetchVisibilityMetrics()
+	await fetchVisibilityMetrics()
 })
 
 const deleteOrganization = async (organizationId) => {
 	try {
 		await organizationStore.deleteOrganization(organizationId)
-		await organizationStore.fetchVisibilityMetrics()
+		await fetchVisibilityMetrics()
 	} catch (error) {
 		console.error('Error deleting organization:', error)
 	}
@@ -70,6 +161,40 @@ const deleteOrganization = async (organizationId) => {
 
 		<!-- Visibility score -->
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
+
+		<!-- Date Filter Controls -->
+		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+			<h3 class="text-lg font-semibold mb-4">Time Period</h3>
+
+			<!-- Timeframe Selection -->
+			<div class="flex flex-wrap gap-2 mb-4">
+				<button
+					v-for="option in timeframeOptions"
+					:key="option.value"
+					@click="selectedTimeframe = option.value"
+					:class="{
+						'bg-blue-600 text-white': selectedTimeframe === option.value,
+						'bg-neutral-100 text-neutral-700 hover:bg-neutral-200': selectedTimeframe !== option.value
+					}"
+					class="px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer"
+				>
+					{{ option.label }}
+				</button>
+			</div>
+
+			<!-- Custom Date Range -->
+			<div v-if="selectedTimeframe === 'custom'" class="flex gap-4 items-end">
+				<div class="flex-1">
+					<label class="block text-sm font-medium text-neutral-700 mb-1">Start Date</label>
+					<DatePicker v-model="customStartDate" placeholder="Select start date" :max-date="customEndDate || moment().format('YYYY-MM-DD')" />
+				</div>
+				<div class="flex-1">
+					<label class="block text-sm font-medium text-neutral-700 mb-1">End Date</label>
+					<DatePicker v-model="customEndDate" placeholder="Select end date" :min-date="customStartDate" :max-date="moment().format('YYYY-MM-DD')" />
+				</div>
+				<Button @click="applyCustomDateRange" :disabled="!customStartDate || !customEndDate" class="px-4 py-2"> Apply </Button>
+			</div>
+		</div>
 
 		<!-- Rankings -->
 		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">

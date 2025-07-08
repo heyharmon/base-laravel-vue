@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Prompt;
 use App\Models\Conversation;
 use App\Models\Article;
-use App\Events\ArticleChatProcessingComplete;
+use App\Events\ArticleChatAgentFinished;
 
 class OpenAIService
 {
@@ -893,7 +893,7 @@ class OpenAIService
 			if ($conversation->conversable_type === 'App\\Models\\Article') {
 				$article = $conversation->conversable;
 				if ($article) {
-					event(new ArticleChatProcessingComplete($article, $conversation, $success, $error));
+					event(new ArticleChatAgentFinished($article, $conversation, $success, $error));
 				}
 			}
 		} catch (\Exception $e) {

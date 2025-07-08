@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
 const router = useRouter()
+const teamStore = useTeamStore()
 const email = ref('')
 const password = ref('')
 const error = ref('')
@@ -18,6 +20,9 @@ const login = async () => {
 			email: email.value,
 			password: password.value
 		})
+
+		// Fetch teams immediately after login to ensure currentTeam is set
+		await teamStore.fetchTeams()
 
 		router.push('/')
 	} catch (err) {
