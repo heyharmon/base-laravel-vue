@@ -68,7 +68,7 @@ const updateCustomDate = (startDate, endDate) => {
 }
 
 onMounted(() => {
-	const availableTimeframes = timeframeOptions.map(opt => opt.value)
+	const availableTimeframes = timeframeOptions.map((opt) => opt.value)
 	selectedTimeframe.value = detectTimeframe(props.startDate, props.endDate, availableTimeframes) || 'last_30_days'
 
 	if (!customStartDate.value || !customEndDate.value) {
@@ -87,7 +87,7 @@ watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 	if (newStart !== customStartDate.value || newEnd !== customEndDate.value) {
 		customStartDate.value = newStart
 		customEndDate.value = newEnd
-		const availableTimeframes = timeframeOptions.map(opt => opt.value)
+		const availableTimeframes = timeframeOptions.map((opt) => opt.value)
 		selectedTimeframe.value = detectTimeframe(newStart, newEnd, availableTimeframes)
 	}
 })
@@ -136,7 +136,7 @@ watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 								'bg-blue-50 text-blue-700 border-blue-200': selectedTimeframe === option.value,
 								'text-neutral-700 hover:bg-neutral-50': selectedTimeframe !== option.value
 							}"
-							class="w-full text-left px-3 py-2 text-sm rounded-md border border-transparent transition-colors"
+							class="w-full text-left px-3 py-2 text-sm rounded-md border border-transparent transition-colors cursor-pointer"
 						>
 							{{ option.label }}
 						</button>

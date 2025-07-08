@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import moment from 'moment'
 
 const props = defineProps({
@@ -23,8 +23,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:startDate', 'update:endDate'])
 
-// Initialize current date properly in setup
-const currentDate = ref(props.startDate ? moment(props.startDate) : moment())
+// Initialize current date to show the end date's month (or current month if no end date)
+const currentDate = ref(props.endDate ? moment(props.endDate) : moment())
 
 const selectedStartDate = computed({
 	get: () => (props.startDate ? moment(props.startDate) : null),
@@ -83,6 +83,16 @@ const previousMonthDate = computed(() => currentDate.value.clone().subtract(1, '
 const leftCalendarDays = computed(() => generateCalendarDays(previousMonthDate.value))
 const rightCalendarDays = computed(() => generateCalendarDays(currentDate.value))
 
+// Watch for endDate changes to update the calendar view
+watch(
+	() => props.endDate,
+	(newEndDate) => {
+		if (newEndDate) {
+			currentDate.value = moment(newEndDate)
+		}
+	}
+)
+
 const selectDate = (day) => {
 	if (day.isDisabled) return
 
@@ -133,10 +143,10 @@ const getDayClasses = (day) => {
 </script>
 
 <template>
-	<div class="bg-white border border-neutral-200 rounded-lg p-4 min-w-[640px]">
+	<div class="bg-white min-w-[640px]">
 		<!-- Calendar Header -->
 		<div class="flex items-center justify-between mb-4">
-			<button @click="previousMonth" class="p-1 hover:bg-neutral-100 rounded">
+			<button @click="previousMonth" class="p-1 hover:bg-neutral-100 rounded cursor-pointer">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 				</svg>
@@ -151,7 +161,7 @@ const getDayClasses = (day) => {
 				</h3>
 			</div>
 
-			<button @click="nextMonth" class="p-1 hover:bg-neutral-100 rounded">
+			<button @click="nextMonth" class="p-1 hover:bg-neutral-100 rounded cursor-pointer">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 				</svg>
@@ -203,21 +213,6 @@ const getDayClasses = (day) => {
 						{{ day.date.date() }}
 					</button>
 				</div>
-			</div>
-		</div>
-
-		<!-- Selected Range Display -->
-		<div v-if="selectedStartDate || selectedEndDate" class="mt-4 pt-4 border-t border-neutral-200">
-			<div class="text-xs text-neutral-600 space-y-1">
-				<div v-if="selectedStartDate" class="flex justify-between">
-					<span>Start:</span>
-					<span class="font-medium">{{ selectedStartDate.format('MMM D, YYYY') }}</span>
-				</div>
-				<div v-if="selectedEndDate" class="flex justify-between">
-					<span>End:</span>
-					<span class="font-medium">{{ selectedEndDate.format('MMM D, YYYY') }}</span>
-				</div>
-				<div v-if="!selectedEndDate && selectedStartDate" class="text-neutral-400 text-center">Select end date</div>
 			</div>
 		</div>
 	</div>
