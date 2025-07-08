@@ -38,9 +38,10 @@ const selectedEndDate = computed({
 	}
 })
 
-const calendarDays = computed(() => {
-	const start = currentDate.value.clone().startOf('month').startOf('week')
-	const end = currentDate.value.clone().endOf('month').endOf('week')
+// Generate calendar days for a specific month
+const generateCalendarDays = (monthDate) => {
+	const start = monthDate.clone().startOf('month').startOf('week')
+	const end = monthDate.clone().endOf('month').endOf('week')
 	const days = []
 
 	let day = start.clone()
@@ -51,7 +52,7 @@ const calendarDays = computed(() => {
 
 		days.push({
 			date: day.clone(),
-			isCurrentMonth: day.isSame(currentDate.value, 'month'),
+			isCurrentMonth: day.isSame(monthDate, 'month'),
 			isToday: day.isSame(moment(), 'day'),
 			isStart,
 			isEnd,
@@ -62,6 +63,21 @@ const calendarDays = computed(() => {
 	}
 
 	return days
+}
+
+// Left month calendar days (previous month)
+const leftCalendarDays = computed(() => {
+	return generateCalendarDays(currentDate.value.clone().subtract(1, 'month'))
+})
+
+// Right month calendar days (current month)
+const rightCalendarDays = computed(() => {
+	return generateCalendarDays(currentDate.value)
+})
+
+// Get the previous month date for display
+const previousMonthDate = computed(() => {
+	return currentDate.value.clone().subtract(1, 'month')
 })
 
 const isDateDisabled = (date) => {
@@ -105,7 +121,7 @@ if (selectedStartDate.value) {
 </script>
 
 <template>
-	<div class="bg-white border border-neutral-200 rounded-lg p-4 min-w-[320px]">
+	<div class="bg-white border border-neutral-200 rounded-lg p-4 min-w-[640px]">
 		<!-- Calendar Header -->
 		<div class="flex items-center justify-between mb-4">
 			<button @click="previousMonth" class="p-1 hover:bg-neutral-100 rounded">
@@ -114,9 +130,14 @@ if (selectedStartDate.value) {
 				</svg>
 			</button>
 
-			<h3 class="text-sm font-medium">
-				{{ currentDate.format('MMMM YYYY') }}
-			</h3>
+			<div class="flex gap-8">
+				<h3 class="text-sm font-medium">
+					{{ previousMonthDate.format('MMMM YYYY') }}
+				</h3>
+				<h3 class="text-sm font-medium">
+					{{ currentDate.format('MMMM YYYY') }}
+				</h3>
+			</div>
 
 			<button @click="nextMonth" class="p-1 hover:bg-neutral-100 rounded">
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,36 +146,76 @@ if (selectedStartDate.value) {
 			</button>
 		</div>
 
-		<!-- Calendar Days Header -->
-		<div class="grid grid-cols-7 gap-1 mb-2">
-			<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center p-2 font-medium">
-				{{ day }}
-			</div>
-		</div>
+		<div class="flex gap-4">
+			<!-- Left Month Calendar -->
+			<div class="flex-1">
+				<!-- Calendar Days Header -->
+				<div class="grid grid-cols-7 gap-1 mb-2">
+					<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center p-2 font-medium">
+						{{ day }}
+					</div>
+				</div>
 
-		<!-- Calendar Days -->
-		<div class="grid grid-cols-7 gap-1">
-			<button
-				v-for="day in calendarDays"
-				:key="day.date.format('YYYY-MM-DD')"
-				@click="selectDate(day)"
-				:class="{
-					'text-neutral-300': !day.isCurrentMonth,
-					'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
-					'bg-blue-600 text-white': day.isStart || day.isEnd,
-					'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
-					'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
-					'cursor-not-allowed opacity-50': day.isDisabled,
-					'cursor-pointer': !day.isDisabled,
-					'rounded-l-md': day.isStart && day.isInRange,
-					'rounded-r-md': day.isEnd && day.isInRange,
-					'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
-				}"
-				class="w-8 h-8 text-xs flex items-center justify-center transition-colors"
-				:disabled="day.isDisabled"
-			>
-				{{ day.date.date() }}
-			</button>
+				<!-- Calendar Days -->
+				<div class="grid grid-cols-7 gap-1">
+					<button
+						v-for="day in leftCalendarDays"
+						:key="day.date.format('YYYY-MM-DD')"
+						@click="selectDate(day)"
+						:class="{
+							'text-neutral-300': !day.isCurrentMonth,
+							'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
+							'bg-blue-600 text-white': day.isStart || day.isEnd,
+							'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
+							'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
+							'cursor-not-allowed opacity-50': day.isDisabled,
+							'cursor-pointer': !day.isDisabled,
+							'rounded-l-md': day.isStart && day.isInRange,
+							'rounded-r-md': day.isEnd && day.isInRange,
+							'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
+						}"
+						class="w-8 h-8 text-xs flex items-center justify-center transition-colors"
+						:disabled="day.isDisabled"
+					>
+						{{ day.date.date() }}
+					</button>
+				</div>
+			</div>
+
+			<!-- Right Month Calendar -->
+			<div class="flex-1">
+				<!-- Calendar Days Header -->
+				<div class="grid grid-cols-7 gap-1 mb-2">
+					<div v-for="day in ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']" :key="day" class="text-xs text-neutral-500 text-center p-2 font-medium">
+						{{ day }}
+					</div>
+				</div>
+
+				<!-- Calendar Days -->
+				<div class="grid grid-cols-7 gap-1">
+					<button
+						v-for="day in rightCalendarDays"
+						:key="day.date.format('YYYY-MM-DD')"
+						@click="selectDate(day)"
+						:class="{
+							'text-neutral-300': !day.isCurrentMonth,
+							'bg-neutral-100': day.isToday && !day.isStart && !day.isEnd && !day.isInRange,
+							'bg-blue-600 text-white': day.isStart || day.isEnd,
+							'bg-blue-100 text-blue-800': day.isInRange && !day.isStart && !day.isEnd,
+							'hover:bg-neutral-100': !day.isStart && !day.isEnd && !day.isInRange && !day.isDisabled,
+							'cursor-not-allowed opacity-50': day.isDisabled,
+							'cursor-pointer': !day.isDisabled,
+							'rounded-l-md': day.isStart && day.isInRange,
+							'rounded-r-md': day.isEnd && day.isInRange,
+							'rounded-md': (day.isStart && !day.isInRange) || (day.isEnd && !day.isInRange)
+						}"
+						class="w-8 h-8 text-xs flex items-center justify-center transition-colors"
+						:disabled="day.isDisabled"
+					>
+						{{ day.date.date() }}
+					</button>
+				</div>
+			</div>
 		</div>
 
 		<!-- Selected Range Display -->

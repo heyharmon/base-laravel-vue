@@ -4,7 +4,7 @@ import moment from 'moment'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
-import RangeCalendarPicker from '@/components/RangeCalendarPicker.vue'
+import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import Button from '@/components/ui/Button.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
@@ -12,153 +12,22 @@ import TrashIcon from '../components/icons/TrashIcon.vue'
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
-// Date filtering state
+// Date filtering state - this is the single source of truth
 const selectedTimeframe = ref('this_month')
-const customStartDate = ref(null)
-const customEndDate = ref(null)
-const isDropdownOpen = ref(false)
 
-// Timeframe options
-const timeframeOptions = [
-	{ value: 'today', label: 'Today' },
-	{ value: 'yesterday', label: 'Yesterday' },
-	{ value: 'this_week', label: 'This week' },
-	{ value: 'last_week', label: 'Last week' },
-	{ value: 'this_month', label: 'This month' },
-	{ value: 'last_month', label: 'Last month' },
-	{ value: 'this_year', label: 'This year' },
-	{ value: 'last_year', label: 'Last year' },
-	{ value: 'all_time', label: 'All time' }
-]
+// Initialize with this month's dates
+const now = moment()
+const customStartDate = ref(now.clone().startOf('month').format('YYYY-MM-DD'))
+const customEndDate = ref(now.format('YYYY-MM-DD'))
 
-// Computed date range based on selected timeframe
-const dateRange = computed(() => {
-	const now = moment()
-
-	switch (selectedTimeframe.value) {
-		case 'today':
-			return {
-				startDate: now.format('YYYY-MM-DD'),
-				endDate: now.format('YYYY-MM-DD')
-			}
-		case 'yesterday':
-			return {
-				startDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD'),
-				endDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD')
-			}
-		case 'this_week':
-			return {
-				startDate: now.clone().startOf('week').format('YYYY-MM-DD'),
-				endDate: now.format('YYYY-MM-DD')
-			}
-		case 'last_week':
-			return {
-				startDate: now.clone().subtract(1, 'week').startOf('week').format('YYYY-MM-DD'),
-				endDate: now.clone().subtract(1, 'week').endOf('week').format('YYYY-MM-DD')
-			}
-		case 'this_month':
-			return {
-				startDate: now.clone().startOf('month').format('YYYY-MM-DD'),
-				endDate: now.format('YYYY-MM-DD')
-			}
-		case 'last_month':
-			return {
-				startDate: now.clone().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
-				endDate: now.clone().subtract(1, 'month').endOf('month').format('YYYY-MM-DD')
-			}
-		case 'this_year':
-			return {
-				startDate: now.clone().startOf('year').format('YYYY-MM-DD'),
-				endDate: now.format('YYYY-MM-DD')
-			}
-		case 'last_year':
-			return {
-				startDate: now.clone().subtract(1, 'year').startOf('year').format('YYYY-MM-DD'),
-				endDate: now.clone().subtract(1, 'year').endOf('year').format('YYYY-MM-DD')
-			}
-		case 'all_time':
-			return {
-				startDate: null,
-				endDate: null
-			}
-		case 'custom':
-			return {
-				startDate: customStartDate.value,
-				endDate: customEndDate.value
-			}
-		default:
-			return {
-				startDate: null,
-				endDate: null
-			}
-	}
-})
-
-// Fetch visibility metrics with date filters
-const fetchVisibilityMetrics = async () => {
+// Handle date range changes from the dropdown component
+const handleDateRangeChange = (dateRange) => {
 	const params = {}
-	if (dateRange.value.startDate) params.startDate = dateRange.value.startDate
-	if (dateRange.value.endDate) params.endDate = dateRange.value.endDate
+	if (dateRange.startDate) params.startDate = dateRange.startDate
+	if (dateRange.endDate) params.endDate = dateRange.endDate
 
-	await organizationStore.fetchVisibilityMetrics(params)
-}
-
-// Watch for timeframe changes
-watch(selectedTimeframe, () => {
-	if (selectedTimeframe.value !== 'custom') {
-		fetchVisibilityMetrics()
-	}
-})
-
-// Watch for custom date changes
-watch([customStartDate, customEndDate], () => {
-	if (customStartDate.value && customEndDate.value) {
-		selectedTimeframe.value = 'custom'
-		fetchVisibilityMetrics()
-	}
-})
-
-// Apply custom date range
-const applyCustomDateRange = () => {
-	if (customStartDate.value && customEndDate.value) {
-		fetchVisibilityMetrics()
-	}
-}
-
-// Apply custom date range and close dropdown
-const applyCustomDateRangeAndClose = () => {
-	applyCustomDateRange()
-	closeDropdown()
-}
-
-// Get selected timeframe label
-const selectedTimeframeLabel = computed(() => {
-	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
-		return `${moment(customStartDate.value).format('MMM D, YYYY')} - ${moment(customEndDate.value).format('MMM D, YYYY')}`
-	}
-	const option = timeframeOptions.find((opt) => opt.value === selectedTimeframe.value)
-	return option ? option.label : 'Select timeframe'
-})
-
-// Toggle dropdown
-const toggleDropdown = () => {
-	isDropdownOpen.value = !isDropdownOpen.value
-}
-
-// Close dropdown when clicking outside
-const closeDropdown = () => {
-	isDropdownOpen.value = false
-}
-
-// Select timeframe and close dropdown
-const selectTimeframe = (value) => {
-	selectedTimeframe.value = value
-	// Clear custom dates when selecting a preset timeframe
-	if (value !== 'custom') {
-		customStartDate.value = null
-		customEndDate.value = null
-		isDropdownOpen.value = false
-	}
+	console.log('Fetching visibility metrics with date range:', params)
+	organizationStore.fetchVisibilityMetrics(params)
 }
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
@@ -171,7 +40,11 @@ watch(
 		const hasCompletedJobs = jobStatusStore.completedJobs.length > 0
 		if (hasCompletedJobs) {
 			console.log('Jobs completed, refreshing visibility metrics')
-			fetchVisibilityMetrics()
+			// Use current date range for refresh
+			const params = {}
+			if (customStartDate.value) params.startDate = customStartDate.value
+			if (customEndDate.value) params.endDate = customEndDate.value
+			organizationStore.fetchVisibilityMetrics(params)
 		}
 	},
 	{ deep: true }
@@ -184,13 +57,22 @@ const ownedOrg = computed(() => {
 })
 
 onMounted(async () => {
-	await fetchVisibilityMetrics()
+	// Fetch visibility metrics with the already initialized dates
+	console.log('Initial fetch with dates:', customStartDate.value, customEndDate.value)
+	await organizationStore.fetchVisibilityMetrics({
+		startDate: customStartDate.value,
+		endDate: customEndDate.value
+	})
 })
 
 const deleteOrganization = async (organizationId) => {
 	try {
 		await organizationStore.deleteOrganization(organizationId)
-		await fetchVisibilityMetrics()
+		// Refresh with current date range
+		const params = {}
+		if (customStartDate.value) params.startDate = customStartDate.value
+		if (customEndDate.value) params.endDate = customEndDate.value
+		await organizationStore.fetchVisibilityMetrics(params)
 	} catch (error) {
 		console.error('Error deleting organization:', error)
 	}
@@ -224,74 +106,13 @@ const deleteOrganization = async (organizationId) => {
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
 		<!-- Date Filter Dropdown -->
-		<div class="mt-6 relative">
-			<!-- Dropdown Trigger -->
-			<button
-				@click="toggleDropdown"
-				class="flex items-center justify-between w-full max-w-xs px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-			>
-				<span class="flex items-center gap-2">
-					<svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-						></path>
-					</svg>
-					{{ selectedTimeframeLabel }}
-				</span>
-				<svg
-					class="w-4 h-4 text-neutral-500 transition-transform"
-					:class="{ 'rotate-180': isDropdownOpen }"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-				</svg>
-			</button>
-
-			<!-- Dropdown Content -->
-			<div
-				v-if="isDropdownOpen"
-				@click.stop
-				class="absolute top-full left-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-[700px]"
-			>
-				<div class="flex">
-					<!-- Left Column - Timeframe Options -->
-					<div class="w-48 p-4 border-r border-neutral-200">
-						<div class="space-y-1">
-							<button
-								v-for="option in timeframeOptions"
-								:key="option.value"
-								@click="selectTimeframe(option.value)"
-								:class="{
-									'bg-blue-50 text-blue-700 border-blue-200': selectedTimeframe === option.value,
-									'text-neutral-700 hover:bg-neutral-50': selectedTimeframe !== option.value
-								}"
-								class="w-full text-left px-3 py-2 text-sm rounded-md border border-transparent transition-colors"
-							>
-								{{ option.label }}
-							</button>
-						</div>
-					</div>
-
-					<!-- Right Column - Calendar Picker -->
-					<div class="flex-1 p-4 flex justify-center">
-						<RangeCalendarPicker
-							:start-date="customStartDate"
-							:end-date="customEndDate"
-							:max-date="moment().format('YYYY-MM-DD')"
-							@update:start-date="customStartDate = $event"
-							@update:end-date="customEndDate = $event"
-						/>
-					</div>
-				</div>
-			</div>
-
-			<!-- Backdrop to close dropdown -->
-			<div v-if="isDropdownOpen" @click="closeDropdown" class="fixed inset-0 z-40"></div>
+		<div class="mt-6">
+			<DateFilterDropdown
+				v-model:selected-timeframe="selectedTimeframe"
+				v-model:custom-start-date="customStartDate"
+				v-model:custom-end-date="customEndDate"
+				@date-range-changed="handleDateRangeChange"
+			/>
 		</div>
 
 		<!-- Rankings -->
