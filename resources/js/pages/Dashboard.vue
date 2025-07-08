@@ -1,33 +1,25 @@
 <script setup>
-import { onMounted, watch, computed, ref } from 'vue'
-import moment from 'moment'
+import { onMounted, watch, computed } from 'vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
-import Button from '@/components/ui/Button.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
 
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
-// Simplified state - only track what we actually need
-const currentDateRange = ref({
-	startDate: moment().subtract(30, 'days').format('YYYY-MM-DD'),
-	endDate: moment().format('YYYY-MM-DD')
-})
+// Use centralized state from the store
 
-// Extract data fetching to a reusable function
-const fetchVisibilityData = (dateRange = currentDateRange.value) => {
-	console.log('Fetching visibility metrics with date range:', dateRange)
-	organizationStore.fetchVisibilityMetrics(dateRange)
+// Use the store's fetchVisibilityMetrics directly
+const fetchVisibilityData = () => {
+	organizationStore.fetchVisibilityMetrics()
 }
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-	currentDateRange.value = dateRange
-	fetchVisibilityData(dateRange)
+	organizationStore.setDateRange(dateRange)
 }
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
@@ -57,8 +49,8 @@ onMounted(() => {
 const deleteOrganization = async (organizationId) => {
 	try {
 		await organizationStore.deleteOrganization(organizationId)
-		// Refresh with current date range
-		fetchVisibilityData()
+		// Refresh visibility data
+		organizationStore.fetchVisibilityMetrics()
 	} catch (error) {
 		console.error('Error deleting organization:', error)
 	}
@@ -93,7 +85,7 @@ const deleteOrganization = async (organizationId) => {
 
 		<!-- Simplified Date Filter -->
 		<div class="mt-6">
-			<DateFilterDropdown :start-date="currentDateRange.startDate" :end-date="currentDateRange.endDate" @date-range-changed="handleDateRangeChange" />
+			<DateFilterDropdown :start-date="organizationStore.currentDateRange.startDate" :end-date="organizationStore.currentDateRange.endDate" @date-range-changed="handleDateRangeChange" />
 		</div>
 
 		<!-- Rankings -->
