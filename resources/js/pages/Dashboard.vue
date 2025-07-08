@@ -28,8 +28,7 @@ const timeframeOptions = [
 	{ value: 'last_month', label: 'Last month' },
 	{ value: 'this_year', label: 'This year' },
 	{ value: 'last_year', label: 'Last year' },
-	{ value: 'all_time', label: 'All time' },
-	{ value: 'custom', label: 'Custom range' }
+	{ value: 'all_time', label: 'All time' }
 ]
 
 // Computed date range based on selected timeframe
@@ -113,7 +112,8 @@ watch(selectedTimeframe, () => {
 
 // Watch for custom date changes
 watch([customStartDate, customEndDate], () => {
-	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
+	if (customStartDate.value && customEndDate.value) {
+		selectedTimeframe.value = 'custom'
 		fetchVisibilityMetrics()
 	}
 })
@@ -133,10 +133,10 @@ const applyCustomDateRangeAndClose = () => {
 
 // Get selected timeframe label
 const selectedTimeframeLabel = computed(() => {
-	const option = timeframeOptions.find((opt) => opt.value === selectedTimeframe.value)
 	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
 		return `${moment(customStartDate.value).format('MMM D, YYYY')} - ${moment(customEndDate.value).format('MMM D, YYYY')}`
 	}
+	const option = timeframeOptions.find((opt) => opt.value === selectedTimeframe.value)
 	return option ? option.label : 'Select timeframe'
 })
 
@@ -153,7 +153,10 @@ const closeDropdown = () => {
 // Select timeframe and close dropdown
 const selectTimeframe = (value) => {
 	selectedTimeframe.value = value
+	// Clear custom dates when selecting a preset timeframe
 	if (value !== 'custom') {
+		customStartDate.value = null
+		customEndDate.value = null
 		isDropdownOpen.value = false
 	}
 }
@@ -276,7 +279,7 @@ const deleteOrganization = async (organizationId) => {
 
 					<!-- Right Column - Calendar Pickers -->
 					<div class="flex-1 p-4">
-						<div v-if="selectedTimeframe === 'custom'" class="flex gap-4">
+						<div class="flex gap-4">
 							<div class="flex-1">
 								<div class="mb-2 text-sm font-medium text-neutral-700">Start Date</div>
 								<CalendarPicker v-model="customStartDate" :max-date="customEndDate || moment().format('YYYY-MM-DD')" />
@@ -284,27 +287,6 @@ const deleteOrganization = async (organizationId) => {
 							<div class="flex-1">
 								<div class="mb-2 text-sm font-medium text-neutral-700">End Date</div>
 								<CalendarPicker v-model="customEndDate" :min-date="customStartDate" :max-date="moment().format('YYYY-MM-DD')" />
-							</div>
-						</div>
-
-						<!-- Apply/Cancel buttons for custom range -->
-						<div v-if="selectedTimeframe === 'custom'" class="flex gap-2 mt-4 justify-end">
-							<Button @click="closeDropdown()" variant="outline" class="px-4 py-2"> Cancel </Button>
-							<Button @click="applyCustomDateRangeAndClose" :disabled="!customStartDate || !customEndDate" class="px-4 py-2"> Apply </Button>
-						</div>
-
-						<!-- Message for non-custom selections -->
-						<div v-else class="flex items-center justify-center h-64 text-neutral-500">
-							<div class="text-center">
-								<svg class="w-12 h-12 mx-auto mb-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-									></path>
-								</svg>
-								<p class="text-sm">Select "Custom range" to choose specific dates</p>
 							</div>
 						</div>
 					</div>
