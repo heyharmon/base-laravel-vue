@@ -1,9 +1,10 @@
 <script setup>
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import moment from 'moment'
+import { useDateRangeUtils } from '@/composables/useDateRangeUtils'
+
 import RangeCalendarPicker from '@/components/RangeCalendarPicker.vue'
 
-// Simplified props - only need to track the current date range
 const props = defineProps({
 	startDate: {
 		type: String,
@@ -15,49 +16,12 @@ const props = defineProps({
 	}
 })
 
-// Single event emission for date changes
 const emit = defineEmits(['dateRangeChanged'])
+
+const { getDateRangeForTimeframe, detectTimeframe, formatDateRange } = useDateRangeUtils()
 
 const isDropdownOpen = ref(false)
 const selectedTimeframe = ref('last_30_days')
-
-// Move date utilities to a composable or utility file
-const getDateRangeForTimeframe = (timeframe) => {
-	const now = moment()
-
-	const ranges = {
-		today: {
-			startDate: now.format('YYYY-MM-DD'),
-			endDate: now.format('YYYY-MM-DD')
-		},
-		yesterday: {
-			startDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD'),
-			endDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD')
-		},
-		last_7_days: {
-			startDate: now.clone().subtract(7, 'days').format('YYYY-MM-DD'),
-			endDate: now.format('YYYY-MM-DD')
-		},
-		last_30_days: {
-			startDate: now.clone().subtract(30, 'days').format('YYYY-MM-DD'),
-			endDate: now.format('YYYY-MM-DD')
-		},
-		this_year: {
-			startDate: now.clone().startOf('year').format('YYYY-MM-DD'),
-			endDate: now.format('YYYY-MM-DD')
-		},
-		last_year: {
-			startDate: now.clone().subtract(1, 'year').startOf('year').format('YYYY-MM-DD'),
-			endDate: now.clone().subtract(1, 'year').endOf('year').format('YYYY-MM-DD')
-		},
-		all_time: {
-			startDate: null,
-			endDate: null
-		}
-	}
-
-	return ranges[timeframe] || { startDate: null, endDate: null }
-}
 
 const timeframeOptions = [
 	{ value: 'today', label: 'Today' },
@@ -69,24 +33,12 @@ const timeframeOptions = [
 	{ value: 'all_time', label: 'All time' }
 ]
 
-// Internal state for custom dates
 const customStartDate = ref(props.startDate)
 const customEndDate = ref(props.endDate)
 
-// Determine if current dates match a predefined timeframe
-const detectTimeframe = (startDate, endDate) => {
-	for (const option of timeframeOptions) {
-		const range = getDateRangeForTimeframe(option.value)
-		if (range.startDate === startDate && range.endDate === endDate) {
-			return option.value
-		}
-	}
-	return 'custom'
-}
-
 const selectedTimeframeLabel = computed(() => {
 	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
-		return `${moment(customStartDate.value).format('MMM D, YYYY')} - ${moment(customEndDate.value).format('MMM D, YYYY')}`
+		return formatDateRange(customStartDate.value, customEndDate.value)
 	}
 	const option = timeframeOptions.find((opt) => opt.value === selectedTimeframe.value)
 	return option ? option.label : 'Select timeframe'
@@ -115,31 +67,28 @@ const updateCustomDate = (startDate, endDate) => {
 	}
 }
 
-// Initialize on mount
 onMounted(() => {
-	// Detect current timeframe or set default
-	selectedTimeframe.value = detectTimeframe(props.startDate, props.endDate) || 'last_30_days'
+	const availableTimeframes = timeframeOptions.map(opt => opt.value)
+	selectedTimeframe.value = detectTimeframe(props.startDate, props.endDate, availableTimeframes) || 'last_30_days'
 
-	// Ensure we have valid dates
 	if (!customStartDate.value || !customEndDate.value) {
 		const range = getDateRangeForTimeframe(selectedTimeframe.value)
 		customStartDate.value = range.startDate
 		customEndDate.value = range.endDate
 	}
 
-	// Emit initial date range
 	emit('dateRangeChanged', {
 		startDate: customStartDate.value,
 		endDate: customEndDate.value
 	})
 })
 
-// Watch for external prop changes
 watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 	if (newStart !== customStartDate.value || newEnd !== customEndDate.value) {
 		customStartDate.value = newStart
 		customEndDate.value = newEnd
-		selectedTimeframe.value = detectTimeframe(newStart, newEnd)
+		const availableTimeframes = timeframeOptions.map(opt => opt.value)
+		selectedTimeframe.value = detectTimeframe(newStart, newEnd, availableTimeframes)
 	}
 })
 </script>
