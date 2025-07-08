@@ -3,6 +3,7 @@ import { onMounted, watch, computed } from 'vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
+import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
@@ -89,6 +90,16 @@ const deleteOrganization = async (organizationId) => {
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				@date-range-changed="handleDateRangeChange"
+			/>
+		</div>
+
+		<!-- Visibility chart -->
+		<div class="mt-6">
+			<VisibilityChart
+				v-if="organizationStore.visibilityMetrics.length > 0"
+				:start-date="organizationStore.currentDateRange.startDate"
+				:end-date="organizationStore.currentDateRange.endDate"
+				class="mt-6"
 			/>
 		</div>
 

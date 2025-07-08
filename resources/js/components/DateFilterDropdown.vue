@@ -3,7 +3,7 @@ import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import moment from 'moment'
 import { useDateRangeUtils } from '@/composables/useDateRangeUtils'
 
-import RangeCalendarPicker from '@/components/RangeCalendarPicker.vue'
+import DatePickerRange from '@/components/DatePickerRange.vue'
 
 const props = defineProps({
 	startDate: {
@@ -167,7 +167,7 @@ watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 
 				<!-- Right Column - Calendar Picker -->
 				<div class="flex-1 p-4 flex justify-center">
-					<RangeCalendarPicker
+					<DatePickerRange
 						:start-date="customStartDate"
 						:end-date="customEndDate"
 						:max-date="moment().format('YYYY-MM-DD')"
