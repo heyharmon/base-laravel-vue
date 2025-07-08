@@ -4,7 +4,7 @@ import moment from 'moment'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
-import DatePicker from '@/components/DatePicker.vue'
+import CalendarPicker from '@/components/CalendarPicker.vue'
 import Button from '@/components/ui/Button.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
@@ -13,17 +13,22 @@ const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
 // Date filtering state
-const selectedTimeframe = ref('last_28_days')
+const selectedTimeframe = ref('this_month')
 const customStartDate = ref(null)
 const customEndDate = ref(null)
+const isDropdownOpen = ref(false)
 
 // Timeframe options
 const timeframeOptions = [
-	{ value: 'last_7_days', label: 'Last 7 days' },
-	{ value: 'last_14_days', label: 'Last 14 days' },
-	{ value: 'last_28_days', label: 'Last 28 days' },
-	{ value: 'last_90_days', label: 'Last 90 days' },
+	{ value: 'today', label: 'Today' },
+	{ value: 'yesterday', label: 'Yesterday' },
+	{ value: 'this_week', label: 'This week' },
+	{ value: 'last_week', label: 'Last week' },
+	{ value: 'this_month', label: 'This month' },
+	{ value: 'last_month', label: 'Last month' },
 	{ value: 'this_year', label: 'This year' },
+	{ value: 'last_year', label: 'Last year' },
+	{ value: 'all_time', label: 'All time' },
 	{ value: 'custom', label: 'Custom range' }
 ]
 
@@ -32,30 +37,50 @@ const dateRange = computed(() => {
 	const now = moment()
 
 	switch (selectedTimeframe.value) {
-		case 'last_7_days':
+		case 'today':
 			return {
-				startDate: now.clone().subtract(7, 'days').format('YYYY-MM-DD'),
+				startDate: now.format('YYYY-MM-DD'),
 				endDate: now.format('YYYY-MM-DD')
 			}
-		case 'last_14_days':
+		case 'yesterday':
 			return {
-				startDate: now.clone().subtract(14, 'days').format('YYYY-MM-DD'),
+				startDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD'),
+				endDate: now.clone().subtract(1, 'day').format('YYYY-MM-DD')
+			}
+		case 'this_week':
+			return {
+				startDate: now.clone().startOf('week').format('YYYY-MM-DD'),
 				endDate: now.format('YYYY-MM-DD')
 			}
-		case 'last_28_days':
+		case 'last_week':
 			return {
-				startDate: now.clone().subtract(28, 'days').format('YYYY-MM-DD'),
+				startDate: now.clone().subtract(1, 'week').startOf('week').format('YYYY-MM-DD'),
+				endDate: now.clone().subtract(1, 'week').endOf('week').format('YYYY-MM-DD')
+			}
+		case 'this_month':
+			return {
+				startDate: now.clone().startOf('month').format('YYYY-MM-DD'),
 				endDate: now.format('YYYY-MM-DD')
 			}
-		case 'last_90_days':
+		case 'last_month':
 			return {
-				startDate: now.clone().subtract(90, 'days').format('YYYY-MM-DD'),
-				endDate: now.format('YYYY-MM-DD')
+				startDate: now.clone().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
+				endDate: now.clone().subtract(1, 'month').endOf('month').format('YYYY-MM-DD')
 			}
 		case 'this_year':
 			return {
 				startDate: now.clone().startOf('year').format('YYYY-MM-DD'),
 				endDate: now.format('YYYY-MM-DD')
+			}
+		case 'last_year':
+			return {
+				startDate: now.clone().subtract(1, 'year').startOf('year').format('YYYY-MM-DD'),
+				endDate: now.clone().subtract(1, 'year').endOf('year').format('YYYY-MM-DD')
+			}
+		case 'all_time':
+			return {
+				startDate: null,
+				endDate: null
 			}
 		case 'custom':
 			return {
@@ -97,6 +122,39 @@ watch([customStartDate, customEndDate], () => {
 const applyCustomDateRange = () => {
 	if (customStartDate.value && customEndDate.value) {
 		fetchVisibilityMetrics()
+	}
+}
+
+// Apply custom date range and close dropdown
+const applyCustomDateRangeAndClose = () => {
+	applyCustomDateRange()
+	closeDropdown()
+}
+
+// Get selected timeframe label
+const selectedTimeframeLabel = computed(() => {
+	const option = timeframeOptions.find((opt) => opt.value === selectedTimeframe.value)
+	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
+		return `${moment(customStartDate.value).format('MMM D, YYYY')} - ${moment(customEndDate.value).format('MMM D, YYYY')}`
+	}
+	return option ? option.label : 'Select timeframe'
+})
+
+// Toggle dropdown
+const toggleDropdown = () => {
+	isDropdownOpen.value = !isDropdownOpen.value
+}
+
+// Close dropdown when clicking outside
+const closeDropdown = () => {
+	isDropdownOpen.value = false
+}
+
+// Select timeframe and close dropdown
+const selectTimeframe = (value) => {
+	selectedTimeframe.value = value
+	if (value !== 'custom') {
+		isDropdownOpen.value = false
 	}
 }
 
@@ -162,38 +220,99 @@ const deleteOrganization = async (organizationId) => {
 		<!-- Visibility score -->
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
-		<!-- Date Filter Controls -->
-		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
-			<h3 class="text-lg font-semibold mb-4">Time Period</h3>
-
-			<!-- Timeframe Selection -->
-			<div class="flex flex-wrap gap-2 mb-4">
-				<button
-					v-for="option in timeframeOptions"
-					:key="option.value"
-					@click="selectedTimeframe = option.value"
-					:class="{
-						'bg-blue-600 text-white': selectedTimeframe === option.value,
-						'bg-neutral-100 text-neutral-700 hover:bg-neutral-200': selectedTimeframe !== option.value
-					}"
-					class="px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer"
+		<!-- Date Filter Dropdown -->
+		<div class="mt-6 relative">
+			<!-- Dropdown Trigger -->
+			<button
+				@click="toggleDropdown"
+				class="flex items-center justify-between w-full max-w-xs px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+			>
+				<span class="flex items-center gap-2">
+					<svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+						></path>
+					</svg>
+					{{ selectedTimeframeLabel }}
+				</span>
+				<svg
+					class="w-4 h-4 text-neutral-500 transition-transform"
+					:class="{ 'rotate-180': isDropdownOpen }"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
 				>
-					{{ option.label }}
-				</button>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+				</svg>
+			</button>
+
+			<!-- Dropdown Content -->
+			<div
+				v-if="isDropdownOpen"
+				@click.stop
+				class="absolute top-full left-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-[700px]"
+			>
+				<div class="flex">
+					<!-- Left Column - Timeframe Options -->
+					<div class="w-48 p-4 border-r border-neutral-200">
+						<div class="space-y-1">
+							<button
+								v-for="option in timeframeOptions"
+								:key="option.value"
+								@click="selectTimeframe(option.value)"
+								:class="{
+									'bg-blue-50 text-blue-700 border-blue-200': selectedTimeframe === option.value,
+									'text-neutral-700 hover:bg-neutral-50': selectedTimeframe !== option.value
+								}"
+								class="w-full text-left px-3 py-2 text-sm rounded-md border border-transparent transition-colors"
+							>
+								{{ option.label }}
+							</button>
+						</div>
+					</div>
+
+					<!-- Right Column - Calendar Pickers -->
+					<div class="flex-1 p-4">
+						<div v-if="selectedTimeframe === 'custom'" class="flex gap-4">
+							<div class="flex-1">
+								<div class="mb-2 text-sm font-medium text-neutral-700">Start Date</div>
+								<CalendarPicker v-model="customStartDate" :max-date="customEndDate || moment().format('YYYY-MM-DD')" />
+							</div>
+							<div class="flex-1">
+								<div class="mb-2 text-sm font-medium text-neutral-700">End Date</div>
+								<CalendarPicker v-model="customEndDate" :min-date="customStartDate" :max-date="moment().format('YYYY-MM-DD')" />
+							</div>
+						</div>
+
+						<!-- Apply/Cancel buttons for custom range -->
+						<div v-if="selectedTimeframe === 'custom'" class="flex gap-2 mt-4 justify-end">
+							<Button @click="closeDropdown()" variant="outline" class="px-4 py-2"> Cancel </Button>
+							<Button @click="applyCustomDateRangeAndClose" :disabled="!customStartDate || !customEndDate" class="px-4 py-2"> Apply </Button>
+						</div>
+
+						<!-- Message for non-custom selections -->
+						<div v-else class="flex items-center justify-center h-64 text-neutral-500">
+							<div class="text-center">
+								<svg class="w-12 h-12 mx-auto mb-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+									></path>
+								</svg>
+								<p class="text-sm">Select "Custom range" to choose specific dates</p>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 
-			<!-- Custom Date Range -->
-			<div v-if="selectedTimeframe === 'custom'" class="flex gap-4 items-end">
-				<div class="flex-1">
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Start Date</label>
-					<DatePicker v-model="customStartDate" placeholder="Select start date" :max-date="customEndDate || moment().format('YYYY-MM-DD')" />
-				</div>
-				<div class="flex-1">
-					<label class="block text-sm font-medium text-neutral-700 mb-1">End Date</label>
-					<DatePicker v-model="customEndDate" placeholder="Select end date" :min-date="customStartDate" :max-date="moment().format('YYYY-MM-DD')" />
-				</div>
-				<Button @click="applyCustomDateRange" :disabled="!customStartDate || !customEndDate" class="px-4 py-2"> Apply </Button>
-			</div>
+			<!-- Backdrop to close dropdown -->
+			<div v-if="isDropdownOpen" @click="closeDropdown" class="fixed inset-0 z-40"></div>
 		</div>
 
 		<!-- Rankings -->
