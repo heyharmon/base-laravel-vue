@@ -46,7 +46,7 @@ useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
 })
 
 // Listen for chat processing completion events
-useEcho(`article.${route.params.id}`, 'ArticleChatProcessingComplete', (e) => {
+useEcho(`article.${route.params.id}`, 'ArticleChatAgentFinished', (e) => {
 	console.log('Chat processing completed:', e)
 
 	// Reset loading state
