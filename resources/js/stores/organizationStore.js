@@ -16,7 +16,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 	// Date range for visibility metrics
 	const currentDateRange = ref({
-		startDate: moment().subtract(30, 'days').format('YYYY-MM-DD'),
+		startDate: moment().clone().startOf('year').format('YYYY-MM-DD'),
 		endDate: moment().format('YYYY-MM-DD')
 	})
 
@@ -134,7 +134,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		try {
 			// Use provided params or fall back to store's currentDateRange
 			const dateParams = params || currentDateRange.value
-			
+
 			const queryParams = new URLSearchParams()
 			if (dateParams.startDate) queryParams.append('start_date', dateParams.startDate)
 			if (dateParams.endDate) queryParams.append('end_date', dateParams.endDate)

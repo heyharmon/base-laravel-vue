@@ -57,7 +57,7 @@
 		</div>
 
 		<div class="relative" style="height: 400px">
-			<canvas ref="chartCanvas"></canvas>
+			<div ref="chartContainer"></div>
 		</div>
 
 		<div v-if="!isLoading && chartData.length === 0" class="text-center py-8 text-neutral-500">No data available for the selected date range</div>
@@ -65,9 +65,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, nextTick, onUnmounted } from 'vue'
+import { ref, onMounted, watch, computed, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
-import Chart from 'chart.js/auto'
+import ApexCharts from 'apexcharts'
 import api from '@/services/api'
 
 const props = defineProps({
@@ -77,7 +77,7 @@ const props = defineProps({
 
 const organizationStore = useOrganizationStore()
 
-const chartCanvas = ref(null)
+const chartContainer = ref(null)
 const chart = ref(null)
 const isLoading = ref(false)
 const chartData = ref([])
@@ -104,10 +104,20 @@ const vClickOutside = {
 	}
 }
 
+// Keep track of the latest request ID
+let latestRequestId = 0
+
 const fetchChartData = async () => {
+	// Don't fetch if we're unmounting
+	if (isUnmounting.value) return
+	
 	isLoading.value = true
 
 	try {
+		// Prevent multiple simultaneous requests with a more robust ID system
+		const currentRequestId = Date.now()
+		latestRequestId = currentRequestId
+		
 		const params = new URLSearchParams({
 			start_date: props.startDate,
 			end_date: props.endDate,
@@ -128,10 +138,24 @@ const fetchChartData = async () => {
 		})
 
 		const response = await api.get(`/organization-visibility/chart?${params}`)
+		
+		// Check if a newer request has come in while we were waiting or if unmounting
+		if (currentRequestId !== latestRequestId || isUnmounting.value) {
+			return // Abandon this update as it's stale or component is unmounting
+		}
+		
 		chartData.value = response.organizations
 
+		// If component is unmounting, don't proceed with chart update
+		if (isUnmounting.value) return
+
+		// Ensure DOM is updated before updating chart
 		await nextTick()
-		updateChart()
+		
+		// Final check before updating chart
+		if (!isUnmounting.value && chartContainer.value) {
+			updateChart()
+		}
 	} catch (error) {
 		console.error('Error fetching chart data:', error)
 	} finally {
@@ -139,83 +163,149 @@ const fetchChartData = async () => {
 	}
 }
 
-const updateChart = () => {
-	if (!chartCanvas.value) return
+// Flag to track if component is being unmounted
+const isUnmounting = ref(false)
 
-	// Destroy existing chart
-	if (chart.value) {
-		chart.value.destroy()
+// Safe chart destruction
+const safeDestroyChart = () => {
+	try {
+		if (chart.value) {
+			chart.value.destroy()
+			chart.value = null
+		}
+	} catch (error) {
+		console.error('Error safely destroying chart:', error)
 	}
+}
 
-	// Prepare datasets
-	const datasets = chartData.value.map((org) => ({
-		label: org.name,
-		data: org.data.map((point) => ({
-			x: point.date,
-			y: point.visibility
-		})),
-		borderColor: org.color,
-		backgroundColor: org.color + '20', // Add transparency
-		borderWidth: 2,
-		tension: 0.1, // Smooth lines
-		pointRadius: 4,
-		pointHoverRadius: 6
-	}))
+const updateChart = () => {
+	// Don't update if unmounting or container is gone
+	if (!chartContainer.value || isUnmounting.value) return
 
-	// Create new chart
-	chart.value = new Chart(chartCanvas.value, {
-		type: 'line',
-		data: {
-			datasets: datasets
-		},
-		options: {
-			responsive: true,
-			maintainAspectRatio: false,
-			interaction: {
-				mode: 'index',
-				intersect: false
-			},
-			plugins: {
-				legend: {
-					position: 'bottom',
+	try {
+		// Safely destroy existing chart
+		safeDestroyChart()
+
+		// Wait for the next tick to ensure DOM is updated
+		nextTick(() => {
+			// Make sure container is still available and we're not unmounting
+			if (!chartContainer.value || isUnmounting.value) return
+			
+			// Format the data for ApexCharts
+			const series = chartData.value.map((org) => ({
+				name: org.name,
+				data: org.data.map((point) => point.visibility)
+			}))
+
+			// Get categories (dates) from the first organization's data points
+			const categories = chartData.value.length > 0
+				? chartData.value[0].data.map((point) => point.date)
+				: []
+
+			// Prepare colors array
+			const colors = chartData.value.map((org) => org.color)
+
+			// Create ApexCharts options
+			const options = {
+				chart: {
+					type: 'line',
+					height: 400,
+					fontFamily: 'inherit',
+					toolbar: {
+						show: false
+					},
+					animations: {
+						enabled: true,
+						easing: 'easeinout',
+						speed: 800
+					}
+				},
+				colors: colors,
+				series: series,
+				dataLabels: {
+					enabled: false
+				},
+				stroke: {
+					curve: 'smooth',
+					width: 2
+				},
+				xaxis: {
+					categories: categories,
+					tooltip: {
+						enabled: false
+					}
+				},
+				yaxis: {
+					min: 0,
+					max: 100,
+					decimals: 0,
 					labels: {
-						padding: 15,
-						usePointStyle: true
+						formatter: function (value) {
+							return value + '%';
+						}
 					}
 				},
 				tooltip: {
-					callbacks: {
-						afterLabel: function (context) {
-							const dataIndex = context.dataIndex
-							const orgData = chartData.value[context.datasetIndex]
-							const point = orgData.data[dataIndex]
-							return [`Mentions: ${point.mentions}`, `Total Responses: ${point.responses}`]
-						}
-					}
-				}
-			},
-			scales: {
-				x: {
-					type: 'category',
-					grid: {
-						display: false
-					}
-				},
-				y: {
-					beginAtZero: true,
-					max: 100,
-					ticks: {
-						callback: function (value) {
+					shared: true,
+					intersect: false,
+					y: {
+						formatter: function (value) {
 							return value + '%'
 						}
 					},
-					grid: {
-						borderDash: [2, 2]
+					custom: function({ series, seriesIndex, dataPointIndex, w }) {
+						const orgData = chartData.value[seriesIndex];
+						const point = orgData.data[dataPointIndex];
+						
+						return `
+						<div class="p-2 bg-white border border-neutral-200 rounded shadow">
+							<div class="font-bold">${orgData.name}</div>
+							<div>Visibility: ${point.visibility}%</div>
+							<div>Mentions: ${point.mentions}</div>
+							<div>Total Responses: ${point.responses}</div>
+						</div>
+						`;
+					}
+				},
+				legend: {
+					position: 'bottom',
+					horizontalAlign: 'center',
+					offsetY: 8,
+					markers: {
+						width: 10,
+						height: 10,
+						radius: 100
+					}
+				},
+				grid: {
+					borderColor: '#e0e0e0',
+					row: {
+						colors: ['#f3f3f3', 'transparent'],
+						opacity: 0.5
+					}
+				},
+				markers: {
+					size: 4,
+					hover: {
+						size: 6
 					}
 				}
+			};
+
+			// Create new chart with robust error handling
+			try {
+				// Final check before creating chart
+				if (!isUnmounting.value && chartContainer.value) {
+					chart.value = new ApexCharts(chartContainer.value, options);
+					chart.value.render();
+				}
+			} catch (chartError) {
+				console.error('Error creating chart:', chartError)
 			}
-		}
-	})
+		})
+	} catch (error) {
+		console.error('Error updating chart:', error)
+	}
 }
 
 // Watch for date changes
@@ -239,10 +329,18 @@ onMounted(() => {
 	fetchChartData()
 })
 
-// Clean up chart on unmount
+// Set unmounting flag before component is unmounted
+onBeforeUnmount(() => {
+	isUnmounting.value = true
+})
+
+// Clean up chart on unmount with error handling
 onUnmounted(() => {
-	if (chart.value) {
-		chart.value.destroy()
+	try {
+		// The isUnmounting flag ensures no new charts will be created during unmount
+		safeDestroyChart()
+	} catch (error) {
+		console.error('Error destroying chart on unmount:', error)
 	}
 })
 </script>

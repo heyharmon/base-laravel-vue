@@ -128,13 +128,15 @@ onMounted(async () => {
 <template>
 	<DefaultLayout>
 		<div class="flex flex-col space-y-6 my-6">
+			<!-- Date Filter -->
+			<DateFilterDropdown
+				:start-date="organizationStore.currentDateRange.startDate"
+				:end-date="organizationStore.currentDateRange.endDate"
+				@date-range-changed="handleDateRangeChange"
+			/>
+
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
-			
-			<!-- Date Filter -->
-			<div>
-				<DateFilterDropdown :start-date="organizationStore.currentDateRange.startDate" :end-date="organizationStore.currentDateRange.endDate" @date-range-changed="handleDateRangeChange" />
-			</div>
 
 			<!-- Main Content -->
 			<div class="flex flex-col">

@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import api from '@/services/api'
-import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import FullWidthLayout from '@/layouts/FullWidthLayout.vue'
 import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -225,265 +225,263 @@ onMounted(async () => {
 </script>
 
 <template>
-	<DefaultLayout>
-		<div class="container mx-auto py-6">
-			<!-- Header -->
-			<div class="mb-6">
-				<h1 class="text-2xl font-bold mb-4">Super Admin - Organizations</h1>
+	<FullWidthLayout>
+		<!-- Header -->
+		<div class="py-6">
+			<h1 class="text-2xl font-bold mb-4">Super Admin</h1>
 
-				<!-- Stats Cards -->
-				<div class="grid grid-cols-4 gap-4 mb-6">
-					<div class="bg-white p-4 rounded-lg border border-neutral-200">
-						<div class="text-sm text-neutral-500">Total Organizations</div>
-						<div class="text-2xl font-bold">{{ stats.total_organizations }}</div>
-					</div>
-					<div class="bg-white p-4 rounded-lg border border-neutral-200">
-						<div class="text-sm text-neutral-500">Owned</div>
-						<div class="text-2xl font-bold text-green-600">{{ stats.owned_organizations }}</div>
-					</div>
-					<div class="bg-white p-4 rounded-lg border border-neutral-200">
-						<div class="text-sm text-neutral-500">Competitors</div>
-						<div class="text-2xl font-bold text-red-600">{{ stats.competitor_organizations }}</div>
-					</div>
-					<div class="bg-white p-4 rounded-lg border border-neutral-200">
-						<div class="text-sm text-neutral-500">Total Teams</div>
-						<div class="text-2xl font-bold text-blue-600">{{ stats.total_teams }}</div>
-					</div>
+			<!-- Stats Cards -->
+			<div class="grid grid-cols-4 gap-4">
+				<div class="bg-white p-4 rounded-lg border border-neutral-200">
+					<div class="text-sm text-neutral-500">Total Organizations</div>
+					<div class="text-2xl font-bold">{{ stats.total_organizations }}</div>
+				</div>
+				<div class="bg-white p-4 rounded-lg border border-neutral-200">
+					<div class="text-sm text-neutral-500">Owned</div>
+					<div class="text-2xl font-bold text-green-600">{{ stats.owned_organizations }}</div>
+				</div>
+				<div class="bg-white p-4 rounded-lg border border-neutral-200">
+					<div class="text-sm text-neutral-500">Competitors</div>
+					<div class="text-2xl font-bold text-red-600">{{ stats.competitor_organizations }}</div>
+				</div>
+				<div class="bg-white p-4 rounded-lg border border-neutral-200">
+					<div class="text-sm text-neutral-500">Total Teams</div>
+					<div class="text-2xl font-bold text-blue-600">{{ stats.total_teams }}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Filters -->
+		<div class="bg-neutral-50 p-4 rounded-lg border border-neutral-200 mb-6">
+			<div class="grid grid-cols-4 gap-4">
+				<!-- Search -->
+				<div>
+					<label class="block text-sm font-medium text-neutral-700 mb-1">Search by name</label>
+					<input
+						v-model="filters.search"
+						type="text"
+						placeholder="Search organizations..."
+						class="w-full px-3 py-1.5 bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				</div>
+
+				<!-- Team Filter -->
+				<div>
+					<label class="block text-sm font-medium text-neutral-700 mb-1">Team</label>
+					<select
+						v-model="filters.team_id"
+						class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="">All Teams</option>
+						<option v-for="team in teams" :key="team.id" :value="team.id">
+							{{ team.name }}
+						</option>
+					</select>
+				</div>
+
+				<!-- Industry Filter -->
+				<div>
+					<label class="block text-sm font-medium text-neutral-700 mb-1">Industry</label>
+					<select
+						v-model="filters.industry_id"
+						class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="">All Industries</option>
+						<option v-for="industry in industries" :key="industry.id" :value="industry.id">
+							{{ industry.name }}
+						</option>
+					</select>
+				</div>
+
+				<!-- Type Filter -->
+				<div>
+					<label class="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+					<select
+						v-model="filters.is_competitor"
+						class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+					>
+						<option value="all">All</option>
+						<option value="owned">Owned</option>
+						<option value="competitor">Competitor</option>
+					</select>
 				</div>
 			</div>
 
-			<!-- Filters -->
-			<div class="bg-white p-4 rounded-lg border border-neutral-200 mb-6">
-				<div class="grid grid-cols-4 gap-4">
-					<!-- Search -->
-					<div>
-						<label class="block text-sm font-medium text-neutral-700 mb-1">Search by name</label>
-						<input
-							v-model="filters.search"
-							type="text"
-							placeholder="Search organizations..."
-							class="w-full px-3 py-1.5 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						/>
-					</div>
+			<!-- Selected Count and Export Button -->
+			<div class="flex items-center gap-2 pt-3">
+				<Button v-if="selectedCount > 0" @click="exportSelected" :disabled="isExporting" variant="primary" size="sm">
+					{{ isExporting ? 'Exporting...' : 'Export Selected' }}
+				</Button>
+				<Button v-if="selectedCount > 0" @click="clearSelection" variant="outline" size="sm"> Clear Selection </Button>
+				<div v-if="selectedCount > 0" class="text-blue-700 text-sm ml-1">{{ selectedCount }} selected</div>
+			</div>
+		</div>
 
-					<!-- Team Filter -->
-					<div>
-						<label class="block text-sm font-medium text-neutral-700 mb-1">Team</label>
-						<select
-							v-model="filters.team_id"
-							class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						>
-							<option value="">All Teams</option>
-							<option v-for="team in teams" :key="team.id" :value="team.id">
-								{{ team.name }}
-							</option>
-						</select>
-					</div>
-
-					<!-- Industry Filter -->
-					<div>
-						<label class="block text-sm font-medium text-neutral-700 mb-1">Industry</label>
-						<select
-							v-model="filters.industry_id"
-							class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						>
-							<option value="">All Industries</option>
-							<option v-for="industry in industries" :key="industry.id" :value="industry.id">
-								{{ industry.name }}
-							</option>
-						</select>
-					</div>
-
-					<!-- Type Filter -->
-					<div>
-						<label class="block text-sm font-medium text-neutral-700 mb-1">Type</label>
-						<select
-							v-model="filters.is_competitor"
-							class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						>
-							<option value="all">All</option>
-							<option value="owned">Owned</option>
-							<option value="competitor">Competitor</option>
-						</select>
-					</div>
-				</div>
-
-				<!-- Selected Count and Export Button -->
-				<div class="flex items-center gap-2 pt-3">
-					<Button v-if="selectedCount > 0" @click="exportSelected" :disabled="isExporting" variant="primary" size="sm">
-						{{ isExporting ? 'Exporting...' : 'Export Selected' }}
-					</Button>
-					<Button v-if="selectedCount > 0" @click="clearSelection" variant="outline" size="sm"> Clear Selection </Button>
-					<div v-if="selectedCount > 0" class="text-blue-700 text-sm ml-1">{{ selectedCount }} selected</div>
-				</div>
+		<!-- Data Table -->
+		<div class="bg-white rounded-lg border border-neutral-200 overflow-hidden">
+			<!-- Loading State -->
+			<div v-if="isLoading" class="flex justify-center py-8">
+				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
 
-			<!-- Data Table -->
-			<div class="bg-white rounded-lg border border-neutral-200 overflow-hidden">
-				<!-- Loading State -->
-				<div v-if="isLoading" class="flex justify-center py-8">
-					<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
-				</div>
-
-				<!-- Table -->
-				<div v-else class="overflow-x-auto">
-					<table class="min-w-full divide-y divide-neutral-200">
-						<thead class="bg-neutral-50">
-							<tr>
-								<th class="px-4 py-3 text-left">
-									<input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="rounded border-neutral-300" />
-								</th>
-								<th class="px-4 py-3 text-left">
-									<span class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Logo</span>
-								</th>
-								<th class="px-4 py-3 text-left">
-									<button
-										@click="sort('name')"
-										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-									>
-										Name {{ getSortIcon('name') }}
-									</button>
-								</th>
-								<th class="px-4 py-3 text-left">
-									<button
-										@click="sort('team_name')"
-										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-									>
-										Team {{ getSortIcon('team_name') }}
-									</button>
-								</th>
-								<th class="px-4 py-3 text-left">
-									<button
-										@click="sort('visibility')"
-										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-									>
-										Visibility {{ getSortIcon('visibility') }}
-									</button>
-								</th>
-								<th class="px-4 py-3 text-left">
-									<button
-										@click="sort('industry_name')"
-										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-									>
-										Industry {{ getSortIcon('industry_name') }}
-									</button>
-								</th>
-								<th class="px-4 py-3 text-left">
-									<button
-										@click="sort('website')"
-										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-									>
-										Website {{ getSortIcon('website') }}
-									</button>
-								</th>
-								<th class="px-4 py-3 text-left">
-									<button
-										@click="sort('type')"
-										class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-									>
-										Type {{ getSortIcon('type') }}
-									</button>
-								</th>
-							</tr>
-						</thead>
-						<tbody class="bg-white divide-y divide-neutral-200">
-							<tr
-								v-for="org in organizations"
-								:key="org.id"
-								class="hover:bg-neutral-50 transition-colors"
-								:class="{ 'bg-blue-50': selectedOrganizations.has(org.id) }"
-							>
-								<td class="px-4 py-3">
-									<input
-										type="checkbox"
-										:checked="selectedOrganizations.has(org.id)"
-										@change="toggleSelect(org.id)"
-										class="rounded border-neutral-300"
-									/>
-								</td>
-								<td class="px-4 py-3">
-									<OrganizationLogo :organization="org" size="sm" />
-								</td>
-								<td class="px-4 py-3">
-									<div class="font-medium text-neutral-900">{{ org.name || 'Unnamed' }}</div>
-								</td>
-								<td class="px-4 py-3 text-sm text-neutral-600">
-									{{ org.team_name || '-' }}
-								</td>
-								<td class="px-4 py-3">
-									<div class="flex items-center gap-2">
-										<div class="w-20 bg-neutral-200 rounded-full h-2">
-											<div
-												class="h-2 rounded-full"
-												:class="org.is_competitor ? 'bg-red-500' : 'bg-green-500'"
-												:style="{ width: `${org.visibility}%` }"
-											></div>
-										</div>
-										<span class="text-sm font-medium">{{ org.visibility }}%</span>
-									</div>
-								</td>
-								<td class="px-4 py-3 text-sm text-neutral-600">
-									{{ org.industry_name || '-' }}
-								</td>
-								<td class="px-4 py-3 text-sm text-neutral-600">
-									<a
-										v-if="org.website"
-										:href="org.website.startsWith('http') ? org.website : `https://${org.website}`"
-										target="_blank"
-										class="text-blue-600 hover:underline"
-									>
-										{{ org.website }}
-									</a>
-									<span v-else>-</span>
-								</td>
-								<td class="px-4 py-3">
-									<span
-										class="px-2 py-1 text-xs font-medium rounded-full"
-										:class="org.is_competitor ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'"
-									>
-										{{ org.is_competitor ? 'Competitor' : 'Owned' }}
-									</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-
-				<!-- Pagination -->
-				<div v-if="pagination.last_page > 1" class="px-4 py-3 bg-neutral-50 border-t border-neutral-200">
-					<div class="flex items-center justify-between">
-						<div class="text-sm text-neutral-700">
-							Showing {{ (pagination.current_page - 1) * pagination.per_page + 1 }} to
-							{{ Math.min(pagination.current_page * pagination.per_page, pagination.total) }} of {{ pagination.total }} results
-						</div>
-						<div class="flex gap-2">
-							<Button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1" variant="outline" size="sm">
-								Previous
-							</Button>
-
-							<template v-for="page in Math.min(5, pagination.last_page)" :key="page">
-								<Button
-									v-if="page === 1 || page === pagination.last_page || Math.abs(page - pagination.current_page) <= 1"
-									@click="changePage(page)"
-									:variant="page === pagination.current_page ? 'dark' : 'outline'"
-									size="sm"
+			<!-- Table -->
+			<div v-else class="overflow-x-auto">
+				<table class="min-w-full divide-y divide-neutral-200">
+					<thead class="bg-neutral-50">
+						<tr>
+							<th class="px-4 py-3 text-left">
+								<input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="rounded border-neutral-300" />
+							</th>
+							<th class="px-4 py-3 text-left">
+								<span class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Logo</span>
+							</th>
+							<th class="px-4 py-3 text-left">
+								<button
+									@click="sort('name')"
+									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
 								>
-									{{ page }}
-								</Button>
-							</template>
+									Name {{ getSortIcon('name') }}
+								</button>
+							</th>
+							<th class="px-4 py-3 text-left">
+								<button
+									@click="sort('team_name')"
+									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
+								>
+									Team {{ getSortIcon('team_name') }}
+								</button>
+							</th>
+							<th class="px-4 py-3 text-left">
+								<button
+									@click="sort('visibility')"
+									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
+								>
+									Visibility {{ getSortIcon('visibility') }}
+								</button>
+							</th>
+							<th class="px-4 py-3 text-left">
+								<button
+									@click="sort('industry_name')"
+									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
+								>
+									Industry {{ getSortIcon('industry_name') }}
+								</button>
+							</th>
+							<th class="px-4 py-3 text-left">
+								<button
+									@click="sort('website')"
+									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
+								>
+									Website {{ getSortIcon('website') }}
+								</button>
+							</th>
+							<th class="px-4 py-3 text-left">
+								<button
+									@click="sort('type')"
+									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
+								>
+									Type {{ getSortIcon('type') }}
+								</button>
+							</th>
+						</tr>
+					</thead>
+					<tbody class="bg-white divide-y divide-neutral-200">
+						<tr
+							v-for="org in organizations"
+							:key="org.id"
+							class="hover:bg-neutral-50 transition-colors"
+							:class="{ 'bg-blue-50': selectedOrganizations.has(org.id) }"
+						>
+							<td class="px-4 py-3">
+								<input
+									type="checkbox"
+									:checked="selectedOrganizations.has(org.id)"
+									@change="toggleSelect(org.id)"
+									class="rounded border-neutral-300"
+								/>
+							</td>
+							<td class="px-4 py-3">
+								<OrganizationLogo :organization="org" size="sm" />
+							</td>
+							<td class="px-4 py-3">
+								<div class="font-medium text-neutral-900">{{ org.name || 'Unnamed' }}</div>
+							</td>
+							<td class="px-4 py-3 text-sm text-neutral-600">
+								{{ org.team_name || '-' }}
+							</td>
+							<td class="px-4 py-3">
+								<div class="flex items-center gap-2">
+									<div class="w-20 bg-neutral-200 rounded-full h-2">
+										<div
+											class="h-2 rounded-full"
+											:class="org.is_competitor ? 'bg-red-500' : 'bg-green-500'"
+											:style="{ width: `${org.visibility}%` }"
+										></div>
+									</div>
+									<span class="text-sm font-medium">{{ org.visibility }}%</span>
+								</div>
+							</td>
+							<td class="px-4 py-3 text-sm text-neutral-600">
+								{{ org.industry_name || '-' }}
+							</td>
+							<td class="px-4 py-3 text-sm text-neutral-600">
+								<a
+									v-if="org.website"
+									:href="org.website.startsWith('http') ? org.website : `https://${org.website}`"
+									target="_blank"
+									class="text-blue-600 hover:underline"
+								>
+									{{ org.website }}
+								</a>
+								<span v-else>-</span>
+							</td>
+							<td class="px-4 py-3">
+								<span
+									class="px-2 py-1 text-xs font-medium rounded-full"
+									:class="org.is_competitor ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'"
+								>
+									{{ org.is_competitor ? 'Competitor' : 'Owned' }}
+								</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
+			<!-- Pagination -->
+			<div v-if="pagination.last_page > 1" class="px-4 py-3 bg-neutral-50 border-t border-neutral-200">
+				<div class="flex items-center justify-between">
+					<div class="text-sm text-neutral-700">
+						Showing {{ (pagination.current_page - 1) * pagination.per_page + 1 }} to
+						{{ Math.min(pagination.current_page * pagination.per_page, pagination.total) }} of {{ pagination.total }} results
+					</div>
+					<div class="flex gap-2">
+						<Button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1" variant="outline" size="sm">
+							Previous
+						</Button>
+
+						<template v-for="page in Math.min(5, pagination.last_page)" :key="page">
 							<Button
-								@click="changePage(pagination.current_page + 1)"
-								:disabled="pagination.current_page === pagination.last_page"
-								variant="outline"
+								v-if="page === 1 || page === pagination.last_page || Math.abs(page - pagination.current_page) <= 1"
+								@click="changePage(page)"
+								:variant="page === pagination.current_page ? 'dark' : 'outline'"
 								size="sm"
 							>
-								Next
+								{{ page }}
 							</Button>
-						</div>
+						</template>
+
+						<Button
+							@click="changePage(pagination.current_page + 1)"
+							:disabled="pagination.current_page === pagination.last_page"
+							variant="outline"
+							size="sm"
+						>
+							Next
+						</Button>
 					</div>
 				</div>
 			</div>
 		</div>
-	</DefaultLayout>
+	</FullWidthLayout>
 </template>
