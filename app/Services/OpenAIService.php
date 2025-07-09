@@ -718,7 +718,7 @@ class OpenAIService
 				try {
 					$prompt = Prompt::where('team_id', $teamId)
 						->with(['responses' => function ($query) {
-							$query->latest()->limit(10);
+							$query->latest()->limit(15);
 						}])
 						->find($promptId);
 
