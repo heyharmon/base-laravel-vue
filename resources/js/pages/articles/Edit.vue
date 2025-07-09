@@ -5,6 +5,7 @@ import { useArticleStore } from '@/stores/articleStore'
 import { useDebounceFn } from '@vueuse/core'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import ChatInterface from '@/components/chat/ChatInterface.vue'
@@ -46,7 +47,13 @@ const context = computed(() => {
 
 const editor = useEditor({
 	content: '',
-	extensions: [StarterKit],
+	extensions: [
+		StarterKit,
+		Link.configure({
+			openOnClick: false,
+			linkOnPaste: true
+		})
+	],
 	onUpdate: ({ editor }) => {
 		if (articleStore.article && !isUpdatingFromAutoSave.value) {
 			articleStore.article.content = editor.getHTML()
@@ -333,7 +340,7 @@ const clearSelectedContent = () => {
 						<EditorMenu :editor="editor" />
 
 						<!-- Editor content -->
-						<div class="pl-2 pr-6 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
+						<div class="pl-2 pr-6 pt-4 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
 							<EditorContent :editor="editor" />
 						</div>
 
