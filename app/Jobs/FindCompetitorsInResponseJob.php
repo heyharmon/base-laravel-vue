@@ -78,7 +78,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			// Skip if team already has 50 competitors
 			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
 
-			if ($competitorCount >= 10) {
+			if ($competitorCount >= 50) {
 				$this->markJobAsCompleted('Skipping prompt, max 50 competitors reached');
 				return;
 			}
@@ -93,17 +93,20 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				return;
 			}
 
-			// Get the latest response for this prompt
-			$latestResponse = $this->model->responses()->latest()->first();
+			// Get the last 5 responses for this prompt
+			$recentResponses = $this->model->responses()->latest()->take(5)->get();
 
 			// Skip prompts without responses
-			if (!$latestResponse) {
+			if ($recentResponses->isEmpty()) {
 				$this->markJobAsCompleted('Skipping prompt because it has no responses');
 				return;
 			}
 
+			// Combine content from all recent responses
+			$combinedContent = $recentResponses->pluck('content')->implode('\n\n---\n\n');
+
 			// Get competitors from the LLM
-			$competitors = $this->findCompetitorsWithLlm($latestResponse->content, $ownedOrganization);
+			$competitors = $this->findCompetitorsWithLlm($combinedContent, $ownedOrganization);
 
 			// Create competitor
 			$createdCount = $this->createCompetitorOrganizations($competitors);
