@@ -54,25 +54,34 @@ const handleCommand = (command, options = {}) => {
 }
 
 const handleLinkClick = () => {
+	const { from, to } = props.editor.state.selection
+	if (from === to) {
+		// No text selected
+		return
+	}
+
 	if (activeCommands.value.link) {
-		// Remove link if already active
-		props.editor.chain().focus().unsetLink().run()
+		// Get current link URL and show dialog to edit
+		const currentUrl = props.editor.getAttributes('link').href || ''
+		linkUrl.value = currentUrl
 	} else {
-		// Show dialog to add link
-		const { from, to } = props.editor.state.selection
-		if (from === to) {
-			// No text selected
-			return
-		}
-		showLinkDialog.value = true
+		// Show dialog to add new link
 		linkUrl.value = ''
 	}
+
+	showLinkDialog.value = true
 }
 
 const applyLink = () => {
 	if (linkUrl.value) {
-		props.editor.chain().focus().toggleLink({ href: linkUrl.value }).run()
+		props.editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.value }).run()
 	}
+	showLinkDialog.value = false
+	linkUrl.value = ''
+}
+
+const removeLink = () => {
+	props.editor.chain().focus().extendMarkRange('link').unsetLink().run()
 	showLinkDialog.value = false
 	linkUrl.value = ''
 }
@@ -186,6 +195,13 @@ const revertToNextVersion = async () => {
 							class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
 						>
 							Apply
+						</button>
+						<button
+							v-if="activeCommands?.link"
+							@click="removeLink"
+							class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+						>
+							Remove
 						</button>
 						<button
 							@click="cancelLink"
