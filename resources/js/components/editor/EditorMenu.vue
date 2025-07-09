@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import BoldIcon from '@/components/icons/BoldIcon.vue'
 import ItalicIcon from '@/components/icons/ItalicIcon.vue'
@@ -11,6 +11,10 @@ import BackIcon from '@/components/icons/BackIcon.vue'
 import ForwardIcon from '@/components/icons/ForwardIcon.vue'
 
 const articleStore = useArticleStore()
+
+// Link dialogue state
+const showLinkDialog = ref(false)
+const linkUrl = ref('')
 
 defineEmits(['command'])
 
@@ -49,23 +53,33 @@ const handleCommand = (command, options = {}) => {
 	}
 }
 
-const setLink = () => {
-	const previousUrl = props.editor.getAttributes('link').href
-	const url = window.prompt('URL', previousUrl)
-
-	// cancelled
-	if (url === null) {
-		return
+const handleLinkClick = () => {
+	if (activeCommands.value.link) {
+		// Remove link if already active
+		props.editor.chain().focus().unsetLink().run()
+	} else {
+		// Show dialog to add link
+		const { from, to } = props.editor.state.selection
+		if (from === to) {
+			// No text selected
+			return
+		}
+		showLinkDialog.value = true
+		linkUrl.value = ''
 	}
+}
 
-	// empty
-	if (url === '') {
-		props.editor.chain().focus().extendMarkRange('link').unsetLink().run()
-		return
+const applyLink = () => {
+	if (linkUrl.value) {
+		props.editor.chain().focus().toggleLink({ href: linkUrl.value }).run()
 	}
+	showLinkDialog.value = false
+	linkUrl.value = ''
+}
 
-	// update link
-	props.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+const cancelLink = () => {
+	showLinkDialog.value = false
+	linkUrl.value = ''
 }
 
 const canRevertBack = () => {
@@ -147,14 +161,41 @@ const revertToNextVersion = async () => {
 				<BlockquoteIcon />
 			</button>
 
-			<button
-				@click="handleCommand('link')"
-				:class="{ 'bg-neutral-200': activeCommands?.link }"
-				class="p-1 rounded hover:bg-neutral-200"
-				title="Link"
-			>
-				<LinkIcon />
-			</button>
+			<div class="relative">
+				<button @click="handleLinkClick" :class="{ 'bg-neutral-200': activeCommands?.link }" class="p-1 rounded hover:bg-neutral-200" title="Link">
+					<LinkIcon />
+				</button>
+
+				<!-- Link Dialog -->
+				<div v-if="showLinkDialog" class="absolute top-full left-0 mt-2 p-3 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-64">
+					<div class="mb-2">
+						<label class="block text-sm font-medium text-neutral-700 mb-1">URL</label>
+						<input
+							v-model="linkUrl"
+							type="url"
+							placeholder="https://example.com"
+							class="w-full px-2 py-1 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							@keyup.enter="applyLink"
+							@keyup.escape="cancelLink"
+							autofocus
+						/>
+					</div>
+					<div class="flex gap-2">
+						<button
+							@click="applyLink"
+							class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						>
+							Apply
+						</button>
+						<button
+							@click="cancelLink"
+							class="px-3 py-1 bg-neutral-200 text-neutral-700 text-sm rounded hover:bg-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-500"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</div>
 
 			<div class="h-5 w-px bg-neutral-300 mx-1"></div>
 
