@@ -55,9 +55,44 @@ const handleCommand = (command, options = {}) => {
 
 const handleLinkClick = () => {
 	const { from, to } = props.editor.state.selection
+
+	// If no text is selected, try to select the current word or extend the link range
 	if (from === to) {
-		// No text selected
-		return
+		if (activeCommands.value.link) {
+			// Cursor is within a link, extend to the full link range
+			props.editor.chain().focus().extendMarkRange('link').run()
+		} else {
+			// Cursor is within a word, select the word
+			const { state } = props.editor
+			const { doc } = state
+			const pos = state.selection.from
+
+			// Find word boundaries
+			let start = pos
+			let end = pos
+
+			// Move start backwards to find word start
+			while (start > 0) {
+				const char = doc.textBetween(start - 1, start)
+				if (/\s/.test(char)) break
+				start--
+			}
+
+			// Move end forwards to find word end
+			while (end < doc.content.size) {
+				const char = doc.textBetween(end, end + 1)
+				if (/\s/.test(char)) break
+				end++
+			}
+
+			// Select the word if we found boundaries
+			if (start < end) {
+				props.editor.chain().focus().setTextSelection({ from: start, to: end }).run()
+			} else {
+				// No word found, don't show dialog
+				return
+			}
+		}
 	}
 
 	if (activeCommands.value.link) {
@@ -178,7 +213,6 @@ const revertToNextVersion = async () => {
 				<!-- Link Dialog -->
 				<div v-if="showLinkDialog" class="absolute top-full left-0 mt-2 p-3 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-64">
 					<div class="mb-2">
-						<label class="block text-sm font-medium text-neutral-700 mb-1">URL</label>
 						<input
 							v-model="linkUrl"
 							type="url"
