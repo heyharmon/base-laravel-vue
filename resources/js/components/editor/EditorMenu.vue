@@ -6,6 +6,7 @@ import ItalicIcon from '@/components/icons/ItalicIcon.vue'
 import BulletListIcon from '@/components/icons/BulletListIcon.vue'
 import NumberedListIcon from '@/components/icons/NumberedListIcon.vue'
 import BlockquoteIcon from '@/components/icons/BlockquoteIcon.vue'
+import LinkIcon from '@/components/icons/LinkIcon.vue'
 import BackIcon from '@/components/icons/BackIcon.vue'
 import ForwardIcon from '@/components/icons/ForwardIcon.vue'
 
@@ -28,7 +29,8 @@ const activeCommands = computed(() => ({
 	},
 	bulletList: props.editor?.isActive('bulletList'),
 	orderedList: props.editor?.isActive('orderedList'),
-	blockquote: props.editor?.isActive('blockquote')
+	blockquote: props.editor?.isActive('blockquote'),
+	link: props.editor?.isActive('link')
 }))
 
 const handleCommand = (command, options = {}) => {
@@ -38,12 +40,32 @@ const handleCommand = (command, options = {}) => {
 		heading: ({ level }) => props.editor.chain().focus().toggleHeading({ level }).run(),
 		bulletList: () => props.editor.chain().focus().toggleBulletList().run(),
 		orderedList: () => props.editor.chain().focus().toggleOrderedList().run(),
-		blockquote: () => props.editor.chain().focus().toggleBlockquote().run()
+		blockquote: () => props.editor.chain().focus().toggleBlockquote().run(),
+		link: () => setLink()
 	}
 
 	if (commandMap[command]) {
 		commandMap[command](options)
 	}
+}
+
+const setLink = () => {
+	const previousUrl = props.editor.getAttributes('link').href
+	const url = window.prompt('URL', previousUrl)
+
+	// cancelled
+	if (url === null) {
+		return
+	}
+
+	// empty
+	if (url === '') {
+		props.editor.chain().focus().extendMarkRange('link').unsetLink().run()
+		return
+	}
+
+	// update link
+	props.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
 }
 
 const canRevertBack = () => {
@@ -123,6 +145,15 @@ const revertToNextVersion = async () => {
 				title="Blockquote"
 			>
 				<BlockquoteIcon />
+			</button>
+
+			<button
+				@click="handleCommand('link')"
+				:class="{ 'bg-neutral-200': activeCommands?.link }"
+				class="p-1 rounded hover:bg-neutral-200"
+				title="Link"
+			>
+				<LinkIcon />
 			</button>
 
 			<div class="h-5 w-px bg-neutral-300 mx-1"></div>
