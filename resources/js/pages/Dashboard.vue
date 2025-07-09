@@ -82,13 +82,13 @@ const deleteOrganization = async (organizationId) => {
 		</div>
 
 		<!-- Simplified Date Filter -->
-		<div class="mt-6">
+		<!-- <div class="mt-6">
 			<DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				@date-range-changed="handleDateRangeChange"
 			/>
-		</div>
+		</div> -->
 
 		<!-- Visibility score -->
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
