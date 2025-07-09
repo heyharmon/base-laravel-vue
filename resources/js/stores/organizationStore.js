@@ -140,7 +140,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 			if (dateParams.endDate) queryParams.append('end_date', dateParams.endDate)
 
 			const queryString = queryParams.toString()
-			const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`
+			// const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`
+			const url = `/organization-visibility`
 
 			const response = await api.get(url)
 			visibilityMetrics.value = response
