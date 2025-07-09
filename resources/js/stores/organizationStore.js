@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import moment from 'moment'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import api from '@/services/api'
 
@@ -12,6 +13,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const isLoadingVisibility = ref(false)
 	const industries = ref([])
 	const isLoadingIndustries = ref(false)
+
+	// Date range for visibility metrics
+	const currentDateRange = ref({
+		startDate: moment().clone().startOf('year').format('YYYY-MM-DD'),
+		endDate: moment().format('YYYY-MM-DD')
+	})
 
 	// Other stores
 	const jobStatusStore = useJobStatusStore()
@@ -120,14 +127,17 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function fetchVisibilityMetrics(params = {}) {
+	async function fetchVisibilityMetrics(params = null) {
 		console.log('Fetching visibility metrics...')
 		isLoadingVisibility.value = true
 
 		try {
+			// Use provided params or fall back to store's currentDateRange
+			const dateParams = params || currentDateRange.value
+
 			const queryParams = new URLSearchParams()
-			if (params.startDate) queryParams.append('start_date', params.startDate)
-			if (params.endDate) queryParams.append('end_date', params.endDate)
+			if (dateParams.startDate) queryParams.append('start_date', dateParams.startDate)
+			if (dateParams.endDate) queryParams.append('end_date', dateParams.endDate)
 
 			const queryString = queryParams.toString()
 			const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`
@@ -189,6 +199,13 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
+	// Function to update date range and refresh visibility data
+	function setDateRange(dateRange) {
+		console.log('Setting date range:', dateRange)
+		currentDateRange.value = dateRange
+		return fetchVisibilityMetrics()
+	}
+
 	return {
 		// State
 		organizations,
@@ -198,6 +215,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		visibilityMetrics,
 		industries,
 		isLoadingIndustries,
+		currentDateRange,
 
 		// Getters
 		ownedOrganizations,
@@ -211,6 +229,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
+		setDateRange,
 		findCompetitors,
 		fetchIndustries,
 		createIndustry

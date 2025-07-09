@@ -15,6 +15,7 @@ use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\PromptExportController;
 use App\Http\Controllers\PromptController;
 use App\Http\Controllers\OrganizationVisibilityController;
+use App\Http\Controllers\OrganizationVisibilityChartController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
 use App\Http\Controllers\OrganizationIndustryController;
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Organization Visibility
 	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
+	Route::get('/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
 
 	// Organization Search
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);

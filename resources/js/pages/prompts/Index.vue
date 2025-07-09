@@ -10,6 +10,7 @@ import PromptToolbar from '@/components/prompts/PromptToolbar.vue'
 import PromptListItem from '@/components/prompts/PromptListItem.vue'
 import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 import VisibilityScore from '@/components/VisibilityScore.vue'
+import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const promptStore = usePromptStore()
@@ -23,6 +24,8 @@ const isGenerateModalOpen = ref(false)
 const selectedPrompt = ref(null)
 const selectedPromptId = ref(null)
 const sortOption = ref('default') // Default sort option
+
+// Using centralized date range from organizationStore
 
 const activePromptJobs = computed(() => {
 	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
@@ -111,6 +114,11 @@ const ownedOrg = computed(() => {
 	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
 })
 
+// Handle date range changes from dropdown
+const handleDateRangeChange = (dateRange) => {
+	organizationStore.setDateRange(dateRange)
+}
+
 onMounted(async () => {
 	await promptStore.fetchPrompts()
 	await organizationStore.fetchVisibilityMetrics()
@@ -120,6 +128,13 @@ onMounted(async () => {
 <template>
 	<DefaultLayout>
 		<div class="flex flex-col space-y-6 my-6">
+			<!-- Date Filter -->
+			<DateFilterDropdown
+				:start-date="organizationStore.currentDateRange.startDate"
+				:end-date="organizationStore.currentDateRange.endDate"
+				@date-range-changed="handleDateRangeChange"
+			/>
+
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 
