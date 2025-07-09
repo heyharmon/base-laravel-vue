@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useArticleStore } from '@/stores/articleStore'
 import BoldIcon from '@/components/icons/BoldIcon.vue'
 import ItalicIcon from '@/components/icons/ItalicIcon.vue'
@@ -11,6 +11,10 @@ import BackIcon from '@/components/icons/BackIcon.vue'
 import ForwardIcon from '@/components/icons/ForwardIcon.vue'
 
 const articleStore = useArticleStore()
+
+// Link dialogue state
+const showLinkDialog = ref(false)
+const linkUrl = ref('')
 
 defineEmits(['command'])
 
@@ -49,23 +53,77 @@ const handleCommand = (command, options = {}) => {
 	}
 }
 
-const setLink = () => {
-	const previousUrl = props.editor.getAttributes('link').href
-	const url = window.prompt('URL', previousUrl)
+const handleLinkClick = () => {
+	const { from, to } = props.editor.state.selection
 
-	// cancelled
-	if (url === null) {
-		return
+	// If no text is selected, try to select the current word or extend the link range
+	if (from === to) {
+		if (activeCommands.value.link) {
+			// Cursor is within a link, extend to the full link range
+			props.editor.chain().focus().extendMarkRange('link').run()
+		} else {
+			// Cursor is within a word, select the word
+			const { state } = props.editor
+			const { doc } = state
+			const pos = state.selection.from
+
+			// Find word boundaries
+			let start = pos
+			let end = pos
+
+			// Move start backwards to find word start
+			while (start > 0) {
+				const char = doc.textBetween(start - 1, start)
+				if (/\s/.test(char)) break
+				start--
+			}
+
+			// Move end forwards to find word end
+			while (end < doc.content.size) {
+				const char = doc.textBetween(end, end + 1)
+				if (/\s/.test(char)) break
+				end++
+			}
+
+			// Select the word if we found boundaries
+			if (start < end) {
+				props.editor.chain().focus().setTextSelection({ from: start, to: end }).run()
+			} else {
+				// No word found, don't show dialog
+				return
+			}
+		}
 	}
 
-	// empty
-	if (url === '') {
-		props.editor.chain().focus().extendMarkRange('link').unsetLink().run()
-		return
+	if (activeCommands.value.link) {
+		// Get current link URL and show dialog to edit
+		const currentUrl = props.editor.getAttributes('link').href || ''
+		linkUrl.value = currentUrl
+	} else {
+		// Show dialog to add new link
+		linkUrl.value = ''
 	}
 
-	// update link
-	props.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+	showLinkDialog.value = true
+}
+
+const applyLink = () => {
+	if (linkUrl.value) {
+		props.editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.value }).run()
+	}
+	showLinkDialog.value = false
+	linkUrl.value = ''
+}
+
+const removeLink = () => {
+	props.editor.chain().focus().extendMarkRange('link').unsetLink().run()
+	showLinkDialog.value = false
+	linkUrl.value = ''
+}
+
+const cancelLink = () => {
+	showLinkDialog.value = false
+	linkUrl.value = ''
 }
 
 const canRevertBack = () => {
@@ -147,14 +205,47 @@ const revertToNextVersion = async () => {
 				<BlockquoteIcon />
 			</button>
 
-			<button
-				@click="handleCommand('link')"
-				:class="{ 'bg-neutral-200': activeCommands?.link }"
-				class="p-1 rounded hover:bg-neutral-200"
-				title="Link"
-			>
-				<LinkIcon />
-			</button>
+			<div class="relative">
+				<button @click="handleLinkClick" :class="{ 'bg-neutral-200': activeCommands?.link }" class="p-1 rounded hover:bg-neutral-200" title="Link">
+					<LinkIcon />
+				</button>
+
+				<!-- Link Dialog -->
+				<div v-if="showLinkDialog" class="absolute top-full left-0 mt-2 p-3 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 min-w-64">
+					<div class="mb-2">
+						<input
+							v-model="linkUrl"
+							type="url"
+							placeholder="https://example.com"
+							class="w-full px-2 py-1 border border-neutral-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							@keyup.enter="applyLink"
+							@keyup.escape="cancelLink"
+							autofocus
+						/>
+					</div>
+					<div class="flex gap-2">
+						<button
+							@click="applyLink"
+							class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						>
+							Apply
+						</button>
+						<button
+							v-if="activeCommands?.link"
+							@click="removeLink"
+							class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+						>
+							Remove
+						</button>
+						<button
+							@click="cancelLink"
+							class="px-3 py-1 bg-neutral-200 text-neutral-700 text-sm rounded hover:bg-neutral-300 focus:outline-none focus:ring-2 focus:ring-neutral-500"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</div>
 
 			<div class="h-5 w-px bg-neutral-300 mx-1"></div>
 
