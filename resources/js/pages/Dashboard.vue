@@ -45,6 +45,7 @@ const ownedOrg = computed(() => {
 onMounted(() => {
 	// Initial fetch will be handled by the DateFilterDropdown component
 	// No need to duplicate the logic here
+	fetchVisibilityData()
 })
 
 const deleteOrganization = async (organizationId) => {
