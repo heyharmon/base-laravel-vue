@@ -28,7 +28,7 @@ class AddAdminsToAllTeams extends Command
 	 */
 	public function handle()
 	{
-		$userEmails = ['derik.krauss@metrifi.com', 'ryan.harmon@metrifi.com', 'elisha@bloomcu.com'];
+		$userEmails = ['derik.krauss@metrifi.com', 'ryan.harmon@metrifi.com', 'elisha.po@metrifi.com'];
 		$teams = Team::all();
 		$now = Carbon::now();
 		$addedCount = 0;
