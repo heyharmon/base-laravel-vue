@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
-class AddAdminesToAllTeams extends Command
+class AddAdminsToAllTeams extends Command
 {
 	/**
 	 * The name and signature of the console command.

@@ -33,9 +33,14 @@ const presetPrompts = [
 	'🌐 Search web for info related to this article'
 ]
 
-onMounted(async () => {
-	await articleStore.fetchChats(route.params.id)
-})
+// Watch for route changes to fetch chats for new article
+watch(
+	() => route.params.id,
+	(newId) => {
+		if (newId) articleStore.fetchChats(newId)
+	},
+	{ immediate: true }
+)
 
 // Listen for new chat events on the article
 useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
@@ -172,7 +177,7 @@ const getRoleLabel = (role) => {
 	<div class="flex-1 overflow-hidden flex flex-col h-full">
 		<!-- Messages top bar -->
 		<div class="py-2 px-6">
-			<ChatsDropdown :article-id="articleStore.article?.id" @conversation-changed="handleConversationChanged" />
+			<ChatsDropdown :article-id="route.params.id" @conversation-changed="handleConversationChanged" />
 		</div>
 
 		<!-- Messages area (scrollable) -->
