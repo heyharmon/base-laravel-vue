@@ -23,6 +23,7 @@ const activeConversationTitle = ref('AI Chat Assistant')
 const isOpen = ref(false)
 
 const fetchConversations = async () => {
+	console.log('Fetching article conversations...')
 	if (!props.articleId) {
 		conversations.value = []
 		return
@@ -43,6 +44,7 @@ const fetchConversations = async () => {
 }
 
 const setActiveConversation = (id) => {
+	console.log('Setting active conversation...')
 	activeConversationId.value = id
 	const conversation = conversations.value.find((c) => c.id === id)
 	if (conversation) {
@@ -54,6 +56,7 @@ const setActiveConversation = (id) => {
 }
 
 const createNewConversation = async () => {
+	console.log('Creating new conversation...')
 	if (!props.articleId) {
 		console.warn('Cannot create conversation: No article ID provided')
 		return

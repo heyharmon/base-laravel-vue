@@ -205,10 +205,12 @@ useEcho(`article.${route.params.id}`, 'ArticleDeepResearchUpdated', (e) => {
 	}
 })
 
-onMounted(async () => {
+// Function to load article data
+const loadArticle = async (articleId) => {
 	try {
-		const articleId = route.params.id
 		if (!articleId) return
+
+		isLoading.value = true
 
 		// Load article
 		await articleStore.fetchArticle(articleId)
@@ -223,7 +225,18 @@ onMounted(async () => {
 		console.error('Error loading article:', error)
 		isLoading.value = false
 	}
-})
+}
+
+// Watch for route changes to load new article
+watch(
+	() => route.params.id,
+	(newId) => {
+		if (newId) {
+			loadArticle(newId)
+		}
+	},
+	{ immediate: true }
+)
 
 // Open the prompt detail sheet
 const showPromptDetails = () => {
