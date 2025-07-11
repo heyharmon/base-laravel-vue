@@ -15,13 +15,18 @@ class ArticleController extends Controller
 	/**
 	 * Display a listing of the resource.
 	 */
-	public function index(): JsonResponse
+	public function index(Request $request): JsonResponse
 	{
 		$teamId = Auth::user()->current_team_id;
+		$campaignId = $request->get('campaign_id');
 
-		$articles = Article::where('team_id', $teamId)
-			->latest()
-			->get();
+		$query = Article::where('team_id', $teamId);
+
+		if ($campaignId) {
+			$query->where('campaign_id', $campaignId);
+		}
+
+		$articles = $query->latest()->get();
 
 		return response()->json($articles);
 	}
@@ -34,12 +39,9 @@ class ArticleController extends Controller
 		// Get the users team id
 		$teamId = $request->user()->currentTeam->id;
 
-		// Get the owned organization for this team
-		$ownedOrganization = Organization::where('team_id', $teamId)
-			->where('is_competitor', false)
-			->first();
-
 		$validated = $request->validate([
+			'campaign_id' => 'required|exists:campaigns,id',
+			'organization_id' => 'required|exists:organizations,id',
 			'prompt_id' => 'nullable|exists:prompts,id',
 			'title' => 'required|string|max:255',
 			'meta_title' => 'nullable|string|max:255',
@@ -49,11 +51,9 @@ class ArticleController extends Controller
 			'content' => 'nullable|string',
 		]);
 
-		$article = request()->user()->currentTeam->articles()->create([
-			...$validated,
-			'team_id' => $teamId,
-			'organization_id' => $ownedOrganization->id,
-		]);
+		$validated['team_id'] = $teamId;
+
+		$article = Article::create($validated);
 
 		return response()->json($article, 201);
 	}

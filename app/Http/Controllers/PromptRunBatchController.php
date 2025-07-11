@@ -22,6 +22,7 @@ class PromptRunBatchController extends Controller
 	public function store(Request $request): JsonResponse
 	{
 		$validated = $request->validate([
+			'campaign_id' => 'required|integer|exists:campaigns,id',
 			'providers' => 'nullable|array',
 			'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
 			'count' => 'nullable|integer|min:1|max:5',
@@ -30,9 +31,12 @@ class PromptRunBatchController extends Controller
 		$providers = $validated['providers'] ?? ['openai'];
 		$count = $validated['count'] ?? 1;
 		$teamId = Auth::user()->current_team_id;
+		$campaignId = $validated['campaign_id'];
 
-		// Get all prompts
-		$prompts = Prompt::where('team_id', $teamId)->get();
+		// Get all prompts scoped to the campaign
+		$prompts = Prompt::where('team_id', $teamId)
+			->where('campaign_id', $campaignId)
+			->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([
@@ -41,7 +45,7 @@ class PromptRunBatchController extends Controller
 		}
 
 		// Dispatch the job to run all prompts
-		$job = new RunAllPromptsJob($prompts->first(), $teamId, $providers, $count);
+		$job = new RunAllPromptsJob($prompts, $teamId, $providers, $count);
 		$this->jobDispatcher->dispatch($prompts->first(), $job);
 
 		return response()->json([

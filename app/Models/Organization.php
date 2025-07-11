@@ -14,8 +14,24 @@ class Organization extends Model
 {
 	use HasFactory, HasJobStatus;
 
-	protected $guarded = [
-		'id'
+	protected $fillable = [
+		'team_id',
+		'campaign_id',
+		'industry_id',
+		'name',
+		'website',
+		'logo',
+		'color',
+		'description',
+		'long_description',
+		'location',
+		'city',
+		'state',
+		'country',
+		'founded',
+		'employee_count',
+		'is_competitor',
+		'keywords',
 	];
 
 	protected $casts = [
@@ -32,6 +48,14 @@ class Organization extends Model
 	public function team(): BelongsTo
 	{
 		return $this->belongsTo(Team::class);
+	}
+
+	/**
+	 * Get the campaign that owns the organization.
+	 */
+	public function campaign(): BelongsTo
+	{
+		return $this->belongsTo(Campaign::class);
 	}
 
 	/**

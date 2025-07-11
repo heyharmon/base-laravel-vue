@@ -20,18 +20,23 @@ class OrganizationVisibilityController extends Controller
 
 		// Validate request parameters
 		$request->validate([
+			'campaign_id' => 'nullable|exists:campaigns,id',
 			'start_date' => 'nullable|date',
 			'end_date' => 'nullable|date|after_or_equal:start_date',
 		]);
 
+		$campaignId = $request->input('campaign_id');
 		$startDate = $request->input('start_date');
 		$endDate = $request->input('end_date');
 
-		// Get total responses count with date filtering
+		// Get total responses count with date and campaign filtering
 		$totalResponsesQuery = DB::table('responses')
 			->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
 			->where('prompts.team_id', $teamId);
 
+		if ($campaignId) {
+			$totalResponsesQuery->where('prompts.campaign_id', $campaignId);
+		}
 		if ($startDate) {
 			$totalResponsesQuery->where('responses.created_at', '>=', $startDate);
 		}
@@ -56,14 +61,20 @@ class OrganizationVisibilityController extends Controller
                 INNER JOIN responses r ON r.id = tr.response_id
                 INNER JOIN prompts p ON p.id = r.prompt_id
                 WHERE p.team_id = ?
+                ' . ($campaignId ? 'AND p.campaign_id = ?' : '') . '
                 ' . ($startDate ? 'AND r.created_at >= ?' : '') . '
                 ' . ($endDate ? 'AND r.created_at <= ?' : '') . '
                 GROUP BY t.organization_id
             ) as mention_data'), 'organizations.id', '=', 'mention_data.organization_id')
 			->where('organizations.team_id', $teamId);
 
+		if ($campaignId) {
+			$organizationsWithMentions->where('organizations.campaign_id', $campaignId);
+		}
+
 		// Bind parameters for the subquery
 		$bindings = [$teamId];
+		if ($campaignId) $bindings[] = $campaignId;
 		if ($startDate) $bindings[] = $startDate;
 		if ($endDate) $bindings[] = $endDate;
 

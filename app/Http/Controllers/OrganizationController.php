@@ -22,13 +22,18 @@ class OrganizationController extends Controller
 	/**
 	 * Display a listing of the resource.
 	 */
-	public function index(): JsonResponse
+	public function index(Request $request): JsonResponse
 	{
 		$teamId = Auth::user()->current_team_id;
+		$campaignId = $request->get('campaign_id');
 
-		$organizations = Organization::where('team_id', $teamId)
-			->withCount('terms')
-			->get();
+		$query = Organization::where('team_id', $teamId);
+
+		if ($campaignId) {
+			$query->where('campaign_id', $campaignId);
+		}
+
+		$organizations = $query->withCount('terms')->get();
 
 		return response()->json($organizations);
 	}
@@ -39,6 +44,7 @@ class OrganizationController extends Controller
 	public function store(Request $request): JsonResponse
 	{
 		$validated = $request->validate([
+			'campaign_id' => 'required|exists:campaigns,id',
 			'industry_id' => 'nullable|exists:organization_industries,id',
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
@@ -55,8 +61,10 @@ class OrganizationController extends Controller
 			'is_competitor' => 'boolean',
 		]);
 
+		$validated['team_id'] = request()->user()->currentTeam->id;
+
 		// TODO: Move this term creation logic into the organization model boot method
-		$organization = request()->user()->currentTeam->organizations()->create($validated);
+		$organization = Organization::create($validated);
 
 		// Create a term for the competitor name
 		$nameTerm = Term::create([

@@ -16,6 +16,7 @@ class Article extends Model
 
 	protected $fillable = [
 		'team_id',
+		'campaign_id',
 		'organization_id',
 		'prompt_id',
 		'current_version',
@@ -49,6 +50,11 @@ class Article extends Model
 	public function team(): BelongsTo
 	{
 		return $this->belongsTo(Team::class);
+	}
+
+	public function campaign(): BelongsTo
+	{
+		return $this->belongsTo(Campaign::class);
 	}
 
 	public function organization(): BelongsTo
