@@ -29,10 +29,14 @@ class PromptRunBatchController extends Controller
 
 		$providers = $validated['providers'] ?? ['openai'];
 		$count = $validated['count'] ?? 1;
-		$teamId = Auth::user()->current_team_id;
+		$user = Auth::user();
+		$teamId = $user->current_team_id;
+		$campaignId = $user->current_campaign_id;
 
-		// Get all prompts
-		$prompts = Prompt::where('team_id', $teamId)->get();
+		// Get all prompts scoped to the campaign
+		$prompts = Prompt::where('team_id', $teamId)
+			->where('campaign_id', $campaignId)
+			->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([
@@ -41,7 +45,7 @@ class PromptRunBatchController extends Controller
 		}
 
 		// Dispatch the job to run all prompts
-		$job = new RunAllPromptsJob($prompts->first(), $teamId, $providers, $count);
+		$job = new RunAllPromptsJob($prompts, $teamId, $providers, $count);
 		$this->jobDispatcher->dispatch($prompts->first(), $job);
 
 		return response()->json([

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use App\Models\JobStatus;
+use App\Models\Campaign;
 
 class Team extends Model
 {
@@ -107,11 +108,28 @@ class Team extends Model
 	}
 
 	/**
+	 * Get the campaigns that belong to the team.
+	 */
+	public function campaigns(): HasMany
+	{
+		return $this->hasMany(Campaign::class);
+	}
+
+	/**
 	 * The "booted" method of the model.
 	 * Remove related data and queued jobs when deleting a team.
 	 */
 	protected static function booted()
 	{
+		static::created(function (Team $team) {
+			// Create a default campaign for the team
+			$team->campaigns()->create([
+				'name' => 'Default Campaign',
+				'description' => 'Default campaign for ' . $team->name,
+				'is_default' => true,
+			]);
+		});
+
 		static::deleting(function (Team $team) {
 			// Detach all users from the team
 			$team->users()->detach();
@@ -121,6 +139,7 @@ class Team extends Model
 			$team->terms()->get()->each->delete();
 			$team->organizations()->get()->each->delete();
 			$team->conversations()->get()->each->delete();
+			$team->campaigns()->get()->each->delete();
 
 			// Remove queued job data
 			$jobIds = $team->jobStatuses()->pluck('job_id')->toArray();

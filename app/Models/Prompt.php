@@ -16,6 +16,7 @@ class Prompt extends Model
 
 	protected $fillable = [
 		'team_id',
+		'campaign_id',
 		'name',
 		'content',
 		'description',
@@ -55,6 +56,14 @@ class Prompt extends Model
 	public function team(): BelongsTo
 	{
 		return $this->belongsTo(Team::class);
+	}
+
+	/**
+	 * Get the campaign that owns the prompt.
+	 */
+	public function campaign(): BelongsTo
+	{
+		return $this->belongsTo(Campaign::class);
 	}
 
 	/**

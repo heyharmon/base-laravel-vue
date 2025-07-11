@@ -9,85 +9,96 @@ use Illuminate\Support\Facades\Auth;
 
 class PromptController extends Controller
 {
-    public function index(): JsonResponse
-    {
-        // TODO: Change this if adding projects model
-        $teamId = Auth::user()->current_team_id;
-        $prompts = Prompt::where('team_id', $teamId)
-            ->withCount([
-				// Count terms that are not competitor terms
-                'terms' => function($query) use ($teamId) {
-                    $query->whereHas('organization', function($q) {
-                        $q->where('is_competitor', false);
-                    });
-                },
-                'responses'
-            ])
-            ->latest()
-            ->get();
+	public function index(Request $request): JsonResponse
+	{
+		$user = Auth::user();
+		$teamId = $user->current_team_id;
+		$campaignId = $user->current_campaign_id;
 
-        return response()->json($prompts);
-    }
+		$query = Prompt::where('team_id', $teamId);
 
-    public function show(Prompt $prompt): JsonResponse
-    {
-        // Check if prompt belongs to user's current team
-        // TODO: Change this if adding projects model
-        if ($prompt->team_id !== Auth::user()->current_team_id) {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+		if ($campaignId) {
+			$query->where('campaign_id', $campaignId);
+		}
 
-        $prompt->load(['terms', 'articles']);
+		$prompts = $query->withCount([
+			// Count terms that are not competitor terms
+			'terms' => function ($query) use ($teamId) {
+				$query->whereHas('organization', function ($q) {
+					$q->where('is_competitor', false);
+				});
+			},
+			'responses'
+		])
+			->latest()
+			->get();
 
-        return response()->json($prompt);
-    }
+		return response()->json($prompts);
+	}
 
-    public function store(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'name' => 'nullable|string',
-            'content' => 'required|string',
-            'description' => 'nullable|string',
-        ]);
+	public function show(Prompt $prompt): JsonResponse
+	{
+		// Check if prompt belongs to user's current team
+		// TODO: Change this if adding projects model
+		if ($prompt->team_id !== Auth::user()->current_team_id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
-        // Add the team_id to the validated data
-        // TODO: Change this if adding projects model
-        $validated['team_id'] = Auth::user()->current_team_id;
+		$prompt->load(['terms', 'articles']);
 
-        $prompt = Prompt::create($validated);
+		return response()->json($prompt);
+	}
 
-        return response()->json($prompt, 201);
-    }
+	public function store(Request $request): JsonResponse
+	{
+		$user = Auth::user();
+		$teamId = $user->current_team_id;
+		$campaignId = $user->current_campaign_id;
 
-    public function update(Request $request, Prompt $prompt): JsonResponse
-    {
-        // Check if prompt belongs to user's current team
-        // TODO: Change this if adding projects model
-        if ($prompt->team_id !== Auth::user()->current_team_id) {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+		$validated = $request->validate([
+			'name' => 'nullable|string',
+			'content' => 'required|string',
+			'description' => 'nullable|string',
+		]);
 
-        $validated = $request->validate([
-            'name' => 'nullable|string',
-            'content' => 'required|string',
-            'description' => 'nullable|string',
-        ]);
+		// Add the team_id to the validated data
+		$validated['team_id'] = $teamId;
+		$validated['campaign_id'] = $campaignId;
 
-        $prompt->update($validated);
+		$prompt = Prompt::create($validated);
 
-        return response()->json($prompt);
-    }
+		return response()->json($prompt, 201);
+	}
 
-    public function destroy(Prompt $prompt): JsonResponse
-    {
-        // Check if prompt belongs to user's current team
-        // TODO: Change this if adding projects model
-        if ($prompt->team_id !== Auth::user()->current_team_id) {
-            return response()->json(['message' => 'Not found'], 404);
-        }
+	public function update(Request $request, Prompt $prompt): JsonResponse
+	{
+		// Check if prompt belongs to user's current team
+		// TODO: Change this if adding projects model
+		if ($prompt->team_id !== Auth::user()->current_team_id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
-        $prompt->delete();
+		$validated = $request->validate([
+			'name' => 'nullable|string',
+			'content' => 'required|string',
+			'description' => 'nullable|string',
+		]);
 
-        return response()->json(null, 204);
-    }
+		$prompt->update($validated);
+
+		return response()->json($prompt);
+	}
+
+	public function destroy(Prompt $prompt): JsonResponse
+	{
+		// Check if prompt belongs to user's current team
+		// TODO: Change this if adding projects model
+		if ($prompt->team_id !== Auth::user()->current_team_id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
+
+		$prompt->delete();
+
+		return response()->json(null, 204);
+	}
 }

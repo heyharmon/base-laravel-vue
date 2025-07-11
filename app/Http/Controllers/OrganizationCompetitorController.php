@@ -20,10 +20,18 @@ class OrganizationCompetitorController extends Controller
 
 	public function find(Request $request): JsonResponse
 	{
-		$teamId = Auth::user()->current_team_id;
+		$user = Auth::user();
+		$teamId = $user->current_team_id;
+		$campaignId = $user->current_campaign_id;
 
 		// Get all prompts for the current team
-		$prompts = Prompt::where('team_id', $teamId)->get();
+		$query = Prompt::where('team_id', $teamId);
+
+		if ($campaignId) {
+			$query->where('campaign_id', $campaignId);
+		}
+
+		$prompts = $query->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([
@@ -35,7 +43,7 @@ class OrganizationCompetitorController extends Controller
 		$jobs = [];
 
 		foreach ($prompts as $prompt) {
-			$jobs[] = new FindCompetitorsInResponseJob($prompt, $teamId);
+			$jobs[] = new FindCompetitorsInResponseJob($prompt, $teamId, $campaignId);
 		}
 
 		if (empty($jobs)) {

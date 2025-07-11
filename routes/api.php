@@ -28,6 +28,7 @@ use App\Http\Controllers\ArticleVersionController;
 use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
+use App\Http\Controllers\CampaignController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -90,6 +91,10 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Job status routes
 	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
 	Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+
+	// Campaigns
+	Route::resource('campaigns', CampaignController::class);
+	Route::post('campaigns/{campaign}/switch', [CampaignController::class, 'switch']);
 
 	// Articles
 	Route::resource('articles', ArticleController::class);

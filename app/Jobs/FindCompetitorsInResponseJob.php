@@ -45,16 +45,25 @@ class FindCompetitorsInResponseJob extends TrackableJob
 	protected $teamId;
 
 	/**
+	 * The campaign ID.
+	 *
+	 * @var int|null
+	 */
+	protected $campaignId;
+
+	/**
 	 * Create a new job instance.
 	 *
 	 * @param  \App\Models\Prompt  $prompt
-	 * @param  int|null  $teamId
+	 * @param  int  $teamId
+	 * @param  int|null  $campaignId
 	 * @return void
 	 */
-	public function __construct(Prompt $prompt, int $teamId)
+	public function __construct(Prompt $prompt, int $teamId, ?int $campaignId = null)
 	{
 		$this->model = $prompt;
 		$this->teamId = $teamId;
+		$this->campaignId = $campaignId;
 	}
 
 	/**
@@ -209,12 +218,18 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
 			if (!$existingOrganization) {
 				// Create new competitor organization
-				$competitorOrg = Organization::create([
+				$organizationData = [
 					'team_id' => $this->teamId,
 					'name' => $competitor['name'],
 					'website' => $competitor['website'] ?? null,
 					'is_competitor' => true,
-				]);
+				];
+
+				if ($this->campaignId) {
+					$organizationData['campaign_id'] = $this->campaignId;
+				}
+
+				$competitorOrg = Organization::create($organizationData);
 
 				// Create a term for the competitor name
 				$nameTerm = Term::create([

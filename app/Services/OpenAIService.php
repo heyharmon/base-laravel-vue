@@ -19,6 +19,13 @@ class OpenAIService
 	 */
 	protected $teamId;
 
+	/**
+	 * The campaign ID for scoping tool operations.
+	 *
+	 * @var int|null
+	 */
+	protected $campaignId;
+
 	protected $tools = [
 		[
 			'type' => 'function',
@@ -231,15 +238,16 @@ class OpenAIService
 
 	public function processMessageAsync(Conversation $conversation, string $userMessage, array $context = [])
 	{
-		// Capture the team ID before dispatching the job
+		// Capture the team ID and campaign ID before dispatching the job
 		$teamId = $this->getTeamId();
+		$campaignId = $this->getCampaignId();
 
 		// Process in background
-		dispatch(function () use ($conversation, $userMessage, $context, $teamId) {
+		dispatch(function () use ($conversation, $userMessage, $context, $teamId, $campaignId) {
 			try {
-				// Create a new service instance with the team ID
+				// Create a new service instance with the team ID and campaign ID
 				$service = new self();
-				$service->withTeamId($teamId);
+				$service->withTeamId($teamId)->withCampaignId($campaignId);
 
 				// Build and send request
 				$request = $service->buildRequest($conversation, $userMessage, $context);
@@ -264,7 +272,7 @@ class OpenAIService
 
 				// Emit completion event with error
 				$service = new self();
-				$service->withTeamId($teamId);
+				$service->withTeamId($teamId)->withCampaignId($campaignId);
 				$service->emitCompletionEvent($conversation, false, $e->getMessage());
 			}
 		});
@@ -455,6 +463,7 @@ class OpenAIService
 		switch ($functionName) {
 			case 'list_articles':
 				$teamId = $this->getTeamId();
+				$campaignId = $this->getCampaignId();
 
 				if (!$teamId) {
 					return json_encode(['error' => 'Team ID not available']);
@@ -463,8 +472,13 @@ class OpenAIService
 				$page = $arguments['page'] ?? 1;
 				$perPage = min($arguments['per_page'] ?? 20, 100);
 
-				$paginatedArticles = Article::where('team_id', $teamId)
-					->select(['id', 'title', 'created_at'])
+				$query = Article::where('team_id', $teamId);
+
+				if ($campaignId) {
+					$query->where('campaign_id', $campaignId);
+				}
+
+				$paginatedArticles = $query->select(['id', 'title', 'created_at'])
 					->orderBy('created_at', 'desc')
 					->paginate($perPage, ['*'], 'page', $page);
 
@@ -496,15 +510,22 @@ class OpenAIService
 
 			case 'create_article':
 				$teamId = $this->getTeamId();
+				$campaignId = $this->getCampaignId();
 
 				if (!$teamId) {
 					return json_encode(['error' => 'Team ID not available']);
 				}
 
-				$article = Article::create([
+				$articleData = [
 					'title' => $arguments['title'],
 					'team_id' => $teamId
-				]);
+				];
+
+				if ($campaignId) {
+					$articleData['campaign_id'] = $campaignId;
+				}
+
+				$article = Article::create($articleData);
 
 				return json_encode([
 					'success' => true,
@@ -861,6 +882,18 @@ class OpenAIService
 	}
 
 	/**
+	 * Set the campaign ID for this service instance.
+	 *
+	 * @param int $campaignId
+	 * @return $this
+	 */
+	public function withCampaignId(int $campaignId): self
+	{
+		$this->campaignId = $campaignId;
+		return $this;
+	}
+
+	/**
 	 * Get the team ID, falling back to Auth if not set.
 	 *
 	 * @return int|null
@@ -874,6 +907,25 @@ class OpenAIService
 		// Fallback to Auth if available (for synchronous operations)
 		if (Auth::check()) {
 			return Auth::user()->current_team_id;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the campaign ID, falling back to Auth if not set.
+	 *
+	 * @return int|null
+	 */
+	protected function getCampaignId(): ?int
+	{
+		if ($this->campaignId) {
+			return $this->campaignId;
+		}
+
+		// Fallback to Auth if available (for synchronous operations)
+		if (Auth::check()) {
+			return Auth::user()->current_campaign_id;
 		}
 
 		return null;
