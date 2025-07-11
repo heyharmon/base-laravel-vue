@@ -33,11 +33,15 @@ const presetPrompts = [
 	'🌐 Search web for info related to this article'
 ]
 
-// Watch for route changes to fetch chats for new article
+// Watch for route changes to reset conversation state
 watch(
 	() => route.params.id,
 	(newId) => {
-		if (newId) articleStore.fetchChats(newId)
+		if (newId) {
+			// Reset conversation state when switching articles
+			articleStore.setConversationId(null)
+			articleStore.chats = []
+		}
 	},
 	{ immediate: true }
 )
@@ -116,8 +120,8 @@ const sendPresetPrompt = async (prompt) => {
 // Handle conversation selection from dropdown
 const handleConversationChanged = async (conversationId) => {
 	if (conversationId) {
-		articleStore.setConversationId(conversationId)
-		await articleStore.fetchChats()
+		// The ChatsDropdown component already calls setConversationId and fetchChats
+		// We just need to scroll to bottom here
 		scrollToBottom()
 	}
 }

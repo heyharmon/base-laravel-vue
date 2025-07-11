@@ -43,7 +43,7 @@ const fetchConversations = async () => {
 	}
 }
 
-const setActiveConversation = (id) => {
+const setActiveConversation = async (id) => {
 	console.log('Setting active conversation...')
 	activeConversationId.value = id
 	const conversation = conversations.value.find((c) => c.id === id)
@@ -51,6 +51,9 @@ const setActiveConversation = (id) => {
 		activeConversationTitle.value = conversation.title || 'Untitled Conversation'
 		articleStore.setConversationId(id)
 		emit('conversationChanged', id)
+
+		// Ensure chats are loaded for this conversation
+		await articleStore.fetchChats()
 	}
 	isOpen.value = false
 }

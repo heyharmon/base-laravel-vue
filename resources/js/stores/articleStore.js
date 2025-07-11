@@ -171,6 +171,7 @@ export const useArticleStore = defineStore('article', () => {
 	function setConversationId(id) {
 		console.log('Setting conversation ID...')
 		conversationId.value = id
+		// Clear chats when switching conversations
 		chats.value = []
 	}
 
