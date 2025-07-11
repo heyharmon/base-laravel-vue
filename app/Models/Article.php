@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
 use App\Traits\HasVersions;
-use App\Events\ArticleUpdated;
+// use App\Events\ArticleUpdated;
 
 class Article extends Model
 {
@@ -37,9 +37,9 @@ class Article extends Model
 	 * Events the model dispatches.
 	 *
 	 */
-	protected $dispatchesEvents = [
-		'updated' => ArticleUpdated::class,
-	];
+	// protected $dispatchesEvents = [
+	// 	'updated' => ArticleUpdated::class,
+	// ];
 
 	/**
 	 * The version model class name.

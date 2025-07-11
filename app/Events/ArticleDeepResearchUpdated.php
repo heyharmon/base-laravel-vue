@@ -44,7 +44,6 @@ class ArticleDeepResearchUpdated implements ShouldBroadcastNow
 	{
 		return [
 			'id' => $this->article->id,
-			'updated_at' => $this->article->updated_at,
 		];
 	}
 }

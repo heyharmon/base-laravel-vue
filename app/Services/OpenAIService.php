@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Prompt;
 use App\Models\Conversation;
 use App\Models\Article;
+use App\Events\ArticleUpdated;
 use App\Events\ArticleChatAgentFinished;
 
 class OpenAIService
@@ -142,7 +143,7 @@ class OpenAIService
 					],
 					'search_text' => [
 						'type' => 'string',
-						'description' => 'Exact text to find and replace'
+						'description' => 'Exact text to find and replace. Use the users context "selected_content" to find the text.'
 					],
 					'replacement_text' => [
 						'type' => 'string',
@@ -170,7 +171,7 @@ class OpenAIService
 					],
 					'after_text' => [
 						'type' => 'string',
-						'description' => 'Exact text to find - new content will be inserted after this text'
+						'description' => 'Exact text to find - new content will be inserted after this text. Use the users context "selected_content" to find the text.'
 					],
 					'content' => [
 						'type' => 'string',
@@ -189,7 +190,7 @@ class OpenAIService
 				'properties' => [
 					'prompt_id' => [
 						'type' => 'integer',
-						'description' => 'The ID of the prompt to fetch. Use the frontend context "id_of_prompt_belonging_to_article"'
+						'description' => 'The ID of the prompt to fetch. Use the users context "id_of_prompt_belonging_to_article"'
 					]
 				],
 				'required' => ['prompt_id']
@@ -303,10 +304,11 @@ class OpenAIService
 		$systemMessage .= "When writing article content, use the append_content function to write in chunks of approximately 200 words at a time. Use multiple append_content calls to write more than approximately 200 words.";
 		$systemMessage .= "This provides faster feedback to the USER. \n";
 		$systemMessage .= "Use edit_article_title to change titles, append_content to add content to the end of articles, prepend_content to add content to the beginning, insert_content to add content after specific text, and replace_content to replace specific text. \n";
+		$systemMessage .= "Always check the \"User's context\" below, and use it to inform your responses. \n";
 
 		// Use the passed context
 		if (!empty($context)) {
-			$systemMessage .= "\n\nCurrent frontend context:\n";
+			$systemMessage .= "\n\nUser's context:\n";
 			foreach ($context as $key => $value) {
 				$systemMessage .= "- {$key}: {$value}\n";
 			}
@@ -528,6 +530,8 @@ class OpenAIService
 				$article->title = $arguments['title'];
 				$article->save();
 
+				event(new ArticleUpdated($article));
+
 				return json_encode([
 					'success' => true,
 					'message' => 'Article title updated successfully',
@@ -553,6 +557,8 @@ class OpenAIService
 
 				$article->content .= $arguments['content'];
 				$article->save();
+
+				event(new ArticleUpdated($article));
 
 				$newWordCount = str_word_count($article->content);
 				$newLength = strlen($article->content);
@@ -589,6 +595,8 @@ class OpenAIService
 
 				$article->content = $arguments['content'] . $article->content;
 				$article->save();
+
+				event(new ArticleUpdated($article));
 
 				$newWordCount = str_word_count($article->content);
 				$newLength = strlen($article->content);
@@ -643,6 +651,8 @@ class OpenAIService
 
 				$article->save();
 
+				event(new ArticleUpdated($article));
+
 				$newWordCount = str_word_count($article->content);
 				$newLength = strlen($article->content);
 
@@ -687,6 +697,8 @@ class OpenAIService
 				$insertPos = $pos + strlen($afterText);
 				$article->content = substr($article->content, 0, $insertPos) . $content . substr($article->content, $insertPos);
 				$article->save();
+
+				event(new ArticleUpdated($article));
 
 				$newWordCount = str_word_count($article->content);
 				$newLength = strlen($article->content);
@@ -823,8 +835,7 @@ class OpenAIService
 				$searchPreview = strlen($arguments['search_text']) > 30 ?
 					substr($arguments['search_text'], 0, 30) . '...' :
 					$arguments['search_text'];
-				$wordCount = str_word_count($arguments['replacement_text']);
-				return "Replacing \"{$searchPreview}\" with {$wordCount} words in article \"{$title}\"...";
+				return "Replacing \"{$searchPreview}\" in article \"{$title}\"...";
 
 			case 'insert_content':
 				$article = Article::find($arguments['article_id']);
