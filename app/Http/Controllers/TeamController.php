@@ -349,10 +349,16 @@ class TeamController extends Controller
 			return response()->json(['message' => 'You are not a member of this team'], 403);
 		}
 
-		// Update the user's current team
+		// Get the default campaign for the team (first campaign)
+		$defaultCampaign = $team->campaigns()->first();
+
+		// Update the user's current team and campaign
 		DB::table('users')
 			->where('id', $user->id)
-			->update(['current_team_id' => $team->id]);
+			->update([
+				'current_team_id' => $team->id,
+				'current_campaign_id' => $defaultCampaign ? $defaultCampaign->id : null,
+			]);
 
 		return response()->json([
 			'message' => 'Current team updated successfully',
