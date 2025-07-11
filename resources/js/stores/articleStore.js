@@ -42,6 +42,11 @@ export const useArticleStore = defineStore('article', () => {
 		try {
 			const response = await api.get(`/articles/${id}`)
 			article.value = response
+
+			// Reset conversation ID when switching to a new article
+			conversationId.value = null
+			chats.value = []
+
 			return response
 		} catch (err) {
 			window.location.href = '/articles'
