@@ -180,6 +180,9 @@ export const useArticleStore = defineStore('article', () => {
 		const id = articleId || (article.value ? article.value.id : null)
 		if (!id) return
 
+		// Set loading state at the beginning
+		isLoadingChats.value = true
+
 		try {
 			let params = {}
 
@@ -201,6 +204,11 @@ export const useArticleStore = defineStore('article', () => {
 			}))
 		} catch (error) {
 			console.error('Error fetching article chats:', error)
+			// Clear chats on error
+			chats.value = []
+		} finally {
+			// Always reset loading state when done
+			isLoadingChats.value = false
 		}
 	}
 
