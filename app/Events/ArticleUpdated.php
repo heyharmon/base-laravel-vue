@@ -40,9 +40,12 @@ class ArticleUpdated implements ShouldBroadcastNow
 	 */
 	public function broadcastWith(): array
 	{
-		// Load the versions relationship to ensure it's included in the resource
-		$this->article->load('versions');
+		return [
+			'id' => $this->article->id,
+		];
 
-		return (new ArticleResource($this->article))->resolve();
+		// Load the versions relationship to ensure it's included in the resource
+		// $this->article->load('versions');
+		// return (new ArticleResource($this->article))->resolve();
 	}
 }

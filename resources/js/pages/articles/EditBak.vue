@@ -187,20 +187,6 @@ useEcho(`article.${route.params.id}`, 'ArticleUpdated', (e) => {
 			isUpdatingFromAutoSave.value = false
 		}, 300)
 	}
-	// Update the article content
-	// if (e.id === articleStore.article.id) {
-	// 	isUpdatingFromAutoSave.value = true
-	// 	articleStore.article = e
-
-	// 	// Update the editor content if it's different
-	// 	if (editor.value.getHTML() !== e.content) {
-	// 		editor.value.commands.setContent(e.content)
-	// 	}
-
-	// 	setTimeout(() => {
-	// 		isUpdatingFromAutoSave.value = false
-	// 	}, 100)
-	// }
 })
 
 // Listen for deep research updates
@@ -224,9 +210,16 @@ const loadArticle = async (articleId) => {
 		// Load article
 		await articleStore.fetchArticle(articleId)
 
-		// Initialize editor content
+		// Initialize/update editor content while preserving position
 		if (editor.value && articleStore.article.content) {
-			editor.value.commands.setContent(articleStore.article.content)
+			const currentHtml = editor.value.getHTML()
+			if (currentHtml !== articleStore.article.content) {
+				// Only update if content differs
+				const { from, to } = editor.value.state.selection // Capture current selection positions
+				editor.value.commands.setContent(articleStore.article.content, false) // Update content without emitting update event
+				editor.value.commands.setTextSelection({ from, to }) // Restore selection to original positions
+				editor.value.commands.scrollIntoView() // Scroll to the restored selection
+			}
 		}
 
 		isLoading.value = false
