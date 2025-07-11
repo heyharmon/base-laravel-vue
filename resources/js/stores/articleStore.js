@@ -20,6 +20,7 @@ export const useArticleStore = defineStore('article', () => {
 	const newMessage = ref('')
 
 	const fetchArticles = async () => {
+		console.log('Fetching articles...')
 		isLoading.value = true
 
 		try {
@@ -35,6 +36,7 @@ export const useArticleStore = defineStore('article', () => {
 	}
 
 	const fetchArticle = async (id) => {
+		console.log('Fetching article...')
 		isLoading.value = true
 
 		try {
@@ -51,6 +53,7 @@ export const useArticleStore = defineStore('article', () => {
 	}
 
 	const createArticle = async (articleData) => {
+		console.log('Creating article...')
 		isLoading.value = true
 
 		try {
@@ -87,6 +90,7 @@ export const useArticleStore = defineStore('article', () => {
 	}
 
 	const deleteArticle = async (id) => {
+		console.log('Deleting article...')
 		isLoading.value = true
 
 		try {
@@ -113,6 +117,7 @@ export const useArticleStore = defineStore('article', () => {
 	 * Revert an article to a specific version
 	 */
 	const revertToVersion = async (articleId, versionId) => {
+		console.log('Reverting article to version...')
 		try {
 			let response = await api.post(`/articles/${articleId}/versions/${versionId}/revert`)
 			// window.location.reload()
@@ -125,6 +130,7 @@ export const useArticleStore = defineStore('article', () => {
 
 	// Auto-save content only (to be called from components)
 	const autoSaveContent = async (articleId, content) => {
+		console.log('Auto-saving article content...')
 		if (isSaving.value) return
 		isSaving.value = true
 
@@ -145,7 +151,6 @@ export const useArticleStore = defineStore('article', () => {
 				article.value.updated_at = response.updated_at
 			}
 
-			console.log('Article content auto-saved successfully')
 			return response
 		} catch (err) {
 			console.error('Error auto-saving article content:', err)
@@ -159,11 +164,13 @@ export const useArticleStore = defineStore('article', () => {
 
 	// Chat-related actions
 	function setConversationId(id) {
+		console.log('Setting conversation ID...')
 		conversationId.value = id
 		chats.value = []
 	}
 
 	async function fetchChats(articleId) {
+		console.log('Fetching article chats...')
 		const id = articleId || (article.value ? article.value.id : null)
 		if (!id) return
 
@@ -192,6 +199,7 @@ export const useArticleStore = defineStore('article', () => {
 	}
 
 	async function sendMessage(content, context = null) {
+		console.log('Sending message...')
 		if (!article.value || !article.value.id) return
 
 		// Set loading state immediately when sending
