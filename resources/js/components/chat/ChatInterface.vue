@@ -33,11 +33,15 @@ const presetPrompts = [
 	'🌐 Search web for info related to this article'
 ]
 
-// Watch for route changes to fetch chats for new article
+// Watch for route changes to reset conversation state
 watch(
 	() => route.params.id,
 	(newId) => {
-		if (newId) articleStore.fetchChats(newId)
+		if (newId) {
+			// Reset conversation state when switching articles
+			articleStore.setConversationId(null)
+			articleStore.chats = []
+		}
 	},
 	{ immediate: true }
 )
@@ -116,8 +120,8 @@ const sendPresetPrompt = async (prompt) => {
 // Handle conversation selection from dropdown
 const handleConversationChanged = async (conversationId) => {
 	if (conversationId) {
-		articleStore.setConversationId(conversationId)
-		await articleStore.fetchChats()
+		// The ChatsDropdown component already calls setConversationId and fetchChats
+		// We just need to scroll to bottom here
 		scrollToBottom()
 	}
 }
@@ -182,8 +186,20 @@ const getRoleLabel = (role) => {
 
 		<!-- Messages area (scrollable) -->
 		<div ref="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin px-6 pt-4 pb-8 space-y-6 custom-scrollbar">
+			<!-- Initial loading state -->
+			<div v-if="articleStore.isLoadingChats && articleStore.chats.length === 0" class="flex justify-center items-center py-8">
+				<div class="flex flex-col items-center gap-3">
+					<div class="flex items-center space-x-2">
+						<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse"></div>
+						<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.2s"></div>
+						<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.4s"></div>
+					</div>
+					<p class="text-neutral-500 text-sm">Loading conversation...</p>
+				</div>
+			</div>
+
 			<!-- Empty state with preset prompts -->
-			<div v-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3">
+			<div v-else-if="articleStore.chats.length === 0 && !articleStore.isLoadingChats" class="flex flex-col gap-3">
 				<p class="text-neutral-600 font-medium">Start a conversation with one of these prompts:</p>
 				<button
 					v-for="(prompt, index) in presetPrompts"
@@ -245,8 +261,8 @@ const getRoleLabel = (role) => {
 				</div>
 			</div>
 
-			<!-- Loading indicator -->
-			<div v-if="articleStore.isLoadingChats" class="flex justify-start">
+			<!-- Loading indicator for new messages -->
+			<div v-if="articleStore.isLoadingChats && articleStore.chats.length > 0" class="flex justify-start">
 				<div class="bg-neutral-300 dark:bg-neutral-700 rounded-lg p-3 flex items-center space-x-2">
 					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse"></div>
 					<div class="w-2 h-2 rounded-full bg-neutral-500 animate-pulse" style="animation-delay: 0.2s"></div>

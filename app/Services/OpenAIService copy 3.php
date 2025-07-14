@@ -312,13 +312,9 @@ class OpenAIService
 		$previous = $conversation->openai_response_id;
 
 		return array_filter([
-			'model' => 'gpt-4.1', // Non-reasoning
-			// 'model' => 'o4-mini-2025-04-16', // Reasoning
-			// 'reasoning' => [
-			// 	'effort' => 'medium'  // low, medium, or high
-			// ],
+			'model' => 'gpt-4.1',
 			'instructions' => $instructions,
-			'input' => $enhancedUserMessage,
+			'input' => $enhancedUserMessage, // Use enhanced message here
 			'parallel_tool_calls' => true,
 			'previous_response_id' => $previous,
 			'store' => true,
@@ -372,13 +368,6 @@ class OpenAIService
 	protected function composeSystemPrompt(Conversation $conversation, array $context = []): string
 	{
 		$systemMessage = "You are a tool-focused assistant for article tasks. Respond only with short, action-oriented messages—no chit-chat, no thanks, no offers for help, no explanations of changes, no quoting original/edited content EVER. If content must be modified, ALWAYS apply via tools without showing it.\n\n";
-
-		// Add reasoning guidance
-		$systemMessage .= "REASONING APPROACH:\n";
-		$systemMessage .= "- Think through the user's request step by step\n";
-		$systemMessage .= "- Consider edge cases and potential issues\n";
-		$systemMessage .= "- Plan the optimal sequence of tool calls before executing\n";
-		$systemMessage .= "- For complex edits, reason about maintaining content coherence\n\n";
 
 		$systemMessage .= "CRITICAL RULES - NEVER VIOLATE:\n";
 		$systemMessage .= "1. NEVER ask for confirmation - just execute the task\n";
@@ -489,36 +478,9 @@ class OpenAIService
 		// $reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
 
 		// You might want to format or summarize the reasoning here
-		// $conversation->chats()->create([
-		// 	'role' => 'assistant',
-		// 	'content' => $reasoningContent,
-		// ]);
-
-		// Extract reasoning content
-
-		// Log reasoning for debugging
-		Log::info('OpenAI Reasoning:', [
-			'item' => $item,
-		]);
-
-		$reasoningContent = '';
-
-		if (isset($item->content)) {
-			if (is_string($item->content)) {
-				$reasoningContent = $item->content;
-			} elseif (is_array($item->content) && isset($item->content[0])) {
-				$reasoningContent = $item->content[0]->text ?? $item->content[0] ?? '';
-			}
-		} elseif (isset($item->text)) {
-			$reasoningContent = $item->text;
-		} elseif (isset($item->reasoning)) {
-			$reasoningContent = $item->reasoning;
-		}
-
-		// Store reasoning in the conversation
 		$conversation->chats()->create([
-			'role' => 'assistant',
-			'content' => $reasoningContent,
+			'type' => 'reasoning',
+			'content' => '',
 		]);
 	}
 
