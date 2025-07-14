@@ -23,7 +23,7 @@ const revertToVersion = async (versionId) => {
 </script>
 
 <template>
-	<div class="bg-neutral-50 p-4 rounded-md border border-neutral-200 mb-2">
+	<div class="bg-neutral-50 p-4 mx-8 rounded-md border border-neutral-200 mb-2">
 		<h2 class="text-lg font-medium mb-4">Article Versions</h2>
 		<p class="text-sm text-neutral-500 mb-3">Select a version to revert the article to that state.</p>
 

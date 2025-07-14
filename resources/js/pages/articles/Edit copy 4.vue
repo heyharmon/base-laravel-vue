@@ -76,19 +76,6 @@ const editor = useEditor({
 		} else {
 			hideTooltip()
 		}
-	},
-	// ADD THIS: Handle paste events specifically
-	onTransaction: ({ editor, transaction }) => {
-		// Check if this transaction includes pasted content
-		if (transaction.docChanged && !isUpdatingEditorFromStore.value) {
-			// Small delay to ensure the content is fully updated
-			nextTick(() => {
-				if (articleStore.article) {
-					console.log('Editor onTransaction: Content changed (possibly paste)')
-					articleStore.article.content = editor.getHTML()
-				}
-			})
-		}
 	}
 })
 
@@ -158,13 +145,36 @@ const debouncedAutoSaveContent = useDebounceFn(async (content) => {
 	}
 }, 2000)
 
-// Watcher to handle both store updates and user changes
+// Watch for content changes and auto-save (only user-initiated changes)
 watch(
 	() => articleStore.article?.content,
 	(newContent, oldContent) => {
-		console.log('Content watcher triggered')
+		// Skip if this is the initial load, content hasn't changed, or editor is being updated from store
+		if (!oldContent || newContent === oldContent || isUpdatingEditorFromStore.value) {
+			return
+		}
 
-		// FIRST: Handle store updates that need to update the editor
+		// Only auto-save if we have a valid article ID and content
+		if (articleStore.article?.id && newContent) {
+			console.log('Watch: User content changed, triggering auto-save')
+			debouncedAutoSaveContent(newContent)
+		}
+	}
+)
+
+// Watch for changes in the article content from the store and update the editor
+watch(
+	() => articleStore.article?.content,
+	(newContent) => {
+		console.log('Content watcher triggered:', {
+			hasEditor: !!editor.value,
+			hasNewContent: !!newContent,
+			editorContent: editor.value?.getHTML()?.substring(0, 100) + '...',
+			newContentPreview: newContent?.substring(0, 100) + '...',
+			contentsDifferent: editor.value && newContent && editor.value.getHTML() !== newContent,
+			isUpdatingFlag: isUpdatingEditorFromStore.value
+		})
+
 		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
 			console.log('Updating editor content from store')
 
@@ -179,20 +189,6 @@ watch(
 					console.log('Editor update completed, flag reset')
 				}, 100)
 			})
-
-			// Exit early since this was a store update, not a user change
-			return
-		}
-
-		// SECOND: Handle user-initiated changes for auto-save
-		if (newContent !== oldContent && !isUpdatingEditorFromStore.value) {
-			console.log('User content changed, checking for auto-save')
-
-			// Allow auto-save even for new articles (without ID) if they have content
-			if (newContent && newContent.trim() !== '' && newContent !== '<p></p>') {
-				console.log('Triggering auto-save')
-				debouncedAutoSaveContent(newContent)
-			}
 		}
 	}
 )
