@@ -57,6 +57,40 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
+	// NEW METHOD: Refresh article data without affecting chat state
+	const refreshArticleData = async (id) => {
+		console.log('Refreshing article data...')
+
+		try {
+			const response = await api.get(`/articles/${id}`)
+			console.log('Received updated article data:', {
+				id: response.id,
+				title: response.title,
+				contentLength: response.content?.length || 0,
+				contentPreview: response.content?.substring(0, 100) + '...'
+			})
+
+			// Only update the article data, don't touch chat state
+			if (article.value && article.value.id === id) {
+				const oldContent = article.value.content
+				article.value = {
+					...article.value,
+					...response
+					// Preserve any chat-related state if it exists
+				}
+				console.log('Article updated in store. Content changed:', oldContent !== response.content)
+			} else {
+				article.value = response
+				console.log('Article set in store (new article)')
+			}
+
+			return response
+		} catch (err) {
+			console.error('Error refreshing article data:', err)
+			throw err
+		}
+	}
+
 	const createArticle = async (articleData) => {
 		console.log('Creating article...')
 		isLoading.value = true
@@ -141,21 +175,6 @@ export const useArticleStore = defineStore('article', () => {
 
 		try {
 			const response = await api.put(`/articles/${articleId}`, { content })
-
-			// Only update if the article exists and the content is actually different
-			if (article.value && article.value.id === articleId) {
-				// Only update content if it's actually different (shouldn't happen for auto-save)
-				if (article.value.content !== response.content) {
-					article.value.content = response.content
-				}
-
-				// Only update fields that might have changed on the server
-				// Don't update content since it should already match what we sent
-				article.value.current_version = response.current_version
-				article.value.versions = response.versions
-				article.value.updated_at = response.updated_at
-			}
-
 			return response
 		} catch (err) {
 			console.error('Error auto-saving article content:', err)
@@ -266,6 +285,7 @@ export const useArticleStore = defineStore('article', () => {
 		isSaving,
 		fetchArticles,
 		fetchArticle,
+		refreshArticleData, // NEW METHOD
 		createArticle,
 		updateArticle,
 		deleteArticle,

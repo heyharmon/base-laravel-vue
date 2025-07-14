@@ -46,7 +46,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'view_article',
-			'description' => 'View article content before edits. Use this to confirm selected_text location, then proceed to edit article without outputting content.',
+			'description' => 'View article content before edits. Use this to confirm selected_text location, then proceed to replace_content without outputting content.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -56,30 +56,6 @@ class OpenAIService
 					]
 				],
 				'required' => ['article_id']
-			]
-		],
-		[
-			'type' => 'function',
-			'name' => 'find_content',
-			'description' => 'Find exact position of content in article using fuzzy matching. Use this BEFORE replace_content or insert_content to get precise locations.',
-			'parameters' => [
-				'type' => 'object',
-				'properties' => [
-					'article_id' => [
-						'type' => 'integer',
-						'description' => 'The ID of the article to search in'
-					],
-					'search_text' => [
-						'type' => 'string',
-						'description' => 'Text to find (will use fuzzy matching)'
-					],
-					'occurrence' => [
-						'type' => 'integer',
-						'description' => 'Which occurrence to find (1 = first, 2 = second, etc.)',
-						'default' => 1
-					]
-				],
-				'required' => ['article_id', 'search_text']
 			]
 		],
 		[
@@ -138,7 +114,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'prepend_content',
-			'description' => 'Add content to the beginning of an article in chunks of ~200 words. ',
+			'description' => 'Add content to the beginning of an article in chunks of ~200 words.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -157,7 +133,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'replace_content',
-			'description' => 'Replace text in article in ~200-word chunks at a time. ALWAYS call \'view_article\' first to find selected_text location. Apply directly; NEVER output replacement_text or content in responses—confirm briefly after tool succeeds.',
+			'description' => 'Replace exact text in article (~200-word chunks). ALWAYS call view_article first. Apply directly; NEVER output replacement_text or content in responses—confirm briefly after tool succeeds.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -185,7 +161,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'insert_content',
-			'description' => 'Insert new content after a specific piece of text in an article in chunks of ~200 words. ALWAYS call \'view_article\' to find the location in the article before inserting content.',
+			'description' => 'Insert new content after a specific piece of text in an article in chunks of ~200 words. Always use the \'view_article\' function to view the article before inserting content.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -268,7 +244,6 @@ class OpenAIService
 
 				// Build and send request
 				$request = $service->buildRequest($conversation, $userMessage, $context);
-
 				$response = OpenAI::responses()->create($request);
 
 				// Process the response
@@ -298,172 +273,50 @@ class OpenAIService
 
 	protected function buildRequest(Conversation $conversation, string $userMessage, array $context = []): array
 	{
-		// Don't enhance system prompt with context anymore
+		// Instructions are a system message that are swappable, not carried over to next response.
 		$instructions = $this->composeSystemPrompt($conversation, $context);
 
-		// Enhance the user message with context instead
-		$enhancedUserMessage = $this->enhanceUserMessageWithContext($userMessage, $context);
-
-		Log::info('System instructions: ', [
-			'instructions' => $instructions
-		]);
-
-		// Previous response maintains the conversation state in OpenAI.
+		// Previous response is maintains the conversation state in OpenAI.
 		$previous = $conversation->openai_response_id;
 
 		return array_filter([
-			'model' => 'gpt-4.1', // Non-reasoning
-			// 'model' => 'o4-mini-2025-04-16', // Reasoning
-			// 'reasoning' => [
-			// 	'effort' => 'medium'  // low, medium, or high
-			// ],
+			'model' => 'gpt-4.1',
 			'instructions' => $instructions,
-			'input' => $enhancedUserMessage,
+			'input' => $userMessage,
 			'parallel_tool_calls' => true,
 			'previous_response_id' => $previous,
 			'store' => true,
 			'tools' => $this->tools,
 			'tool_choice' => 'auto',
+			// 'reasoning' => [
+			//     'effort' => 'medium', // low, medium, high, defaults to medium. o-series models only
+			//     'summary' => 'auto' // null, auto, concise, detailed
+			// ],
 		]);
-	}
-
-	protected function enhanceUserMessageWithContext(string $userMessage, array $context = []): string
-	{
-		if (empty($context)) {
-			return $userMessage;
-		}
-
-		$contextParts = [];
-
-		if (!empty($context['viewing_article_id'])) {
-			$contextParts[] = "Article ID: {$context['viewing_article_id']}";
-		}
-
-		if (!empty($context['viewing_article_title'])) {
-			$contextParts[] = "Article Title: {$context['viewing_article_title']}";
-		}
-
-		if (!empty($context['selected_content'])) {
-			$contextParts[] = "Selected Content: {$context['selected_content']}";
-		}
-
-		if (isset($context['selected_start'])) {
-			$contextParts[] = "Selected Start Position: {$context['selected_start']}";
-		}
-
-		if (isset($context['selected_length'])) {
-			$contextParts[] = "Selected Length: {$context['selected_length']}";
-		}
-
-		if (!empty($context['id_of_prompt_belonging_to_article'])) {
-			$contextParts[] = "Prompt ID: {$context['id_of_prompt_belonging_to_article']}";
-		}
-
-		if (!empty($contextParts)) {
-			$enhancedMessage = $userMessage . "\n\n[CONTEXT]\n";
-			$enhancedMessage .= implode("\n", $contextParts);
-			$enhancedMessage .= "\n[END CONTEXT]";
-			return $enhancedMessage;
-		}
-
-		return $userMessage;
 	}
 
 	protected function composeSystemPrompt(Conversation $conversation, array $context = []): string
 	{
-		$systemMessage = "You are a tool-focused assistant for article tasks. Respond only with short, action-oriented messages—no chit-chat, no thanks, no offers for help, no explanations of changes, no quoting original/edited content EVER. If content must be modified, ALWAYS apply via tools without showing it.\n\n";
-
-		// Add reasoning guidance
-		$systemMessage .= "REASONING APPROACH:\n";
-		$systemMessage .= "- Think through the user's request step by step\n";
-		$systemMessage .= "- Consider edge cases and potential issues\n";
-		$systemMessage .= "- Plan the optimal sequence of tool calls before executing\n";
-		$systemMessage .= "- For complex edits, reason about maintaining content coherence\n\n";
-
-		$systemMessage .= "CRITICAL RULES - NEVER VIOLATE:\n";
-		$systemMessage .= "1. NEVER ask for confirmation - just execute the task\n";
-		$systemMessage .= "2. NEVER say 'Would you like me to...' - just do it\n";
-		$systemMessage .= "3. NEVER apologize or explain why something might not match exactly\n";
-		$systemMessage .= "4. NEVER quote or show the content you're modifying\n";
-		$systemMessage .= "5. ALWAYS complete the task in one go without user interaction\n\n";
-
-		$systemMessage .= "FUZZY MATCHING AND CONTENT FINDING:\n";
-		$systemMessage .= "- Use find_content tool to locate text positions before editing\n";
-		$systemMessage .= "- find_content will handle fuzzy matching automatically\n";
-		$systemMessage .= "- Selected content from [CONTEXT] may not match exactly - that's normal\n";
-		$systemMessage .= "- Trust the find_content results and proceed without hesitation\n";
-		$systemMessage .= "- For multi-paragraph operations, find and process each separately\n\n";
-
-		$systemMessage .= "STANDARD WORKFLOW FOR EDITS:\n";
-		$systemMessage .= "1. view_article - See the full content\n";
-		$systemMessage .= "2. find_content - Locate exact positions of text to edit\n";
-		$systemMessage .= "3. replace_content/insert_content - Apply changes using found positions\n";
-		$systemMessage .= "4. Single confirmation message - 'Content updated.' or similar\n\n";
-
-		$systemMessage .= "CONTEXT HANDLING:\n";
-		$systemMessage .= "- User messages include [CONTEXT] blocks at the end\n";
-		$systemMessage .= "- Parse Article ID, Selected Content, and position data from [CONTEXT]\n";
-		$systemMessage .= "- Selected Content shows what user selected - use find_content to locate it\n\n";
-
-		$systemMessage .= "TOOL USAGE EXAMPLES:\n\n";
-
-		$systemMessage .= "SINGLE PARAGRAPH EDIT:\n";
-		$systemMessage .= "USER: Shorten this paragraph\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 82\n";
-		$systemMessage .= "Selected Content: <p>Long paragraph about SEO and AI...</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Checking article. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Locating content. [call find_content with partial text]\n";
-		$systemMessage .= "ASSISTANT: Shortening paragraph. [call replace_content with found position]\n";
-		$systemMessage .= "ASSISTANT: Paragraph shortened.\n\n";
-
-		$systemMessage .= "MULTI-PARAGRAPH REPLACEMENT:\n";
-		$systemMessage .= "USER: Replace these two paragraphs with one summary\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 99\n";
-		$systemMessage .= "Selected Content: <p>First paragraph...</p><p>Second paragraph...</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Reviewing content. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Finding paragraphs. [call find_content for first paragraph]\n";
-		$systemMessage .= "ASSISTANT: Locating second paragraph. [call find_content for second paragraph]\n";
-		$systemMessage .= "ASSISTANT: Consolidating paragraphs. [call replace_content twice or once for full range]\n";
-		$systemMessage .= "ASSISTANT: Paragraphs combined into summary.\n\n";
-
-		$systemMessage .= "INSERTION EXAMPLE:\n";
-		$systemMessage .= "USER: Add a transition sentence after this\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 45\n";
-		$systemMessage .= "Selected Content: ...end of a paragraph about climate change.\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Viewing article. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Finding insertion point. [call find_content]\n";
-		$systemMessage .= "ASSISTANT: Adding transition. [call insert_content at found position]\n";
-		$systemMessage .= "ASSISTANT: Transition added.\n\n";
-
-		$systemMessage .= "COMPLEX MULTI-EDIT:\n";
-		$systemMessage .= "USER: Make all these sections more concise\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 77\n";
-		$systemMessage .= "Selected Content: <h2>Section 1</h2><p>...</p><h2>Section 2</h2><p>...</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Analyzing sections. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Processing sections. [call find_content for each section]\n";
-		$systemMessage .= "ASSISTANT: Condensing content. [call replace_content for each section]\n";
-		$systemMessage .= "ASSISTANT: All sections condensed.\n\n";
-
-		$systemMessage .= "DELETION EXAMPLE:\n";
-		$systemMessage .= "USER: Delete this\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 61\n";
-		$systemMessage .= "Selected Content: <p>Paragraph to remove</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Locating content. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Finding paragraph. [call find_content]\n";
-		$systemMessage .= "ASSISTANT: Removing content. [call replace_content with empty string]\n";
-		$systemMessage .= "ASSISTANT: Content removed.\n\n";
-
-		$systemMessage .= "REMEMBER:\n";
-		$systemMessage .= "- NEVER ask questions - execute immediately\n";
-		$systemMessage .= "- Use find_content to get exact positions before editing\n";
-		$systemMessage .= "- Complete all tasks without user interaction\n";
-		$systemMessage .= "- Keep responses brief and action-focused\n";
-		$systemMessage .= "- Trust the tools - they handle fuzzy matching\n";
+		$systemMessage = "You are a tool-focused assistant for article tasks. Respond only with short, action-oriented messages—no chit-chat, no thanks, no offers for help, no explanations of changes, no quoting original/edited content EVER. If content must be modified, ALWAYS apply via tools without showing it.\n";
+		$systemMessage .= "Rules for edit requests (shorten, rewrite, modify):\n";
+		$systemMessage .= "- Check context for 'selected_text' and 'article_id'.\n";
+		$systemMessage .= "- If present: 1. Call view_article with article_id to confirm. 2. Then call replace_content with article_id, exact search_text=selected_text, replacement_text=your modified version (HTML-formatted if needed), replace_all=false.\n";
+		$systemMessage .= "- NEVER output the replacement_text or any content in messages—the tool applies it silently.\n";
+		$systemMessage .= "- If article_id missing, respond ONLY: 'Please provide article_id.'\n";
+		$systemMessage .= "- Final message: One sentence confirmation, e.g., 'Paragraph shortened.'\n";
+		$systemMessage .= "- Bad behavior to avoid: Outputting edited text, asking questions, verbose explanations.\n";
+		$systemMessage .= "Before tool calls: One brief reason sentence. Examples:\n";
+		$systemMessage .= "USER: How many articles? ASSISTANT: Checking count. [Call list_articles] TOOL: [tool message] ASSISTANT: 12 articles.\n";
+		$systemMessage .= "USER: Shorten this paragraph. User's context: - selected_text: \"GEO tools are like...\" - article_id: 5 ASSISTANT: Evaluating article. [Call view_article with article_id=5] TOOL: [tool message] ASSISTANT: Applying shorten. [Call replace_content with article_id=5, search_text=\"GEO tools are like...\", replacement_text=\"Shortened version.\", replace_all=false] TOOL: [tool message] ASSISTANT: Paragraph shortened.\n";
+		$systemMessage .= "For new content: append_content in ~200-word chunks. Always view_article before edits. Use web_search for research.\n";
+		$systemMessage .= "User's context:\n";
+		if (!empty($context)) {
+			foreach ($context as $key => $value) {
+				$systemMessage .= "- {$key}: {$value}\n";
+			}
+		} else {
+			$systemMessage .= "- No additional context provided.\n";
+		}
 
 		return $systemMessage;
 	}
@@ -489,36 +342,9 @@ class OpenAIService
 		// $reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
 
 		// You might want to format or summarize the reasoning here
-		// $conversation->chats()->create([
-		// 	'role' => 'assistant',
-		// 	'content' => $reasoningContent,
-		// ]);
-
-		// Extract reasoning content
-
-		// Log reasoning for debugging
-		Log::info('OpenAI Reasoning:', [
-			'item' => $item,
-		]);
-
-		$reasoningContent = '';
-
-		if (isset($item->content)) {
-			if (is_string($item->content)) {
-				$reasoningContent = $item->content;
-			} elseif (is_array($item->content) && isset($item->content[0])) {
-				$reasoningContent = $item->content[0]->text ?? $item->content[0] ?? '';
-			}
-		} elseif (isset($item->text)) {
-			$reasoningContent = $item->text;
-		} elseif (isset($item->reasoning)) {
-			$reasoningContent = $item->reasoning;
-		}
-
-		// Store reasoning in the conversation
 		$conversation->chats()->create([
-			'role' => 'assistant',
-			'content' => $reasoningContent,
+			'type' => 'reasoning',
+			'content' => '',
 		]);
 	}
 
@@ -673,138 +499,6 @@ class OpenAIService
 				}
 
 				return json_encode($article->toArray());
-
-			case 'find_content':
-				$teamId = $this->getTeamId();
-				if (!$teamId) {
-					return json_encode(['error' => 'Team ID not available']);
-				}
-
-				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
-				if (!$article) {
-					return json_encode(['error' => 'Article not found']);
-				}
-
-				$searchText = $arguments['search_text'];
-				$occurrence = $arguments['occurrence'] ?? 1;
-				$content = $article->content;
-
-				// Fuzzy matching function
-				$findMatches = function ($haystack, $needle) {
-					$matches = [];
-
-					// Try exact match first
-					$pos = 0;
-					while (($pos = strpos($haystack, $needle, $pos)) !== false) {
-						$matches[] = [
-							'position' => $pos,
-							'length' => strlen($needle),
-							'text' => $needle,
-							'match_type' => 'exact'
-						];
-						$pos += strlen($needle);
-					}
-
-					// If no exact matches, try fuzzy
-					if (empty($matches)) {
-						// Normalize function
-						$normalize = function ($text) {
-							$text = strip_tags($text);
-							$text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-							$text = preg_replace('/\s+/u', ' ', $text);
-							return trim($text);
-						};
-
-						$needleNorm = $normalize($needle);
-						$haystackNorm = $normalize($haystack);
-
-						// Try to find normalized needle in normalized haystack
-						$pos = 0;
-						while (($pos = stripos($haystackNorm, $needleNorm, $pos)) !== false) {
-							// Map back to original position
-							$beforeNorm = substr($haystackNorm, 0, $pos);
-							$originalPos = 0;
-							$normPos = 0;
-
-							// Walk through original text to find corresponding position
-							for ($i = 0; $i < strlen($haystack); $i++) {
-								if ($normPos >= strlen($beforeNorm)) break;
-
-								$origChar = substr($haystack, $i, 1);
-								$normChar = substr($haystackNorm, $normPos, 1);
-
-								if ($normalize($origChar) === $normChar) {
-									$normPos++;
-								}
-								$originalPos = $i;
-							}
-
-							// Find the actual text at this position
-							$endPos = $originalPos;
-							$matchedNormLength = 0;
-							while ($matchedNormLength < strlen($needleNorm) && $endPos < strlen($haystack)) {
-								if ($normalize(substr($haystack, $endPos, 1)) !== '') {
-									$matchedNormLength++;
-								}
-								$endPos++;
-							}
-
-							$actualText = substr($haystack, $originalPos, $endPos - $originalPos);
-
-							$matches[] = [
-								'position' => $originalPos,
-								'length' => strlen($actualText),
-								'text' => $actualText,
-								'match_type' => 'fuzzy'
-							];
-
-							$pos += strlen($needleNorm);
-						}
-					}
-
-					return $matches;
-				};
-
-				$allMatches = $findMatches($content, $searchText);
-
-				if (empty($allMatches)) {
-					// Try finding as a substring
-					$words = explode(' ', $searchText);
-					if (count($words) > 3) {
-						// Try with first few words
-						$partialSearch = implode(' ', array_slice($words, 0, min(5, count($words))));
-						$allMatches = $findMatches($content, $partialSearch);
-					}
-				}
-
-				if (empty($allMatches)) {
-					return json_encode([
-						'found' => false,
-						'message' => 'Content not found',
-						'search_text' => $searchText
-					]);
-				}
-
-				// Get the requested occurrence
-				$matchIndex = min($occurrence - 1, count($allMatches) - 1);
-				$match = $allMatches[$matchIndex];
-
-				// Get context around the match
-				$contextBefore = substr($content, max(0, $match['position'] - 50), 50);
-				$contextAfter = substr($content, $match['position'] + $match['length'], 50);
-
-				return json_encode([
-					'found' => true,
-					'position' => $match['position'],
-					'length' => $match['length'],
-					'matched_text' => $match['text'],
-					'match_type' => $match['match_type'],
-					'total_occurrences' => count($allMatches),
-					'occurrence_number' => $matchIndex + 1,
-					'context_before' => '...' . $contextBefore,
-					'context_after' => $contextAfter . '...',
-					'search_text' => $searchText
-				]);
 
 			case 'create_article':
 				$teamId = $this->getTeamId();
@@ -1112,38 +806,32 @@ class OpenAIService
 			case 'list_articles':
 				$page = $arguments['page'] ?? 1;
 				$perPage = $arguments['per_page'] ?? 20;
-				return "Listing articles (page {$page}, {$perPage} per page)";
+				return "Listing articles (page {$page}, {$perPage} per page)...";
 
 			case 'view_article':
 				$article = Article::find($arguments['article_id']);
 				$title = $article ? $article->title : 'Unknown';
-				return "Viewing article: \"{$title}\"";
-
-			case 'find_content':
-				$searchPreview = strlen($arguments['search_text']) > 50 ?
-					substr($arguments['search_text'], 0, 50) . '...' :
-					$arguments['search_text'];
-				return "Locating \"{$searchPreview}\" in article";
+				return "Viewing article: \"{$title}\"...";
 
 			case 'create_article':
-				return "Creating article: \"{$arguments['title']}\"";
+				return "Creating article: \"{$arguments['title']}\"...";
 
 			case 'edit_article_title':
 				$article = Article::find($arguments['article_id']);
 				$title = $article ? $article->title : 'Unknown';
-				return "Editing title of article: \"{$title}\"";
+				return "Editing title of article: \"{$title}\"...";
 
 			case 'append_content':
 				$article = Article::find($arguments['article_id']);
 				$title = $article ? $article->title : 'Unknown';
 				$wordCount = str_word_count($arguments['content']);
-				return "Appending {$wordCount} words to article \"{$title}\"";
+				return "Appending {$wordCount} words to article \"{$title}\"...";
 
 			case 'prepend_content':
 				$article = Article::find($arguments['article_id']);
 				$title = $article ? $article->title : 'Unknown';
 				$wordCount = str_word_count($arguments['content']);
-				return "Prepending {$wordCount} words to article \"{$title}\"";
+				return "Prepending {$wordCount} words to article \"{$title}\"...";
 
 			case 'replace_content':
 				$article = Article::find($arguments['article_id']);
@@ -1151,7 +839,7 @@ class OpenAIService
 				$searchPreview = strlen($arguments['search_text']) > 30 ?
 					substr($arguments['search_text'], 0, 30) . '...' :
 					$arguments['search_text'];
-				return "Replacing \"{$searchPreview}\" in article \"{$title}\"";
+				return "Replacing \"{$searchPreview}\" in article \"{$title}\"...";
 
 			case 'insert_content':
 				$article = Article::find($arguments['article_id']);
@@ -1160,18 +848,18 @@ class OpenAIService
 					substr($arguments['after_text'], 0, 30) . '...' :
 					$arguments['after_text'];
 				$wordCount = str_word_count($arguments['content']);
-				return "Inserting {$wordCount} words after \"{$afterTextPreview}\" in article \"{$title}\"";
+				return "Inserting {$wordCount} words after \"{$afterTextPreview}\" in article \"{$title}\"...";
 
 			case 'fetch_prompt_with_responses':
 				$prompt = Prompt::find($arguments['prompt_id']);
 				$contentPreview = substr($prompt->content, 0, 30) . '...';
-				return "Fetching prompt: \"{$contentPreview}\" with recent responses";
+				return "Fetching prompt: \"{$contentPreview}\" with recent responses...";
 
 			case 'web_search':
 				return "Searching for: \"{$arguments['query']}\"";
 
 			default:
-				return 'Executing tool';
+				return 'Executing tool...';
 		}
 	}
 

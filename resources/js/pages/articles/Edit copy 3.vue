@@ -4,7 +4,9 @@ import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useDebounceFn } from '@vueuse/core'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { DOMSerializer } from 'prosemirror-model'
 import StarterKit from '@tiptap/starter-kit'
+
 import Link from '@tiptap/extension-link'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -60,23 +62,34 @@ const editor = useEditor({
 			console.log('Editor onUpdate: User made changes')
 			articleStore.article.content = editor.getHTML()
 		}
-	},
-	onSelectionUpdate: ({ editor }) => {
-		// Get selected text when user selects text in editor
-		const { from, to } = editor.state.selection
-		if (from !== to) {
-			const selectedText = editor.state.doc.textBetween(from, to)
-			if (selectedText.trim()) {
-				// Store the current selection but don't set selectedContent yet
-				currentSelection.value = selectedText.trim()
-				showSelectionTooltip()
-			} else {
-				hideTooltip()
-			}
-		} else {
-			hideTooltip()
-		}
 	}
+	// onSelectionUpdate: ({ editor }) => {
+	// 	// Get selected content when user selects text in editor
+	// 	const { from, to } = editor.state.selection
+	// 	if (from !== to) {
+	// 		// Get the selected document slice
+	// 		const selectedSlice = editor.state.doc.slice(from, to)
+
+	// 		// Convert the slice to HTML using ProseMirror's DOMSerializer
+	// 		const serializer = DOMSerializer.fromSchema(editor.state.schema)
+	// 		const dom = serializer.serializeFragment(selectedSlice.content)
+
+	// 		// Create a temporary container to get the HTML string
+	// 		const tempContainer = document.createElement('div')
+	// 		tempContainer.appendChild(dom)
+	// 		const selectedHTML = tempContainer.innerHTML
+
+	// 		if (selectedHTML.trim()) {
+	// 			// Store the HTML content instead of plain text
+	// 			currentSelection.value = selectedHTML.trim()
+	// 			showSelectionTooltip()
+	// 		} else {
+	// 			hideTooltip()
+	// 		}
+	// 	} else {
+	// 		hideTooltip()
+	// 	}
+	// }
 })
 
 // Show tooltip at the selection position
@@ -299,7 +312,7 @@ const clearSelectedContent = () => {
 			<!-- Deep research statuses -->
 			<div
 				v-if="articleStore.article?.perplexity_status === 'CREATED' || articleStore.article?.perplexity_status === 'IN_PROGRESS'"
-				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
+				class="p-4 ml-8 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
 			>
 				<div class="flex items-center gap-2 mb-2">
 					<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
@@ -317,7 +330,7 @@ const clearSelectedContent = () => {
 			</div>
 			<div
 				v-if="articleStore.article?.perplexity_status === 'COMPLETED' && articleStore.article?.perplexity_request_id"
-				class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
+				class="p-4 ml-8 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg mr-6"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">✅ Deep research completed</div>
@@ -327,14 +340,14 @@ const clearSelectedContent = () => {
 
 			<div
 				v-if="articleStore.article?.perplexity_status === 'FAILED'"
-				class="p-4 my-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2 mr-6"
+				class="p-4 ml-8 my-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2 mr-6"
 			>
 				Deep research failed
 			</div>
 
 			<div class="pt-4">
 				<!-- Top bar -->
-				<div class="flex justify-between items-start gap-10 mb-4 pr-6">
+				<div class="flex justify-between items-start gap-10 mb-4 pl-8 pr-6">
 					<h1 class="text-xl font-bold">{{ articleStore.article?.title || 'Edit Article' }}</h1>
 
 					<div class="flex items-center justify-end gap-2">
@@ -359,24 +372,24 @@ const clearSelectedContent = () => {
 				</div>
 
 				<!-- Loading state -->
-				<div v-if="isLoading" class="flex justify-center py-8">
+				<div v-if="isLoading" class="flex justify-center p-8">
 					<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 				</div>
 
 				<div class="flex flex-col gap-6">
 					<!-- Versions panel - dynamically loaded -->
-					<ArticleVersionsPanel v-if="isVersionsOpen" />
+					<ArticleVersionsPanel v-if="isVersionsOpen" class="mx-8" />
 
 					<!-- Settings panel -->
-					<ArticleSettingsPanel v-if="isSettingsOpen" @close="isSettingsOpen = false" />
+					<ArticleSettingsPanel v-if="isSettingsOpen" @close="isSettingsOpen = false" class="mx-8" />
 
 					<!-- Rich text editor -->
 					<div class="flex flex-col overflow-hidden relative">
 						<!-- Editor menu -->
-						<EditorMenu v-if="editor" :editor="editor" />
+						<EditorMenu v-if="editor" :editor="editor" class="ml-8" />
 
 						<!-- Editor content -->
-						<div class="pl-2 pr-6 pt-4 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
+						<div class="pl-8 pr-6 pt-4 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
 							<EditorContent v-if="editor" :editor="editor" />
 						</div>
 
