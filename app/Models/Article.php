@@ -12,7 +12,7 @@ use App\Traits\HasVersions;
 
 class Article extends Model
 {
-	use HasFactory, HasJobStatus, HasVersions;
+        use HasFactory, HasJobStatus, HasVersions, \App\Traits\BelongsToTeam;
 
 	protected $fillable = [
 		'team_id',
