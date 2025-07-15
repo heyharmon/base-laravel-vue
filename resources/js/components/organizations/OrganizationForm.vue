@@ -46,10 +46,10 @@ const emit = defineEmits(['update'])
 				<textarea
 					v-model="organization.description"
 					rows="3"
-					placeholder="Enter organization description (optional)"
+					placeholder="Enter description (optional)"
 					class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
 				></textarea>
-				<p class="text-xs text-neutral-500 mt-1">Provide a brief description of this organization</p>
+				<p class="text-xs text-neutral-500">This description can help AI generate accurate prompts</p>
 			</div>
 			<div class="pt-4">
 				<Button v-if="hasChanges" type="submit" :disabled="isSubmitting" variant="dark">
