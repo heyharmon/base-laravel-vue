@@ -11,7 +11,7 @@ use App\Models\Article;
 
 class Organization extends Model
 {
-	use HasFactory, HasJobStatus;
+        use HasFactory, HasJobStatus, \App\Traits\BelongsToTeam;
 
 	protected $guarded = [
 		'id'

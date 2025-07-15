@@ -12,7 +12,7 @@ use App\Models\Organization;
 
 class Prompt extends Model
 {
-	use HasFactory, HasJobStatus;
+        use HasFactory, HasJobStatus, \App\Traits\BelongsToTeam;
 
 	protected $fillable = [
 		'team_id',

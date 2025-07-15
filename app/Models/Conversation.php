@@ -11,7 +11,7 @@ use App\Models\Team;
 
 class Conversation extends Model
 {
-	use HasFactory;
+        use HasFactory, \App\Traits\BelongsToTeam;
 
 	protected $fillable = [
 		'team_id',

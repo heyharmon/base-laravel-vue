@@ -12,7 +12,7 @@ use App\Traits\HasJobStatus;
 
 class Term extends Model
 {
-	use HasFactory, HasJobStatus;
+        use HasFactory, HasJobStatus, \App\Traits\BelongsToTeam;
 
 	protected $fillable = [
 		'team_id',

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class JobStatus extends Model
 {
-	use Prunable, HasFactory;
+        use Prunable, HasFactory, \App\Traits\BelongsToTeam;
 
 	protected $fillable = [
 		'job_id',
