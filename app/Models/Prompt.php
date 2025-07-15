@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
+use App\Traits\BelongsToTeam;
 use App\Models\Organization;
 
 class Prompt extends Model
 {
-        use HasFactory, HasJobStatus, \App\Traits\BelongsToTeam;
+	use HasFactory, HasJobStatus, BelongsToTeam;
 
 	protected $fillable = [
 		'team_id',
@@ -47,14 +48,6 @@ class Prompt extends Model
 	public function responses(): HasMany
 	{
 		return $this->hasMany(Response::class);
-	}
-
-	/**
-	 * Get the team that owns the prompt.
-	 */
-	public function team(): BelongsTo
-	{
-		return $this->belongsTo(Team::class);
 	}
 
 	/**
