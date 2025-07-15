@@ -99,7 +99,6 @@ const selectOrganization = (result) => {
 		employee_count: null,
 		location: '',
 		description: '',
-		industry: '',
 		hasDetails: false
 	}
 
@@ -127,7 +126,6 @@ const createFromDomain = () => {
 			location: '',
 			description: '',
 			logo: '',
-			industry: '',
 			hasDetails: false
 		}
 

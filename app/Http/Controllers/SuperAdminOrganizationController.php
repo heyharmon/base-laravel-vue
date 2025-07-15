@@ -17,24 +17,19 @@ class SuperAdminOrganizationController extends Controller
 	{
 		// Validate request parameters
 		$request->validate([
-			'industry_id' => 'nullable|exists:organization_industries,id',
 			'team_id' => 'nullable|exists:teams,id',
 			'is_competitor' => 'nullable|in:owned,competitor,all',
 			'search' => 'nullable|string|max:255',
-			'sort_by' => 'nullable|in:name,team_name,visibility,industry_name,website,type',
+			'sort_by' => 'nullable|in:name,team_name,visibility,website,type',
 			'sort_order' => 'nullable|in:asc,desc',
 			'page' => 'nullable|integer|min:1',
 			'per_page' => 'nullable|integer|min:1|max:100',
 		]);
 
 		// Build base query with relationships
-		$query = Organization::with(['team', 'industry']);
+		$query = Organization::with(['team']);
 
 		// Apply filters
-		if ($request->has('industry_id') && $request->industry_id) {
-			$query->where('industry_id', $request->industry_id);
-		}
-
 		if ($request->has('team_id') && $request->team_id) {
 			$query->where('team_id', $request->team_id);
 		}
@@ -86,8 +81,6 @@ class SuperAdminOrganizationController extends Controller
 				'is_competitor' => $organization->is_competitor,
 				'team_id' => $organization->team_id,
 				'team_name' => $organization->team ? $organization->team->name : null,
-				'industry_id' => $organization->industry_id,
-				'industry_name' => $organization->industry ? $organization->industry->name : null,
 				'visibility' => $visibility,
 				'total_mentions' => $totalMentions,
 				'total_responses' => $totalResponses,
@@ -112,9 +105,6 @@ class SuperAdminOrganizationController extends Controller
 					break;
 				case 'visibility':
 					$compareValue = $a['visibility'] <=> $b['visibility'];
-					break;
-				case 'industry_name':
-					$compareValue = strcasecmp($a['industry_name'] ?? '', $b['industry_name'] ?? '');
 					break;
 				case 'website':
 					$compareValue = strcasecmp($a['website'] ?? '', $b['website'] ?? '');

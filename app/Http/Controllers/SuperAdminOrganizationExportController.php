@@ -28,7 +28,7 @@ class SuperAdminOrganizationExportController extends Controller
 		$exportData = [];
 
 		foreach ($organizationIds as $orgId) {
-			$organization = Organization::with(['industry', 'terms'])->find($orgId);
+			$organization = Organization::with(['terms'])->find($orgId);
 
 			if (!$organization) {
 				continue;
@@ -99,7 +99,6 @@ class SuperAdminOrganizationExportController extends Controller
 				'id' => $organization->id,
 				'name' => $organization->name,
 				'visibility' => $visibility,
-				'industry' => $organization->industry ? $organization->industry->name : null,
 				'website' => $organization->website,
 				'total_mentions' => $totalMentions,
 				'total_responses' => $totalResponses,

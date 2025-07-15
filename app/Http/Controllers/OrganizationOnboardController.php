@@ -23,7 +23,6 @@ class OrganizationOnboardController extends Controller
 	public function store(Request $request): JsonResponse
 	{
 		$validated = $request->validate([
-			'industry_id' => 'nullable|exists:organization_industries,id',
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
 			'logo' => 'nullable|string|max:1000',

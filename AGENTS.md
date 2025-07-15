@@ -11,7 +11,7 @@ This document gives AI developers a concise view of the **LLM Mention Tracker** 
 
 ### Organizations & Terms
 
--   **Organization** – represents a company/brand. Each team has one primary organization (not a competitor) and many competitor organizations. Organizations store website, logo, industry, location and other info. They also keep an array of suggested terms (`terms`).
+-   **Organization** – represents a company/brand. Each team has one primary organization (not a competitor) and many competitor organizations. Organizations store website, logo, location and other info. They also keep an array of suggested terms (`terms`).
 -   **Term** – word or phrase to track. Terms belong to an organization and a team.
 
 ### Prompts & Responses

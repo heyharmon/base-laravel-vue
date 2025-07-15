@@ -39,7 +39,6 @@ class OrganizationController extends Controller
 	public function store(Request $request): JsonResponse
 	{
 		$validated = $request->validate([
-			'industry_id' => 'nullable|exists:organization_industries,id',
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
 			'logo' => 'nullable|string|max:1000',
@@ -103,7 +102,6 @@ class OrganizationController extends Controller
 		}
 
 		$validated = $request->validate([
-			'industry_id' => 'sometimes|nullable|exists:organization_industries,id',
 			'name' => 'sometimes|nullable|string|max:255',
 			'website' => 'sometimes|nullable|string|max:255',
 			'logo' => 'sometimes|nullable|string|max:1000',
