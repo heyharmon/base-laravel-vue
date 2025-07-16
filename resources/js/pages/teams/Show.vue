@@ -212,10 +212,8 @@ const copyInviteUrl = async (url) => {
 								</div>
 							</div>
 							<div class="flex items-center space-x-4">
-								<div class="text-sm">
-									<span v-if="member.token_expired" class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Expired</span>
-									<span v-else class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Pending</span>
-								</div>
+								<span v-if="!member.invitation_url" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Existing user</span>
+								<span v-if="member.token_expired" class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Expired</span>
 								<div v-if="isOwner || isAdmin" class="flex space-x-2">
 									<button
 										v-if="member.invitation_url"
