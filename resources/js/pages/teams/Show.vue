@@ -174,7 +174,7 @@ const copyInviteUrl = async (url) => {
 											v-if="member.id !== $route.meta?.user?.id"
 											:value="member.pivot.role"
 											@change="updateRole(member.id, $event.target.value)"
-											class="text-sm border border-neutral-300 rounded px-2 py-1"
+											class="text-sm border border-neutral-300 rounded px-2 py-1 cursor-pointer"
 										>
 											<option value="member">Member</option>
 											<option value="admin">Admin</option>
@@ -182,7 +182,7 @@ const copyInviteUrl = async (url) => {
 										<button
 											v-if="member.id !== $route.meta?.user?.id"
 											@click="removeMember(member.id)"
-											class="text-red-600 hover:text-red-800 text-sm"
+											class="text-red-600 hover:text-red-800 text-sm cursor-pointer"
 										>
 											Remove
 										</button>
@@ -213,11 +213,13 @@ const copyInviteUrl = async (url) => {
 									<button
 										v-if="member.invitation_url"
 										@click="copyInviteUrl(member.invitation_url)"
-										class="text-blue-600 hover:text-blue-800 text-sm"
+										class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
 									>
 										Copy invite URL
 									</button>
-									<button @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm">Cancel Invitation</button>
+									<button @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm cursor-pointer">
+										Cancel Invitation
+									</button>
 								</div>
 							</div>
 						</div>
