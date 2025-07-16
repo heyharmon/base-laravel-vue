@@ -102,6 +102,22 @@ class TeamController extends Controller
 		$members = $team->members;
 		$pendingInvitations = $team->pendingInvitations;
 
+		// Add invitation URLs to pending invitations
+		$pendingInvitations->each(function ($invitation) use ($team) {
+			// Check if there's an invitation token for this user
+			$token = InvitationToken::where('email', $invitation->email)
+				->where('team_id', $team->id)
+				->where('expires_at', '>', now())
+				->first();
+
+			if ($token) {
+				$invitation->invitation_url = url('/register?token=' . $token->token);
+			} else {
+				// For existing users without tokens, they would just login normally
+				$invitation->invitation_url = url('/login');
+			}
+		});
+
 		// Check if current user is owner or admin
 		$isOwner = $team->owner_id === $user->id;
 		$isAdmin = $members->contains(function ($member) use ($user) {

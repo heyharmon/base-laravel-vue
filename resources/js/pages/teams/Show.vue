@@ -105,6 +105,23 @@ const deleteTeam = async () => {
 		console.error('Error deleting team:', error)
 	}
 }
+
+const copyInviteUrl = async (url) => {
+	try {
+		await navigator.clipboard.writeText(url)
+		// You could add a toast notification here if you have one
+		console.log('Invite URL copied to clipboard')
+	} catch (error) {
+		console.error('Failed to copy URL:', error)
+		// Fallback for older browsers
+		const textArea = document.createElement('textarea')
+		textArea.value = url
+		document.body.appendChild(textArea)
+		textArea.select()
+		document.execCommand('copy')
+		document.body.removeChild(textArea)
+	}
+}
 </script>
 
 <template>
@@ -114,8 +131,6 @@ const deleteTeam = async () => {
 			<div v-if="teamStore.isLoading" class="flex justify-center py-8">
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
-
-
 
 			<div v-else-if="teamStore.currentTeam">
 				<div class="flex justify-between items-center mb-8">
@@ -194,9 +209,16 @@ const deleteTeam = async () => {
 								<div class="text-sm">
 									<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs"> Pending </span>
 								</div>
-								<button v-if="isOwner || isAdmin" @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm">
-									Cancel Invitation
-								</button>
+								<div v-if="isOwner || isAdmin" class="flex space-x-2">
+									<button
+										v-if="member.invitation_url"
+										@click="copyInviteUrl(member.invitation_url)"
+										class="text-blue-600 hover:text-blue-800 text-sm"
+									>
+										Copy invite URL
+									</button>
+									<button @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm">Cancel Invitation</button>
+								</div>
 							</div>
 						</div>
 					</div>
