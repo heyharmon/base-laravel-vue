@@ -105,6 +105,23 @@ const deleteTeam = async () => {
 		console.error('Error deleting team:', error)
 	}
 }
+
+const copyInviteUrl = async (url) => {
+	try {
+		await navigator.clipboard.writeText(url)
+		// You could add a toast notification here if you have one
+		console.log('Invite URL copied to clipboard')
+	} catch (error) {
+		console.error('Failed to copy URL:', error)
+		// Fallback for older browsers
+		const textArea = document.createElement('textarea')
+		textArea.value = url
+		document.body.appendChild(textArea)
+		textArea.select()
+		document.execCommand('copy')
+		document.body.removeChild(textArea)
+	}
+}
 </script>
 
 <template>
@@ -114,8 +131,6 @@ const deleteTeam = async () => {
 			<div v-if="teamStore.isLoading" class="flex justify-center py-8">
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
-
-
 
 			<div v-else-if="teamStore.currentTeam">
 				<div class="flex justify-between items-center mb-8">
@@ -159,7 +174,7 @@ const deleteTeam = async () => {
 											v-if="member.id !== $route.meta?.user?.id"
 											:value="member.pivot.role"
 											@change="updateRole(member.id, $event.target.value)"
-											class="text-sm border border-neutral-300 rounded px-2 py-1"
+											class="text-sm border border-neutral-300 rounded px-2 py-1 cursor-pointer"
 										>
 											<option value="member">Member</option>
 											<option value="admin">Admin</option>
@@ -167,7 +182,7 @@ const deleteTeam = async () => {
 										<button
 											v-if="member.id !== $route.meta?.user?.id"
 											@click="removeMember(member.id)"
-											class="text-red-600 hover:text-red-800 text-sm"
+											class="text-red-600 hover:text-red-800 text-sm cursor-pointer"
 										>
 											Remove
 										</button>
@@ -189,14 +204,28 @@ const deleteTeam = async () => {
 								<div class="font-medium">{{ member.name }}</div>
 								<div class="text-sm text-neutral-500">{{ member.email }}</div>
 								<div class="text-xs text-neutral-400 mt-1">Invited: {{ new Date(member.pivot.invitation_sent_at).toLocaleDateString() }}</div>
+								<div v-if="member.token_expires_at" class="text-xs text-neutral-400 mt-1">
+									<span v-if="member.token_expired" class="text-red-600"
+										>Token expired: {{ new Date(member.token_expires_at).toLocaleDateString() }}</span
+									>
+									<span v-else>Token expires: {{ new Date(member.token_expires_at).toLocaleDateString() }}</span>
+								</div>
 							</div>
 							<div class="flex items-center space-x-4">
-								<div class="text-sm">
-									<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs"> Pending </span>
+								<span v-if="!member.invitation_url" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Existing user</span>
+								<span v-if="member.token_expired" class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Expired</span>
+								<div v-if="isOwner || isAdmin" class="flex space-x-2">
+									<button
+										v-if="member.invitation_url"
+										@click="copyInviteUrl(member.invitation_url)"
+										class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
+									>
+										Copy invite URL
+									</button>
+									<button @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm cursor-pointer">
+										Cancel Invitation
+									</button>
 								</div>
-								<button v-if="isOwner || isAdmin" @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm">
-									Cancel Invitation
-								</button>
 							</div>
 						</div>
 					</div>

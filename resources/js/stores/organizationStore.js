@@ -11,8 +11,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const isLoading = ref(false)
 	const visibilityMetrics = ref([])
 	const isLoadingVisibility = ref(false)
-	const industries = ref([])
-	const isLoadingIndustries = ref(false)
 
 	// Date range for visibility metrics
 	const currentDateRange = ref({
@@ -171,35 +169,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function fetchIndustries() {
-		console.log('Fetching industries...')
-		isLoadingIndustries.value = true
-
-		try {
-			const response = await api.get('/organization-industries')
-			industries.value = response
-			return response
-		} catch (err) {
-			console.error('Error fetching industries:', err)
-			throw err
-		} finally {
-			isLoadingIndustries.value = false
-		}
-	}
-
-	async function createIndustry(industryData) {
-		console.log('Creating industry...', industryData)
-
-		try {
-			const response = await api.post('/organization-industries', industryData)
-			await fetchIndustries()
-			return response
-		} catch (err) {
-			console.error('Error creating industry:', err)
-			throw err
-		}
-	}
-
 	// Function to update date range and refresh visibility data
 	function setDateRange(dateRange) {
 		console.log('Setting date range:', dateRange)
@@ -214,8 +183,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 		isLoading,
 		isLoadingVisibility,
 		visibilityMetrics,
-		industries,
-		isLoadingIndustries,
 		currentDateRange,
 
 		// Getters
@@ -231,8 +198,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 		deleteOrganization,
 		fetchVisibilityMetrics,
 		setDateRange,
-		findCompetitors,
-		fetchIndustries,
-		createIndustry
+		findCompetitors
 	}
 })

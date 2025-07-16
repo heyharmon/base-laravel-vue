@@ -20,7 +20,6 @@ const organization = ref({
 	location: '',
 	description: '',
 	logo: '',
-	industry: '',
 	hasDetails: false
 })
 
@@ -40,7 +39,6 @@ const deselectOrganization = () => {
 		location: '',
 		description: '',
 		logo: '',
-		industry: '',
 		hasDetails: false
 	}
 }
@@ -82,8 +80,8 @@ const createOrganization = async () => {
 				<div v-if="organization.name || organization.website" class="mt-4">
 					<div class="flex justify-between items-center mb-2">
 						<h3 class="text-sm font-medium text-neutral-700">Competitor</h3>
-						<button 
-							@click="deselectOrganization" 
+						<button
+							@click="deselectOrganization"
 							class="px-3 py-1.5 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
 						>
 							<span>Deselect</span>

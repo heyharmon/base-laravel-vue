@@ -18,7 +18,6 @@ use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationVisibilityChartController;
 use App\Http\Controllers\OrganizationSearchController;
 use App\Http\Controllers\OrganizationOnboardController;
-use App\Http\Controllers\OrganizationIndustryController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\JobStatusController;
@@ -58,10 +57,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Organization Search
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
 	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
-
-	// Organization Industries
-	Route::get('organization-industries', [OrganizationIndustryController::class, 'index']);
-	Route::post('organization-industries', [OrganizationIndustryController::class, 'store']);
 
 	// Terms
 	Route::resource('organizations/{organization}/terms', TermController::class);

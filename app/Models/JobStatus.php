@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToTeam;
 
 class JobStatus extends Model
 {
-	use Prunable, HasFactory;
+	use Prunable, HasFactory, BelongsToTeam;
 
 	protected $fillable = [
 		'job_id',
@@ -38,14 +39,6 @@ class JobStatus extends Model
 	public function trackable()
 	{
 		return $this->morphTo();
-	}
-
-	/**
-	 * Get the team that owns the job status.
-	 */
-	public function team()
-	{
-		return $this->belongsTo(Team::class);
 	}
 
 	/**

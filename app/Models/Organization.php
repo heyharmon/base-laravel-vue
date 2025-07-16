@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
+use App\Traits\BelongsToTeam;
 use App\Models\Article;
-use App\Models\OrganizationIndustry;
 
 class Organization extends Model
 {
-	use HasFactory, HasJobStatus;
+	use HasFactory, HasJobStatus, BelongsToTeam;
 
 	protected $guarded = [
 		'id'
@@ -25,14 +25,6 @@ class Organization extends Model
 	protected $appends = [
 		// 'visibility',
 	];
-
-	/**
-	 * Get the team that owns the organization.
-	 */
-	public function team(): BelongsTo
-	{
-		return $this->belongsTo(Team::class);
-	}
 
 	/**
 	 * Get the terms that belong to the organization.
@@ -48,13 +40,5 @@ class Organization extends Model
 	public function articles(): HasMany
 	{
 		return $this->hasMany(Article::class);
-	}
-
-	/**
-	 * Get the industry that owns the organization.
-	 */
-	public function industry(): BelongsTo
-	{
-		return $this->belongsTo(OrganizationIndustry::class, 'industry_id');
 	}
 }

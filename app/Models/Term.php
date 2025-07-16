@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder;
 use App\Traits\HasJobStatus;
+use App\Traits\BelongsToTeam;
 
 class Term extends Model
 {
-	use HasFactory, HasJobStatus;
+	use HasFactory, HasJobStatus, BelongsToTeam;
 
 	protected $fillable = [
 		'team_id',
@@ -37,14 +36,6 @@ class Term extends Model
 	{
 		return $this->belongsToMany(Response::class, 'term_response')
 			->withTimestamps();
-	}
-
-	/**
-	 * Get the team that owns the term.
-	 */
-	public function team(): BelongsTo
-	{
-		return $this->belongsTo(Team::class);
 	}
 
 	/**

@@ -9,7 +9,6 @@ import Input from '@/components/ui/Input.vue'
 
 // State
 const organizations = ref([])
-const industries = ref([])
 const teams = ref([])
 const isLoading = ref(false)
 const isExporting = ref(false)
@@ -23,7 +22,6 @@ const stats = ref({
 
 // Filters
 const filters = ref({
-	industry_id: '',
 	team_id: '',
 	is_competitor: 'owned',
 	search: '',
@@ -78,16 +76,6 @@ const fetchOrganizations = async () => {
 	}
 }
 
-// Fetch industries for filter
-const fetchIndustries = async () => {
-	try {
-		const response = await api.get('/organization-industries')
-		industries.value = response
-	} catch (error) {
-		console.error('Error fetching industries:', error)
-	}
-}
-
 // Fetch teams for filter
 const fetchTeams = async () => {
 	try {
@@ -122,7 +110,7 @@ watch(
 	}
 )
 
-watch([() => filters.value.industry_id, () => filters.value.team_id, () => filters.value.is_competitor], () => {
+watch([() => filters.value.team_id, () => filters.value.is_competitor], () => {
 	pagination.value.current_page = 1
 	fetchOrganizations()
 })
@@ -220,7 +208,7 @@ const exportSelected = async () => {
 
 // Lifecycle
 onMounted(async () => {
-	await Promise.all([fetchOrganizations(), fetchIndustries(), fetchTeams(), fetchStats()])
+	await Promise.all([fetchOrganizations(), fetchTeams(), fetchStats()])
 })
 </script>
 
@@ -275,20 +263,6 @@ onMounted(async () => {
 						<option value="">All Teams</option>
 						<option v-for="team in teams" :key="team.id" :value="team.id">
 							{{ team.name }}
-						</option>
-					</select>
-				</div>
-
-				<!-- Industry Filter -->
-				<div>
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Industry</label>
-					<select
-						v-model="filters.industry_id"
-						class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-					>
-						<option value="">All Industries</option>
-						<option v-for="industry in industries" :key="industry.id" :value="industry.id">
-							{{ industry.name }}
 						</option>
 					</select>
 				</div>
@@ -361,14 +335,6 @@ onMounted(async () => {
 							</th>
 							<th class="px-4 py-3 text-left">
 								<button
-									@click="sort('industry_name')"
-									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
-								>
-									Industry {{ getSortIcon('industry_name') }}
-								</button>
-							</th>
-							<th class="px-4 py-3 text-left">
-								<button
 									@click="sort('website')"
 									class="text-xs font-medium text-neutral-500 uppercase tracking-wider hover:text-neutral-700 flex items-center gap-1 cursor-pointer"
 								>
@@ -420,9 +386,6 @@ onMounted(async () => {
 									</div>
 									<span class="text-sm font-medium">{{ org.visibility }}%</span>
 								</div>
-							</td>
-							<td class="px-4 py-3 text-sm text-neutral-600">
-								{{ org.industry_name || '-' }}
 							</td>
 							<td class="px-4 py-3 text-sm text-neutral-600">
 								<a

@@ -41,12 +41,6 @@ Output your suggested prompt as plain text, without quotation marks, or any type
 So, again pretend you are given the term term, \"car loan\" and the location is \"" . $organization->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $organization->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $organization->location . " that can provide a loan.");
 			}
 
-			// Add industry message conditionally if industry is available
-			if ($organization->industry) {
-				$messages[] = new UserMessage("You also need to incorporate the industry \"" . $organization->industry->name . "\" in the prompts when it makes sense.
-For example, if the keyword is related to the " . $organization->industry->name . " industry, make sure your prompt specifically mentions or implies this industry context. This will help ChatGPT provide more targeted brand recommendations related to this specific industry.");
-			}
-
 			// Add description message conditionally if description is available
 			if (isset($organization->description) && !empty($organization->description)) {
 				$messages[] = new UserMessage("Here is additional context about the organization that might help you create more relevant prompts: \"" . $organization->description . "\".

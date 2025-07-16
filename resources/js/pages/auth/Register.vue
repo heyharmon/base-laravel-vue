@@ -1,10 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
+const teamStore = useTeamStore()
 const router = useRouter()
 const route = useRoute()
+
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -32,14 +35,21 @@ const register = async () => {
 			password_confirmation: password_confirmation.value
 		}
 
-		// Add token if it exists
+		// If user is registering with token, they have been invited to a team
 		if (token.value) {
 			registrationData.token = token.value
+
+			await auth.register(registrationData)
+
+			// Fetch teams immediately after login to ensure currentTeam is set
+			await teamStore.fetchTeams()
+
+			router.push('/')
+		} else {
+			await auth.register(registrationData)
+
+			router.push({ name: 'teams.create' })
 		}
-
-		await auth.register(registrationData)
-
-		router.push({ name: 'teams.create' })
 	} catch (err) {
 		error.value = err.message || 'Registration failed. Please try again.'
 	} finally {

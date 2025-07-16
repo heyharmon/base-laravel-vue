@@ -4,8 +4,9 @@ import { useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
 
-const router = useRouter()
 const teamStore = useTeamStore()
+const router = useRouter()
+
 const email = ref('')
 const password = ref('')
 const error = ref('')

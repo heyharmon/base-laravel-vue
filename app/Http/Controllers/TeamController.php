@@ -102,6 +102,25 @@ class TeamController extends Controller
 		$members = $team->members;
 		$pendingInvitations = $team->pendingInvitations;
 
+		// Add invitation URLs and token information to pending invitations
+		$pendingInvitations->each(function ($invitation) use ($team) {
+			// Check if there's an invitation token for this user (including expired ones)
+			$token = InvitationToken::where('email', $invitation->email)
+				->where('team_id', $team->id)
+				->first();
+
+			if ($token) {
+				$invitation->token_expires_at = $token->expires_at;
+				$invitation->token_expired = $token->expires_at <= now();
+
+				if (!$invitation->token_expired) {
+					$invitation->invitation_url = url('/register?token=' . $token->token);
+				} else {
+					$invitation->invitation_url = null; // No URL for expired tokens
+				}
+			}
+		});
+
 		// Check if current user is owner or admin
 		$isOwner = $team->owner_id === $user->id;
 		$isAdmin = $members->contains(function ($member) use ($user) {
@@ -271,11 +290,21 @@ class TeamController extends Controller
 	 */
 	public function declineInvitation(Team $team)
 	{
+		$user = Auth::user();
+
 		// Remove the user from the team
 		DB::table('team_user')
 			->where('team_id', $team->id)
-			->where('user_id', Auth::id())
+			->where('user_id', $user->id)
 			->delete();
+
+		// Remove any invitation tokens for this user/team combination
+		InvitationToken::where('email', $user->email)
+			->where('team_id', $team->id)
+			->delete();
+
+		// Note: We don't delete the authenticated user when they decline an invitation
+		// as they are actively using the system
 
 		return response()->json(['message' => 'Invitation declined']);
 	}
@@ -299,7 +328,21 @@ class TeamController extends Controller
 			return response()->json(['message' => 'Cannot remove the team owner'], 422);
 		}
 
+		// Remove the user from the team
 		$team->users()->detach($user->id);
+
+		// Remove any invitation tokens for this user/team combination
+		InvitationToken::where('email', $user->email)
+			->where('team_id', $team->id)
+			->delete();
+
+		// Check if the user has any other team memberships (accepted or pending)
+		$hasOtherTeamMemberships = $user->teams()->exists();
+
+		// If the user has no other team memberships, delete the user record
+		if (!$hasOtherTeamMemberships) {
+			$user->delete();
+		}
 
 		return response()->json(['message' => 'Member removed successfully']);
 	}

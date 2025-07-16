@@ -12,132 +12,131 @@ use Laravel\Sanctum\Sanctum;
 uses(RefreshDatabase::class);
 
 it('lists organizations for the current team', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
 
-    $org1 = Organization::factory()->for($team)->owned()->create();
-    $org2 = Organization::factory()->for($team)->create();
-    $otherOrg = Organization::factory()->create();
+	$org1 = Organization::factory()->for($team)->owned()->create();
+	$org2 = Organization::factory()->for($team)->create();
+	$otherOrg = Organization::factory()->create();
 
-    Sanctum::actingAs($user);
+	Sanctum::actingAs($user);
 
-    $response = $this->getJson('/api/organizations');
+	$response = $this->getJson('/api/organizations');
 
-    $response->assertStatus(200)
-        ->assertJsonCount(2)
-        ->assertJsonFragment(['id' => $org1->id])
-        ->assertJsonFragment(['id' => $org2->id])
-        ->assertJsonMissing(['id' => $otherOrg->id]);
+	$response->assertStatus(200)
+		->assertJsonCount(2)
+		->assertJsonFragment(['id' => $org1->id])
+		->assertJsonFragment(['id' => $org2->id])
+		->assertJsonMissing(['id' => $otherOrg->id]);
 });
 
 it('creates an organization with terms for name and website', function () {
-    Bus::fake();
+	Bus::fake();
 
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    Sanctum::actingAs($user);
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	Sanctum::actingAs($user);
 
-    $response = $this->postJson('/api/organizations', [
-        'name' => 'Acme',
-        'website' => 'acme.com',
-        'is_competitor' => true,
-    ]);
+	$response = $this->postJson('/api/organizations', [
+		'name' => 'Acme',
+		'website' => 'acme.com',
+		'is_competitor' => true,
+	]);
 
-    $response->assertStatus(201)
-        ->assertJson([
-            'name' => 'Acme',
-            'website' => 'acme.com',
-            'team_id' => $team->id,
-        ]);
+	$response->assertStatus(201)
+		->assertJson([
+			'name' => 'Acme',
+			'website' => 'acme.com',
+			'team_id' => $team->id,
+		]);
 
-    $organizationId = $response->json('id');
+	$organizationId = $response->json('id');
 
-    expect(Organization::find($organizationId))->not->toBeNull();
-    expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
-    expect(JobStatus::where('team_id', $team->id)->where('trackable_type', Term::class)->count())->toBe(2);
+	expect(Organization::find($organizationId))->not->toBeNull();
+	expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
+	expect(JobStatus::where('team_id', $team->id)->where('trackable_type', Term::class)->count())->toBe(2);
 });
 
 it('shows an organization belonging to the team', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    $organization = Organization::factory()->for($team)->create();
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	$organization = Organization::factory()->for($team)->create();
 
-    Sanctum::actingAs($user);
+	Sanctum::actingAs($user);
 
-    $response = $this->getJson("/api/organizations/{$organization->id}");
+	$response = $this->getJson("/api/organizations/{$organization->id}");
 
-    $response->assertStatus(200)
-        ->assertJson(['id' => $organization->id]);
+	$response->assertStatus(200)
+		->assertJson(['id' => $organization->id]);
 });
 
-it('returns unauthorized when viewing another team\'s organization', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    $otherOrganization = Organization::factory()->create();
+it('returns not found when viewing another team\'s organization', function () {
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	$otherOrganization = Organization::factory()->create();
 
-    Sanctum::actingAs($user);
+	Sanctum::actingAs($user);
 
-    $response = $this->getJson("/api/organizations/{$otherOrganization->id}");
+	$response = $this->getJson("/api/organizations/{$otherOrganization->id}");
 
-    $response->assertStatus(403);
+	$response->assertStatus(404);
 });
 
 it('updates an organization belonging to the team', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    $organization = Organization::factory()->for($team)->create(['name' => 'Old']);
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	$organization = Organization::factory()->for($team)->create(['name' => 'Old']);
 
-    Sanctum::actingAs($user);
+	Sanctum::actingAs($user);
 
-    $response = $this->putJson("/api/organizations/{$organization->id}", [
-        'name' => 'Updated',
-    ]);
+	$response = $this->putJson("/api/organizations/{$organization->id}", [
+		'name' => 'Updated',
+	]);
 
-    $response->assertStatus(200)
-        ->assertJson(['name' => 'Updated']);
+	$response->assertStatus(200)
+		->assertJson(['name' => 'Updated']);
 
-    expect($organization->refresh()->name)->toBe('Updated');
+	expect($organization->refresh()->name)->toBe('Updated');
 });
 
 it('deletes a competitor organization', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    $organization = Organization::factory()->for($team)->create();
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	$organization = Organization::factory()->for($team)->create();
 
-    Sanctum::actingAs($user);
+	Sanctum::actingAs($user);
 
-    $response = $this->deleteJson("/api/organizations/{$organization->id}");
+	$response = $this->deleteJson("/api/organizations/{$organization->id}");
 
-    $response->assertStatus(204);
+	$response->assertStatus(204);
 
-    expect(Organization::find($organization->id))->toBeNull();
+	expect(Organization::find($organization->id))->toBeNull();
 });
 
 it('does not delete the default organization', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    $organization = Organization::factory()->for($team)->owned()->create();
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	$organization = Organization::factory()->for($team)->owned()->create();
 
-    Sanctum::actingAs($user);
+	Sanctum::actingAs($user);
 
-    $response = $this->deleteJson("/api/organizations/{$organization->id}");
+	$response = $this->deleteJson("/api/organizations/{$organization->id}");
 
-    $response->assertStatus(422);
+	$response->assertStatus(422);
 
-    expect(Organization::find($organization->id))->not->toBeNull();
+	expect(Organization::find($organization->id))->not->toBeNull();
 });
-
