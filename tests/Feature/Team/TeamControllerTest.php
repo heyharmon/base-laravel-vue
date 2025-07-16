@@ -336,57 +336,6 @@ it('allows a user to decline a team invitation', function () {
 	]);
 });
 
-it('adds invitation URLs to pending invitations based on token existence', function () {
-	$owner = User::factory()->create();
-	$team = Team::factory()->for($owner, 'owner')->create();
-
-	// Create a user with pending invitation and an invitation token
-	$inviteeWithToken = User::factory()->create();
-	$team->users()->attach($inviteeWithToken->id, [
-		'role' => 'member',
-		'invitation_accepted' => false,
-		'invitation_sent_at' => now(),
-	]);
-
-	$token = \App\Models\InvitationToken::create([
-		'email' => $inviteeWithToken->email,
-		'token' => 'test-token-123',
-		'team_id' => $team->id,
-		'expires_at' => now()->addDays(7),
-	]);
-
-	// Create another user with pending invitation but no token
-	$inviteeWithoutToken = User::factory()->create();
-	$team->users()->attach($inviteeWithoutToken->id, [
-		'role' => 'member',
-		'invitation_accepted' => false,
-		'invitation_sent_at' => now(),
-	]);
-
-	Sanctum::actingAs($owner);
-
-	$response = $this->getJson("/api/teams/{$team->id}");
-
-	$response->assertStatus(200);
-
-	$pendingInvitations = $response->json('pendingInvitations');
-	expect($pendingInvitations)->toHaveCount(2);
-
-	// Find the invitations in the response
-	$invitationWithToken = collect($pendingInvitations)->firstWhere('id', $inviteeWithToken->id);
-	$invitationWithoutToken = collect($pendingInvitations)->firstWhere('id', $inviteeWithoutToken->id);
-
-	// Verify invitation with token has register URL and token info
-	expect($invitationWithToken['invitation_url'])->toBe(url('/register?token=test-token-123'));
-	expect($invitationWithToken['token_expired'])->toBeFalse();
-	expect($invitationWithToken['token_expires_at'])->not->toBeNull();
-
-	// Verify invitation without token has invitations URL and no token info
-	expect($invitationWithoutToken['invitation_url'])->toBe(url('/invitations'));
-	expect($invitationWithoutToken['token_expired'])->toBeFalse();
-	expect($invitationWithoutToken['token_expires_at'])->toBeNull();
-});
-
 it('sets invitation URL to null when token is expired', function () {
 	$owner = User::factory()->create();
 	$team = Team::factory()->for($owner, 'owner')->create();

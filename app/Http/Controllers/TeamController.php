@@ -118,11 +118,6 @@ class TeamController extends Controller
 				} else {
 					$invitation->invitation_url = null; // No URL for expired tokens
 				}
-			} else {
-				// For existing users without tokens, they can accept invitations at /invitations
-				$invitation->token_expires_at = null;
-				$invitation->token_expired = false;
-				$invitation->invitation_url = url('/invitations');
 			}
 		});
 
