@@ -204,10 +204,17 @@ const copyInviteUrl = async (url) => {
 								<div class="font-medium">{{ member.name }}</div>
 								<div class="text-sm text-neutral-500">{{ member.email }}</div>
 								<div class="text-xs text-neutral-400 mt-1">Invited: {{ new Date(member.pivot.invitation_sent_at).toLocaleDateString() }}</div>
+								<div v-if="member.token_expires_at" class="text-xs text-neutral-400 mt-1">
+									<span v-if="member.token_expired" class="text-red-600"
+										>Token expired: {{ new Date(member.token_expires_at).toLocaleDateString() }}</span
+									>
+									<span v-else>Token expires: {{ new Date(member.token_expires_at).toLocaleDateString() }}</span>
+								</div>
 							</div>
 							<div class="flex items-center space-x-4">
 								<div class="text-sm">
-									<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs"> Pending </span>
+									<span v-if="member.token_expired" class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">Expired</span>
+									<span v-else class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Pending</span>
 								</div>
 								<div v-if="isOwner || isAdmin" class="flex space-x-2">
 									<button

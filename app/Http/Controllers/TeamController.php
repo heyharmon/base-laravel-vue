@@ -102,18 +102,26 @@ class TeamController extends Controller
 		$members = $team->members;
 		$pendingInvitations = $team->pendingInvitations;
 
-		// Add invitation URLs to pending invitations
+		// Add invitation URLs and token information to pending invitations
 		$pendingInvitations->each(function ($invitation) use ($team) {
-			// Check if there's an invitation token for this user
+			// Check if there's an invitation token for this user (including expired ones)
 			$token = InvitationToken::where('email', $invitation->email)
 				->where('team_id', $team->id)
-				->where('expires_at', '>', now())
 				->first();
 
 			if ($token) {
-				$invitation->invitation_url = url('/register?token=' . $token->token);
+				$invitation->token_expires_at = $token->expires_at;
+				$invitation->token_expired = $token->expires_at <= now();
+
+				if (!$invitation->token_expired) {
+					$invitation->invitation_url = url('/register?token=' . $token->token);
+				} else {
+					$invitation->invitation_url = null; // No URL for expired tokens
+				}
 			} else {
-				// For existing users, they can accept invitations at /invitations in the app
+				// For existing users without tokens, they can accept invitations at /invitations
+				$invitation->token_expires_at = null;
+				$invitation->token_expired = false;
 				$invitation->invitation_url = url('/invitations');
 			}
 		});

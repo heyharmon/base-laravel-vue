@@ -376,14 +376,18 @@ it('adds invitation URLs to pending invitations based on token existence', funct
 	$invitationWithToken = collect($pendingInvitations)->firstWhere('id', $inviteeWithToken->id);
 	$invitationWithoutToken = collect($pendingInvitations)->firstWhere('id', $inviteeWithoutToken->id);
 
-	// Verify invitation with token has register URL
+	// Verify invitation with token has register URL and token info
 	expect($invitationWithToken['invitation_url'])->toBe(url('/register?token=test-token-123'));
+	expect($invitationWithToken['token_expired'])->toBeFalse();
+	expect($invitationWithToken['token_expires_at'])->not->toBeNull();
 
-	// Verify invitation without token has invitations URL
+	// Verify invitation without token has invitations URL and no token info
 	expect($invitationWithoutToken['invitation_url'])->toBe(url('/invitations'));
+	expect($invitationWithoutToken['token_expired'])->toBeFalse();
+	expect($invitationWithoutToken['token_expires_at'])->toBeNull();
 });
 
-it('sets invitation URL to invitations page when token is expired', function () {
+it('sets invitation URL to null when token is expired', function () {
 	$owner = User::factory()->create();
 	$team = Team::factory()->for($owner, 'owner')->create();
 
@@ -412,6 +416,10 @@ it('sets invitation URL to invitations page when token is expired', function () 
 	$pendingInvitations = $response->json('pendingInvitations');
 	expect($pendingInvitations)->toHaveCount(1);
 
-	// Verify invitation with expired token has invitations URL
-	expect($pendingInvitations[0]['invitation_url'])->toBe(url('/invitations'));
+	$invitation = $pendingInvitations[0];
+
+	// Verify invitation with expired token has null URL and correct expiration info
+	expect($invitation['invitation_url'])->toBeNull();
+	expect($invitation['token_expired'])->toBeTrue();
+	expect($invitation['token_expires_at'])->not->toBeNull();
 });
