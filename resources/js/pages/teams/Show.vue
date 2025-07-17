@@ -214,8 +214,8 @@ const generatePasswordResetUrl = async (userId) => {
 									</span>
 								</div>
 								<div v-if="isOwner || isAdmin" class="flex space-x-2">
-									<button @click="generatePasswordResetUrl(member.id)" class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer">
-										{{ copiedResetUrls[member.id] ? 'Copied' : 'Copy reset URL' }}
+									<button @click="generatePasswordResetUrl(member.id)" class="text-neutral-800 hover:text-neutral-600 text-sm cursor-pointer">
+										{{ copiedResetUrls[member.id] ? 'Copied' : 'Copy password reset URL' }}
 									</button>
 									<div v-if="member.id !== teamStore.currentTeam.owner_id" class="flex space-x-2">
 										<select
@@ -269,6 +269,13 @@ const generatePasswordResetUrl = async (userId) => {
 										class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
 									>
 										{{ copiedInviteUrls[member.id] ? 'Copied' : 'Copy invite URL' }}
+									</button>
+									<button
+										v-else
+										@click="generatePasswordResetUrl(member.id)"
+										class="text-neutral-800 hover:text-neutral-600 text-sm cursor-pointer"
+									>
+										{{ copiedResetUrls[member.id] ? 'Copied' : 'Copy password reset URL' }}
 									</button>
 									<button @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm cursor-pointer">
 										Cancel Invitation
