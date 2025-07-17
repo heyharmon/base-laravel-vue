@@ -26,10 +26,13 @@ export const useTeamStore = defineStore('team', {
 				// Set current team based on user's current_team_id
 				const user = JSON.parse(localStorage.getItem('user'))
 				if (user && user.current_team_id) {
-					this.currentTeam = this.getCurrentTeam({
-						ownedTeams: this.ownedTeams,
-						joinedTeams: this.joinedTeams
-					}, user)
+					this.currentTeam = this.getCurrentTeam(
+						{
+							ownedTeams: this.ownedTeams,
+							joinedTeams: this.joinedTeams
+						},
+						user
+					)
 				}
 			} catch (error) {
 				console.error('Error fetching teams:', error)
@@ -225,6 +228,18 @@ export const useTeamStore = defineStore('team', {
 			return (
 				teams.ownedTeams.find((team) => team.id === user.current_team_id) || teams.joinedTeams.find((team) => team.id === user.current_team_id) || null
 			)
+		},
+
+		async generatePasswordResetUrl(teamId, userId) {
+			console.log('Generating password reset URL for user ID:', userId)
+
+			try {
+				const response = await api.post(`/teams/${teamId}/members/${userId}/password-reset`)
+				return response.reset_url
+			} catch (error) {
+				console.error('Error generating password reset URL:', error)
+				throw error
+			}
 		}
 	}
 })

@@ -122,6 +122,16 @@ const copyInviteUrl = async (url) => {
 		document.body.removeChild(textArea)
 	}
 }
+
+const generatePasswordResetUrl = async (userId) => {
+	try {
+		const resetUrl = await teamStore.generatePasswordResetUrl(route.params.id, userId)
+		await copyInviteUrl(resetUrl)
+		console.log('Password reset URL copied to clipboard')
+	} catch (error) {
+		console.error('Error generating password reset URL:', error)
+	}
+}
 </script>
 
 <template>
@@ -168,7 +178,10 @@ const copyInviteUrl = async (url) => {
 										{{ member.pivot.role === 'admin' ? 'Admin' : 'Member' }}
 									</span>
 								</div>
-								<div v-if="isOwner || isAdmin">
+								<div v-if="isOwner || isAdmin" class="flex space-x-2">
+									<button @click="generatePasswordResetUrl(member.id)" class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer">
+										Copy reset URL
+									</button>
 									<div v-if="member.id !== teamStore.currentTeam.owner_id" class="flex space-x-2">
 										<select
 											v-if="member.id !== $route.meta?.user?.id"
