@@ -21,6 +21,8 @@ const editTeamName = ref('')
 const inviteEmail = ref('')
 const inviteRole = ref('member')
 const isSubmitting = ref(false)
+const copiedResetUrls = ref({})
+const copiedInviteUrls = ref({})
 
 onMounted(async () => {
 	await loadTeam()
@@ -106,10 +108,15 @@ const deleteTeam = async () => {
 	}
 }
 
-const copyInviteUrl = async (url) => {
+const copyInviteUrl = async (url, memberId) => {
 	try {
 		await navigator.clipboard.writeText(url)
-		// You could add a toast notification here if you have one
+		// Set copied state
+		copiedInviteUrls.value[memberId] = true
+		// Reset after 2 seconds
+		setTimeout(() => {
+			delete copiedInviteUrls.value[memberId]
+		}, 2000)
 		console.log('Invite URL copied to clipboard')
 	} catch (error) {
 		console.error('Failed to copy URL:', error)
@@ -120,16 +127,44 @@ const copyInviteUrl = async (url) => {
 		textArea.select()
 		document.execCommand('copy')
 		document.body.removeChild(textArea)
+		// Set copied state even for fallback
+		copiedInviteUrls.value[memberId] = true
+		setTimeout(() => {
+			delete copiedInviteUrls.value[memberId]
+		}, 2000)
 	}
 }
 
 const generatePasswordResetUrl = async (userId) => {
 	try {
 		const resetUrl = await teamStore.generatePasswordResetUrl(route.params.id, userId)
-		await copyInviteUrl(resetUrl)
+		// Copy the URL
+		await navigator.clipboard.writeText(resetUrl)
+		// Set copied state
+		copiedResetUrls.value[userId] = true
+		// Reset after 2 seconds
+		setTimeout(() => {
+			delete copiedResetUrls.value[userId]
+		}, 2000)
 		console.log('Password reset URL copied to clipboard')
 	} catch (error) {
 		console.error('Error generating password reset URL:', error)
+		// Try fallback if clipboard fails
+		try {
+			const textArea = document.createElement('textarea')
+			textArea.value = resetUrl
+			document.body.appendChild(textArea)
+			textArea.select()
+			document.execCommand('copy')
+			document.body.removeChild(textArea)
+			// Set copied state even for fallback
+			copiedResetUrls.value[userId] = true
+			setTimeout(() => {
+				delete copiedResetUrls.value[userId]
+			}, 2000)
+		} catch (fallbackError) {
+			console.error('Fallback copy also failed:', fallbackError)
+		}
 	}
 }
 </script>
@@ -180,7 +215,7 @@ const generatePasswordResetUrl = async (userId) => {
 								</div>
 								<div v-if="isOwner || isAdmin" class="flex space-x-2">
 									<button @click="generatePasswordResetUrl(member.id)" class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer">
-										Copy reset URL
+										{{ copiedResetUrls[member.id] ? 'Copied' : 'Copy reset URL' }}
 									</button>
 									<div v-if="member.id !== teamStore.currentTeam.owner_id" class="flex space-x-2">
 										<select
@@ -230,10 +265,10 @@ const generatePasswordResetUrl = async (userId) => {
 								<div v-if="isOwner || isAdmin" class="flex space-x-2">
 									<button
 										v-if="member.invitation_url"
-										@click="copyInviteUrl(member.invitation_url)"
+										@click="copyInviteUrl(member.invitation_url, member.id)"
 										class="text-blue-600 hover:text-blue-800 text-sm cursor-pointer"
 									>
-										Copy invite URL
+										{{ copiedInviteUrls[member.id] ? 'Copied' : 'Copy invite URL' }}
 									</button>
 									<button @click="removeMember(member.id)" class="text-red-600 hover:text-red-800 text-sm cursor-pointer">
 										Cancel Invitation
