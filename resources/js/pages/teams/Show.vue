@@ -283,8 +283,8 @@ const cancelInvitation = async (userId) => {
 										</span>
 									</td>
 									<td class="px-6 py-4">
-										<div v-if="(isOwner || isAdmin) && member.id !== teamStore.currentTeam.owner_id" class="relative dropdown-container">
-											<button @click="toggleDropdown(`member-${member.id}`)" class="p-1 hover:bg-neutral-100 rounded">
+										<div v-if="isOwner || isAdmin" class="relative dropdown-container">
+											<button @click="toggleDropdown(`member-${member.id}`)" class="p-1 hover:bg-neutral-100 rounded cursor-pointer">
 												<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 													<path
 														stroke-linecap="round"
@@ -307,14 +307,14 @@ const cancelInvitation = async (userId) => {
 														Copy password reset URL
 													</button>
 													<button
-														v-if="member.id !== currentUser?.id"
+														v-if="member.id !== currentUser?.id && member.id !== teamStore.currentTeam.owner_id"
 														@click="openChangeRoleModal(member)"
 														class="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100 cursor-pointer"
 													>
 														Change role
 													</button>
 													<button
-														v-if="member.id !== currentUser?.id"
+														v-if="member.id !== currentUser?.id && member.id !== teamStore.currentTeam.owner_id"
 														@click="removeMember(member.id)"
 														class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-100 cursor-pointer"
 													>
@@ -373,7 +373,7 @@ const cancelInvitation = async (userId) => {
 									</td>
 									<td class="px-6 py-4">
 										<div v-if="isOwner || isAdmin" class="relative dropdown-container">
-											<button @click="toggleDropdown(`pending-${member.id}`)" class="p-1 hover:bg-neutral-100 rounded">
+											<button @click="toggleDropdown(`pending-${member.id}`)" class="p-1 hover:bg-neutral-100 rounded cursor-pointer">
 												<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 													<path
 														stroke-linecap="round"
