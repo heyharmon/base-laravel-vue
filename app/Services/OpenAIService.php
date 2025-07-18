@@ -690,18 +690,8 @@ class OpenAIService
 				$occurrence = $arguments['occurrence'] ?? 1;
 				$content = $article->content;
 
-				// Normalize function for comparison
-				$normalize = function ($text) {
-					$text = strip_tags($text);
-					$text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-					$text = preg_replace('/\s+/u', ' ', $text);
-					return trim($text);
-				};
-
-				$searchNorm = $normalize($searchText);
+				// Simple direct HTML search
 				$matches = [];
-
-				// First, try exact match in the HTML
 				$pos = 0;
 				while (($pos = strpos($content, $searchText, $pos)) !== false) {
 					$matches[] = [
@@ -713,113 +703,11 @@ class OpenAIService
 					$pos += strlen($searchText);
 				}
 
-				// If no exact matches, use improved fuzzy approach
-				if (empty($matches)) {
-					// Try to find matches within text nodes of HTML
-					// This regex captures text between HTML tags along with the surrounding tags
-					preg_match_all('/(<[^>]*>)([^<]+)(<[^>]*>|$)/s', $content, $segments, PREG_OFFSET_CAPTURE);
-
-					foreach ($segments[0] as $index => $segment) {
-						$fullSegment = $segment[0];
-						$segmentPos = $segment[1];
-						$openingTag = $segments[1][$index][0];
-						$textContent = $segments[2][$index][0];
-						$closingTag = $segments[3][$index][0];
-
-						$textNorm = $normalize($textContent);
-
-						// Check if our normalized search text is in this normalized segment
-						if (stripos($textNorm, $searchNorm) !== false) {
-							$matches[] = [
-								'position' => $segmentPos,
-								'length' => strlen($fullSegment),
-								'text' => $fullSegment,
-								'match_type' => 'fuzzy_full_tag',
-								'text_content' => $textContent
-							];
-						}
-					}
-
-					// If still no matches, try partial matching for longer search texts
-					if (empty($matches) && str_word_count($searchText) > 5) {
-						// Try matching first and last portions
-						$words = explode(' ', $searchNorm);
-						$firstWords = implode(' ', array_slice($words, 0, min(10, count($words) / 2)));
-						$lastWords = implode(' ', array_slice($words, -min(10, count($words) / 2)));
-
-						// Look for segments containing beginning or end
-						preg_match_all('/(<[^>]*>)([^<]+)(<[^>]*>|$)/s', $content, $segments, PREG_OFFSET_CAPTURE);
-
-						foreach ($segments[0] as $index => $segment) {
-							$fullSegment = $segment[0];
-							$segmentPos = $segment[1];
-							$textContent = $segments[2][$index][0];
-							$textNorm = $normalize($textContent);
-
-							if (stripos($textNorm, $firstWords) !== false || stripos($textNorm, $lastWords) !== false) {
-								$matches[] = [
-									'position' => $segmentPos,
-									'length' => strlen($fullSegment),
-									'text' => $fullSegment,
-									'match_type' => 'fuzzy_partial',
-									'text_content' => $textContent
-								];
-								break; // Take first partial match
-							}
-						}
-					}
-
-					// Last resort: try to find any paragraph or heading containing key terms
-					if (empty($matches)) {
-						// Extract key terms (ignore common words)
-						$stopWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'been', 'be'];
-						$words = array_filter(explode(' ', strtolower($searchNorm)), function ($word) use ($stopWords) {
-							return strlen($word) > 3 && !in_array($word, $stopWords);
-						});
-
-						if (!empty($words)) {
-							// Find paragraphs or headings
-							preg_match_all('/<(p|h[1-6])[^>]*>.*?<\/\1>/s', $content, $blocks, PREG_OFFSET_CAPTURE);
-
-							foreach ($blocks[0] as $block) {
-								$blockContent = $block[0];
-								$blockPos = $block[1];
-								$blockNorm = $normalize($blockContent);
-
-								// Count how many key terms appear in this block
-								$matchCount = 0;
-								foreach ($words as $word) {
-									if (stripos($blockNorm, $word) !== false) {
-										$matchCount++;
-									}
-								}
-
-								// If more than half the key terms match, consider it a match
-								if ($matchCount >= count($words) / 2) {
-									$matches[] = [
-										'position' => $blockPos,
-										'length' => strlen($blockContent),
-										'text' => $blockContent,
-										'match_type' => 'fuzzy_keywords',
-										'match_score' => $matchCount . '/' . count($words)
-									];
-									break; // Take first good match
-								}
-							}
-						}
-					}
-				}
-
 				if (empty($matches)) {
 					return json_encode([
 						'found' => false,
 						'message' => 'Content not found',
-						'search_text' => $searchText,
-						'debug_info' => [
-							'normalized_search' => $searchNorm,
-							'content_length' => strlen($content),
-							'has_html' => strpos($content, '<') !== false
-						]
+						'search_text' => $searchText
 					]);
 				}
 
@@ -827,45 +715,23 @@ class OpenAIService
 				$matchIndex = min($occurrence - 1, count($matches) - 1);
 				$match = $matches[$matchIndex];
 
-				// Get context around the match
+				// Get context
 				$contextLength = 50;
-				$contextBefore = '';
-				$contextAfter = '';
+				$contextBefore = substr($content, max(0, $match['position'] - $contextLength), $contextLength);
+				$contextAfter = substr($content, $match['position'] + $match['length'], $contextLength);
 
-				if ($match['position'] > 0) {
-					$startPos = max(0, $match['position'] - $contextLength);
-					$contextBefore = '...' . substr($content, $startPos, $match['position'] - $startPos);
-				}
-
-				$afterPos = $match['position'] + $match['length'];
-				if ($afterPos < strlen($content)) {
-					$contextAfter = substr($content, $afterPos, $contextLength) . '...';
-				}
-
-				// For fuzzy matches, include the actual text content without HTML
-				$returnData = [
+				return json_encode([
 					'found' => true,
 					'position' => $match['position'],
 					'length' => $match['length'],
 					'matched_text' => $match['text'],
-					'match_type' => $match['match_type'],
+					'match_type' => 'exact',
 					'total_occurrences' => count($matches),
 					'occurrence_number' => $matchIndex + 1,
-					'context_before' => $contextBefore,
-					'context_after' => $contextAfter,
+					'context_before' => '...' . $contextBefore,
+					'context_after' => $contextAfter . '...',
 					'search_text' => $searchText
-				];
-
-				// Add text content for fuzzy matches to help the agent understand what was found
-				if (isset($match['text_content'])) {
-					$returnData['text_content'] = $match['text_content'];
-				}
-
-				if (isset($match['match_score'])) {
-					$returnData['match_score'] = $match['match_score'];
-				}
-
-				return json_encode($returnData);
+				]);
 
 			case 'create_article':
 				$teamId = $this->getTeamId();
@@ -923,30 +789,15 @@ class OpenAIService
 					return json_encode(['error' => 'Article not found']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
 				$article->content .= $arguments['content'];
 				$article->save();
 
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
-				$addedWords = str_word_count($arguments['content']);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content appended successfully',
 					'article_id' => $article->id,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength,
-					// 	'chunk_words' => $addedWords,
-					// 	'chunk_length' => strlen($arguments['content'])
-					// ]
 				]);
 
 			case 'prepend_content':
@@ -961,35 +812,19 @@ class OpenAIService
 					return json_encode(['error' => 'Article not found']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
 				$article->content = $arguments['content'] . $article->content;
 				$article->save();
 
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
-				$addedWords = str_word_count($arguments['content']);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content prepended successfully',
 					'article_id' => $article->id,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength,
-					// 	'chunk_words' => $addedWords,
-					// 	'chunk_length' => strlen($arguments['content'])
-					// ]
 				]);
 
 			case 'replace_content':
 				$teamId = $this->getTeamId();
-
 				if (!$teamId) {
 					return json_encode(['error' => 'Team ID not available']);
 				}
@@ -1003,170 +838,40 @@ class OpenAIService
 				$replacementText = $arguments['replacement_text'];
 				$replaceAll = $arguments['replace_all'] ?? false;
 
-				$occurrences = 0;
-
-				// Normalize function for comparison
-				$normalize = function ($text) {
-					$text = strip_tags($text);
-					$text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-					$text = preg_replace('/\s+/u', ' ', $text);
-					return trim($text);
-				};
-
-				// First try exact match
-				if (strpos($article->content, $searchText) !== false) {
-					// Exact match found
-					if ($replaceAll) {
-						$occurrences = substr_count($article->content, $searchText);
-						$article->content = str_replace($searchText, $replacementText, $article->content);
-					} else {
-						$pos = strpos($article->content, $searchText);
-						$article->content = substr_replace($article->content, $replacementText, $pos, strlen($searchText));
-						$occurrences = 1;
-					}
-				} else {
-					// No exact match, try fuzzy matching
-					$searchNorm = $normalize($searchText);
-					$replaced = false;
-					$newContent = '';
-					$lastPos = 0;
-
-					// Process HTML content segment by segment
-					preg_match_all('/(<[^>]*>)([^<]+)(<[^>]*>|$)/s', $article->content, $segments, PREG_OFFSET_CAPTURE);
-
-					foreach ($segments[0] as $index => $segment) {
-						$fullSegment = $segment[0];
-						$segmentPos = $segment[1];
-						$openingTag = $segments[1][$index][0];
-						$textContent = $segments[2][$index][0];
-						$closingTag = $segments[3][$index][0];
-
-						// Add any content between last position and current segment
-						if ($segmentPos > $lastPos) {
-							$newContent .= substr($article->content, $lastPos, $segmentPos - $lastPos);
-						}
-
-						$textNorm = $normalize($textContent);
-
-						// Check if this segment contains our search text
-						if (stripos($textNorm, $searchNorm) !== false && (!$replaced || $replaceAll)) {
-							// This segment contains our text, replace it
-							$newContent .= $openingTag . $replacementText . $closingTag;
-							$replaced = true;
-							$occurrences++;
-
-							if (!$replaceAll) {
-								// For single replacement, add the rest of the content and break
-								$lastPos = $segmentPos + strlen($fullSegment);
-								$newContent .= substr($article->content, $lastPos);
-								break;
-							}
-						} else {
-							// Keep the original segment
-							$newContent .= $fullSegment;
-						}
-
-						$lastPos = $segmentPos + strlen($fullSegment);
-					}
-
-					// Add any remaining content
-					if ($replaceAll && $lastPos < strlen($article->content)) {
-						$newContent .= substr($article->content, $lastPos);
-					}
-
-					// If still no matches found, try replacing within larger blocks
-					if (!$replaced) {
-						// Try to find and replace within paragraphs or headings
-						$blockReplaced = false;
-						$newContent = preg_replace_callback(
-							'/<(p|h[1-6])([^>]*)>(.*?)<\/\1>/s',
-							function ($matches) use ($searchNorm, $replacementText, $normalize, &$blockReplaced, $replaceAll, &$occurrences) {
-								$tag = $matches[1];
-								$attributes = $matches[2];
-								$content = $matches[3];
-								$contentNorm = $normalize($content);
-
-								if (stripos($contentNorm, $searchNorm) !== false && (!$blockReplaced || $replaceAll)) {
-									$blockReplaced = true;
-									$occurrences++;
-
-									// If the content has nested tags, try to preserve structure
-									if (strpos($content, '<') !== false) {
-										// Content has nested HTML, just replace the whole block's content
-										return "<{$tag}{$attributes}>{$replacementText}</{$tag}>";
-									} else {
-										// Simple text content, can do a more precise replacement
-										return "<{$tag}{$attributes}>{$replacementText}</{$tag}>";
-									}
-								}
-
-								return $matches[0];
-							},
-							$article->content
-						);
-
-						if ($blockReplaced) {
-							$replaced = true;
-							$article->content = $newContent;
-						}
-					} else {
-						$article->content = $newContent;
-					}
-
-					// Last resort: try to match partial content
-					if (!$replaced && str_word_count($searchText) > 5) {
-						// Extract key portions of the search text
-						$words = explode(' ', $searchNorm);
-						$firstWords = implode(' ', array_slice($words, 0, min(10, count($words) / 2)));
-
-						$partialReplaced = false;
-						$newContent = preg_replace_callback(
-							'/<(p|h[1-6])([^>]*)>(.*?)<\/\1>/s',
-							function ($matches) use ($firstWords, $replacementText, $normalize, &$partialReplaced, &$occurrences) {
-								$tag = $matches[1];
-								$attributes = $matches[2];
-								$content = $matches[3];
-								$contentNorm = $normalize($content);
-
-								if (!$partialReplaced && stripos($contentNorm, $firstWords) !== false) {
-									$partialReplaced = true;
-									$occurrences = 1;
-									return "<{$tag}{$attributes}>{$replacementText}</{$tag}>";
-								}
-
-								return $matches[0];
-							},
-							$article->content,
-							1 // Limit to 1 replacement for partial matches
-						);
-
-						if ($partialReplaced) {
-							$replaced = true;
-							$article->content = $newContent;
-						}
-					}
-
-					if (!$replaced) {
-						return json_encode([
-							'error' => 'Search text not found in article',
-							'debug_info' => [
-								'search_text' => $searchText,
-								'normalized_search' => $searchNorm,
-								'attempted_fuzzy_match' => true
-							]
-						]);
-					}
+				// Check if search text exists
+				if (strpos($article->content, $searchText) === false) {
+					return json_encode(['error' => 'Search text not found in article']);
 				}
 
-				// Save the article
-				$article->save();
+				$previousWordCount = str_word_count(strip_tags($article->content));
+				$previousLength = strlen($article->content);
 
+				// Simple string replacement
+				if ($replaceAll) {
+					$occurrences = substr_count($article->content, $searchText);
+					$article->content = str_replace($searchText, $replacementText, $article->content);
+				} else {
+					$pos = strpos($article->content, $searchText);
+					$article->content = substr_replace($article->content, $replacementText, $pos, strlen($searchText));
+					$occurrences = 1;
+				}
+
+				$article->save();
 				event(new ArticleUpdated($article));
+
+				$newWordCount = str_word_count(strip_tags($article->content));
+				$newLength = strlen($article->content);
 
 				return json_encode([
 					'success' => true,
 					'message' => 'Content replaced successfully',
 					'article_id' => $article->id,
+					'replacements' => $occurrences,
+					'word_count' => [
+						'previous' => $previousWordCount,
+						'current' => $newWordCount,
+						'difference' => $newWordCount - $previousWordCount
+					]
 				]);
 
 			case 'insert_content':

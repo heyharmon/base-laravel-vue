@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useDebounceFn } from '@vueuse/core'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { getHTMLFromFragment } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
@@ -61,13 +62,16 @@ const editor = useEditor({
 		}
 	},
 	onSelectionUpdate: ({ editor }) => {
-		// Get selected text when user selects text in editor
+		// Get selected HTML when user selects text in editor
 		const { from, to } = editor.state.selection
 		if (from !== to) {
-			const selectedText = editor.state.doc.textBetween(from, to)
-			if (selectedText.trim()) {
-				// Store the current selection but don't set selectedContent yet
-				currentSelection.value = selectedText.trim()
+			// Get the selected content as a fragment
+			const fragment = editor.state.doc.slice(from, to).content
+			const selectedHTML = getHTMLFromFragment(fragment, editor.schema)
+
+			if (selectedHTML && selectedHTML.trim()) {
+				// Store the HTML selection
+				currentSelection.value = selectedHTML
 				showSelectionTooltip()
 			} else {
 				hideTooltip()
