@@ -324,8 +324,6 @@ class OpenAIService
 			'store' => true,
 			'tools' => $this->tools,
 			'tool_choice' => 'auto',
-			// 'temperature' => 0.3,  // Lower temperature for more consistent behavior
-			// 'max_completion_tokens' => 300,   // Limit response length to enforce brevity
 		]);
 	}
 
@@ -501,36 +499,14 @@ class OpenAIService
 	protected function handleReasoningMessage(Conversation $conversation, $item): void
 	{
 		// Extract reasoning content - adjust based on the actual structure of $item
-		// $reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
-
-		// You might want to format or summarize the reasoning here
-		// $conversation->chats()->create([
-		// 	'role' => 'assistant',
-		// 	'content' => $reasoningContent,
-		// ]);
-
-		// Extract reasoning content
+		$reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
 
 		// Log reasoning for debugging
 		Log::info('OpenAI Reasoning:', [
 			'item' => $item,
 		]);
 
-		$reasoningContent = '';
-
-		if (isset($item->content)) {
-			if (is_string($item->content)) {
-				$reasoningContent = $item->content;
-			} elseif (is_array($item->content) && isset($item->content[0])) {
-				$reasoningContent = $item->content[0]->text ?? $item->content[0] ?? '';
-			}
-		} elseif (isset($item->text)) {
-			$reasoningContent = $item->text;
-		} elseif (isset($item->reasoning)) {
-			$reasoningContent = $item->reasoning;
-		}
-
-		// Store reasoning in the conversation
+		// You might want to format or summarize the reasoning here
 		$conversation->chats()->create([
 			'role' => 'assistant',
 			'content' => $reasoningContent,
@@ -583,9 +559,9 @@ class OpenAIService
 				case 'message':
 					$this->handleAssistantMessage($conversation, $item);
 					break;
-				case 'reasoning':
-					$this->handleReasoningMessage($conversation, $item);
-					break;
+				// case 'reasoning':
+				// 	$this->handleReasoningMessage($conversation, $item);
+				// 	break;
 				case 'function_call':
 					$functionCalls[] = $item;
 					break;
