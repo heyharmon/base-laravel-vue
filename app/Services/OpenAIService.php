@@ -843,35 +843,21 @@ class OpenAIService
 					return json_encode(['error' => 'Search text not found in article']);
 				}
 
-				$previousWordCount = str_word_count(strip_tags($article->content));
-				$previousLength = strlen($article->content);
-
 				// Simple string replacement
 				if ($replaceAll) {
-					$occurrences = substr_count($article->content, $searchText);
 					$article->content = str_replace($searchText, $replacementText, $article->content);
 				} else {
 					$pos = strpos($article->content, $searchText);
 					$article->content = substr_replace($article->content, $replacementText, $pos, strlen($searchText));
-					$occurrences = 1;
 				}
 
 				$article->save();
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count(strip_tags($article->content));
-				$newLength = strlen($article->content);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content replaced successfully',
 					'article_id' => $article->id,
-					'replacements' => $occurrences,
-					'word_count' => [
-						'previous' => $previousWordCount,
-						'current' => $newWordCount,
-						'difference' => $newWordCount - $previousWordCount
-					]
 				]);
 
 			case 'insert_content':
@@ -895,9 +881,6 @@ class OpenAIService
 					return json_encode(['error' => 'Target text not found in article']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
 				// Insert content after the found text
 				$insertPos = $pos + strlen($afterText);
 				$article->content = substr($article->content, 0, $insertPos) . $content . substr($article->content, $insertPos);
@@ -905,22 +888,10 @@ class OpenAIService
 
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
-				$addedWords = str_word_count($content);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content inserted successfully',
 					'article_id' => $article->id,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength,
-					// 	'chunk_words' => $addedWords,
-					// 	'chunk_length' => strlen($content)
-					// ]
 				]);
 
 			case 'fetch_prompt_with_responses':
