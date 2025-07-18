@@ -22,49 +22,65 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for handling errors globally
 api.interceptors.response.use(
-        (response) => response.data,
-        (error) => {
-                const notificationStore = useNotificationStore()
+	(response) => response.data,
+	(error) => {
+		const notificationStore = useNotificationStore()
 
-                if (error.response) {
-                        const status = error.response.status
+		// Check if it's a network/connection error
+		if (!error.response) {
+			// This catches network errors including ERR_CONNECTION_CLOSED
+			let message = 'Network error. Please check your internet connection.'
 
-                        if (status === 401) {
-                                localStorage.removeItem('token')
-                                localStorage.removeItem('user')
-                                window.location.href = '/login'
-                        }
+			// Check for specific connection error types
+			if (
+				error.code === 'ERR_NETWORK' ||
+				error.code === 'ERR_CONNECTION_CLOSED' ||
+				error.message.includes('ERR_CONNECTION_CLOSED') ||
+				error.message.includes('Network Error')
+			) {
+				message = 'Connection lost. Please check your internet connection and refresh.'
+			}
 
-                        let message = 'An error occurred. Please try again.'
-                        const data = error.response.data
-                        if (data) {
-                                if (typeof data === 'string') {
-                                        message = data
-                                } else if (data.message) {
-                                        message = data.message
-                                } else if (data.error) {
-                                        message = data.error
-                                }
-                                if (status === 422 && data.errors) {
-                                        const firstKey = Object.keys(data.errors)[0]
-                                        message = data.errors[firstKey][0] || message
-                                }
-                        }
+			notificationStore.addNotification({
+				type: 'error',
+				message
+			})
 
-                        notificationStore.addNotification({
-                                type: 'error',
-                                message
-                        })
+			return Promise.reject(error)
+		}
 
-                        return Promise.reject(error.response.data)
-                }
+		// Handle server response errors (when error.response exists)
+		const status = error.response.status
 
-                notificationStore.addNotification({
-                        type: 'error',
-                        message: error.message || 'Network error. Please check your connection.'
-                })
-                return Promise.reject(error)
-        }
+		if (status === 401) {
+			localStorage.removeItem('token')
+			localStorage.removeItem('user')
+			window.location.href = '/login'
+		}
+
+		let message = 'An error occurred. Please try again.'
+		const data = error.response.data
+		if (data) {
+			if (typeof data === 'string') {
+				message = data
+			} else if (data.message) {
+				message = data.message
+			} else if (data.error) {
+				message = data.error
+			}
+			if (status === 422 && data.errors) {
+				const firstKey = Object.keys(data.errors)[0]
+				message = data.errors[firstKey][0] || message
+			}
+		}
+
+		notificationStore.addNotification({
+			type: 'error',
+			message
+		})
+
+		return Promise.reject(error.response.data)
+	}
 )
 
 export default api

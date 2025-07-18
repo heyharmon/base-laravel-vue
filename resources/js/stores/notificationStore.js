@@ -6,10 +6,21 @@ export const useNotificationStore = defineStore('notification', () => {
 	let nextId = 1
 
 	function addNotification(notification) {
+		const message = notification.message
+		const type = notification.type || 'info'
+
+		// Check if a notification with the same message and type already exists
+		const existingNotification = notifications.value.find((n) => n.message === message && n.type === type)
+
+		// If duplicate exists, don't add a new one
+		if (existingNotification) {
+			return
+		}
+
 		const notif = {
 			id: nextId++,
-			type: notification.type || 'info',
-			message: notification.message
+			type,
+			message
 		}
 		notifications.value.push(notif)
 
