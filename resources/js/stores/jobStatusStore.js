@@ -58,7 +58,6 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 			return jobs.value
 		} catch (err) {
 			console.error('Error loading team jobs:', err)
-			throw err
 		} finally {
 			loading.value = false
 		}
@@ -70,7 +69,6 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 			await fetchTeamJobs()
 		} catch (err) {
 			console.error('Error cancelling jobs:', err)
-			throw err
 		}
 	}
 
