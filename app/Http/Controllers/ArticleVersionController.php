@@ -25,8 +25,9 @@ class ArticleVersionController extends Controller
 
 		$article->revertToVersion($version);
 
-		// Load versions
-		$article->load('versions');
+		$article->load(['versions' => function ($query) {
+			$query->select('id', 'article_id', 'version_number', 'created_at');
+		}]);
 
 		return response()->json($article);
 	}

@@ -57,7 +57,6 @@ const editor = useEditor({
 	onUpdate: ({ editor }) => {
 		// Only update store if this is a user-initiated change
 		if (articleStore.article && !isUpdatingEditorFromStore.value) {
-			console.log('Editor onUpdate: User made changes')
 			articleStore.article.content = editor.getHTML()
 		}
 	},
@@ -77,14 +76,13 @@ const editor = useEditor({
 			hideTooltip()
 		}
 	},
-	// ADD THIS: Handle paste events specifically
+	// Handle paste events specifically
 	onTransaction: ({ editor, transaction }) => {
 		// Check if this transaction includes pasted content
 		if (transaction.docChanged && !isUpdatingEditorFromStore.value) {
 			// Small delay to ensure the content is fully updated
 			nextTick(() => {
 				if (articleStore.article) {
-					console.log('Editor onTransaction: Content changed (possibly paste)')
 					articleStore.article.content = editor.getHTML()
 				}
 			})
@@ -158,12 +156,10 @@ const debouncedAutoSaveContent = useDebounceFn(async (content) => {
 	}
 }, 2000)
 
-// Watcher to handle both store updates and user changes
+// Watcher to handle both articlestore updates and user changes
 watch(
 	() => articleStore.article?.content,
 	(newContent, oldContent) => {
-		console.log('Content watcher triggered')
-
 		// FIRST: Handle store updates that need to update the editor
 		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
 			console.log('Updating editor content from store')
@@ -176,7 +172,6 @@ watch(
 			nextTick(() => {
 				setTimeout(() => {
 					isUpdatingEditorFromStore.value = false
-					console.log('Editor update completed, flag reset')
 				}, 100)
 			})
 
@@ -190,14 +185,13 @@ watch(
 
 			// Allow auto-save even for new articles (without ID) if they have content
 			if (newContent && newContent.trim() !== '' && newContent !== '<p></p>') {
-				console.log('Triggering auto-save')
 				debouncedAutoSaveContent(newContent)
 			}
 		}
 	}
 )
 
-// Listen for article updates - USE NEW METHOD TO AVOID CHAT RELOAD
+// Listen for article updates
 useEcho(`article.${route.params.id}`, 'ArticleUpdated', async (e) => {
 	console.log('Echo: Received article update for ID:', e.id)
 

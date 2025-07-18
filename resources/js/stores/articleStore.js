@@ -169,12 +169,14 @@ export const useArticleStore = defineStore('article', () => {
 
 	// Auto-save content only (to be called from components)
 	const autoSaveContent = async (articleId, content) => {
-		console.log('Auto-saving article content...')
 		if (isSaving.value) return
 		isSaving.value = true
 
 		try {
 			const response = await api.put(`/articles/${articleId}`, { content })
+			article.value.current_version = response.current_version
+			article.value.versions = response.versions
+			// console.log(response)
 			return response
 		} catch (err) {
 			console.error('Error auto-saving article content:', err)
