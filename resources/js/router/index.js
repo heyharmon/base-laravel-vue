@@ -137,7 +137,10 @@ router.beforeEach(async (to, from, next) => {
 
 	// Handle auth routes when not logged in
 	if (!token) {
-		return next({ name: 'login' })
+		return next({
+			name: 'login',
+			query: { redirect: to.fullPath }
+		})
 	}
 
 	// Skip team check for teams.create route
