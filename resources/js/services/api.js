@@ -46,7 +46,7 @@ api.interceptors.response.use(
 				message
 			})
 
-			return Promise.reject(error)
+			// return Promise.reject(error)
 		}
 
 		// Handle server response errors (when error.response exists)
@@ -79,7 +79,7 @@ api.interceptors.response.use(
 			message
 		})
 
-		return Promise.reject(error.response.data)
+		// return Promise.reject(error.response.data)
 	}
 )
 
