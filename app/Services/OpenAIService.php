@@ -84,6 +84,31 @@ class OpenAIService
 		],
 		[
 			'type' => 'function',
+			'name' => 'check_formatting',
+			'description' => 'Get a chunk of article content to check for formatting issues, typos, and inconsistencies. Agent will analyze the content to identify issues.',
+			'parameters' => [
+				'type' => 'object',
+				'properties' => [
+					'article_id' => [
+						'type' => 'integer',
+						'description' => 'The ID of the article to check'
+					],
+					'chunk_size' => [
+						'type' => 'integer',
+						'description' => 'Size of content chunk to return (default: 1000 characters)',
+						'default' => 1000
+					],
+					'chunk_number' => [
+						'type' => 'integer',
+						'description' => 'Which chunk to retrieve (1-based index)',
+						'default' => 1
+					]
+				],
+				'required' => ['article_id']
+			]
+		],
+		[
+			'type' => 'function',
 			'name' => 'create_article',
 			'description' => 'Create a new article',
 			'parameters' => [
@@ -402,6 +427,12 @@ class OpenAIService
 		$systemMessage .= "2. Silently use find_content if needed\n";
 		$systemMessage .= "3. Execute the change immediately\n";
 		$systemMessage .= "4. Respond with ONLY: 'Done.', 'Updated.', or similar (max 5 words)\n\n";
+
+		$systemMessage .= "FORMATTING CHECK TOOL:\n";
+		$systemMessage .= "- check_formatting returns article content in chunks for you to analyze\n";
+		$systemMessage .= "- You can identify: extra line breaks, HTML issues, typos, spacing problems, etc.\n";
+		$systemMessage .= "- After edits, optionally check the affected area for formatting issues\n";
+		$systemMessage .= "- If user asks to check article, go through chunks systematically\n\n";
 
 		$systemMessage .= "RESEARCH WORKFLOW:\n";
 		$systemMessage .= "When user asks questions or requests research:\n";
@@ -723,6 +754,48 @@ class OpenAIService
 					'search_text' => $searchText
 				]);
 
+			case 'check_formatting':
+				$teamId = $this->getTeamId();
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
+				if (!$article) {
+					return json_encode(['error' => 'Article not found']);
+				}
+
+				$chunkSize = $arguments['chunk_size'] ?? 1000;
+				$chunkNumber = $arguments['chunk_number'] ?? 1;
+				$content = $article->content;
+				$totalLength = strlen($content);
+
+				// Calculate chunk position
+				$startPos = ($chunkNumber - 1) * $chunkSize;
+				if ($startPos >= $totalLength) {
+					return json_encode([
+						'success' => false,
+						'message' => 'No more chunks to check',
+						'total_chunks' => ceil($totalLength / $chunkSize),
+						'requested_chunk' => $chunkNumber
+					]);
+				}
+
+				$chunk = substr($content, $startPos, $chunkSize);
+				$totalChunks = ceil($totalLength / $chunkSize);
+
+				return json_encode([
+					'success' => true,
+					'article_id' => $article->id,
+					'chunk_number' => $chunkNumber,
+					'total_chunks' => $totalChunks,
+					'chunk_start_position' => $startPos,
+					'chunk_end_position' => min($startPos + $chunkSize, $totalLength),
+					'chunk_content' => $chunk,
+					'has_more_chunks' => $chunkNumber < $totalChunks
+				]);
+
+
 			case 'create_article':
 				$teamId = $this->getTeamId();
 
@@ -980,6 +1053,12 @@ class OpenAIService
 					substr($arguments['search_text'], 0, 50) . '...' :
 					$arguments['search_text'];
 				return "Locating \"{$searchPreview}\" in article";
+
+			case 'check_formatting':
+				$article = Article::find($arguments['article_id']);
+				$title = $article ? $article->title : 'Unknown';
+				$chunkNumber = $arguments['chunk_number'] ?? 1;
+				return "Checking formatting in article \"{$title}\" (chunk {$chunkNumber})";
 
 			case 'create_article':
 				return "Creating article: \"{$arguments['title']}\"";

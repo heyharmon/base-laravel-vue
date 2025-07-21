@@ -30,7 +30,8 @@ const presetPrompts = [
 	'💬 Summarize this article for me',
 	'🔗 List sources mentioned in prompt responses',
 	'✨ Suggest improvements for this article',
-	'🌐 Search web for info related to this article'
+	'🌐 Search web for info related to this article',
+	'🛠️ Fix the formatting in this article'
 ]
 
 // Watch for route changes to reset conversation state
