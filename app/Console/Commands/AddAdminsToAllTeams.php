@@ -55,7 +55,7 @@ class AddAdminsToAllTeams extends Command
 
 			foreach ($teamsToAdd as $team) {
 				$team->users()->attach($user->id, [
-					'role' => 'member',
+					'role' => 'admin',
 					'invitation_accepted' => true,
 					'joined_at' => $now,
 					'created_at' => $now,
