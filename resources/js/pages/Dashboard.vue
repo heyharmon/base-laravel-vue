@@ -2,6 +2,7 @@
 import { onMounted, watch, computed } from 'vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useTeamStore } from '@/stores/teamStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
@@ -10,17 +11,22 @@ import TrashIcon from '../components/icons/TrashIcon.vue'
 
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+const teamStore = useTeamStore()
 
 // Use centralized state from the store
 
 // Use the store's fetchVisibilityMetrics directly
 const fetchVisibilityData = () => {
-	organizationStore.fetchVisibilityMetrics()
+        if (teamStore.currentTeam) {
+                organizationStore.fetchVisibilityMetrics(teamStore.currentTeam.id)
+        }
 }
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-	organizationStore.setDateRange(dateRange)
+        if (teamStore.currentTeam) {
+                organizationStore.setDateRange(teamStore.currentTeam.id, dateRange)
+        }
 }
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)

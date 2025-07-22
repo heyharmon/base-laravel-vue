@@ -17,6 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const organizationStore = useOrganizationStore()
 const termStore = useTermStore()
+const teamId = ref(null)
 const organization = ref({
 	name: '',
 	website: '',
@@ -46,10 +47,11 @@ const deletedTermMessage = ref(null)
 
 onMounted(async () => {
 	try {
-		const data = await organizationStore.fetchOrganization(route.params.id)
-		organization.value = { ...data }
-		originalOrganization.value = { ...data }
-		await termStore.fetchTerms(route.params.id)
+                const data = await organizationStore.fetchOrganization(route.params.id)
+                teamId.value = data.team_id
+                organization.value = { ...data }
+                originalOrganization.value = { ...data }
+                await termStore.fetchTerms(teamId.value, route.params.id)
 	} catch (error) {
 		console.error('Error fetching organization:', error)
 	} finally {
@@ -107,7 +109,7 @@ const cancelEdit = () => {
 
 const handleDeleteTerm = (termId, termName) => {
 	deletedTermMessage.value = `The term "${termName}" and its history has been deleted.`
-	termStore.deleteTerm(route.params.id, termId)
+    termStore.deleteTerm(teamId.value, route.params.id, termId)
 	setTimeout(() => {
 		deletedTermMessage.value = null
 	}, 10000)
@@ -206,7 +208,7 @@ const handleDeleteTerm = (termId, termName) => {
 	</DefaultLayout>
 
 	<!-- Term Modal -->
-	<TermCreateModal :is-open="isTermCreateModalOpen" @close="isTermCreateModalOpen = false" @create="addTerm" />
+        <TermCreateModal :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
 	<!-- Generate Keywords Modal -->
 	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />

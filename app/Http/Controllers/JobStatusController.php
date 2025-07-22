@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\JobStatus;
 use App\Models\Prompt;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
+use App\Models\Team;
 
 class JobStatusController extends Controller
 {
@@ -16,9 +16,9 @@ class JobStatusController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getTeamJobs(Request $request)
+    public function getTeamJobs(Request $request, Team $team)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $team->id;
 
         // Get job statuses for this team
         $jobStatuses = JobStatus::where('team_id', $teamId)
@@ -32,9 +32,9 @@ class JobStatusController extends Controller
     /**
      * Cancel all pending jobs for the current team.
      */
-    public function cancelTeamJobs(Request $request)
+    public function cancelTeamJobs(Request $request, Team $team)
     {
-        $teamId = Auth::user()->current_team_id;
+        $teamId = $team->id;
 
         $pendingJobs = JobStatus::where('team_id', $teamId)
             ->where('status', 'pending')

@@ -16,12 +16,12 @@ export const useTermStore = defineStore('terms', () => {
 	const jobStatusStore = useJobStatusStore()
 
 	// Actions
-	async function fetchTerms(organizationId) {
+        async function fetchTerms(teamId, organizationId) {
 		console.log('Fetching terms for organization ID:', organizationId)
 		isLoading.value = true
 
 		try {
-			terms.value = await api.get(`organizations/${organizationId}/terms`)
+                        terms.value = await api.get(`teams/${teamId}/organizations/${organizationId}/terms`)
 		} catch (error) {
 			console.error('Error fetching terms:', error)
 		} finally {
@@ -42,11 +42,11 @@ export const useTermStore = defineStore('terms', () => {
 		}
 	}
 
-	async function createTerm(organizationId, data) {
+        async function createTerm(teamId, organizationId, data) {
 		console.log('Creating term for organization ID:', organizationId)
 		isLoading.value = true
 		try {
-			const newTerm = await api.post(`organizations/${organizationId}/terms`, data)
+                        const newTerm = await api.post(`teams/${teamId}/organizations/${organizationId}/terms`, data)
 			terms.value.unshift(newTerm)
 			return newTerm
 		} catch (error) {

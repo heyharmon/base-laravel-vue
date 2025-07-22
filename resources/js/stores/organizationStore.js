@@ -26,12 +26,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor) : []))
 
 	// Actions
-	async function fetchOrganizations() {
-		console.log('Fetching organizations...')
+        async function fetchOrganizations(teamId) {
+                console.log('Fetching organizations...')
 		// isLoading.value = true
 
 		try {
-			const response = await api.get('/organizations')
+                        const response = await api.get(`/teams/${teamId}/organizations`)
 			organizations.value = response
 		} catch (err) {
 			console.error('Error fetching organizations:', err)
@@ -55,12 +55,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function createOrganization(organizationData) {
+        async function createOrganization(teamId, organizationData) {
 		console.log('Creating organization...', organizationData)
 		isLoading.value = true
 
 		try {
-			const response = await api.post('/organizations', organizationData)
+                        const response = await api.post(`/teams/${teamId}/organizations`, organizationData)
 			await fetchOrganizations()
 			return response // API interceptor already extracts response.data
 		} catch (err) {
@@ -71,12 +71,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function createAndOnboardOrganization(organizationData) {
+        async function createAndOnboardOrganization(teamId, organizationData) {
 		console.log('Creating and onboarding organization...')
 		isLoading.value = true
 
 		try {
-			const response = await api.post('/organizations-onboard', organizationData)
+                        const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
 			await fetchOrganizations()
 			return response // API interceptor already extracts response.data
 		} catch (err) {
@@ -125,7 +125,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function fetchVisibilityMetrics(params = null) {
+        async function fetchVisibilityMetrics(teamId, params = null) {
 		console.log('Fetching visibility metrics...')
 		isLoadingVisibility.value = true
 
@@ -139,7 +139,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 			const queryString = queryParams.toString()
 			// const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`
-			const url = `/organization-visibility`
+                        const url = `/teams/${teamId}/organization-visibility`
 
 			const response = await api.get(url)
 			visibilityMetrics.value = response
@@ -151,14 +151,14 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function findCompetitors() {
+        async function findCompetitors(teamId) {
 		console.log('Finding competitors from past responses...')
 		isLoading.value = true
 
 		try {
-			const response = await api.post('/organizations-find-competitors')
+                        const response = await api.post(`/teams/${teamId}/organizations-find-competitors`)
 
-			await jobStatusStore.pollTeamJobs()
+                        await jobStatusStore.pollTeamJobs(teamId)
 
 			return response
 		} catch (err) {
@@ -170,11 +170,11 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	// Function to update date range and refresh visibility data
-	function setDateRange(dateRange) {
-		console.log('Setting date range:', dateRange)
-		currentDateRange.value = dateRange
-		return fetchVisibilityMetrics()
-	}
+        function setDateRange(teamId, dateRange) {
+                console.log('Setting date range:', dateRange)
+                currentDateRange.value = dateRange
+                return fetchVisibilityMetrics(teamId)
+        }
 
 	return {
 		// State

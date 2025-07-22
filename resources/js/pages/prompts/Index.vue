@@ -54,14 +54,14 @@ const promptToDelete = ref(null)
 const showDeleteConfirmation = ref(false)
 
 const runPrompt = async (id, count = 1) => {
-	await promptStore.runPrompt(id, count)
-	await jobStatusStore.pollTeamJobs()
+        await promptStore.runPrompt(id, count)
+        await jobStatusStore.pollTeamJobs(teamId.value)
 }
 
 const runAllPrompts = async (count = 1) => {
 	try {
-		await promptStore.runAllPrompts(teamId.value, count)
-		await jobStatusStore.pollTeamJobs()
+                await promptStore.runAllPrompts(teamId.value, count)
+                await jobStatusStore.pollTeamJobs(teamId.value)
 	} catch (error) {
 		console.error('Error running all prompts:', error)
 	}
@@ -120,12 +120,12 @@ const ownedOrg = computed(() => {
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-	organizationStore.setDateRange(dateRange)
+        organizationStore.setDateRange(teamId.value, dateRange)
 }
 
 onMounted(async () => {
-	await promptStore.fetchPrompts(teamId.value)
-	await organizationStore.fetchVisibilityMetrics()
+        await promptStore.fetchPrompts(teamId.value)
+        await organizationStore.fetchVisibilityMetrics(teamId.value)
 })
 </script>
 
