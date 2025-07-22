@@ -46,23 +46,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	Route::post('/logout', [AuthController::class, 'logout']);
 
-	// Organizations
-	Route::resource('organizations', OrganizationController::class);
-	Route::post('organizations-onboard', [OrganizationOnboardController::class, 'store']);
+        // Organizations
+        Route::get('teams/{team}/organizations', [OrganizationController::class, 'index']);
+        Route::post('teams/{team}/organizations', [OrganizationController::class, 'store']);
+        Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);
+        Route::post('teams/{team}/organizations-onboard', [OrganizationOnboardController::class, 'store']);
 
-	// Organization Competitors
-	Route::post('organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
+        // Organization Competitors
+        Route::post('teams/{team}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
 
-	// Organization Visibility
-	Route::get('organization-visibility', [OrganizationVisibilityController::class, 'index']);
-	Route::get('/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
+        // Organization Visibility
+        Route::get('teams/{team}/organization-visibility', [OrganizationVisibilityController::class, 'index']);
+        Route::get('teams/{team}/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
 
 	// Organization Search
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
 	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
 
-	// Terms
-	Route::resource('organizations/{organization}/terms', TermController::class);
+        // Terms
+        Route::get('teams/{team}/organizations/{organization}/terms', [TermController::class, 'index']);
+        Route::post('teams/{team}/organizations/{organization}/terms', [TermController::class, 'store']);
+        Route::resource('organizations/{organization}/terms', TermController::class)->except(['index', 'store']);
 	Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
@@ -89,13 +93,15 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
 	Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
-	// Job status routes
-	Route::get('/team-jobs', [JobStatusController::class, 'getTeamJobs']);
-	Route::post('/team-jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+        // Job status routes
+        Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
+        Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 
-	// Articles
-	Route::resource('articles', ArticleController::class);
-	Route::get('articles/{article}/perplexity-response', [ArticleController::class, 'getPerplexityResponse']);
+        // Articles
+        Route::get('teams/{team}/articles', [ArticleController::class, 'index']);
+        Route::post('teams/{team}/articles', [ArticleController::class, 'store']);
+        Route::resource('articles', ArticleController::class)->except(['index', 'store']);
+        Route::get('articles/{article}/perplexity-response', [ArticleController::class, 'getPerplexityResponse']);
 
 	// Article Versions
 	Route::post('articles/{article}/versions/{version}/revert', [ArticleVersionController::class, 'revert']);

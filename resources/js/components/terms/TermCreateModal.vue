@@ -6,10 +6,14 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const props = defineProps({
-	isOpen: {
-		type: Boolean,
-		required: true
-	}
+        isOpen: {
+                type: Boolean,
+                required: true
+        },
+        teamId: {
+                type: [Number, String],
+                required: true
+        }
 })
 
 const emit = defineEmits(['close', 'create'])
@@ -40,7 +44,7 @@ const addTerm = async () => {
 	if (newTerm.value.trim()) {
 		const termData = { name: newTerm.value.trim() }
 		const processedData = emit('create', termData) || termData
-		await termStore.createTerm(route.params.id, processedData)
+                await termStore.createTerm(props.teamId, route.params.id, processedData)
 		closeModal()
 	}
 }

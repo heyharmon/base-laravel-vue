@@ -1,7 +1,7 @@
 <script setup>
 import moment from 'moment'
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
@@ -10,6 +10,8 @@ import TrashIcon from '@/components/icons/TrashIcon.vue'
 import Button from '@/components/ui/Button.vue'
 
 const router = useRouter()
+const route = useRoute()
+const teamId = route.params.teamId
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
@@ -27,9 +29,9 @@ const isRunMenuOpen = ref(false)
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 
 const hasActiveRunPromptJob = computed(() => {
-	let jobs = jobStatusStore.jobs.filter(
-		(job) =>
-			job.job_class.includes('RunPromptJob') &&
+        let jobs = (jobStatusStore.jobs || []).filter(
+                (job) =>
+                        job.job_class.includes('RunPromptJob') &&
 			job.trackable_type === 'App\\Models\\Prompt' &&
 			job.trackable_id === props.prompt.id &&
 			(job.status === 'pending' || job.status === 'processing')
@@ -64,10 +66,10 @@ const runPrompt = (count) => {
 const confirmDelete = () => emit('delete', props.prompt)
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle({
-		title: 'Untitled article',
-		prompt_id: props.prompt.id
-	})
+        const newArticle = await articleStore.createArticle(teamId, {
+                title: 'Untitled article',
+                prompt_id: props.prompt.id
+        })
 	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 </script>
