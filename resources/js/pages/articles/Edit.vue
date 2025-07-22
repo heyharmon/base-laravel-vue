@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import { useDebounceFn } from '@vueuse/core'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { getHTMLFromFragment } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import TwoColumnLayout from '@/layouts/TwoColumnLayout.vue'
@@ -57,18 +58,20 @@ const editor = useEditor({
 	onUpdate: ({ editor }) => {
 		// Only update store if this is a user-initiated change
 		if (articleStore.article && !isUpdatingEditorFromStore.value) {
-			console.log('Editor onUpdate: User made changes')
 			articleStore.article.content = editor.getHTML()
 		}
 	},
 	onSelectionUpdate: ({ editor }) => {
-		// Get selected text when user selects text in editor
+		// Get selected HTML when user selects text in editor
 		const { from, to } = editor.state.selection
 		if (from !== to) {
-			const selectedText = editor.state.doc.textBetween(from, to)
-			if (selectedText.trim()) {
-				// Store the current selection but don't set selectedContent yet
-				currentSelection.value = selectedText.trim()
+			// Get the selected content as a fragment
+			const fragment = editor.state.doc.slice(from, to).content
+			const selectedHTML = getHTMLFromFragment(fragment, editor.schema)
+
+			if (selectedHTML && selectedHTML.trim()) {
+				// Store the HTML selection
+				currentSelection.value = selectedHTML
 				showSelectionTooltip()
 			} else {
 				hideTooltip()
@@ -77,14 +80,13 @@ const editor = useEditor({
 			hideTooltip()
 		}
 	},
-	// ADD THIS: Handle paste events specifically
+	// Handle paste events specifically
 	onTransaction: ({ editor, transaction }) => {
 		// Check if this transaction includes pasted content
 		if (transaction.docChanged && !isUpdatingEditorFromStore.value) {
 			// Small delay to ensure the content is fully updated
 			nextTick(() => {
 				if (articleStore.article) {
-					console.log('Editor onTransaction: Content changed (possibly paste)')
 					articleStore.article.content = editor.getHTML()
 				}
 			})
@@ -158,12 +160,10 @@ const debouncedAutoSaveContent = useDebounceFn(async (content) => {
 	}
 }, 2000)
 
-// Watcher to handle both store updates and user changes
+// Watcher to handle both articlestore updates and user changes
 watch(
 	() => articleStore.article?.content,
 	(newContent, oldContent) => {
-		console.log('Content watcher triggered')
-
 		// FIRST: Handle store updates that need to update the editor
 		if (editor.value && newContent && editor.value.getHTML() !== newContent) {
 			console.log('Updating editor content from store')
@@ -176,7 +176,6 @@ watch(
 			nextTick(() => {
 				setTimeout(() => {
 					isUpdatingEditorFromStore.value = false
-					console.log('Editor update completed, flag reset')
 				}, 100)
 			})
 
@@ -190,14 +189,13 @@ watch(
 
 			// Allow auto-save even for new articles (without ID) if they have content
 			if (newContent && newContent.trim() !== '' && newContent !== '<p></p>') {
-				console.log('Triggering auto-save')
 				debouncedAutoSaveContent(newContent)
 			}
 		}
 	}
 )
 
-// Listen for article updates - USE NEW METHOD TO AVOID CHAT RELOAD
+// Listen for article updates
 useEcho(`article.${route.params.id}`, 'ArticleUpdated', async (e) => {
 	console.log('Echo: Received article update for ID:', e.id)
 

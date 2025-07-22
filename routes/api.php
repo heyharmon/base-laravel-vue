@@ -36,6 +36,9 @@ Route::post('/reset-password', [AuthPasswordController::class, 'resetPassword'])
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+	// Team password reset
+	Route::post('/teams/{team}/members/{user}/password-reset', [App\Http\Controllers\TeamPasswordResetController::class, 'generateResetUrl']);
+
 	// Auth
 	Route::get('/user', function (Request $request) {
 		return $request->user();

@@ -37,7 +37,7 @@ class SuperAdminNewUserNotification extends Mailable
 	public function content(): Content
 	{
 		return new Content(
-			text: 'emails.super-admin-new-user-notification',
+			view: 'emails.super-admin-new-user-notification',
 		);
 	}
 

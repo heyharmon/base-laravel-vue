@@ -1,1 +1,130 @@
-<!doctypehtml><html lang=en xmlns=http://www.w3.org/1999/xhtml xmlns:o=urn:schemas-microsoft-com:office:office xmlns:v=urn:schemas-microsoft-com:vml><title></title><meta charset=UTF-8><meta content="text/html; charset=UTF-8"http-equiv=Content-Type><!--[if !mso]>--><meta content="IE=edge"http-equiv=X-UA-Compatible><!--<![endif]--><meta content=""name=x-apple-disable-message-reformatting><meta content="target-densitydpi=device-dpi"name=viewport><meta content=true name=HandheldFriendly><meta content="width=device-width"name=viewport><meta content="telephone=no, date=no, address=no, email=no, url=no"name=format-detection><style>table{border-collapse:separate;table-layout:fixed;mso-table-lspace:0;mso-table-rspace:0}table td{border-collapse:collapse}.ExternalClass{width:100%}.ExternalClass,.ExternalClass div,.ExternalClass font,.ExternalClass p,.ExternalClass span,.ExternalClass td{line-height:100%}a,body,h1,h2,h3,li,p{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}html{-webkit-text-size-adjust:none!important}#innerTable,body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}#innerTable img+div{display:none;display:none!important}img{Margin:0;padding:0;-ms-interpolation-mode:bicubic}a,h1,h2,h3,p{line-height:inherit;overflow-wrap:normal;white-space:normal;word-break:break-word}a{text-decoration:none}h1,h2,h3,p{min-width:100%!important;width:100%!important;max-width:100%!important;display:inline-block!important;border:0;padding:0;margin:0}a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}u+#body a{color:inherit;text-decoration:none;font-size:inherit;font-family:inherit;font-weight:inherit;line-height:inherit}a[href^=mailto],a[href^=sms],a[href^=tel]{color:inherit;text-decoration:none}</style><style>@media (min-width:481px){.hd{display:none!important}}</style><style>@media (max-width:480px){.hm{display:none!important}}</style><style>@media (max-width:480px){.t51,.t56{mso-line-height-alt:0!important;line-height:0!important;display:none!important}.t52{padding:40px!important;border-radius:0!important}.t32,.t34{max-width:398px!important}}</style><!--[if !mso]>--><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"rel=stylesheet><!--<![endif]--><!--[if mso]><xml><o:officedocumentsettings><o:allowpng><o:pixelsperinch>96</o:pixelsperinch></o:officedocumentsettings></xml><![endif]--><body class=t59 id=body style=min-width:100%;Margin:0;padding:0;background-color:#fff><div class=t58 style=background-color:#fff><table cellpadding=0 cellspacing=0 role=presentation width=100% align=center border=0><tr><td class=t57 style=font-size:0;line-height:0;mso-line-height-rule:exactly;background-color:#fff align=center valign=top><!--[if mso]><v:background xmlns:v=urn:schemas-microsoft-com:vml fill=true stroke=false><v:fill color=#FFFFFF></v:background><![endif]--><table cellpadding=0 cellspacing=0 role=presentation width=100% align=center border=0 id=innerTable><tr><td><div class=t51 style=mso-line-height-rule:exactly;mso-line-height-alt:50px;line-height:50px;font-size:1px;display:block>  </div><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t55><tr><td class=t54 style=width:600px width=600><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t53 width=100%><tr><td class=t52 style="border:1px solid #ebebeb;overflow:hidden;background-color:#fff;padding:44px 42px 32px 42px;border-radius:20px 20px 20px 20px"><table cellpadding=0 cellspacing=0 role=presentation style=width:100%!important width=100%><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t4><tr><td class=t3 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t2 width=100%><tr><td class=t1 style="border-bottom:unset solid #eff1f4;padding:0 0 18px 0"><h1 class=t0 style="margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:28px;font-weight:700;font-style:normal;font-size:20px;text-decoration:none;text-transform:none;letter-spacing:-1px;direction:ltr;color:#141414;text-align:left;mso-line-height-rule:exactly;mso-text-raise:2px">Paraloom</h1></table></table><tr><td><div class=t5 style=mso-line-height-rule:exactly;mso-line-height-alt:18px;line-height:18px;font-size:1px;display:block>  </div><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t10><tr><td class=t9 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t8 width=100%><tr><td class=t7 style="border-bottom:1px solid #eff1f4;padding:0 0 18px 0"><h1 class=t6 style="margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:28px;font-weight:700;font-style:normal;font-size:24px;text-decoration:none;text-transform:none;letter-spacing:-1px;direction:ltr;color:#141414;text-align:left;mso-line-height-rule:exactly;mso-text-raise:1px">Reset your password</h1></table></table><tr><td><div class=t11 style=mso-line-height-rule:exactly;mso-line-height-alt:18px;line-height:18px;font-size:1px;display:block>  </div><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t16><tr><td class=t15 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t14 width=100%><tr><td class=t13><p class=t12 style="margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:25px;font-weight:400;font-style:normal;font-size:15px;text-decoration:none;text-transform:none;letter-spacing:-.1px;direction:ltr;color:#141414;text-align:left;mso-line-height-rule:exactly;mso-text-raise:3px">You are receiving this email because we received a password reset request for your account.</table></table><tr><td><div class=t17 style=mso-line-height-rule:exactly;mso-line-height-alt:14px;line-height:14px;font-size:1px;display:block>  </div><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t22><tr><td class=t21 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t20 width=100%><tr><td class=t19><p class=t18 style="margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:25px;font-weight:400;font-style:normal;font-size:15px;text-decoration:none;text-transform:none;letter-spacing:-.1px;direction:ltr;color:#141414;text-align:left;mso-line-height-rule:exactly;mso-text-raise:3px">Click the button below to reset your password:</table><tr><td><div class=t24 style=mso-line-height-rule:exactly;mso-line-height-alt:14px;line-height:14px;font-size:1px;display:block>  </div><tr><td align=center><tr><td><div class=t30 style=mso-line-height-rule:exactly;mso-line-height-alt:24px;line-height:24px;font-size:1px;display:block>  </div><tr><td align=left><table cellpadding=0 cellspacing=0 role=presentation style=Margin-right:auto;max-width:514px class=t34><tr><td class=t33 style=width:auto><table cellpadding=0 cellspacing=0 role=presentation style=width:auto;max-width:514px class=t32><tr><td class=t31 style="overflow:hidden;background-color:#000;text-align:center;line-height:34px;mso-line-height-rule:exactly;mso-text-raise:5px;padding:0 23px 0 23px;border-radius:40px 40px 40px 40px"><a class=t29 href="{{ $resetUrl }}"style="display:block;margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:34px;font-weight:700;font-style:normal;font-size:16px;text-decoration:none;text-transform:none;letter-spacing:-.2px;direction:ltr;color:#fff;text-align:center;mso-line-height-rule:exactly;mso-text-raise:5px"target=_blank>Reset password</a></table></table><tr><td><div class=t46 style=mso-line-height-rule:exactly;mso-line-height-alt:40px;line-height:40px;font-size:1px;display:block>  </div><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t50><tr><td class=t49 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t48 width=100%><tr><td class=t47 style="border-top:1px solid #dfe1e4;padding:24px 0 0 0"><table cellpadding=0 cellspacing=0 role=presentation style=width:100%!important width=100%><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t39><tr><td class=t38 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t37 width=100%><tr><td class=t36><p class=t35 style="margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:25px;font-weight:400;font-style:normal;font-size:15px;text-decoration:none;text-transform:none;letter-spacing:-.1px;direction:ltr;color:#141414;text-align:left;mso-line-height-rule:exactly;mso-text-raise:3px">Thanks,</table></table><tr><td><div class=t41 style=mso-line-height-rule:exactly;mso-line-height-alt:1px;line-height:1px;font-size:1px;display:block>  </div><tr><td align=center><table cellpadding=0 cellspacing=0 role=presentation style=Margin-left:auto;Margin-right:auto class=t45><tr><td class=t44 style=width:600px width=514><table cellpadding=0 cellspacing=0 role=presentation style=width:100% class=t43 width=100%><tr><td class=t42><p class=t40 style="margin:0;Margin:0;font-family:Inter,BlinkMacSystemFont,Segoe UI,Helvetica Neue,Arial,sans-serif;line-height:25px;font-weight:700;font-style:normal;font-size:15px;text-decoration:none;text-transform:none;letter-spacing:-.5px;direction:ltr;color:#141414;text-align:left;mso-line-height-rule:exactly;mso-text-raise:3px">Paraloom</table></table></table></table></table></table></table></table><tr><td><div class=t56 style=mso-line-height-rule:exactly;mso-line-height-alt:50px;line-height:50px;font-size:1px;display:block>  </div></table></table></div><div class=gmail-fix style="display:none;white-space:nowrap;font:15px courier;line-height:0">                                                           </div>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Simple Transactional Email</title>
+    <style media="all" type="text/css">
+    /* -------------------------------------
+    RESPONSIVE AND MOBILE FRIENDLY STYLES
+------------------------------------- */
+
+    @media only screen and (max-width: 640px) {
+      .main p,
+      .main td,
+      .main span {
+        font-size: 16px !important;
+      }
+      .wrapper {
+        padding: 8px !important;
+      }
+      .content {
+        padding: 0 !important;
+      }
+      .container {
+        padding: 0 !important;
+        padding-top: 8px !important;
+        width: 100% !important;
+      }
+      .main {
+        border-left-width: 0 !important;
+        border-radius: 0 !important;
+        border-right-width: 0 !important;
+      }
+      .btn table {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      .btn a {
+        font-size: 16px !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+    }
+    /* -------------------------------------
+    PRESERVE THESE STYLES IN THE HEAD
+------------------------------------- */
+
+    @media all {
+      .ExternalClass {
+        width: 100%;
+      }
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 100%;
+      }
+      .apple-link a {
+        color: inherit !important;
+        font-family: inherit !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        line-height: inherit !important;
+        text-decoration: none !important;
+      }
+      #MessageViewBody a {
+        color: inherit;
+        text-decoration: none;
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+      }
+      .btn-primary table td:hover {
+        background-color: #000 !important;
+      }
+      .btn-primary a:hover {
+        background-color: #000 !important;
+        border-color: #000 !important;
+      }
+    }
+    </style>
+  </head>
+  <body style="font-family: Helvetica, sans-serif; -webkit-font-smoothing: antialiased; font-size: 16px; line-height: 1.3; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; background-color: #f4f5f6; margin: 0; padding: 0;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; background-color: #f4f5f6;">
+      <tr>
+        <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top;">&nbsp;</td>
+        <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top; margin: 0 auto !important; max-width: 600px; padding: 0; padding-top: 24px; width: 600px;">
+          <div style="box-sizing: border-box; display: block; margin: 0 auto; max-width: 600px; padding: 0;">
+
+            <!-- START CENTERED WHITE CONTAINER -->
+            <span style="color: transparent; display: none; height: 0; max-height: 0; max-width: 0; opacity: 0; overflow: hidden; mso-hide: all; visibility: hidden; width: 0;">Reset your password</span>
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; background: #ffffff; border: 1px solid #eaebed; border-radius: 16px;">
+
+              <!-- START MAIN CONTENT AREA -->
+              <tr>
+                <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top; box-sizing: border-box; padding: 24px;">
+                  <p style="font-family: Helvetica, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;">Reset your password</p>
+                  <p style="font-family: Helvetica, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;">You are receiving this email because we received a password reset request for your account</p>
+				  <p style="font-family: Helvetica, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;">Click the button below to reset your password:</p>
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; box-sizing: border-box; min-width: 100% !important; width: 100%;">
+                    <tbody>
+                      <tr>
+                        <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top; padding-bottom: 16px;" align="left">
+                          <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;">
+                            <tbody>
+                              <tr>
+                                <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top; background-color: #000; border-radius: 4px; text-align: center;"> <a href="{{ $resetUrl }}" target="_blank" style="color: #ffffff; text-decoration: underline; background-color: #000; border: solid 2px #000; border-radius: 4px; box-sizing: border-box; cursor: pointer; display: inline-block; font-size: 16px; font-weight: bold; margin: 0; padding: 12px 24px; text-decoration: none; text-transform: capitalize;">Reset password</a> </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+				  <p style="font-family: Helvetica, sans-serif; font-size: 16px; font-weight: normal; margin: 0; margin-bottom: 16px;">Thanks,<br>Paraloom</p>
+                </td>
+              </tr>
+
+              <!-- END MAIN CONTENT AREA -->
+              </table>
+		  </div>
+        </td>
+        <td style="font-family: Helvetica, sans-serif; font-size: 16px; vertical-align: top;">&nbsp;</td>
+      </tr>
+    </table>
+  </body>
+</html>

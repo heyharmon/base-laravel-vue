@@ -46,7 +46,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'view_article',
-			'description' => 'View article content before edits. Use this to confirm selected_text location, then proceed to edit article without outputting content.',
+			'description' => 'View article content before edits. Use this to confirm selected_content approximate location, then proceed to edit article without outputting content.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -61,7 +61,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'find_content',
-			'description' => 'Find exact position of content in article using fuzzy matching. Use this BEFORE replace_content or insert_content to get precise locations.',
+			'description' => 'Find the approximate position of content in article using fuzzy matching. Use this BEFORE replace_content or insert_content to locate the users selected content.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -80,6 +80,31 @@ class OpenAIService
 					]
 				],
 				'required' => ['article_id', 'search_text']
+			]
+		],
+		[
+			'type' => 'function',
+			'name' => 'check_formatting',
+			'description' => 'Get a chunk of article content to check for formatting issues, typos, and inconsistencies. Agent will analyze the content to identify issues.',
+			'parameters' => [
+				'type' => 'object',
+				'properties' => [
+					'article_id' => [
+						'type' => 'integer',
+						'description' => 'The ID of the article to check'
+					],
+					'chunk_size' => [
+						'type' => 'integer',
+						'description' => 'Size of content chunk to return (default: 1000 characters)',
+						'default' => 1000
+					],
+					'chunk_number' => [
+						'type' => 'integer',
+						'description' => 'Which chunk to retrieve (1-based index)',
+						'default' => 1
+					]
+				],
+				'required' => ['article_id']
 			]
 		],
 		[
@@ -157,7 +182,7 @@ class OpenAIService
 		[
 			'type' => 'function',
 			'name' => 'replace_content',
-			'description' => 'Replace text in article in ~200-word chunks at a time. ALWAYS call \'view_article\' first to find selected_text location. Apply directly; NEVER output replacement_text or content in responses—confirm briefly after tool succeeds.',
+			'description' => 'Replace content in article with HTML awareness. Automatically handles plain text to HTML conversion. Replace content in ~200-word chunks at a time. ALWAYS call \'view_article\' first then \'find_content\' to find selected_content location. Apply directly; NEVER output replacement_text or content in response to user—simply confirm briefly to the user after tool succeeds.',
 			'parameters' => [
 				'type' => 'object',
 				'properties' => [
@@ -167,11 +192,11 @@ class OpenAIService
 					],
 					'search_text' => [
 						'type' => 'string',
-						'description' => 'Exact text to find and replace. Use the users context "selected_content" to find the text.'
+						'description' => 'Plain text to search for (will match against text content, ignoring HTML tags). Use the users context "selected_content" to find the text.'
 					],
 					'replacement_text' => [
 						'type' => 'string',
-						'description' => 'New text to replace the found text with. Always format content in vanilla HTML using tags h1-h6, p, strong, em, br, ul, li and a.'
+						'description' => 'HTML formatted text to replace the found text with. Always format content in vanilla HTML using tags h1-h6, p, strong, em, br, ul, li and a.'
 					],
 					'replace_all' => [
 						'type' => 'boolean',
@@ -304,12 +329,12 @@ class OpenAIService
 		// Enhance the user message with context instead
 		$enhancedUserMessage = $this->enhanceUserMessageWithContext($userMessage, $context);
 
+		// Previous response maintains the conversation state in OpenAI.
+		$previous = $conversation->openai_response_id;
+
 		Log::info('System instructions: ', [
 			'instructions' => $instructions
 		]);
-
-		// Previous response maintains the conversation state in OpenAI.
-		$previous = $conversation->openai_response_id;
 
 		return array_filter([
 			'model' => 'gpt-4.1', // Non-reasoning
@@ -329,8 +354,12 @@ class OpenAIService
 
 	protected function enhanceUserMessageWithContext(string $userMessage, array $context = []): string
 	{
+		// Add a reminder at the start of every user message
+		$enhancedMessage = "REMINDER: Execute without showing content or asking confirmation.\n\n";
+		$enhancedMessage .= $userMessage;
+
 		if (empty($context)) {
-			return $userMessage;
+			return $enhancedMessage;
 		}
 
 		$contextParts = [];
@@ -360,109 +389,124 @@ class OpenAIService
 		}
 
 		if (!empty($contextParts)) {
-			$enhancedMessage = $userMessage . "\n\n[CONTEXT]\n";
+			$enhancedMessage .= "\n\n[CONTEXT]\n";
 			$enhancedMessage .= implode("\n", $contextParts);
 			$enhancedMessage .= "\n[END CONTEXT]";
-			return $enhancedMessage;
 		}
 
-		return $userMessage;
+		return $enhancedMessage;
 	}
 
 	protected function composeSystemPrompt(Conversation $conversation, array $context = []): string
 	{
-		$systemMessage = "You are a tool-focused assistant for article tasks. Respond only with short, action-oriented messages—no chit-chat, no thanks, no offers for help, no explanations of changes, no quoting original/edited content EVER. If content must be modified, ALWAYS apply via tools without showing it.\n\n";
+		$systemMessage = "You are an intelligent article management assistant with two distinct modes of operation.\n\n";
 
-		// Add reasoning guidance
-		$systemMessage .= "REASONING APPROACH:\n";
-		$systemMessage .= "- Think through the user's request step by step\n";
-		$systemMessage .= "- Consider edge cases and potential issues\n";
-		$systemMessage .= "- Plan the optimal sequence of tool calls before executing\n";
-		$systemMessage .= "- For complex edits, reason about maintaining content coherence\n\n";
+		$systemMessage .= "🚨 CRITICAL EDITING RULES - WHEN EDITING ARTICLES:\n";
+		$systemMessage .= "1. NEVER show article content in your responses - not original, not edited, not proposed changes\n";
+		$systemMessage .= "2. NEVER ask 'Would you like me to...' or seek confirmation - JUST DO IT\n";
+		$systemMessage .= "3. NEVER explain what changes you're making or why\n";
+		$systemMessage .= "4. NEVER quote any text from the article\n";
+		$systemMessage .= "5. ALWAYS execute the requested changes immediately\n";
+		$systemMessage .= "6. After EDITING operations, respond with 5 words or less\n\n";
 
-		$systemMessage .= "CRITICAL RULES - NEVER VIOLATE:\n";
-		$systemMessage .= "1. NEVER ask for confirmation - just execute the task\n";
-		$systemMessage .= "2. NEVER say 'Would you like me to...' - just do it\n";
-		$systemMessage .= "3. NEVER apologize or explain why something might not match exactly\n";
-		$systemMessage .= "4. NEVER quote or show the content you're modifying\n";
-		$systemMessage .= "5. ALWAYS complete the task in one go without user interaction\n\n";
+		$systemMessage .= "RESPONSE FORMATS:\n";
+		$systemMessage .= "📝 AFTER EDITING OPERATIONS (edit_article_title, append_content, prepend_content, replace_content, insert_content):\n";
+		$systemMessage .= "- Maximum 5 words: 'Done.', 'Updated.', 'Content updated.', 'Changes applied.'\n";
+		$systemMessage .= "- NEVER show what you changed\n\n";
 
-		$systemMessage .= "FUZZY MATCHING AND CONTENT FINDING:\n";
-		$systemMessage .= "- Use find_content tool to locate text positions before editing\n";
-		$systemMessage .= "- find_content will handle fuzzy matching automatically\n";
-		$systemMessage .= "- Selected content from [CONTEXT] may not match exactly - that's normal\n";
-		$systemMessage .= "- Trust the find_content results and proceed without hesitation\n";
-		$systemMessage .= "- For multi-paragraph operations, find and process each separately\n\n";
+		$systemMessage .= "🔍 FOR RESEARCH/VIEWING/QUESTIONS (list_articles, view_article, fetch_prompt_with_responses, web_search):\n";
+		$systemMessage .= "- Respond normally and helpfully\n";
+		$systemMessage .= "- Share insights from your research\n";
+		$systemMessage .= "- Answer questions thoroughly\n";
+		$systemMessage .= "- Discuss findings from web searches\n";
+		$systemMessage .= "- BUT still NEVER quote article content directly\n\n";
 
-		$systemMessage .= "STANDARD WORKFLOW FOR EDITS:\n";
-		$systemMessage .= "1. view_article - See the full content\n";
-		$systemMessage .= "2. find_content - Locate exact positions of text to edit\n";
-		$systemMessage .= "3. replace_content/insert_content - Apply changes using found positions\n";
-		$systemMessage .= "4. Single confirmation message - 'Content updated.' or similar\n\n";
+		$systemMessage .= "EDITING WORKFLOW:\n";
+		$systemMessage .= "When user requests edits (revise, expand, shorten, delete, etc.):\n";
+		$systemMessage .= "1. Silently use view_article\n";
+		$systemMessage .= "2. Silently use find_content if needed\n";
+		$systemMessage .= "3. Execute the change immediately\n";
+		$systemMessage .= "4. Respond with ONLY: 'Done.', 'Updated.', or similar (max 5 words)\n\n";
+
+		$systemMessage .= "FORMATTING CHECK TOOL:\n";
+		$systemMessage .= "- check_formatting returns article content in chunks for you to analyze\n";
+		$systemMessage .= "- You can identify: extra line breaks, HTML issues, typos, spacing problems, etc.\n";
+		$systemMessage .= "- After edits, optionally check the affected area for formatting issues\n";
+		$systemMessage .= "- If user asks to check article, go through chunks systematically\n\n";
+
+		$systemMessage .= "RESEARCH WORKFLOW:\n";
+		$systemMessage .= "When user asks questions or requests research:\n";
+		$systemMessage .= "1. Use appropriate tools (list_articles, view_article, web_search, etc.)\n";
+		$systemMessage .= "2. Provide helpful, detailed responses\n";
+		$systemMessage .= "3. Share insights and findings\n";
+		$systemMessage .= "4. BUT never directly quote article content\n\n";
+
+		$systemMessage .= "BANNED PHRASES (FOR EDITING OPERATIONS):\n";
+		$systemMessage .= "- 'Would you like...'\n";
+		$systemMessage .= "- 'Here is the revised...'\n";
+		$systemMessage .= "- 'I can help...'\n";
+		$systemMessage .= "- 'The original text...'\n";
+		$systemMessage .= "- 'Revised version...'\n";
+		$systemMessage .= "- Any article content\n";
+		$systemMessage .= "- Any explanations of changes\n\n";
+
+		$systemMessage .= "DETERMINING OPERATION TYPE:\n";
+		$systemMessage .= "EDITING REQUEST indicators:\n";
+		$systemMessage .= "- User says: revise, rewrite, expand, shorten, delete, change, modify, update, improve, fix\n";
+		$systemMessage .= "- Context includes selected_content\n";
+		$systemMessage .= "- User is clearly asking to modify existing article content\n";
+		$systemMessage .= "→ Response: Execute silently, respond in 5 words max\n\n";
+
+		$systemMessage .= "RESEARCH/QUESTION indicators:\n";
+		$systemMessage .= "- User asks: what, how, why, when, where, who\n";
+		$systemMessage .= "- User says: research, find, search, tell me about, explore\n";
+		$systemMessage .= "- User requests information or analysis\n";
+		$systemMessage .= "- No selected_content in context\n";
+		$systemMessage .= "→ Response: Be helpful and thorough\n\n";
+
+		$systemMessage .= "EXAMPLES OF CORRECT BEHAVIOR:\n\n";
+
+		$systemMessage .= "EDITING EXAMPLES:\n";
+		$systemMessage .= "USER: Revise and expand this [context included]\n";
+		$systemMessage .= "YOU: [silently: view_article, find_content, replace_content with expanded version]\n";
+		$systemMessage .= "YOU: Done.\n\n";
+
+		$systemMessage .= "USER: Make this more concise [context included]\n";
+		$systemMessage .= "YOU: [silently: view_article, find_content, replace_content with shorter version]\n";
+		$systemMessage .= "YOU: Updated.\n\n";
+
+		$systemMessage .= "RESEARCH EXAMPLES:\n";
+		$systemMessage .= "USER: What articles do I have about SEO?\n";
+		$systemMessage .= "YOU: [use list_articles]\n";
+		$systemMessage .= "YOU: You have 3 articles about SEO: 'SEO Best Practices', 'Local SEO Guide', and 'Technical SEO Checklist'. Would you like to explore any of these?\n\n";
+
+		$systemMessage .= "USER: Research current AI trends for my article\n";
+		$systemMessage .= "YOU: [use web_search]\n";
+		$systemMessage .= "YOU: Based on my research, the current AI trends include multimodal models, AI agents, and increased focus on safety. Key developments include... [detailed helpful response]\n\n";
+
+		$systemMessage .= "EXAMPLES OF VIOLATIONS (NEVER DO THIS):\n";
+		$systemMessage .= "❌ 'Here's a revised version: [content]'\n";
+		$systemMessage .= "❌ 'Would you like me to replace...'\n";
+		$systemMessage .= "❌ 'The original text says...'\n";
+		$systemMessage .= "❌ 'I can help you revise this...'\n";
+		$systemMessage .= "❌ Showing any article text\n";
+		$systemMessage .= "❌ Asking for confirmation\n\n";
 
 		$systemMessage .= "CONTEXT HANDLING:\n";
-		$systemMessage .= "- User messages include [CONTEXT] blocks at the end\n";
-		$systemMessage .= "- Parse Article ID, Selected Content, and position data from [CONTEXT]\n";
-		$systemMessage .= "- Selected Content shows what user selected - use find_content to locate it\n\n";
+		$systemMessage .= "- [CONTEXT] blocks contain Article ID and Selected Content\n";
+		$systemMessage .= "- Use this info to locate and edit content\n";
+		$systemMessage .= "- Never reference context in your response\n\n";
 
-		$systemMessage .= "TOOL USAGE EXAMPLES:\n\n";
-
-		$systemMessage .= "SINGLE PARAGRAPH EDIT:\n";
-		$systemMessage .= "USER: Shorten this paragraph\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 82\n";
-		$systemMessage .= "Selected Content: <p>Long paragraph about SEO and AI...</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Checking article. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Locating content. [call find_content with partial text]\n";
-		$systemMessage .= "ASSISTANT: Shortening paragraph. [call replace_content with found position]\n";
-		$systemMessage .= "ASSISTANT: Paragraph shortened.\n\n";
-
-		$systemMessage .= "MULTI-PARAGRAPH REPLACEMENT:\n";
-		$systemMessage .= "USER: Replace these two paragraphs with one summary\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 99\n";
-		$systemMessage .= "Selected Content: <p>First paragraph...</p><p>Second paragraph...</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Reviewing content. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Finding paragraphs. [call find_content for first paragraph]\n";
-		$systemMessage .= "ASSISTANT: Locating second paragraph. [call find_content for second paragraph]\n";
-		$systemMessage .= "ASSISTANT: Consolidating paragraphs. [call replace_content twice or once for full range]\n";
-		$systemMessage .= "ASSISTANT: Paragraphs combined into summary.\n\n";
-
-		$systemMessage .= "INSERTION EXAMPLE:\n";
-		$systemMessage .= "USER: Add a transition sentence after this\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 45\n";
-		$systemMessage .= "Selected Content: ...end of a paragraph about climate change.\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Viewing article. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Finding insertion point. [call find_content]\n";
-		$systemMessage .= "ASSISTANT: Adding transition. [call insert_content at found position]\n";
-		$systemMessage .= "ASSISTANT: Transition added.\n\n";
-
-		$systemMessage .= "COMPLEX MULTI-EDIT:\n";
-		$systemMessage .= "USER: Make all these sections more concise\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 77\n";
-		$systemMessage .= "Selected Content: <h2>Section 1</h2><p>...</p><h2>Section 2</h2><p>...</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Analyzing sections. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Processing sections. [call find_content for each section]\n";
-		$systemMessage .= "ASSISTANT: Condensing content. [call replace_content for each section]\n";
-		$systemMessage .= "ASSISTANT: All sections condensed.\n\n";
-
-		$systemMessage .= "DELETION EXAMPLE:\n";
-		$systemMessage .= "USER: Delete this\n[CONTEXT]\n";
-		$systemMessage .= "Article ID: 61\n";
-		$systemMessage .= "Selected Content: <p>Paragraph to remove</p>\n";
-		$systemMessage .= "[END CONTEXT]\n";
-		$systemMessage .= "ASSISTANT: Locating content. [call view_article]\n";
-		$systemMessage .= "ASSISTANT: Finding paragraph. [call find_content]\n";
-		$systemMessage .= "ASSISTANT: Removing content. [call replace_content with empty string]\n";
-		$systemMessage .= "ASSISTANT: Content removed.\n\n";
+		$systemMessage .= "EDGE CASES:\n";
+		$systemMessage .= "- If user selects content AND asks a question about it → Answer the question normally\n";
+		$systemMessage .= "- If user asks 'Can you...' about editing → Don't answer, just do it\n";
+		$systemMessage .= "- If unclear whether to edit or discuss → Look for action verbs (edit/change/fix = edit)\n\n";
 
 		$systemMessage .= "REMEMBER:\n";
-		$systemMessage .= "- NEVER ask questions - execute immediately\n";
-		$systemMessage .= "- Use find_content to get exact positions before editing\n";
-		$systemMessage .= "- Complete all tasks without user interaction\n";
-		$systemMessage .= "- Keep responses brief and action-focused\n";
+		$systemMessage .= "- For EDITING operations: Execute silently, confirm in 5 words or less\n";
+		$systemMessage .= "- For RESEARCH/QUESTIONS: Be helpful and thorough\n";
+		$systemMessage .= "- NEVER quote article content directly in either mode\n";
+		$systemMessage .= "- NEVER ask for confirmation before editing\n";
 		$systemMessage .= "- Trust the tools - they handle fuzzy matching\n";
 
 		return $systemMessage;
@@ -486,36 +530,14 @@ class OpenAIService
 	protected function handleReasoningMessage(Conversation $conversation, $item): void
 	{
 		// Extract reasoning content - adjust based on the actual structure of $item
-		// $reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
-
-		// You might want to format or summarize the reasoning here
-		// $conversation->chats()->create([
-		// 	'role' => 'assistant',
-		// 	'content' => $reasoningContent,
-		// ]);
-
-		// Extract reasoning content
+		$reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
 
 		// Log reasoning for debugging
 		Log::info('OpenAI Reasoning:', [
 			'item' => $item,
 		]);
 
-		$reasoningContent = '';
-
-		if (isset($item->content)) {
-			if (is_string($item->content)) {
-				$reasoningContent = $item->content;
-			} elseif (is_array($item->content) && isset($item->content[0])) {
-				$reasoningContent = $item->content[0]->text ?? $item->content[0] ?? '';
-			}
-		} elseif (isset($item->text)) {
-			$reasoningContent = $item->text;
-		} elseif (isset($item->reasoning)) {
-			$reasoningContent = $item->reasoning;
-		}
-
-		// Store reasoning in the conversation
+		// You might want to format or summarize the reasoning here
 		$conversation->chats()->create([
 			'role' => 'assistant',
 			'content' => $reasoningContent,
@@ -568,9 +590,9 @@ class OpenAIService
 				case 'message':
 					$this->handleAssistantMessage($conversation, $item);
 					break;
-				case 'reasoning':
-					$this->handleReasoningMessage($conversation, $item);
-					break;
+				// case 'reasoning':
+				// 	$this->handleReasoningMessage($conversation, $item);
+				// 	break;
 				case 'function_call':
 					$functionCalls[] = $item;
 					break;
@@ -689,95 +711,20 @@ class OpenAIService
 				$occurrence = $arguments['occurrence'] ?? 1;
 				$content = $article->content;
 
-				// Fuzzy matching function
-				$findMatches = function ($haystack, $needle) {
-					$matches = [];
-
-					// Try exact match first
-					$pos = 0;
-					while (($pos = strpos($haystack, $needle, $pos)) !== false) {
-						$matches[] = [
-							'position' => $pos,
-							'length' => strlen($needle),
-							'text' => $needle,
-							'match_type' => 'exact'
-						];
-						$pos += strlen($needle);
-					}
-
-					// If no exact matches, try fuzzy
-					if (empty($matches)) {
-						// Normalize function
-						$normalize = function ($text) {
-							$text = strip_tags($text);
-							$text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-							$text = preg_replace('/\s+/u', ' ', $text);
-							return trim($text);
-						};
-
-						$needleNorm = $normalize($needle);
-						$haystackNorm = $normalize($haystack);
-
-						// Try to find normalized needle in normalized haystack
-						$pos = 0;
-						while (($pos = stripos($haystackNorm, $needleNorm, $pos)) !== false) {
-							// Map back to original position
-							$beforeNorm = substr($haystackNorm, 0, $pos);
-							$originalPos = 0;
-							$normPos = 0;
-
-							// Walk through original text to find corresponding position
-							for ($i = 0; $i < strlen($haystack); $i++) {
-								if ($normPos >= strlen($beforeNorm)) break;
-
-								$origChar = substr($haystack, $i, 1);
-								$normChar = substr($haystackNorm, $normPos, 1);
-
-								if ($normalize($origChar) === $normChar) {
-									$normPos++;
-								}
-								$originalPos = $i;
-							}
-
-							// Find the actual text at this position
-							$endPos = $originalPos;
-							$matchedNormLength = 0;
-							while ($matchedNormLength < strlen($needleNorm) && $endPos < strlen($haystack)) {
-								if ($normalize(substr($haystack, $endPos, 1)) !== '') {
-									$matchedNormLength++;
-								}
-								$endPos++;
-							}
-
-							$actualText = substr($haystack, $originalPos, $endPos - $originalPos);
-
-							$matches[] = [
-								'position' => $originalPos,
-								'length' => strlen($actualText),
-								'text' => $actualText,
-								'match_type' => 'fuzzy'
-							];
-
-							$pos += strlen($needleNorm);
-						}
-					}
-
-					return $matches;
-				};
-
-				$allMatches = $findMatches($content, $searchText);
-
-				if (empty($allMatches)) {
-					// Try finding as a substring
-					$words = explode(' ', $searchText);
-					if (count($words) > 3) {
-						// Try with first few words
-						$partialSearch = implode(' ', array_slice($words, 0, min(5, count($words))));
-						$allMatches = $findMatches($content, $partialSearch);
-					}
+				// Simple direct HTML search
+				$matches = [];
+				$pos = 0;
+				while (($pos = strpos($content, $searchText, $pos)) !== false) {
+					$matches[] = [
+						'position' => $pos,
+						'length' => strlen($searchText),
+						'text' => $searchText,
+						'match_type' => 'exact'
+					];
+					$pos += strlen($searchText);
 				}
 
-				if (empty($allMatches)) {
+				if (empty($matches)) {
 					return json_encode([
 						'found' => false,
 						'message' => 'Content not found',
@@ -786,25 +733,68 @@ class OpenAIService
 				}
 
 				// Get the requested occurrence
-				$matchIndex = min($occurrence - 1, count($allMatches) - 1);
-				$match = $allMatches[$matchIndex];
+				$matchIndex = min($occurrence - 1, count($matches) - 1);
+				$match = $matches[$matchIndex];
 
-				// Get context around the match
-				$contextBefore = substr($content, max(0, $match['position'] - 50), 50);
-				$contextAfter = substr($content, $match['position'] + $match['length'], 50);
+				// Get context
+				$contextLength = 50;
+				$contextBefore = substr($content, max(0, $match['position'] - $contextLength), $contextLength);
+				$contextAfter = substr($content, $match['position'] + $match['length'], $contextLength);
 
 				return json_encode([
 					'found' => true,
 					'position' => $match['position'],
 					'length' => $match['length'],
 					'matched_text' => $match['text'],
-					'match_type' => $match['match_type'],
-					'total_occurrences' => count($allMatches),
+					'match_type' => 'exact',
+					'total_occurrences' => count($matches),
 					'occurrence_number' => $matchIndex + 1,
 					'context_before' => '...' . $contextBefore,
 					'context_after' => $contextAfter . '...',
 					'search_text' => $searchText
 				]);
+
+			case 'check_formatting':
+				$teamId = $this->getTeamId();
+				if (!$teamId) {
+					return json_encode(['error' => 'Team ID not available']);
+				}
+
+				$article = Article::where('team_id', $teamId)->find($arguments['article_id']);
+				if (!$article) {
+					return json_encode(['error' => 'Article not found']);
+				}
+
+				$chunkSize = $arguments['chunk_size'] ?? 1000;
+				$chunkNumber = $arguments['chunk_number'] ?? 1;
+				$content = $article->content;
+				$totalLength = strlen($content);
+
+				// Calculate chunk position
+				$startPos = ($chunkNumber - 1) * $chunkSize;
+				if ($startPos >= $totalLength) {
+					return json_encode([
+						'success' => false,
+						'message' => 'No more chunks to check',
+						'total_chunks' => ceil($totalLength / $chunkSize),
+						'requested_chunk' => $chunkNumber
+					]);
+				}
+
+				$chunk = substr($content, $startPos, $chunkSize);
+				$totalChunks = ceil($totalLength / $chunkSize);
+
+				return json_encode([
+					'success' => true,
+					'article_id' => $article->id,
+					'chunk_number' => $chunkNumber,
+					'total_chunks' => $totalChunks,
+					'chunk_start_position' => $startPos,
+					'chunk_end_position' => min($startPos + $chunkSize, $totalLength),
+					'chunk_content' => $chunk,
+					'has_more_chunks' => $chunkNumber < $totalChunks
+				]);
+
 
 			case 'create_article':
 				$teamId = $this->getTeamId();
@@ -862,30 +852,15 @@ class OpenAIService
 					return json_encode(['error' => 'Article not found']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
 				$article->content .= $arguments['content'];
 				$article->save();
 
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
-				$addedWords = str_word_count($arguments['content']);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content appended successfully',
 					'article_id' => $article->id,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength,
-					// 	'chunk_words' => $addedWords,
-					// 	'chunk_length' => strlen($arguments['content'])
-					// ]
 				]);
 
 			case 'prepend_content':
@@ -900,35 +875,19 @@ class OpenAIService
 					return json_encode(['error' => 'Article not found']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
 				$article->content = $arguments['content'] . $article->content;
 				$article->save();
 
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
-				$addedWords = str_word_count($arguments['content']);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content prepended successfully',
 					'article_id' => $article->id,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength,
-					// 	'chunk_words' => $addedWords,
-					// 	'chunk_length' => strlen($arguments['content'])
-					// ]
 				]);
 
 			case 'replace_content':
 				$teamId = $this->getTeamId();
-
 				if (!$teamId) {
 					return json_encode(['error' => 'Team ID not available']);
 				}
@@ -947,36 +906,21 @@ class OpenAIService
 					return json_encode(['error' => 'Search text not found in article']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
+				// Simple string replacement
 				if ($replaceAll) {
-					$occurrences = substr_count($article->content, $searchText);
 					$article->content = str_replace($searchText, $replacementText, $article->content);
 				} else {
 					$pos = strpos($article->content, $searchText);
 					$article->content = substr_replace($article->content, $replacementText, $pos, strlen($searchText));
-					$occurrences = 1;
 				}
 
 				$article->save();
-
 				event(new ArticleUpdated($article));
-
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
 
 				return json_encode([
 					'success' => true,
 					'message' => 'Content replaced successfully',
 					'article_id' => $article->id,
-					'replacements' => $occurrences,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength
-					// ]
 				]);
 
 			case 'insert_content':
@@ -1000,9 +944,6 @@ class OpenAIService
 					return json_encode(['error' => 'Target text not found in article']);
 				}
 
-				$previousWordCount = str_word_count($article->content);
-				$previousLength = strlen($article->content);
-
 				// Insert content after the found text
 				$insertPos = $pos + strlen($afterText);
 				$article->content = substr($article->content, 0, $insertPos) . $content . substr($article->content, $insertPos);
@@ -1010,22 +951,10 @@ class OpenAIService
 
 				event(new ArticleUpdated($article));
 
-				$newWordCount = str_word_count($article->content);
-				$newLength = strlen($article->content);
-				$addedWords = str_word_count($content);
-
 				return json_encode([
 					'success' => true,
 					'message' => 'Content inserted successfully',
 					'article_id' => $article->id,
-					// 'progress' => [
-					// 	'total_words' => $newWordCount,
-					// 	'total_length' => $newLength,
-					// 	'previous_words' => $previousWordCount,
-					// 	'previous_length' => $previousLength,
-					// 	'chunk_words' => $addedWords,
-					// 	'chunk_length' => strlen($content)
-					// ]
 				]);
 
 			case 'fetch_prompt_with_responses':
@@ -1124,6 +1053,12 @@ class OpenAIService
 					substr($arguments['search_text'], 0, 50) . '...' :
 					$arguments['search_text'];
 				return "Locating \"{$searchPreview}\" in article";
+
+			case 'check_formatting':
+				$article = Article::find($arguments['article_id']);
+				$title = $article ? $article->title : 'Unknown';
+				$chunkNumber = $arguments['chunk_number'] ?? 1;
+				return "Checking formatting in article \"{$title}\" (chunk {$chunkNumber})";
 
 			case 'create_article':
 				return "Creating article: \"{$arguments['title']}\"";
