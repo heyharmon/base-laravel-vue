@@ -92,6 +92,20 @@ const routes = [
 	},
 	{
 		path: '/prompts',
+		redirect: () => {
+			// Get the current team ID from localStorage
+			const user = JSON.parse(localStorage.getItem('user') || '{}')
+			const teamId = user.current_team_id
+
+			if (teamId) {
+				return `/teams/${teamId}/prompts`
+			}
+			// If no team ID, redirect to home
+			return '/'
+		}
+	},
+	{
+		path: '/teams/:teamId/prompts',
 		name: 'prompts.index',
 		component: PromptsIndex,
 		meta: { requiresAuth: true }

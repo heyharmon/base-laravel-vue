@@ -67,14 +67,18 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Prompts
-	Route::resource('prompts', PromptController::class);
+	Route::get('teams/{team}/prompts', [PromptController::class, 'index']);
+	Route::post('teams/{team}/prompts', [PromptController::class, 'store']);
+	Route::get('prompts/{prompt}', [PromptController::class, 'show']);
+	Route::put('prompts/{prompt}', [PromptController::class, 'update']);
+	Route::delete('prompts/{prompt}', [PromptController::class, 'destroy']);
 	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
 	Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
 
 	// Running prompts
 	Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
-	Route::post('prompt-run-batch', [PromptRunBatchController::class, 'store']);
+	Route::post('teams/{team}/prompt-run-batch', [PromptRunBatchController::class, 'store']);
 
 	// Team routes
 	Route::resource('teams', TeamController::class);

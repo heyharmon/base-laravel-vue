@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
@@ -13,9 +14,12 @@ import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
+const route = useRoute()
 const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+
+const teamId = computed(() => route.params.teamId)
 
 const isPromptCreateModalOpen = ref(false)
 const isPromptDetailSheetOpen = ref(false)
@@ -39,7 +43,7 @@ watch(
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-			promptStore.fetchPrompts()
+			promptStore.fetchPrompts(teamId.value)
 		}
 	},
 	{ deep: true }
@@ -56,7 +60,7 @@ const runPrompt = async (id, count = 1) => {
 
 const runAllPrompts = async (count = 1) => {
 	try {
-		await promptStore.runAllPrompts(count)
+		await promptStore.runAllPrompts(teamId.value, count)
 		await jobStatusStore.pollTeamJobs()
 	} catch (error) {
 		console.error('Error running all prompts:', error)
@@ -120,7 +124,7 @@ const handleDateRangeChange = (dateRange) => {
 }
 
 onMounted(async () => {
-	await promptStore.fetchPrompts()
+	await promptStore.fetchPrompts(teamId.value)
 	await organizationStore.fetchVisibilityMetrics()
 })
 </script>
@@ -192,7 +196,7 @@ onMounted(async () => {
 	<GeneratePromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
 
 	<!-- Prompt Modal -->
-	<PromptCreateModal :is-open="isPromptCreateModalOpen" @close="isPromptCreateModalOpen = false" />
+	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" @close="isPromptCreateModalOpen = false" />
 
 	<!-- Prompt Detail Sheet -->
 	<PromptDetailSheet

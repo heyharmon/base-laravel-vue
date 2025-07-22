@@ -14,11 +14,12 @@ export const usePromptStore = defineStore('prompts', () => {
 	const isRunningAll = ref(false)
 
 	// Actions
-	async function fetchPrompts() {
+	async function fetchPrompts(teamId) {
 		console.log('Fetching prompts...')
+
 		isLoading.value = true
 		try {
-			prompts.value = await api.get('/prompts')
+			prompts.value = await api.get(`/teams/${teamId}/prompts`)
 		} catch (error) {
 			console.error('Error fetching prompts:', error)
 		} finally {
@@ -39,11 +40,12 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
-	async function createPrompt(data) {
+	async function createPrompt(teamId, data) {
 		console.log('Creating prompt...')
+
 		isLoading.value = true
 		try {
-			const newPrompt = await api.post('/prompts', data)
+			const newPrompt = await api.post(`/teams/${teamId}/prompts`, data)
 			prompts.value.unshift(newPrompt)
 			return newPrompt
 		} catch (error) {
@@ -99,11 +101,12 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
-	async function runAllPrompts(count = 1) {
+	async function runAllPrompts(teamId, count = 1) {
 		console.log('Running all prompts...')
+
 		isRunningAll.value = true
 		try {
-			return await api.post('/prompt-run-batch', { count })
+			return await api.post(`/teams/${teamId}/prompt-run-batch`, { count })
 		} catch (error) {
 			console.error('Error running all prompts:', error)
 			throw error
