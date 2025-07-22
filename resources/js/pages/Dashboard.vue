@@ -17,7 +17,7 @@ const organizationStore = useOrganizationStore()
 
 // Use the store's fetchVisibilityMetrics directly
 const teamId = computed(() => {
-        return route.params.teamId || JSON.parse(localStorage.getItem('user') || '{}').current_team_id
+        return route.params.id || JSON.parse(localStorage.getItem('user') || '{}').current_team_id
 })
 
 const fetchVisibilityData = () => {

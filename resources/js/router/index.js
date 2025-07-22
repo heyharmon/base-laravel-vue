@@ -28,7 +28,7 @@ const routes = [
                 }
         },
         {
-                path: '/teams/:teamId?',
+                path: '/teams/:id?',
                 name: 'home',
                 component: Dashboard,
                 meta: { requiresAuth: true }
@@ -67,12 +67,12 @@ const routes = [
 		component: InvitationsIndex,
 		meta: { requiresAuth: true }
 	},
-	{
-		path: '/teams/:id',
-		name: 'teams.show',
-		component: TeamShow,
-		meta: { requiresAuth: true }
-	},
+        {
+                path: '/teams/:id/members',
+                name: 'teams.show',
+                component: TeamShow,
+                meta: { requiresAuth: true }
+        },
 	{
 		path: '/teams/create',
 		name: 'teams.create',

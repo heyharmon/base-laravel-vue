@@ -94,7 +94,7 @@ onMounted(async () => {
 					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
 
 					<!-- Team settings link -->
-					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="text-sm hover:text-neutral-300"> Team settings </router-link>
+                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/members`" class="text-sm hover:text-neutral-300"> Team settings </router-link>
 
 					<!-- Teams dropdown -->
 					<PopoverRoot>
