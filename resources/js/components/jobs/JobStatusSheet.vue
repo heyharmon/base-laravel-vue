@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button.vue'
 import JobStatusList from '@/components/jobs/JobStatusList.vue'
 import SpinnerIcon from '@/components/icons/SpinnerIcon.vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import { useTeamStore } from '@/stores/teamStore'
 
 const props = defineProps({
 	isOpen: {
@@ -20,15 +21,18 @@ const closeSheet = () => {
 }
 
 const jobStatusStore = useJobStatusStore()
+const teamStore = useTeamStore()
 const isCancelling = ref(false)
 
 async function cancelJobs() {
-	isCancelling.value = true
-	try {
-		await jobStatusStore.cancelTeamJobs()
-	} finally {
-		isCancelling.value = false
-	}
+        const teamId = teamStore.currentTeam?.id
+        if (!teamId) return
+        isCancelling.value = true
+        try {
+                await jobStatusStore.cancelTeamJobs(teamId)
+        } finally {
+                isCancelling.value = false
+        }
 }
 </script>
 

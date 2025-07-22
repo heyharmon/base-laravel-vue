@@ -85,8 +85,8 @@ const addTerm = (term) => {
 const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
-		await organizationStore.updateOrganization(route.params.id, organization.value)
-		router.push({ name: 'organizations.index' })
+                await organizationStore.updateOrganization(route.params.id, organization.value)
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -104,7 +104,7 @@ const deleteOrganization = async () => {
 }
 
 const cancelEdit = () => {
-	router.push({ name: 'organizations.index' })
+        router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
 }
 
 const handleDeleteTerm = (termId, termName) => {
@@ -208,21 +208,23 @@ const handleDeleteTerm = (termId, termName) => {
 	</DefaultLayout>
 
 	<!-- Term Modal -->
-        <TermCreateModal :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
+        <TermCreateModal v-if="teamId" :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
 	<!-- Generate Keywords Modal -->
 	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />
 
 	<!-- Term Detail Sheet -->
-	<TermDetailSheet
-		:is-open="isTermDetailSheetOpen"
-		:term="selectedTerm"
-		:term-id="selectedTerm?.id"
-		@close="
-			() => {
-				isTermDetailSheetOpen = false
-				selectedTermId = null
-			}
-		"
-	/>
+        <TermDetailSheet
+                v-if="teamId"
+                :is-open="isTermDetailSheetOpen"
+                :term="selectedTerm"
+                :term-id="selectedTerm?.id"
+                :team-id="teamId"
+                @close="
+                        () => {
+                                isTermDetailSheetOpen = false
+                                selectedTermId = null
+                        }
+                "
+        />
 </template>
