@@ -66,8 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Terms
         Route::get('teams/{team}/organizations/{organization}/terms', [TermController::class, 'index']);
         Route::post('teams/{team}/organizations/{organization}/terms', [TermController::class, 'store']);
-        Route::resource('organizations/{organization}/terms', TermController::class)->except(['index', 'store']);
-	Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
+        Route::get('teams/{team}/organizations/{organization}/terms/{term}', [TermController::class, 'show']);
+        Route::delete('teams/{team}/organizations/{organization}/terms/{term}', [TermController::class, 'destroy']);
+        Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Prompts
