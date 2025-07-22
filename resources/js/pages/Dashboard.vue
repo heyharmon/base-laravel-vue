@@ -1,31 +1,35 @@
 <script setup>
 import { onMounted, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
-import { useTeamStore } from '@/stores/teamStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
 
+const route = useRoute()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
-const teamStore = useTeamStore()
 
 // Use centralized state from the store
 
 // Use the store's fetchVisibilityMetrics directly
+const teamId = computed(() => {
+        return route.params.teamId || JSON.parse(localStorage.getItem('user') || '{}').current_team_id
+})
+
 const fetchVisibilityData = () => {
-        if (teamStore.currentTeam) {
-                organizationStore.fetchVisibilityMetrics(teamStore.currentTeam.id)
+        if (teamId.value) {
+                organizationStore.fetchVisibilityMetrics(teamId.value)
         }
 }
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-        if (teamStore.currentTeam) {
-                organizationStore.setDateRange(teamStore.currentTeam.id, dateRange)
+        if (teamId.value) {
+                organizationStore.setDateRange(teamId.value, dateRange)
         }
 }
 
@@ -55,13 +59,13 @@ onMounted(() => {
 })
 
 const deleteOrganization = async (organizationId) => {
-	try {
-		await organizationStore.deleteOrganization(organizationId)
-		// Refresh visibility data
-		organizationStore.fetchVisibilityMetrics()
-	} catch (error) {
-		console.error('Error deleting organization:', error)
-	}
+        try {
+                await organizationStore.deleteOrganization(teamId.value, organizationId)
+                // Refresh visibility data
+                organizationStore.fetchVisibilityMetrics(teamId.value)
+        } catch (error) {
+                console.error('Error deleting organization:', error)
+        }
 }
 </script>
 

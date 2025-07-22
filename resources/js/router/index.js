@@ -19,17 +19,24 @@ import ArticleEdit from '@/pages/articles/Edit.vue'
 // Super Admin
 
 const routes = [
-	{
-		path: '/',
-		name: 'home',
-		component: Dashboard,
-		meta: { requiresAuth: true }
-	},
-	{
-		path: '/dashboard',
-		name: 'dashboard',
-		component: Dashboard
-	},
+        {
+                path: '/',
+                redirect: () => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}')
+                        const teamId = user.current_team_id
+                        return teamId ? `/teams/${teamId}` : '/login'
+                }
+        },
+        {
+                path: '/teams/:teamId?',
+                name: 'home',
+                component: Dashboard,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/dashboard',
+                redirect: '/' 
+        },
 	{
 		path: '/login',
 		name: 'login',

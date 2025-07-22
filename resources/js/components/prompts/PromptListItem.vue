@@ -29,9 +29,9 @@ const isRunMenuOpen = ref(false)
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 
 const hasActiveRunPromptJob = computed(() => {
-	let jobs = jobStatusStore.jobs.filter(
-		(job) =>
-			job.job_class.includes('RunPromptJob') &&
+        let jobs = (jobStatusStore.jobs || []).filter(
+                (job) =>
+                        job.job_class.includes('RunPromptJob') &&
 			job.trackable_type === 'App\\Models\\Prompt' &&
 			job.trackable_id === props.prompt.id &&
 			(job.status === 'pending' || job.status === 'processing')

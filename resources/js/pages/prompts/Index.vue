@@ -32,10 +32,10 @@ const sortOption = ref('default') // Default sort option
 // Using centralized date range from organizationStore
 
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
-	return jobStatusStore.jobs.filter((job) => {
-		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
-	})
+        const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
+        return (jobStatusStore.jobs || []).filter((job) => {
+                return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
+        })
 })
 
 watch(
@@ -193,7 +193,7 @@ onMounted(async () => {
 	</DefaultLayout>
 
 	<!-- Generate Modal -->
-	<GeneratePromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
+        <GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" @close="isGenerateModalOpen = false" />
 
 	<!-- Prompt Modal -->
 	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" @close="isPromptCreateModalOpen = false" />

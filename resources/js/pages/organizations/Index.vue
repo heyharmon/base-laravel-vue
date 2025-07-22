@@ -32,10 +32,10 @@ watch(
 				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
 		)
 
-		if (completedCompetitorJob) {
-			console.log('Competitor job completed, refreshing organizations')
-			organizationStore.fetchOrganizations()
-		}
+                if (completedCompetitorJob) {
+                        console.log('Competitor job completed, refreshing organizations')
+                        organizationStore.fetchOrganizations(teamId)
+                }
 	},
 	{ deep: true }
 )
@@ -173,10 +173,10 @@ onMounted(async () => {
 								>
 									Edit
 								</router-link>
-								<button
-									@click.stop="organizationStore.deleteOrganization(org.id)"
-									class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
-								>
+                                                <button
+                                                        @click.stop="organizationStore.deleteOrganization(teamId, org.id)"
+                                                        class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+                                                >
 									Remove
 								</button>
 							</div>

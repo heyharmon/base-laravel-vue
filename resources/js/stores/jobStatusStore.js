@@ -45,7 +45,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	// Actions
         async function pollTeamJobs(teamId) {
                 await fetchTeamJobs(teamId)
-                startAutoRefresh(1500)
+                startAutoRefresh(teamId, 1500)
         }
 
         async function fetchTeamJobs(teamId) {
@@ -74,19 +74,19 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		}
 	}
 
-	function hasActiveJobs() {
-		return jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
-	}
+        function hasActiveJobs() {
+                return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
+        }
 
-	function startAutoRefresh(interval = 2000) {
-		stopAutoRefresh()
+        function startAutoRefresh(teamId, interval = 2000) {
+                stopAutoRefresh()
 
-		refreshTimer.value = setInterval(() => {
-			if (hasActiveJobs()) {
-				fetchTeamJobs()
-			}
-		}, interval)
-	}
+                refreshTimer.value = setInterval(() => {
+                        if (hasActiveJobs()) {
+                                fetchTeamJobs(teamId)
+                        }
+                }, interval)
+        }
 
 	function stopAutoRefresh() {
 		if (refreshTimer.value) {

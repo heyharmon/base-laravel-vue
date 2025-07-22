@@ -45,12 +45,12 @@ const logout = async () => {
 }
 
 const switchTeam = async (teamId) => {
-	try {
-		await teamStore.switchTeam(teamId)
-		window.location.href = '/'
-	} catch (error) {
-		console.error('Error switching team:', error)
-	}
+        try {
+                await teamStore.switchTeam(teamId)
+                window.location.href = `/teams/${teamId}`
+        } catch (error) {
+                console.error('Error switching team:', error)
+        }
 }
 
 onMounted(async () => {
@@ -67,7 +67,7 @@ onMounted(async () => {
 			<div class="flex items-center space-x-4">
 				<router-link to="/" class="text-xl font-bold">Paraloom</router-link>
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
-					<router-link to="/" class="text-sm hover:text-neutral-300">Rankings</router-link>
+                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="text-sm hover:text-neutral-300">Rankings</router-link>
 					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/prompts`" class="text-sm hover:text-neutral-300">Prompts</router-link>
                                         <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/organizations`" class="text-sm hover:text-neutral-300">Organizations</router-link>
                                         <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/articles`" class="text-sm hover:text-neutral-300">Articles</router-link>

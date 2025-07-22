@@ -61,7 +61,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 		try {
                         const response = await api.post(`/teams/${teamId}/organizations`, organizationData)
-			await fetchOrganizations()
+                        await fetchOrganizations(teamId)
 			return response // API interceptor already extracts response.data
 		} catch (err) {
 			console.error('Error creating organization:', err)
@@ -77,7 +77,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 		try {
                         const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
-			await fetchOrganizations()
+                        await fetchOrganizations(teamId)
 			return response // API interceptor already extracts response.data
 		} catch (err) {
 			console.error('Error creating organization:', err)
@@ -109,13 +109,13 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function deleteOrganization(organizationId) {
-		console.log('Deleting organization ID:', organizationId)
+        async function deleteOrganization(teamId, organizationId) {
+                console.log('Deleting organization ID:', organizationId)
 		// isLoading.value = true
 
 		try {
-			const response = await api.delete(`/organizations/${organizationId}`)
-			await fetchOrganizations()
+                        const response = await api.delete(`/organizations/${organizationId}`)
+                        await fetchOrganizations(teamId)
 			return response.data
 		} catch (err) {
 			console.error('Error deleting organization:', err)

@@ -31,13 +31,13 @@ const editArticle = (id) => {
 }
 
 const deleteArticle = async (id) => {
-	if (confirm('Are you sure you want to delete this article?')) {
-		try {
-			await articleStore.deleteArticle(id)
-		} catch (error) {
-			console.error('Error deleting article:', error)
-		}
-	}
+        if (confirm('Are you sure you want to delete this article?')) {
+                try {
+                        await articleStore.deleteArticle(teamId, id)
+                } catch (error) {
+                        console.error('Error deleting article:', error)
+                }
+        }
 }
 </script>
 

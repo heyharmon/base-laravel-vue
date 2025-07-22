@@ -95,12 +95,12 @@ const updateOrganization = async () => {
 }
 
 const deleteOrganization = async () => {
-	try {
-		await organizationStore.deleteOrganization(route.params.id)
-		router.push({ name: 'organizations.index' })
-	} catch (error) {
-		console.error('Error deleting organization:', error)
-	}
+        try {
+                await organizationStore.deleteOrganization(teamId.value, route.params.id)
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
+        } catch (error) {
+                console.error('Error deleting organization:', error)
+        }
 }
 
 const cancelEdit = () => {
