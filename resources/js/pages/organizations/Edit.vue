@@ -17,6 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const organizationStore = useOrganizationStore()
 const termStore = useTermStore()
+const teamId = ref(null)
 const organization = ref({
 	name: '',
 	website: '',
@@ -46,10 +47,11 @@ const deletedTermMessage = ref(null)
 
 onMounted(async () => {
 	try {
-		const data = await organizationStore.fetchOrganization(route.params.id)
-		organization.value = { ...data }
-		originalOrganization.value = { ...data }
-		await termStore.fetchTerms(route.params.id)
+                const data = await organizationStore.fetchOrganization(route.params.id)
+                teamId.value = data.team_id
+                organization.value = { ...data }
+                originalOrganization.value = { ...data }
+                await termStore.fetchTerms(teamId.value, route.params.id)
 	} catch (error) {
 		console.error('Error fetching organization:', error)
 	} finally {
@@ -83,8 +85,8 @@ const addTerm = (term) => {
 const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
-		await organizationStore.updateOrganization(route.params.id, organization.value)
-		router.push({ name: 'organizations.index' })
+                await organizationStore.updateOrganization(route.params.id, organization.value)
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -93,21 +95,21 @@ const updateOrganization = async () => {
 }
 
 const deleteOrganization = async () => {
-	try {
-		await organizationStore.deleteOrganization(route.params.id)
-		router.push({ name: 'organizations.index' })
-	} catch (error) {
-		console.error('Error deleting organization:', error)
-	}
+        try {
+                await organizationStore.deleteOrganization(teamId.value, route.params.id)
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
+        } catch (error) {
+                console.error('Error deleting organization:', error)
+        }
 }
 
 const cancelEdit = () => {
-	router.push({ name: 'organizations.index' })
+        router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
 }
 
 const handleDeleteTerm = (termId, termName) => {
 	deletedTermMessage.value = `The term "${termName}" and its history has been deleted.`
-	termStore.deleteTerm(route.params.id, termId)
+    termStore.deleteTerm(teamId.value, route.params.id, termId)
 	setTimeout(() => {
 		deletedTermMessage.value = null
 	}, 10000)
@@ -206,21 +208,23 @@ const handleDeleteTerm = (termId, termName) => {
 	</DefaultLayout>
 
 	<!-- Term Modal -->
-	<TermCreateModal :is-open="isTermCreateModalOpen" @close="isTermCreateModalOpen = false" @create="addTerm" />
+        <TermCreateModal v-if="teamId" :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
 	<!-- Generate Keywords Modal -->
 	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />
 
 	<!-- Term Detail Sheet -->
-	<TermDetailSheet
-		:is-open="isTermDetailSheetOpen"
-		:term="selectedTerm"
-		:term-id="selectedTerm?.id"
-		@close="
-			() => {
-				isTermDetailSheetOpen = false
-				selectedTermId = null
-			}
-		"
-	/>
+        <TermDetailSheet
+                v-if="teamId"
+                :is-open="isTermDetailSheetOpen"
+                :term="selectedTerm"
+                :term-id="selectedTerm?.id"
+                :team-id="teamId"
+                @close="
+                        () => {
+                                isTermDetailSheetOpen = false
+                                selectedTermId = null
+                        }
+                "
+        />
 </template>

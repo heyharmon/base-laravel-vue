@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Team;
 
 class OrganizationVisibilityController extends Controller
 {
@@ -14,9 +15,9 @@ class OrganizationVisibilityController extends Controller
 	 * Get visibility metrics for organizations within a date range.
 	 * OPTIMIZED VERSION - Single query approach
 	 */
-	public function index(Request $request)
-	{
-		$teamId = $request->user()->currentTeam->id;
+        public function index(Request $request, Team $team)
+        {
+                $teamId = $team->id;
 
 		// Validate request parameters
 		$request->validate([
@@ -98,9 +99,9 @@ class OrganizationVisibilityController extends Controller
 	 * Alternative implementation using Eloquent with optimized queries
 	 * MODERATE OPTIMIZATION - Better than original but uses Eloquent
 	 */
-	public function indexAlternative(Request $request)
-	{
-		$teamId = $request->user()->currentTeam->id;
+        public function indexAlternative(Request $request, Team $team)
+        {
+                $teamId = $team->id;
 
 		$request->validate([
 			'start_date' => 'nullable|date',
@@ -183,9 +184,9 @@ class OrganizationVisibilityController extends Controller
 	 * Cached version for high-traffic scenarios
 	 * AGGRESSIVE OPTIMIZATION - Adds caching layer
 	 */
-	public function indexCached(Request $request)
-	{
-		$teamId = $request->user()->currentTeam->id;
+        public function indexCached(Request $request, Team $team)
+        {
+                $teamId = $team->id;
 
 		$request->validate([
 			'start_date' => 'nullable|date',

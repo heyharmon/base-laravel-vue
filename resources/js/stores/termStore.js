@@ -16,12 +16,12 @@ export const useTermStore = defineStore('terms', () => {
 	const jobStatusStore = useJobStatusStore()
 
 	// Actions
-	async function fetchTerms(organizationId) {
+        async function fetchTerms(teamId, organizationId) {
 		console.log('Fetching terms for organization ID:', organizationId)
 		isLoading.value = true
 
 		try {
-			terms.value = await api.get(`organizations/${organizationId}/terms`)
+                        terms.value = await api.get(`teams/${teamId}/organizations/${organizationId}/terms`)
 		} catch (error) {
 			console.error('Error fetching terms:', error)
 		} finally {
@@ -29,24 +29,24 @@ export const useTermStore = defineStore('terms', () => {
 		}
 	}
 
-	async function showTerm(organizationId, id) {
-		console.log('Fetching details for term ID:', id)
-		isLoadingDetails.value = true
-		try {
-			selectedTermDetails.value = await api.get(`organizations/${organizationId}/terms/${id}?include=prompts`)
-		} catch (error) {
-			console.error('Error fetching term details:', error)
-			throw error
-		} finally {
-			isLoadingDetails.value = false
-		}
-	}
+        async function showTerm(teamId, organizationId, id) {
+                console.log('Fetching details for term ID:', id)
+                isLoadingDetails.value = true
+                try {
+                        selectedTermDetails.value = await api.get(`teams/${teamId}/organizations/${organizationId}/terms/${id}?include=prompts`)
+                } catch (error) {
+                        console.error('Error fetching term details:', error)
+                        throw error
+                } finally {
+                        isLoadingDetails.value = false
+                }
+        }
 
-	async function createTerm(organizationId, data) {
+        async function createTerm(teamId, organizationId, data) {
 		console.log('Creating term for organization ID:', organizationId)
 		isLoading.value = true
 		try {
-			const newTerm = await api.post(`organizations/${organizationId}/terms`, data)
+                        const newTerm = await api.post(`teams/${teamId}/organizations/${organizationId}/terms`, data)
 			terms.value.unshift(newTerm)
 			return newTerm
 		} catch (error) {
@@ -57,16 +57,16 @@ export const useTermStore = defineStore('terms', () => {
 		}
 	}
 
-	async function deleteTerm(organizationId, id) {
-		console.log('Deleting term ID:', id)
-		try {
-			await api.delete(`organizations/${organizationId}/terms/${id}`)
-			terms.value = terms.value.filter((k) => k.id !== id)
-		} catch (error) {
-			console.error('Error deleting term:', error)
-			throw error
-		} finally {
-		}
+        async function deleteTerm(teamId, organizationId, id) {
+                console.log('Deleting term ID:', id)
+                try {
+                        await api.delete(`teams/${teamId}/organizations/${organizationId}/terms/${id}`)
+                        terms.value = terms.value.filter((k) => k.id !== id)
+                } catch (error) {
+                        console.error('Error deleting term:', error)
+                        throw error
+                } finally {
+                }
 	}
 
 	// TODO: Test

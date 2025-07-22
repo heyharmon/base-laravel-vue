@@ -2,7 +2,7 @@
 import { onMounted, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -10,6 +10,8 @@ import Button from '@/components/ui/Button.vue'
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
 const router = useRouter()
+const route = useRoute()
+const teamId = route.params.teamId
 
 // Get active jobs related to competitors
 const activeCompetitorJobs = computed(() => {
@@ -30,10 +32,10 @@ watch(
 				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
 		)
 
-		if (completedCompetitorJob) {
-			console.log('Competitor job completed, refreshing organizations')
-			organizationStore.fetchOrganizations()
-		}
+                if (completedCompetitorJob) {
+                        console.log('Competitor job completed, refreshing organizations')
+                        organizationStore.fetchOrganizations(teamId)
+                }
 	},
 	{ deep: true }
 )
@@ -45,8 +47,8 @@ const isNewOrganization = (createdAt) => {
 }
 
 onMounted(async () => {
-	await organizationStore.fetchOrganizations()
-	await jobStatusStore.pollTeamJobs()
+        await organizationStore.fetchOrganizations(teamId)
+        await jobStatusStore.pollTeamJobs(teamId)
 })
 </script>
 
@@ -57,15 +59,15 @@ onMounted(async () => {
 			<div class="flex justify-between items-center mb-3">
 				<h1 class="text-2xl font-bold">Organizations</h1>
 				<div class="flex space-x-2">
-					<Button
-						v-if="organizationStore.ownedOrganizations.length > 0"
-						@click="organizationStore.findCompetitors()"
+                                        <Button
+                                                v-if="organizationStore.ownedOrganizations.length > 0"
+                                                @click="organizationStore.findCompetitors(teamId)"
 						:disabled="activeCompetitorJobs.length > 0"
 						variant="outline"
 					>
 						{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
 					</Button>
-					<Button @click="router.push({ name: 'organizations.create' })">
+                                        <Button @click="router.push({ name: 'organizations.create', params: { teamId } })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
@@ -171,10 +173,10 @@ onMounted(async () => {
 								>
 									Edit
 								</router-link>
-								<button
-									@click.stop="organizationStore.deleteOrganization(org.id)"
-									class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
-								>
+                                                <button
+                                                        @click.stop="organizationStore.deleteOrganization(teamId, org.id)"
+                                                        class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+                                                >
 									Remove
 								</button>
 							</div>

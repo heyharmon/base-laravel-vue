@@ -19,17 +19,24 @@ import ArticleEdit from '@/pages/articles/Edit.vue'
 // Super Admin
 
 const routes = [
-	{
-		path: '/',
-		name: 'home',
-		component: Dashboard,
-		meta: { requiresAuth: true }
-	},
-	{
-		path: '/dashboard',
-		name: 'dashboard',
-		component: Dashboard
-	},
+        {
+                path: '/',
+                redirect: () => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}')
+                        const teamId = user.current_team_id
+                        return teamId ? `/teams/${teamId}` : '/login'
+                }
+        },
+        {
+                path: '/teams/:id?',
+                name: 'home',
+                component: Dashboard,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/dashboard',
+                redirect: '/' 
+        },
 	{
 		path: '/login',
 		name: 'login',
@@ -60,30 +67,38 @@ const routes = [
 		component: InvitationsIndex,
 		meta: { requiresAuth: true }
 	},
-	{
-		path: '/teams/:id',
-		name: 'teams.show',
-		component: TeamShow,
-		meta: { requiresAuth: true }
-	},
+        {
+                path: '/teams/:id/members',
+                name: 'teams.show',
+                component: TeamShow,
+                meta: { requiresAuth: true }
+        },
 	{
 		path: '/teams/create',
 		name: 'teams.create',
 		component: TeamCreate,
 		meta: { requiresAuth: true }
 	},
-	{
-		path: '/organizations',
-		name: 'organizations.index',
-		component: OrganizationsIndex,
-		meta: { requiresAuth: true }
-	},
-	{
-		path: '/organizations/create',
-		name: 'organizations.create',
-		component: OrganizationCreate,
-		meta: { requiresAuth: true }
-	},
+        {
+                path: '/organizations',
+                redirect: () => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}')
+                        const teamId = user.current_team_id
+                        return teamId ? `/teams/${teamId}/organizations` : '/'
+                }
+        },
+        {
+                path: '/teams/:teamId/organizations',
+                name: 'organizations.index',
+                component: OrganizationsIndex,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/teams/:teamId/organizations/create',
+                name: 'organizations.create',
+                component: OrganizationCreate,
+                meta: { requiresAuth: true }
+        },
 	{
 		path: '/organizations/:id/edit',
 		name: 'organizations.edit',
@@ -110,12 +125,20 @@ const routes = [
 		component: PromptsIndex,
 		meta: { requiresAuth: true }
 	},
-	{
-		path: '/articles',
-		name: 'articles.index',
-		component: ArticlesIndex,
-		meta: { requiresAuth: true }
-	},
+        {
+                path: '/articles',
+                redirect: () => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}')
+                        const teamId = user.current_team_id
+                        return teamId ? `/teams/${teamId}/articles` : '/'
+                }
+        },
+        {
+                path: '/teams/:teamId/articles',
+                name: 'articles.index',
+                component: ArticlesIndex,
+                meta: { requiresAuth: true }
+        },
 	{
 		path: '/articles/:id/edit',
 		name: 'articles.edit',

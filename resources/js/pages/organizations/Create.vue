@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -8,7 +8,9 @@ import Button from '@/components/ui/Button.vue'
 import OrganizationSearch from '@/components/OrganizationSearch.vue'
 
 const router = useRouter()
+const route = useRoute()
 const organizationStore = useOrganizationStore()
+const teamId = route.params.teamId
 const isSubmitting = ref(false)
 const isLoadingDetails = ref(false)
 const organization = ref({
@@ -50,9 +52,9 @@ const createOrganization = async () => {
 	isSubmitting.value = true
 	try {
 		// Create the organization
-		const newOrg = await organizationStore.createOrganization(organization.value)
+                const newOrg = await organizationStore.createOrganization(teamId, organization.value)
 
-		router.push({ name: 'organizations.index' })
+        router.push({ name: 'organizations.index', params: { teamId } })
 	} catch (error) {
 		console.error('Error creating organization:', error)
 	} finally {

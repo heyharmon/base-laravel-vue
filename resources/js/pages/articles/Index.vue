@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -11,16 +11,18 @@ import PlusIcon from '../../components/icons/PlusIcon.vue'
 import DocumentIcon from '../../components/icons/DocumentIcon.vue'
 
 const router = useRouter()
+const route = useRoute()
 const articleStore = useArticleStore()
+const teamId = route.params.teamId
 
 onMounted(async () => {
-	await articleStore.fetchArticles()
+        await articleStore.fetchArticles(teamId)
 })
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle({
-		title: 'Untitled article'
-	})
+        const newArticle = await articleStore.createArticle(teamId, {
+                title: 'Untitled article'
+        })
 	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 
@@ -29,13 +31,13 @@ const editArticle = (id) => {
 }
 
 const deleteArticle = async (id) => {
-	if (confirm('Are you sure you want to delete this article?')) {
-		try {
-			await articleStore.deleteArticle(id)
-		} catch (error) {
-			console.error('Error deleting article:', error)
-		}
-	}
+        if (confirm('Are you sure you want to delete this article?')) {
+                try {
+                        await articleStore.deleteArticle(teamId, id)
+                } catch (error) {
+                        console.error('Error deleting article:', error)
+                }
+        }
 }
 </script>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Prompt;
@@ -18,12 +19,12 @@ class OrganizationCompetitorController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-	public function find(Request $request): JsonResponse
-	{
-		$teamId = Auth::user()->current_team_id;
+        public function find(Request $request, Team $team): JsonResponse
+        {
+                $teamId = $team->id;
 
-		// Get all prompts for the current team
-		$prompts = Prompt::where('team_id', $teamId)->get();
+                // Get all prompts for the current team
+                $prompts = Prompt::where('team_id', $teamId)->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([

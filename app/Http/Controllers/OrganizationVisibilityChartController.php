@@ -7,14 +7,15 @@ use App\Models\Response;
 use App\Models\Term;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Models\Team;
 
 class OrganizationVisibilityChartController extends Controller
 {
 	/**
 	 * Get visibility data over time for charting
 	 */
-	public function chartData(Request $request)
-	{
+        public function chartData(Request $request, Team $team)
+        {
 		$request->validate([
 			'start_date' => 'nullable|date',
 			'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -23,7 +24,7 @@ class OrganizationVisibilityChartController extends Controller
 			'organization_ids.*' => 'exists:organizations,id'
 		]);
 
-		$teamId = $request->user()->currentTeam->id;
+                $teamId = $team->id;
 
 		// Handle "all_time" case - if dates are not provided, get the date range from responses
 		if (!$request->start_date || !$request->end_date) {
