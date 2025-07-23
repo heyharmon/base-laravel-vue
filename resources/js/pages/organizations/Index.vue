@@ -3,6 +3,7 @@ import { onMounted, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useRouter, useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -10,9 +11,11 @@ import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
+const campaignStore = useCampaignStore()
 const router = useRouter()
 const route = useRoute()
-const teamId = route.params.teamId
+const teamId = computed(() => route.params.teamId)
+const campaignId = computed(() => route.params.campaignId)
 
 // Get active jobs related to competitors
 const activeCompetitorJobs = computed(() => {
@@ -35,7 +38,7 @@ watch(
 
                 if (completedCompetitorJob) {
                         console.log('Competitor job completed, refreshing organizations')
-                        organizationStore.fetchOrganizations(teamId)
+                        organizationStore.fetchOrganizations(teamId.value, campaignId.value)
                 }
 	},
 	{ deep: true }
@@ -48,8 +51,19 @@ const isNewOrganization = (createdAt) => {
 }
 
 onMounted(async () => {
-        await organizationStore.fetchOrganizations(teamId)
-        await jobStatusStore.pollTeamJobs(teamId)
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+                await campaignStore.switchCampaign(teamId.value, campaignId.value)
+        }
+        await organizationStore.fetchOrganizations(teamId.value, campaignId.value)
+        await jobStatusStore.pollTeamJobs(teamId.value)
+})
+
+watch(campaignId, async (newId) => {
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                await organizationStore.fetchOrganizations(teamId.value, newId)
+        }
 })
 </script>
 
@@ -65,13 +79,13 @@ onMounted(async () => {
                                 <div class="flex space-x-2">
                                         <Button
                                                 v-if="organizationStore.ownedOrganizations.length > 0"
-                                                @click="organizationStore.findCompetitors(teamId)"
+                                                @click="organizationStore.findCompetitors(teamId.value)"
 						:disabled="activeCompetitorJobs.length > 0"
 						variant="outline"
 					>
 						{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
 					</Button>
-                                        <Button @click="router.push({ name: 'organizations.create', params: { teamId } })">
+                                        <Button @click="router.push({ name: 'organizations.create', params: { teamId: teamId.value, campaignId: campaignId.value } })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
@@ -178,7 +192,7 @@ onMounted(async () => {
 									Edit
 								</router-link>
                                                 <button
-                                                        @click.stop="organizationStore.deleteOrganization(teamId, org.id)"
+                                                        @click.stop="organizationStore.deleteOrganization(teamId.value, org.id, campaignId.value)"
                                                         class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                                                 >
 									Remove

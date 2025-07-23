@@ -8,6 +8,7 @@ const router = useRouter()
 const campaignStore = useCampaignStore()
 
 const teamId = computed(() => route.params.teamId || route.params.id)
+const campaignId = computed(() => route.params.campaignId)
 
 const switchCampaign = async (campaignId) => {
         await campaignStore.switchCampaign(teamId.value, campaignId)
@@ -20,6 +21,16 @@ const switchCampaign = async (campaignId) => {
 watch(teamId, async (newTeamId) => {
         if (newTeamId) {
                 await campaignStore.fetchCampaigns(newTeamId)
+        }
+}, { immediate: true })
+
+// Keep current campaign in sync with the route
+watch(campaignId, (newId) => {
+        if (newId && campaignStore.campaigns.length > 0) {
+                const found = campaignStore.campaigns.find(c => c.id == newId)
+                if (found) {
+                        campaignStore.currentCampaign = found
+                }
         }
 }, { immediate: true })
 </script>

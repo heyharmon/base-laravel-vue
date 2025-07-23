@@ -58,17 +58,24 @@ onMounted(async () => {
         if (teamId.value) {
                 await campaignStore.fetchCampaigns(teamId.value)
                 if (campaignId.value) {
-                        campaignStore.loadCurrentCampaign(teamId.value)
+                        await campaignStore.switchCampaign(teamId.value, campaignId.value)
                         fetchVisibilityData()
                 }
         }
 })
 
+watch(campaignId, async (newId) => {
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                fetchVisibilityData()
+        }
+})
+
 const deleteOrganization = async (organizationId) => {
         try {
-                await organizationStore.deleteOrganization(teamId.value, organizationId)
+                await organizationStore.deleteOrganization(teamId.value, organizationId, campaignId.value)
                 // Refresh visibility data
-                organizationStore.fetchVisibilityMetrics(teamId.value)
+                organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
         } catch (error) {
                 console.error('Error deleting organization:', error)
         }

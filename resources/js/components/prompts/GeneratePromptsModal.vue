@@ -14,6 +14,10 @@ const props = defineProps({
   teamId: {
     type: [Number, String],
     required: true
+  },
+  campaignId: {
+    type: [Number, String],
+    required: true
   }
 });
 
@@ -45,7 +49,7 @@ watch(() => props.isOpen, async (isOpen) => {
 
 const fetchOrganizations = async () => {
   try {
-    await organizationStore.fetchOrganizations(props.teamId);
+    await organizationStore.fetchOrganizations(props.teamId, props.campaignId);
     organizations.value = organizationStore.organizations;
   } catch (err) {
     console.error('Error fetching organizations:', err);

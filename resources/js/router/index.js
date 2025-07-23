@@ -103,17 +103,18 @@ const routes = [
                 redirect: () => {
                         const user = JSON.parse(localStorage.getItem('user') || '{}')
                         const teamId = user.current_team_id
-                        return teamId ? `/teams/${teamId}/organizations` : '/'
+                        const campaign = teamId ? JSON.parse(localStorage.getItem(`team_${teamId}_current_campaign`) || '{}') : null
+                        return teamId && campaign?.id ? `/teams/${teamId}/campaigns/${campaign.id}/organizations` : '/'
                 }
         },
         {
-                path: '/teams/:teamId/organizations',
+                path: '/teams/:teamId/campaigns/:campaignId/organizations',
                 name: 'organizations.index',
                 component: OrganizationsIndex,
                 meta: { requiresAuth: true }
         },
         {
-                path: '/teams/:teamId/organizations/create',
+                path: '/teams/:teamId/campaigns/:campaignId/organizations/create',
                 name: 'organizations.create',
                 component: OrganizationCreate,
                 meta: { requiresAuth: true }

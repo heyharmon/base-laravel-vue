@@ -81,8 +81,8 @@ onMounted(async () => {
                                                 class="text-sm hover:text-neutral-300"
                                         >Prompts</router-link>
                                         <router-link
-                                                v-if="currentTeam"
-                                                :to="{ name: 'organizations.index', params: { teamId: currentTeam.id } }"
+                                                v-if="currentTeam && currentCampaign"
+                                                :to="{ name: 'organizations.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
                                                 class="text-sm hover:text-neutral-300"
                                         >Organizations</router-link>
                                         <router-link

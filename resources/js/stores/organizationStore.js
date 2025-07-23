@@ -26,19 +26,18 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor) : []))
 
 	// Actions
-        async function fetchOrganizations(teamId) {
-                console.log('Fetching organizations...')
-		// isLoading.value = true
-
-		try {
-                        const response = await api.get(`/teams/${teamId}/organizations`)
-			organizations.value = response
-		} catch (err) {
-			console.error('Error fetching organizations:', err)
-		} finally {
-			// isLoading.value = false
-		}
-	}
+       async function fetchOrganizations(teamId, campaignId = null) {
+               console.log('Fetching organizations...')
+               try {
+                       const endpoint = campaignId ?
+                               `/teams/${teamId}/campaigns/${campaignId}/organizations` :
+                               `/teams/${teamId}/organizations`
+                       const response = await api.get(endpoint)
+                       organizations.value = response
+               } catch (err) {
+                       console.error('Error fetching organizations:', err)
+               }
+       }
 
 	async function fetchOrganization(organizationId) {
 		isLoading.value = true
@@ -80,21 +79,20 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function createAndOnboardOrganization(teamId, organizationData) {
-		console.log('Creating and onboarding organization...')
-		isLoading.value = true
+       async function createAndOnboardOrganization(teamId, organizationData) {
+               console.log('Creating and onboarding organization...')
+               isLoading.value = true
 
-		try {
-                        const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
-                        await fetchOrganizations(teamId)
-			return response // API interceptor already extracts response.data
-		} catch (err) {
-			console.error('Error creating organization:', err)
-			throw err
-		} finally {
-			isLoading.value = false
-		}
-	}
+               try {
+                       const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
+                       return response
+               } catch (err) {
+                       console.error('Error creating organization:', err)
+                       throw err
+               } finally {
+                       isLoading.value = false
+               }
+       }
 
 	async function updateOrganization(organizationId, organizationData) {
 		console.log('Updating organization ID:', organizationId)
@@ -118,13 +116,13 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function deleteOrganization(teamId, organizationId) {
+       async function deleteOrganization(teamId, organizationId, campaignId = null) {
                 console.log('Deleting organization ID:', organizationId)
 		// isLoading.value = true
 
 		try {
                         const response = await api.delete(`/organizations/${organizationId}`)
-                        await fetchOrganizations(teamId)
+                        await fetchOrganizations(teamId, campaignId)
 			return response.data
 		} catch (err) {
 			console.error('Error deleting organization:', err)

@@ -48,7 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('/logout', [AuthController::class, 'logout']);
 
         // Organizations
-        Route::get('teams/{team}/organizations', [OrganizationController::class, 'index']);
+        Route::get('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'index']);
         Route::post('teams/{team}/organizations', [OrganizationController::class, 'store']);
         Route::post('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'store']);
         Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);

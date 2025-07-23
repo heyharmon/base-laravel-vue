@@ -24,14 +24,15 @@ class OrganizationController extends Controller
 	/**
 	 * Display a listing of the resource.
 	 */
-        public function index(Team $team): JsonResponse
-        {
-                $organizations = Organization::where('team_id', $team->id)
-                        ->withCount('terms')
-                        ->get();
+       public function index(Team $team, Campaign $campaign): JsonResponse
+       {
+               $organizations = Organization::where('team_id', $team->id)
+                       ->forCampaign($campaign->id)
+                       ->withCount('terms')
+                       ->get();
 
-		return response()->json($organizations);
-	}
+               return response()->json($organizations);
+       }
 
 	/**
 	 * Store a newly created resource in storage.

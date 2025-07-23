@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { useArticleStore } from '@/stores/articleStore'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -14,18 +15,30 @@ import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 const router = useRouter()
 const route = useRoute()
 const articleStore = useArticleStore()
-const teamId = route.params.teamId
+const campaignStore = useCampaignStore()
+const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
 onMounted(async () => {
-        await articleStore.fetchArticles(teamId, campaignId.value)
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+                await campaignStore.switchCampaign(teamId.value, campaignId.value)
+        }
+        await articleStore.fetchArticles(teamId.value, campaignId.value)
+})
+
+watch(campaignId, async (newId) => {
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                await articleStore.fetchArticles(teamId.value, newId)
+        }
 })
 
 const createArticle = async () => {
-        const newArticle = await articleStore.createArticle(teamId, campaignId.value, {
+        const newArticle = await articleStore.createArticle(teamId.value, campaignId.value, {
                 title: 'Untitled article'
         })
-	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
+        router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 
 const editArticle = (id) => {
@@ -35,7 +48,7 @@ const editArticle = (id) => {
 const deleteArticle = async (id) => {
         if (confirm('Are you sure you want to delete this article?')) {
                 try {
-        await articleStore.deleteArticle(teamId, campaignId.value, id)
+        await articleStore.deleteArticle(teamId.value, campaignId.value, id)
                 } catch (error) {
                         console.error('Error deleting article:', error)
                 }

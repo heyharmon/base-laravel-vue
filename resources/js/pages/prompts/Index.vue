@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
@@ -19,6 +20,7 @@ const route = useRoute()
 const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
@@ -126,8 +128,20 @@ const handleDateRangeChange = (dateRange) => {
 }
 
 onMounted(async () => {
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+                await campaignStore.switchCampaign(teamId.value, campaignId.value)
+        }
         await promptStore.fetchPrompts(teamId.value, campaignId.value)
         await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+})
+
+watch(campaignId, async (newId) => {
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                await promptStore.fetchPrompts(teamId.value, newId)
+                await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+        }
 })
 </script>
 
@@ -199,7 +213,7 @@ onMounted(async () => {
 	</DefaultLayout>
 
 	<!-- Generate Modal -->
-        <GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" @close="isGenerateModalOpen = false" />
+        <GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" :campaign-id="campaignId" @close="isGenerateModalOpen = false" />
 
 	<!-- Prompt Modal -->
 	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" @close="isPromptCreateModalOpen = false" />
