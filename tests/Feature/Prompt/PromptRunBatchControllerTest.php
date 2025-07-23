@@ -9,33 +9,37 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('returns 404 when no prompts exist', function () {
-    $team = Team::factory()->create();
-    $user = $team->owner;
-    Sanctum::actingAs($user);
+	$team = Team::factory()->create();
+	$user = $team->owner;
+	$user->current_team_id = $team->id;
+	$user->save();
+	Sanctum::actingAs($user);
 
-    $mock = Mockery::mock(JobDispatcherService::class);
-    $this->app->instance(JobDispatcherService::class, $mock);
+	$mock = Mockery::mock(JobDispatcherService::class);
+	$this->app->instance(JobDispatcherService::class, $mock);
 
-    $this->postJson('/api/prompt-run-batch')
-        ->assertStatus(404)
-        ->assertJson(['message' => 'No prompts found to run']);
+	$this->postJson("/api/teams/{$team->id}/prompt-run-batch")
+		->assertStatus(404)
+		->assertJson(['message' => 'No prompts found to run']);
 });
 
 it('dispatches a job to run all prompts', function () {
-    $team = Team::factory()->create();
-    $user = $team->owner;
-    Sanctum::actingAs($user);
+	$team = Team::factory()->create();
+	$user = $team->owner;
+	$user->current_team_id = $team->id;
+	$user->save();
+	Sanctum::actingAs($user);
 
-    $prompts = Prompt::factory()->count(3)->for($team)->create();
+	$prompts = Prompt::factory()->count(3)->for($team)->create();
 
-    $mock = Mockery::mock(JobDispatcherService::class);
-    $mock->shouldReceive('dispatch')->once();
-    $this->app->instance(JobDispatcherService::class, $mock);
+	$mock = Mockery::mock(JobDispatcherService::class);
+	$mock->shouldReceive('dispatch')->once();
+	$this->app->instance(JobDispatcherService::class, $mock);
 
-    $this->postJson('/api/prompt-run-batch', ['count' => 2])
-        ->assertStatus(200)
-        ->assertJson([
-            'prompts_count' => $prompts->count(),
-            'expected_jobs' => $prompts->count() * 2,
-        ]);
+	$this->postJson("/api/teams/{$team->id}/prompt-run-batch", ['count' => 2])
+		->assertStatus(200)
+		->assertJson([
+			'prompts_count' => $prompts->count(),
+			'expected_jobs' => $prompts->count() * 2,
+		]);
 });

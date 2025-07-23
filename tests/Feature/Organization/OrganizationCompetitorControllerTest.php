@@ -19,7 +19,7 @@ it('returns not found when there are no prompts', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	$response = $this->postJson('/api/organizations-find-competitors');
+	$response = $this->postJson("/api/teams/{$team->id}/organizations-find-competitors");
 
 	$response->assertStatus(404);
 });
@@ -36,7 +36,7 @@ it('dispatches competitor jobs for each prompt', function () {
 	$prompt1 = Prompt::factory()->for($team)->create();
 	$prompt2 = Prompt::factory()->for($team)->create();
 
-	$response = $this->postJson('/api/organizations-find-competitors');
+	$response = $this->postJson("/api/teams/{$team->id}/organizations-find-competitors");
 
 	$response->assertStatus(200)
 		->assertJson([
