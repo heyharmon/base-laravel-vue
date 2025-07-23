@@ -48,19 +48,19 @@ const logout = async () => {
 }
 
 const switchTeam = async (teamId) => {
-        try {
-                await teamStore.switchTeam(teamId)
-                window.location.href = `/teams/${teamId}`
-        } catch (error) {
-                console.error('Error switching team:', error)
-        }
+	try {
+		await teamStore.switchTeam(teamId)
+		window.location.href = `/teams/${teamId}`
+	} catch (error) {
+		console.error('Error switching team:', error)
+	}
 }
 
 onMounted(async () => {
-        if (teamStore.currentTeam) {
-                jobStatusStore.pollTeamJobs(teamStore.currentTeam.id)
-        }
-        isTeamDropdownOpen.value = false
+	if (teamStore.currentTeam) {
+		jobStatusStore.pollTeamJobs(teamStore.currentTeam.id)
+	}
+	isTeamDropdownOpen.value = false
 })
 </script>
 
@@ -70,28 +70,34 @@ onMounted(async () => {
 			<div class="flex items-center space-x-4">
 				<router-link to="/" class="text-xl font-bold">Paraloom</router-link>
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
-                                        <router-link
-                                                v-if="currentTeam && currentCampaign"
-                                                :to="{ name: 'home', params: { id: currentTeam.id, campaignId: currentCampaign.id } }"
-                                                class="text-sm hover:text-neutral-300"
-                                        >Rankings</router-link>
-                                        <router-link
-                                                v-if="currentTeam && currentCampaign"
-                                                :to="{ name: 'prompts.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-                                                class="text-sm hover:text-neutral-300"
-                                        >Prompts</router-link>
-                                        <router-link
-                                                v-if="currentTeam && currentCampaign"
-                                                :to="{ name: 'organizations.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-                                                class="text-sm hover:text-neutral-300"
-                                        >Organizations</router-link>
-                                        <router-link
-                                                v-if="currentTeam && currentCampaign"
-                                                :to="{ name: 'articles.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-                                                class="text-sm hover:text-neutral-300"
-                                        >Articles</router-link>
-                                        <router-link v-if="currentTeam" :to="{ name: 'campaigns.index', params: { teamId: currentTeam.id } }" class="text-sm hover:text-neutral-300">Campaigns</router-link>
-                                </div>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'home', params: { id: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Rankings</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'prompts.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Prompts</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'organizations.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Organizations</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'articles.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Articles</router-link
+					>
+					<router-link v-if="currentTeam" :to="{ name: 'campaigns.index', params: { teamId: currentTeam.id } }" class="text-sm hover:text-neutral-300"
+						>Campaigns</router-link
+					>
+				</div>
 			</div>
 
 			<div class="flex items-center gap-4">
@@ -114,7 +120,9 @@ onMounted(async () => {
 					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
 
 					<!-- Team settings link -->
-                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/members`" class="text-sm hover:text-neutral-300"> Team settings </router-link>
+					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/members`" class="text-sm hover:text-neutral-300">
+						Team settings
+					</router-link>
 
 					<!-- Teams dropdown -->
 					<PopoverRoot>

@@ -36,10 +36,10 @@ watch(
 				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
 		)
 
-                if (completedCompetitorJob) {
-                        console.log('Competitor job completed, refreshing organizations')
-                        organizationStore.fetchOrganizations(teamId.value, campaignId.value)
-                }
+		if (completedCompetitorJob) {
+			console.log('Competitor job completed, refreshing organizations')
+			organizationStore.fetchOrganizations(teamId.value, campaignId.value)
+		}
 	},
 	{ deep: true }
 )
@@ -51,19 +51,19 @@ const isNewOrganization = (createdAt) => {
 }
 
 onMounted(async () => {
-        await campaignStore.fetchCampaigns(teamId.value)
-        if (campaignId.value) {
-                await campaignStore.switchCampaign(teamId.value, campaignId.value)
-        }
-        await organizationStore.fetchOrganizations(teamId.value, campaignId.value)
-        await jobStatusStore.pollTeamJobs(teamId.value)
+	await campaignStore.fetchCampaigns(teamId.value)
+	if (campaignId.value) {
+		await campaignStore.switchCampaign(teamId.value, campaignId.value)
+	}
+	await organizationStore.fetchOrganizations(teamId.value, campaignId.value)
+	await jobStatusStore.pollTeamJobs(teamId.value)
 })
 
 watch(campaignId, async (newId) => {
-        if (newId) {
-                await campaignStore.switchCampaign(teamId.value, newId)
-                await organizationStore.fetchOrganizations(teamId.value, newId)
-        }
+	if (newId) {
+		await campaignStore.switchCampaign(teamId.value, newId)
+		await organizationStore.fetchOrganizations(teamId.value, newId)
+	}
 })
 </script>
 
@@ -71,31 +71,28 @@ watch(campaignId, async (newId) => {
 	<DefaultLayout>
 		<div class="container mx-auto py-6">
 			<!-- Header -->
-                        <div class="flex justify-between items-center mb-3">
-                                <div class="flex items-center gap-4">
-                                        <h1 class="text-2xl font-bold">Organizations</h1>
-                                        <CampaignSwitcher />
-                                </div>
-                                <div class="flex space-x-2">
-                                        <Button
-                                                v-if="organizationStore.ownedOrganizations.length > 0"
-                                                @click="organizationStore.findCompetitors(teamId.value)"
+			<div class="flex justify-between items-center mb-3">
+				<div class="flex items-center gap-4">
+					<h1 class="text-2xl font-bold">Organizations</h1>
+				</div>
+				<div class="flex space-x-2">
+					<CampaignSwitcher />
+					<Button
+						v-if="organizationStore.ownedOrganizations.length > 0"
+						@click="organizationStore.findCompetitors(teamId.value)"
 						:disabled="activeCompetitorJobs.length > 0"
 						variant="outline"
 					>
 						{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
 					</Button>
-                                        <Button @click="router.push({ name: 'organizations.create', params: { teamId: teamId.value, campaignId: campaignId.value } })">
+					<Button @click="router.push({ name: 'organizations.create', params: { teamId: teamId.value, campaignId: campaignId.value } })">
 						{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 					</Button>
 				</div>
 			</div>
 
 			<!-- Active jobs message -->
-                        <div
-                                v-if="activeCompetitorJobs.length > 0"
-				class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
-			>
+			<div v-if="activeCompetitorJobs.length > 0" class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
 				<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
 				<span>
 					Looking for new competitors in {{ activeCompetitorJobs.length }} prompt {{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
@@ -106,8 +103,6 @@ watch(campaignId, async (newId) => {
 			<div v-if="organizationStore.isLoading" class="flex justify-center py-8">
 				<div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-900"></div>
 			</div>
-
-
 
 			<div v-else>
 				<!-- Your Organization -->
@@ -191,10 +186,10 @@ watch(campaignId, async (newId) => {
 								>
 									Edit
 								</router-link>
-                                                <button
-                                                        @click.stop="organizationStore.deleteOrganization(teamId.value, org.id, campaignId.value)"
-                                                        class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
-                                                >
+								<button
+									@click.stop="organizationStore.deleteOrganization(teamId.value, org.id, campaignId.value)"
+									class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+								>
 									Remove
 								</button>
 							</div>
