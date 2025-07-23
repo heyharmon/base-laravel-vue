@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
 import GeneratePromptsModal from '@/components/prompts/GeneratePromptsModal.vue'
@@ -18,8 +20,10 @@ const route = useRoute()
 const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 
 const teamId = computed(() => route.params.teamId)
+const campaignId = computed(() => route.params.campaignId)
 
 const isPromptCreateModalOpen = ref(false)
 const isPromptDetailSheetOpen = ref(false)
@@ -32,10 +36,10 @@ const sortOption = ref('default') // Default sort option
 // Using centralized date range from organizationStore
 
 const activePromptJobs = computed(() => {
-        const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
-        return (jobStatusStore.jobs || []).filter((job) => {
-                return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
-        })
+	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
+	return (jobStatusStore.jobs || []).filter((job) => {
+		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
+	})
 })
 
 watch(
@@ -43,7 +47,7 @@ watch(
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-			promptStore.fetchPrompts(teamId.value)
+			promptStore.fetchPrompts(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }
@@ -54,14 +58,14 @@ const promptToDelete = ref(null)
 const showDeleteConfirmation = ref(false)
 
 const runPrompt = async (id, count = 1) => {
-        await promptStore.runPrompt(id, count)
-        await jobStatusStore.pollTeamJobs(teamId.value)
+	await promptStore.runPrompt(id, count)
+	await jobStatusStore.pollTeamJobs(teamId.value)
 }
 
 const runAllPrompts = async (count = 1) => {
 	try {
-                await promptStore.runAllPrompts(teamId.value, count)
-                await jobStatusStore.pollTeamJobs(teamId.value)
+		await promptStore.runAllPrompts(teamId.value, count)
+		await jobStatusStore.pollTeamJobs(teamId.value)
 	} catch (error) {
 		console.error('Error running all prompts:', error)
 	}
@@ -120,18 +124,34 @@ const ownedOrg = computed(() => {
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-        organizationStore.setDateRange(teamId.value, dateRange)
+	organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
 }
 
 onMounted(async () => {
-        await promptStore.fetchPrompts(teamId.value)
-        await organizationStore.fetchVisibilityMetrics(teamId.value)
+	await campaignStore.fetchCampaigns(teamId.value)
+	if (campaignId.value) {
+		await campaignStore.switchCampaign(teamId.value, campaignId.value)
+	}
+	await promptStore.fetchPrompts(teamId.value, campaignId.value)
+	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+})
+
+watch(campaignId, async (newId) => {
+	if (newId) {
+		await campaignStore.switchCampaign(teamId.value, newId)
+		await promptStore.fetchPrompts(teamId.value, newId)
+		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+	}
 })
 </script>
 
 <template>
 	<DefaultLayout>
-		<div class="flex flex-col space-y-6 my-6">
+		<div class="flex justify-between items-center py-6">
+			<h1 class="text-2xl font-bold">Prompts</h1>
+			<CampaignSwitcher />
+		</div>
+		<div class="flex flex-col space-y-6">
 			<!-- Date Filter -->
 			<!-- <DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
@@ -193,7 +213,7 @@ onMounted(async () => {
 	</DefaultLayout>
 
 	<!-- Generate Modal -->
-        <GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" @close="isGenerateModalOpen = false" />
+	<GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" :campaign-id="campaignId" @close="isGenerateModalOpen = false" />
 
 	<!-- Prompt Modal -->
 	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" @close="isPromptCreateModalOpen = false" />

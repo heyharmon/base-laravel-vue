@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useTermStore } from '@/stores/termStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -18,6 +19,7 @@ const router = useRouter()
 const organizationStore = useOrganizationStore()
 const termStore = useTermStore()
 const teamId = ref(null)
+const campaignStore = useCampaignStore()
 const organization = ref({
 	name: '',
 	website: '',
@@ -86,7 +88,7 @@ const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
                 await organizationStore.updateOrganization(route.params.id, organization.value)
-                router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: campaignStore.currentCampaign?.id } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -96,15 +98,15 @@ const updateOrganization = async () => {
 
 const deleteOrganization = async () => {
         try {
-                await organizationStore.deleteOrganization(teamId.value, route.params.id)
-                router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
+                await organizationStore.deleteOrganization(teamId.value, route.params.id, campaignStore.currentCampaign?.id)
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: campaignStore.currentCampaign?.id } })
         } catch (error) {
                 console.error('Error deleting organization:', error)
         }
 }
 
 const cancelEdit = () => {
-        router.push({ name: 'organizations.index', params: { teamId: teamId.value } })
+        router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: campaignStore.currentCampaign?.id } })
 }
 
 const handleDeleteTerm = (termId, termName) => {

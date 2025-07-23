@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui'
 import auth from '@/services/auth'
@@ -12,6 +13,7 @@ import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 const router = useRouter()
 const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
+const campaignStore = useCampaignStore()
 const isAuthenticated = computed(() => auth.isAuthenticated())
 const user = computed(() => auth.getUser())
 const isSuperAdmin = computed(() => user.value?.is_super_admin)
@@ -24,6 +26,7 @@ const teams = computed(() => ({
 }))
 
 const currentTeam = computed(() => teamStore.currentTeam)
+const currentCampaign = computed(() => campaignStore.currentCampaign)
 
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
@@ -45,19 +48,19 @@ const logout = async () => {
 }
 
 const switchTeam = async (teamId) => {
-        try {
-                await teamStore.switchTeam(teamId)
-                window.location.href = `/teams/${teamId}`
-        } catch (error) {
-                console.error('Error switching team:', error)
-        }
+	try {
+		await teamStore.switchTeam(teamId)
+		window.location.href = `/teams/${teamId}`
+	} catch (error) {
+		console.error('Error switching team:', error)
+	}
 }
 
 onMounted(async () => {
-        if (teamStore.currentTeam) {
-                jobStatusStore.pollTeamJobs(teamStore.currentTeam.id)
-        }
-        isTeamDropdownOpen.value = false
+	if (teamStore.currentTeam) {
+		jobStatusStore.pollTeamJobs(teamStore.currentTeam.id)
+	}
+	isTeamDropdownOpen.value = false
 })
 </script>
 
@@ -67,10 +70,30 @@ onMounted(async () => {
 			<div class="flex items-center space-x-4">
 				<router-link to="/" class="text-xl font-bold">Paraloom</router-link>
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
-                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}`" class="text-sm hover:text-neutral-300">Rankings</router-link>
-					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/prompts`" class="text-sm hover:text-neutral-300">Prompts</router-link>
-                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/organizations`" class="text-sm hover:text-neutral-300">Organizations</router-link>
-                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/articles`" class="text-sm hover:text-neutral-300">Articles</router-link>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'home', params: { id: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Rankings</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'prompts.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Prompts</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'organizations.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Organizations</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'articles.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Articles</router-link
+					>
 				</div>
 			</div>
 
@@ -91,10 +114,44 @@ onMounted(async () => {
 						<span class="text-sm">Runs</span>
 					</button>
 
-					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
-
-					<!-- Team settings link -->
-                                        <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/members`" class="text-sm hover:text-neutral-300"> Team settings </router-link>
+					<!-- Settings dropdown -->
+					<PopoverRoot v-if="currentTeam">
+						<PopoverTrigger as-child>
+							<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
+								<span class="text-sm font-medium">Settings</span>
+								<ChevronDownIcon />
+							</div>
+						</PopoverTrigger>
+						<PopoverPortal>
+							<PopoverContent
+								class="w-48 p-0 bg-neutral-800 rounded shadow-lg overflow-hidden border border-neutral-700 z-50"
+								side="bottom"
+								align="end"
+								:side-offset="5"
+							>
+								<div class="py-1">
+									<PopoverClose as-child>
+										<router-link :to="`/teams/${currentTeam.id}/members`" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Team settings
+										</router-link>
+									</PopoverClose>
+									<PopoverClose as-child>
+										<router-link
+											:to="{ name: 'campaigns.index', params: { teamId: currentTeam.id } }"
+											class="block px-3 py-2 text-sm text-white hover:bg-neutral-700"
+										>
+											Campaigns
+										</router-link>
+									</PopoverClose>
+									<PopoverClose as-child v-if="isSuperAdmin">
+										<router-link to="/super-admin/organizations" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Super Admin
+										</router-link>
+									</PopoverClose>
+								</div>
+							</PopoverContent>
+						</PopoverPortal>
+					</PopoverRoot>
 
 					<!-- Teams dropdown -->
 					<PopoverRoot>

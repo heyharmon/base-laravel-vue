@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\BelongsToTeam;
+
+class Campaign extends Model
+{
+        use HasFactory, BelongsToTeam;
+
+        protected $fillable = [
+                'team_id',
+                'name',
+                'description',
+                'is_default',
+        ];
+
+        protected $casts = [
+                'is_default' => 'boolean',
+        ];
+
+        /**
+         * Get the competitors (organizations) that belong to this campaign.
+         */
+        public function competitors(): HasMany
+        {
+                return $this->hasMany(Organization::class)->where('is_competitor', true);
+        }
+
+        /**
+         * Get the prompts that belong to this campaign.
+         */
+        public function prompts(): HasMany
+        {
+                return $this->hasMany(Prompt::class);
+        }
+
+        /**
+         * Get the articles that belong to this campaign.
+         */
+        public function articles(): HasMany
+        {
+                return $this->hasMany(Article::class);
+        }
+
+        /**
+         * Scope a query to only include default campaigns.
+         */
+        public function scopeDefault($query)
+        {
+                return $query->where('is_default', true);
+        }
+
+        /**
+         * Boot the model.
+         */
+        protected static function boot()
+        {
+                parent::boot();
+
+                // Prevent deletion of default campaigns
+                static::deleting(function ($campaign) {
+                        if ($campaign->is_default) {
+                                throw new \Exception('Cannot delete the default campaign');
+                        }
+                });
+        }
+}

@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
@@ -8,29 +9,30 @@ import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
+import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 
 const route = useRoute()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 
 // Use centralized state from the store
 
 // Use the store's fetchVisibilityMetrics directly
-const teamId = computed(() => {
-        return route.params.id || JSON.parse(localStorage.getItem('user') || '{}').current_team_id
-})
+const teamId = computed(() => route.params.id)
+const campaignId = computed(() => route.params.campaignId)
 
 const fetchVisibilityData = () => {
-        if (teamId.value) {
-                organizationStore.fetchVisibilityMetrics(teamId.value)
-        }
+	if (teamId.value && campaignId.value) {
+		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+	}
 }
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-        if (teamId.value) {
-                organizationStore.setDateRange(teamId.value, dateRange)
-        }
+	if (teamId.value && campaignId.value) {
+		organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
+	}
 }
 
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
@@ -52,25 +54,40 @@ const ownedOrg = computed(() => {
 	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
 })
 
-onMounted(() => {
-	// Initial fetch will be handled by the DateFilterDropdown component
-	// No need to duplicate the logic here
-	fetchVisibilityData()
+onMounted(async () => {
+	if (teamId.value) {
+		await campaignStore.fetchCampaigns(teamId.value)
+		if (campaignId.value) {
+			await campaignStore.switchCampaign(teamId.value, campaignId.value)
+			fetchVisibilityData()
+		}
+	}
+})
+
+watch(campaignId, async (newId) => {
+	if (newId) {
+		await campaignStore.switchCampaign(teamId.value, newId)
+		fetchVisibilityData()
+	}
 })
 
 const deleteOrganization = async (organizationId) => {
-        try {
-                await organizationStore.deleteOrganization(teamId.value, organizationId)
-                // Refresh visibility data
-                organizationStore.fetchVisibilityMetrics(teamId.value)
-        } catch (error) {
-                console.error('Error deleting organization:', error)
-        }
+	try {
+		await organizationStore.deleteOrganization(teamId.value, organizationId, campaignId.value)
+		// Refresh visibility data
+		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+	} catch (error) {
+		console.error('Error deleting organization:', error)
+	}
 }
 </script>
 
 <template>
 	<DefaultLayout>
+		<div class="flex justify-between items-center pt-6">
+			<h1 class="text-2xl font-bold">Dashboard</h1>
+			<CampaignSwitcher />
+		</div>
 		<!-- Jobs currently processing message -->
 		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
 			<div class="flex items-center gap-4 mb-2">
