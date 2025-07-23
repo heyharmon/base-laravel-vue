@@ -43,17 +43,17 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	})
 
 	// Actions
-	async function pollTeamJobs() {
-		await fetchTeamJobs()
-		startAutoRefresh(1500)
-	}
+        async function pollTeamJobs(teamId) {
+                await fetchTeamJobs(teamId)
+                startAutoRefresh(teamId, 1500)
+        }
 
-	async function fetchTeamJobs() {
+        async function fetchTeamJobs(teamId) {
 		console.log('Fetching team jobs...')
 		loading.value = true
 
 		try {
-			const response = await api.get('/team-jobs')
+                        const response = await api.get(`/teams/${teamId}/jobs`)
 			jobs.value = response
 			return jobs.value
 		} catch (err) {
@@ -64,29 +64,29 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		}
 	}
 
-	async function cancelTeamJobs() {
+        async function cancelTeamJobs(teamId) {
 		try {
-			await api.post('/team-jobs/cancel')
-			await fetchTeamJobs()
+                        await api.post(`/teams/${teamId}/jobs/cancel`)
+                        await fetchTeamJobs(teamId)
 		} catch (err) {
 			console.error('Error cancelling jobs:', err)
 			throw err
 		}
 	}
 
-	function hasActiveJobs() {
-		return jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
-	}
+        function hasActiveJobs() {
+                return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
+        }
 
-	function startAutoRefresh(interval = 2000) {
-		stopAutoRefresh()
+        function startAutoRefresh(teamId, interval = 2000) {
+                stopAutoRefresh()
 
-		refreshTimer.value = setInterval(() => {
-			if (hasActiveJobs()) {
-				fetchTeamJobs()
-			}
-		}, interval)
-	}
+                refreshTimer.value = setInterval(() => {
+                        if (hasActiveJobs()) {
+                                fetchTeamJobs(teamId)
+                        }
+                }, interval)
+        }
 
 	function stopAutoRefresh() {
 		if (refreshTimer.value) {

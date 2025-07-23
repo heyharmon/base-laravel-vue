@@ -14,17 +14,22 @@ export const usePromptStore = defineStore('prompts', () => {
 	const isRunningAll = ref(false)
 
 	// Actions
-	async function fetchPrompts() {
-		console.log('Fetching prompts...')
-		isLoading.value = true
-		try {
-			prompts.value = await api.get('/prompts')
-		} catch (error) {
-			console.error('Error fetching prompts:', error)
-		} finally {
-			isLoading.value = false
-		}
-	}
+        async function fetchPrompts(teamId, campaignId) {
+                if (!campaignId) {
+                        console.error('Campaign ID is required')
+                        return
+                }
+                console.log('Fetching prompts...')
+
+                isLoading.value = true
+                try {
+                        prompts.value = await api.get(`/teams/${teamId}/campaigns/${campaignId}/prompts`)
+                } catch (error) {
+                        console.error('Error fetching prompts:', error)
+                } finally {
+                        isLoading.value = false
+                }
+        }
 
 	async function showPrompt(id) {
 		console.log('Fetching prompt details for prompt ID:', id)
@@ -39,13 +44,14 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
-	async function createPrompt(data) {
-		console.log('Creating prompt...')
-		isLoading.value = true
-		try {
-			const newPrompt = await api.post('/prompts', data)
-			prompts.value.unshift(newPrompt)
-			return newPrompt
+        async function createPrompt(teamId, campaignId, data) {
+                console.log('Creating prompt...')
+
+                isLoading.value = true
+                try {
+                        const newPrompt = await api.post(`/teams/${teamId}/campaigns/${campaignId}/prompts`, data)
+                        prompts.value.unshift(newPrompt)
+                        return newPrompt
 		} catch (error) {
 			console.error('Error creating prompt:', error)
 			throw error
@@ -99,11 +105,12 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
-	async function runAllPrompts(count = 1) {
+	async function runAllPrompts(teamId, count = 1) {
 		console.log('Running all prompts...')
+
 		isRunningAll.value = true
 		try {
-			return await api.post('/prompt-run-batch', { count })
+			return await api.post(`/teams/${teamId}/prompt-run-batch`, { count })
 		} catch (error) {
 			console.error('Error running all prompts:', error)
 			throw error

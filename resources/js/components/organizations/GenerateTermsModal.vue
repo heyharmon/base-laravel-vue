@@ -73,12 +73,13 @@ const handleCreateTerms = () => {
 				{{ error }}
 			</div>
 
-			<TermSuggestions
-				v-if="organization?.website"
-				:domain="organization.website"
-				:organization-id="route.params.id"
-				@create-terms="handleCreateTerms"
-			/>
+                        <TermSuggestions
+                                v-if="organization?.website"
+                                :domain="organization.website"
+                                :organization-id="route.params.id"
+                                :team-id="organization.team_id"
+                                @create-terms="handleCreateTerms"
+                        />
 		</div>
 
 		<!-- <template #footer>

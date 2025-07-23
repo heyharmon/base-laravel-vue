@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
 use App\Models\Term;
 use App\Jobs\CheckTermInPastResponsesJob;
+use App\Models\Campaign;
 
 class OrganizationController extends Controller
 {
@@ -22,22 +24,21 @@ class OrganizationController extends Controller
 	/**
 	 * Display a listing of the resource.
 	 */
-	public function index(): JsonResponse
-	{
-		$teamId = Auth::user()->current_team_id;
+       public function index(Team $team, Campaign $campaign): JsonResponse
+       {
+               $organizations = Organization::where('team_id', $team->id)
+                       ->forCampaign($campaign->id)
+                       ->withCount('terms')
+                       ->get();
 
-		$organizations = Organization::where('team_id', $teamId)
-			->withCount('terms')
-			->get();
-
-		return response()->json($organizations);
-	}
+               return response()->json($organizations);
+       }
 
 	/**
 	 * Store a newly created resource in storage.
 	 */
-	public function store(Request $request): JsonResponse
-	{
+        public function store(Request $request, Team $team, Campaign $campaign = null): JsonResponse
+        {
 		$validated = $request->validate([
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
@@ -55,7 +56,11 @@ class OrganizationController extends Controller
 		]);
 
 		// TODO: Move this term creation logic into the organization model boot method
-		$organization = request()->user()->currentTeam->organizations()->create($validated);
+                if ($validated['is_competitor'] ?? false) {
+                        $validated['campaign_id'] = $campaign?->id;
+                }
+
+                $organization = $team->organizations()->create($validated);
 
 		// Create a term for the competitor name
 		$nameTerm = Term::create([
@@ -71,9 +76,9 @@ class OrganizationController extends Controller
 			'name' => $organization->website,
 		]);
 
-		foreach ([$nameTerm, $websiteTerm] as $term) {
-			$this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, request()->user()->currentTeam->id));
-		}
+                foreach ([$nameTerm, $websiteTerm] as $term) {
+                        $this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $team->id));
+                }
 
 		return response()->json($organization, 201);
 	}

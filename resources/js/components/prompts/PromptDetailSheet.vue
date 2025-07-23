@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import api from '@/services/api.js'
@@ -22,6 +22,8 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
+const teamId = route.params.teamId
 
 const emit = defineEmits(['close'])
 
@@ -101,10 +103,10 @@ const exportPrompt = async () => {
 }
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle({
-		title: 'Untitled article',
-		prompt_id: props.promptId
-	})
+        const newArticle = await articleStore.createArticle(teamId, {
+                title: 'Untitled article',
+                prompt_id: props.promptId
+        })
 	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
 }
 

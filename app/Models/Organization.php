@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
 use App\Models\Article;
+use App\Models\Campaign;
 
 class Organization extends Model
 {
@@ -37,8 +38,27 @@ class Organization extends Model
 	/**
 	 * Get the articles that belong to the organization.
 	 */
-	public function articles(): HasMany
-	{
-		return $this->hasMany(Article::class);
-	}
+        public function articles(): HasMany
+        {
+                return $this->hasMany(Article::class);
+        }
+
+        /**
+         * Get the campaign that owns the organization (for competitors only).
+         */
+        public function campaign(): BelongsTo
+        {
+                return $this->belongsTo(Campaign::class);
+        }
+
+        /**
+         * Scope a query to only include organizations for a specific campaign.
+         */
+        public function scopeForCampaign($query, $campaignId)
+        {
+                return $query->where(function ($q) use ($campaignId) {
+                        $q->where('campaign_id', $campaignId)
+                          ->orWhere('is_competitor', false);
+                });
+        }
 }

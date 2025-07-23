@@ -7,6 +7,8 @@ use App\Models\Organization;
 use App\Models\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Team;
+use App\Models\Campaign;
 
 class OrganizationVisibilityController extends Controller
 {
@@ -14,9 +16,10 @@ class OrganizationVisibilityController extends Controller
 	 * Get visibility metrics for organizations within a date range.
 	 * OPTIMIZED VERSION - Single query approach
 	 */
-	public function index(Request $request)
-	{
-		$teamId = $request->user()->currentTeam->id;
+        public function index(Request $request, Team $team, Campaign $campaign)
+        {
+                $teamId = $team->id;
+                $campaignId = $campaign->id;
 
 		// Validate request parameters
 		$request->validate([
@@ -29,8 +32,9 @@ class OrganizationVisibilityController extends Controller
 
 		// Get total responses count with date filtering
 		$totalResponsesQuery = DB::table('responses')
-			->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
-			->where('prompts.team_id', $teamId);
+                        ->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
+                        ->where('prompts.team_id', $teamId)
+                        ->where('prompts.campaign_id', $campaignId);
 
 		if ($startDate) {
 			$totalResponsesQuery->where('responses.created_at', '>=', $startDate);
@@ -42,12 +46,12 @@ class OrganizationVisibilityController extends Controller
 		$totalResponses = $totalResponsesQuery->count();
 
 		// Get all organizations with their mention counts in a single optimized query
-		$organizationsWithMentions = DB::table('organizations')
-			->select([
-				'organizations.*',
-				DB::raw('COALESCE(mention_data.mention_count, 0) as total_mentions')
-			])
-			->leftJoin(DB::raw('(
+                $organizationsWithMentions = DB::table('organizations')
+                        ->select([
+                                'organizations.*',
+                                DB::raw('COALESCE(mention_data.mention_count, 0) as total_mentions')
+                        ])
+                        ->leftJoin(DB::raw('(
                 SELECT
                     t.organization_id,
                     COUNT(DISTINCT r.id) as mention_count
@@ -56,14 +60,19 @@ class OrganizationVisibilityController extends Controller
                 INNER JOIN responses r ON r.id = tr.response_id
                 INNER JOIN prompts p ON p.id = r.prompt_id
                 WHERE p.team_id = ?
+                AND p.campaign_id = ?
                 ' . ($startDate ? 'AND r.created_at >= ?' : '') . '
                 ' . ($endDate ? 'AND r.created_at <= ?' : '') . '
                 GROUP BY t.organization_id
             ) as mention_data'), 'organizations.id', '=', 'mention_data.organization_id')
-			->where('organizations.team_id', $teamId);
+                        ->where('organizations.team_id', $teamId)
+                        ->where(function($query) use ($campaignId) {
+                                $query->where('organizations.campaign_id', $campaignId)
+                                      ->orWhere('organizations.is_competitor', false);
+                        });
 
 		// Bind parameters for the subquery
-		$bindings = [$teamId];
+                $bindings = [$teamId, $campaignId];
 		if ($startDate) $bindings[] = $startDate;
 		if ($endDate) $bindings[] = $endDate;
 
@@ -98,9 +107,9 @@ class OrganizationVisibilityController extends Controller
 	 * Alternative implementation using Eloquent with optimized queries
 	 * MODERATE OPTIMIZATION - Better than original but uses Eloquent
 	 */
-	public function indexAlternative(Request $request)
-	{
-		$teamId = $request->user()->currentTeam->id;
+        public function indexAlternative(Request $request, Team $team)
+        {
+                $teamId = $team->id;
 
 		$request->validate([
 			'start_date' => 'nullable|date',
@@ -183,9 +192,9 @@ class OrganizationVisibilityController extends Controller
 	 * Cached version for high-traffic scenarios
 	 * AGGRESSIVE OPTIMIZATION - Adds caching layer
 	 */
-	public function indexCached(Request $request)
-	{
-		$teamId = $request->user()->currentTeam->id;
+        public function indexCached(Request $request, Team $team)
+        {
+                $teamId = $team->id;
 
 		$request->validate([
 			'start_date' => 'nullable|date',

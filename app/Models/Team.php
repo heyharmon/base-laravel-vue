@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use App\Models\JobStatus;
+use App\Models\Campaign;
 
 class Team extends Model
 {
@@ -69,14 +70,14 @@ class Team extends Model
 	/**
 	 * Get the prompts that belong to the team.
 	 */
-	public function prompts(): HasMany
-	{
-		return $this->hasMany(Prompt::class);
-	}
+        public function prompts(): HasMany
+        {
+                return $this->hasMany(Prompt::class);
+        }
 
-	/**
-	 * Get the organizations that belong to the team.
-	 */
+        /**
+         * Get the organizations that belong to the team.
+         */
 	public function organizations(): HasMany
 	{
 		return $this->hasMany(Organization::class);
@@ -85,10 +86,26 @@ class Team extends Model
 	/**
 	 * Get the articles that belong to the team.
 	 */
-	public function articles(): HasMany
-	{
-		return $this->hasMany(Article::class);
-	}
+        public function articles(): HasMany
+        {
+                return $this->hasMany(Article::class);
+        }
+
+        /**
+         * Get the campaigns that belong to the team.
+         */
+        public function campaigns(): HasMany
+        {
+                return $this->hasMany(Campaign::class);
+        }
+
+        /**
+         * Get the default campaign for the team.
+         */
+        public function defaultCampaign()
+        {
+                return $this->campaigns()->where('is_default', true)->first();
+        }
 
 	/**
 	 * Get the conversations that belong to the team.
@@ -110,17 +127,27 @@ class Team extends Model
 	 * The "booted" method of the model.
 	 * Remove related data and queued jobs when deleting a team.
 	 */
-	protected static function booted()
-	{
-		static::deleting(function (Team $team) {
-			// Detach all users from the team
-			$team->users()->detach();
+        protected static function booted()
+        {
+                static::created(function (Team $team) {
+                        Campaign::create([
+                                'team_id' => $team->id,
+                                'name' => 'Default Campaign',
+                                'description' => 'Default campaign',
+                                'is_default' => true,
+                        ]);
+                });
+
+                static::deleting(function (Team $team) {
+                        // Detach all users from the team
+                        $team->users()->detach();
 
 			// Delete related models via Eloquent so model events fire
 			$team->prompts()->get()->each->delete();
 			$team->terms()->get()->each->delete();
-			$team->organizations()->get()->each->delete();
-			$team->conversations()->get()->each->delete();
+                        $team->organizations()->get()->each->delete();
+                        $team->campaigns()->get()->each->delete();
+                        $team->conversations()->get()->each->delete();
 
 			// Remove queued job data
 			$jobIds = $team->jobStatuses()->pluck('job_id')->toArray();
