@@ -9,15 +9,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasVersions;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
+use App\Traits\BelongsToCampaign;
 
 class Article extends Model
 {
-	use HasFactory, HasJobStatus, HasVersions, BelongsToTeam;
+        use HasFactory, HasJobStatus, HasVersions, BelongsToTeam, BelongsToCampaign;
 
-	protected $fillable = [
-		'team_id',
-		'organization_id',
-		'prompt_id',
+        protected $fillable = [
+                'team_id',
+                'campaign_id',
+                'organization_id',
+                'prompt_id',
 		'current_version',
 		'title',
 		'meta_title',

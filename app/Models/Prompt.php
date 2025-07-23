@@ -9,19 +9,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
+use App\Traits\BelongsToCampaign;
 use App\Models\Organization;
 
 class Prompt extends Model
 {
-	use HasFactory, HasJobStatus, BelongsToTeam;
+        use HasFactory, HasJobStatus, BelongsToTeam, BelongsToCampaign;
 
-	protected $fillable = [
-		'team_id',
-		'name',
-		'content',
-		'description',
-		'is_active',
-		'frequency',
+        protected $fillable = [
+                'team_id',
+                'campaign_id',
+                'name',
+                'content',
+                'description',
+                'is_active',
+                'frequency',
 	];
 
 	protected $casts = [

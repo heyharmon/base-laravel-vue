@@ -19,12 +19,12 @@ export const useArticleStore = defineStore('article', () => {
 	const conversationId = ref(null)
 	const newMessage = ref('')
 
-        const fetchArticles = async (teamId) => {
+        const fetchArticles = async (teamId, campaignId) => {
 		console.log('Fetching articles...')
 		isLoading.value = true
 
 		try {
-                        const response = await api.get(`/teams/${teamId}/articles`)
+                        const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/articles`)
 			articles.value = response
 			return response
 		} catch (err) {
@@ -91,13 +91,13 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-        const createArticle = async (teamId, articleData) => {
+        const createArticle = async (teamId, campaignId, articleData) => {
 		console.log('Creating article...')
 		isLoading.value = true
 
 		try {
-                        const response = await api.post(`/teams/${teamId}/articles`, articleData)
-                        await fetchArticles(teamId)
+                        const response = await api.post(`/teams/${teamId}/campaigns/${campaignId}/articles`, articleData)
+                        await fetchArticles(teamId, campaignId)
 			return response
 		} catch (err) {
 			console.error('Error creating article:', err)
@@ -128,7 +128,7 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-        const deleteArticle = async (teamId, id) => {
+        const deleteArticle = async (teamId, campaignId, id) => {
 		console.log('Deleting article...')
 		isLoading.value = true
 
@@ -141,7 +141,7 @@ export const useArticleStore = defineStore('article', () => {
 			}
 
 			// Refresh the articles list
-                        await fetchArticles(teamId)
+                        await fetchArticles(teamId, campaignId)
 
 			return true
 		} catch (err) {

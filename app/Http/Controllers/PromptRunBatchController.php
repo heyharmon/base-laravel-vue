@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Team;
+use App\Models\Campaign;
 use App\Models\Prompt;
 use App\Jobs\RunAllPromptsJob;
 
@@ -19,7 +20,7 @@ class PromptRunBatchController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-	public function store(Request $request, Team $team): JsonResponse
+        public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
 	{
 		$validated = $request->validate([
 			'providers' => 'nullable|array',
@@ -31,7 +32,9 @@ class PromptRunBatchController extends Controller
 		$count = $validated['count'] ?? 1;
 
 		// Get all prompts
-		$prompts = Prompt::where('team_id', $team->id)->get();
+                $prompts = Prompt::where('team_id', $team->id)
+                        ->where('campaign_id', $campaign->id)
+                        ->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([

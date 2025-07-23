@@ -24,18 +24,18 @@ const routes = [
                 redirect: () => {
                         const user = JSON.parse(localStorage.getItem('user') || '{}')
                         const teamId = user.current_team_id
-                        return teamId ? `/teams/${teamId}` : '/login'
+                        return teamId ? `/teams/${teamId}/campaigns/1` : '/login'
                 }
         },
         {
-                path: '/teams/:id?',
+                path: '/teams/:teamId/campaigns/:campaignId',
                 name: 'home',
                 component: Dashboard,
                 meta: { requiresAuth: true }
         },
         {
                 path: '/dashboard',
-                redirect: '/' 
+                redirect: '/'
         },
 	{
 		path: '/login',
@@ -112,39 +112,39 @@ const routes = [
 			const user = JSON.parse(localStorage.getItem('user') || '{}')
 			const teamId = user.current_team_id
 
-			if (teamId) {
-				return `/teams/${teamId}/prompts`
-			}
+                        if (teamId) {
+                                return `/teams/${teamId}/campaigns/1/prompts`
+                        }
 			// If no team ID, redirect to home
 			return '/'
 		}
 	},
-	{
-		path: '/teams/:teamId/prompts',
-		name: 'prompts.index',
-		component: PromptsIndex,
-		meta: { requiresAuth: true }
-	},
+        {
+                path: '/teams/:teamId/campaigns/:campaignId/prompts',
+                name: 'prompts.index',
+                component: PromptsIndex,
+                meta: { requiresAuth: true }
+        },
         {
                 path: '/articles',
                 redirect: () => {
                         const user = JSON.parse(localStorage.getItem('user') || '{}')
                         const teamId = user.current_team_id
-                        return teamId ? `/teams/${teamId}/articles` : '/'
+                        return teamId ? `/teams/${teamId}/campaigns/1/articles` : '/'
                 }
         },
         {
-                path: '/teams/:teamId/articles',
+                path: '/teams/:teamId/campaigns/:campaignId/articles',
                 name: 'articles.index',
                 component: ArticlesIndex,
                 meta: { requiresAuth: true }
         },
-	{
-		path: '/articles/:id/edit',
-		name: 'articles.edit',
-		component: ArticleEdit,
-		meta: { requiresAuth: true }
-	},
+        {
+                path: '/teams/:teamId/campaigns/:campaignId/articles/:id/edit',
+                name: 'articles.edit',
+                component: ArticleEdit,
+                meta: { requiresAuth: true }
+        },
 	{
 		path: '/super-admin/organizations',
 		name: 'super-admin.organizations',

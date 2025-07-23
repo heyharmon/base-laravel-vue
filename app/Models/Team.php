@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use App\Models\JobStatus;
+use App\Models\Campaign;
 
 class Team extends Model
 {
@@ -69,10 +70,18 @@ class Team extends Model
 	/**
 	 * Get the prompts that belong to the team.
 	 */
-	public function prompts(): HasMany
-	{
-		return $this->hasMany(Prompt::class);
-	}
+        public function prompts(): HasMany
+        {
+                return $this->hasMany(Prompt::class);
+        }
+
+        /**
+         * Get the campaigns that belong to the team.
+         */
+        public function campaigns(): HasMany
+        {
+                return $this->hasMany(Campaign::class);
+        }
 
 	/**
 	 * Get the organizations that belong to the team.
