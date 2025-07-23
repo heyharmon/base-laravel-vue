@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useCampaignStore } from '@/stores/campaignStore'
 import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -10,6 +11,7 @@ import OrganizationSearch from '@/components/OrganizationSearch.vue'
 const router = useRouter()
 const route = useRoute()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 const teamId = route.params.teamId
 const isSubmitting = ref(false)
 const isLoadingDetails = ref(false)
@@ -52,7 +54,7 @@ const createOrganization = async () => {
 	isSubmitting.value = true
 	try {
 		// Create the organization
-                const newOrg = await organizationStore.createOrganization(teamId, organization.value)
+                const newOrg = await organizationStore.createOrganization(teamId, campaignStore.currentCampaign?.id, organization.value)
 
         router.push({ name: 'organizations.index', params: { teamId } })
 	} catch (error) {
@@ -66,9 +68,12 @@ const createOrganization = async () => {
 <template>
 	<DefaultLayout>
 		<div class="max-w-2xl mx-auto py-8">
-			<div class="flex justify-between items-center mb-8">
-				<h1 class="text-2xl font-bold">Add Competitor</h1>
-			</div>
+                        <div class="flex justify-between items-center mb-8">
+                                <div class="flex items-center gap-4">
+                                        <h1 class="text-2xl font-bold">Add Competitor</h1>
+                                        <CampaignSwitcher />
+                                </div>
+                        </div>
 
 			<div class="space-y-4">
 				<OrganizationSearch

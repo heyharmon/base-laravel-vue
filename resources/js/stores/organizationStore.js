@@ -144,13 +144,11 @@ export const useOrganizationStore = defineStore('organization', () => {
                 try {
                         const params = {}
 
-                        if (dateRanges[teamId]) {
-                                if (dateRanges[teamId].startDate) {
-                                        params.start_date = dateRanges[teamId].startDate
-                                }
-                                if (dateRanges[teamId].endDate) {
-                                        params.end_date = dateRanges[teamId].endDate
-                                }
+                        if (currentDateRange.value.startDate) {
+                                params.start_date = currentDateRange.value.startDate
+                        }
+                        if (currentDateRange.value.endDate) {
+                                params.end_date = currentDateRange.value.endDate
                         }
 
                         const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organization-visibility`, {

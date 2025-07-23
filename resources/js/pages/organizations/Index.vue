@@ -6,6 +6,7 @@ import { useRouter, useRoute } from 'vue-router'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
+import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
@@ -56,9 +57,12 @@ onMounted(async () => {
 	<DefaultLayout>
 		<div class="container mx-auto py-6">
 			<!-- Header -->
-			<div class="flex justify-between items-center mb-3">
-				<h1 class="text-2xl font-bold">Organizations</h1>
-				<div class="flex space-x-2">
+                        <div class="flex justify-between items-center mb-3">
+                                <div class="flex items-center gap-4">
+                                        <h1 class="text-2xl font-bold">Organizations</h1>
+                                        <CampaignSwitcher />
+                                </div>
+                                <div class="flex space-x-2">
                                         <Button
                                                 v-if="organizationStore.ownedOrganizations.length > 0"
                                                 @click="organizationStore.findCompetitors(teamId)"

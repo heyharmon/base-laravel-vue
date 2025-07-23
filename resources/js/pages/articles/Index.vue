@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useArticleStore } from '@/stores/articleStore'
 import moment from 'moment'
@@ -9,18 +9,20 @@ import EditIcon from '../../components/icons/EditIcon.vue'
 import TrashIcon from '../../components/icons/TrashIcon.vue'
 import PlusIcon from '../../components/icons/PlusIcon.vue'
 import DocumentIcon from '../../components/icons/DocumentIcon.vue'
+import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 
 const router = useRouter()
 const route = useRoute()
 const articleStore = useArticleStore()
 const teamId = route.params.teamId
+const campaignId = computed(() => route.params.campaignId)
 
 onMounted(async () => {
-        await articleStore.fetchArticles(teamId)
+        await articleStore.fetchArticles(teamId, campaignId.value)
 })
 
 const createArticle = async () => {
-        const newArticle = await articleStore.createArticle(teamId, {
+        const newArticle = await articleStore.createArticle(teamId, campaignId.value, {
                 title: 'Untitled article'
         })
 	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
@@ -33,7 +35,7 @@ const editArticle = (id) => {
 const deleteArticle = async (id) => {
         if (confirm('Are you sure you want to delete this article?')) {
                 try {
-                        await articleStore.deleteArticle(teamId, id)
+        await articleStore.deleteArticle(teamId, campaignId.value, id)
                 } catch (error) {
                         console.error('Error deleting article:', error)
                 }
@@ -42,17 +44,20 @@ const deleteArticle = async (id) => {
 </script>
 
 <template>
-	<DefaultLayout>
-		<div class="container mx-auto py-8">
-			<!-- Top bar -->
-			<div class="flex justify-between items-center mb-8">
-				<h1 class="text-2xl font-bold">Articles</h1>
-				<Button @click="createArticle">
-					<div class="flex items-center gap-2">
-						<PlusIcon />
-						Create article
-					</div>
-				</Button>
+        <DefaultLayout>
+                <div class="container mx-auto py-8">
+                        <!-- Top bar -->
+                        <div class="flex justify-between items-center mb-8">
+                                <div class="flex items-center gap-4">
+                                        <h1 class="text-2xl font-bold">Articles</h1>
+                                        <CampaignSwitcher />
+                                </div>
+                                <Button @click="createArticle">
+                                        <div class="flex items-center gap-2">
+                                                <PlusIcon />
+                                                Create article
+                                        </div>
+                                </Button>
 			</div>
 
 			<!-- Loading state -->

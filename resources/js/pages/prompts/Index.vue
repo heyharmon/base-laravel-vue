@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
 import GeneratePromptsModal from '@/components/prompts/GeneratePromptsModal.vue'
@@ -20,6 +21,7 @@ const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 
 const teamId = computed(() => route.params.teamId)
+const campaignId = computed(() => route.params.campaignId)
 
 const isPromptCreateModalOpen = ref(false)
 const isPromptDetailSheetOpen = ref(false)
@@ -43,7 +45,7 @@ watch(
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-			promptStore.fetchPrompts(teamId.value)
+                        promptStore.fetchPrompts(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }
@@ -120,18 +122,22 @@ const ownedOrg = computed(() => {
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-        organizationStore.setDateRange(teamId.value, dateRange)
+        organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
 }
 
 onMounted(async () => {
-        await promptStore.fetchPrompts(teamId.value)
-        await organizationStore.fetchVisibilityMetrics(teamId.value)
+        await promptStore.fetchPrompts(teamId.value, campaignId.value)
+        await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 })
 </script>
 
 <template>
-	<DefaultLayout>
-		<div class="flex flex-col space-y-6 my-6">
+        <DefaultLayout>
+                <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-2xl font-bold">Prompts</h1>
+                        <CampaignSwitcher />
+                </div>
+                <div class="flex flex-col space-y-6 my-6">
 			<!-- Date Filter -->
 			<!-- <DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
