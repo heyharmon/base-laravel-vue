@@ -10,6 +10,7 @@ use App\Http\Controllers\SuperAdminOrganizationExportController;
 use App\Http\Controllers\SuperAdminOrganizationController;
 use App\Http\Controllers\PromptRunController;
 use App\Http\Controllers\PromptRunBatchController;
+use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\PromptExportController;
@@ -47,17 +48,17 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('/logout', [AuthController::class, 'logout']);
 
         // Organizations
-        Route::get('teams/{team}/organizations', [OrganizationController::class, 'index']);
-        Route::post('teams/{team}/organizations', [OrganizationController::class, 'store']);
+        Route::get('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'index']);
+        Route::post('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'store']);
         Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);
-        Route::post('teams/{team}/organizations-onboard', [OrganizationOnboardController::class, 'store']);
+        Route::post('teams/{team}/campaigns/{campaign}/organizations-onboard', [OrganizationOnboardController::class, 'store']);
 
         // Organization Competitors
-        Route::post('teams/{team}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
+        Route::post('teams/{team}/campaigns/{campaign}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
 
         // Organization Visibility
-        Route::get('teams/{team}/organization-visibility', [OrganizationVisibilityController::class, 'index']);
-        Route::get('teams/{team}/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
+        Route::get('teams/{team}/campaigns/{campaign}/organization-visibility', [OrganizationVisibilityController::class, 'index']);
+        Route::get('teams/{team}/campaigns/{campaign}/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
 
 	// Organization Search
 	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
@@ -72,8 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Prompts
-	Route::get('teams/{team}/prompts', [PromptController::class, 'index']);
-	Route::post('teams/{team}/prompts', [PromptController::class, 'store']);
+        Route::get('teams/{team}/campaigns/{campaign}/prompts', [PromptController::class, 'index']);
+        Route::post('teams/{team}/campaigns/{campaign}/prompts', [PromptController::class, 'store']);
 	Route::get('prompts/{prompt}', [PromptController::class, 'show']);
 	Route::put('prompts/{prompt}', [PromptController::class, 'update']);
 	Route::delete('prompts/{prompt}', [PromptController::class, 'destroy']);
@@ -83,10 +84,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 	// Running prompts
 	Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
-	Route::post('teams/{team}/prompt-run-batch', [PromptRunBatchController::class, 'store']);
+        Route::post('teams/{team}/campaigns/{campaign}/prompt-run-batch', [PromptRunBatchController::class, 'store']);
 
-	// Team routes
-	Route::resource('teams', TeamController::class);
+        // Campaign routes
+        Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
+        Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
+
+        // Team routes
+        Route::resource('teams', TeamController::class);
 	Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
 	Route::post('teams/{team}/switch', [TeamController::class, 'switchTeam']);
 	Route::post('teams/{team}/accept-invitation', [TeamController::class, 'acceptInvitation']);
@@ -99,8 +104,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 
         // Articles
-        Route::get('teams/{team}/articles', [ArticleController::class, 'index']);
-        Route::post('teams/{team}/articles', [ArticleController::class, 'store']);
+        Route::get('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'index']);
+        Route::post('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'store']);
         Route::resource('articles', ArticleController::class)->except(['index', 'store']);
         Route::get('articles/{article}/perplexity-response', [ArticleController::class, 'getPerplexityResponse']);
 

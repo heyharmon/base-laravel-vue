@@ -8,6 +8,7 @@ use App\Models\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Team;
+use App\Models\Campaign;
 
 class OrganizationVisibilityController extends Controller
 {
@@ -15,7 +16,7 @@ class OrganizationVisibilityController extends Controller
 	 * Get visibility metrics for organizations within a date range.
 	 * OPTIMIZED VERSION - Single query approach
 	 */
-        public function index(Request $request, Team $team)
+        public function index(Request $request, Team $team, Campaign $campaign)
         {
                 $teamId = $team->id;
 
@@ -29,9 +30,10 @@ class OrganizationVisibilityController extends Controller
 		$endDate = $request->input('end_date');
 
 		// Get total responses count with date filtering
-		$totalResponsesQuery = DB::table('responses')
-			->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
-			->where('prompts.team_id', $teamId);
+                $totalResponsesQuery = DB::table('responses')
+                        ->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
+                        ->where('prompts.team_id', $teamId)
+                        ->where('prompts.campaign_id', $campaign->id);
 
 		if ($startDate) {
 			$totalResponsesQuery->where('responses.created_at', '>=', $startDate);
@@ -56,17 +58,21 @@ class OrganizationVisibilityController extends Controller
                 INNER JOIN term_response tr ON tr.term_id = t.id
                 INNER JOIN responses r ON r.id = tr.response_id
                 INNER JOIN prompts p ON p.id = r.prompt_id
-                WHERE p.team_id = ?
+                WHERE p.team_id = ? AND p.campaign_id = ?
                 ' . ($startDate ? 'AND r.created_at >= ?' : '') . '
                 ' . ($endDate ? 'AND r.created_at <= ?' : '') . '
                 GROUP BY t.organization_id
             ) as mention_data'), 'organizations.id', '=', 'mention_data.organization_id')
-			->where('organizations.team_id', $teamId);
+                        ->where('organizations.team_id', $teamId)
+                        ->where(function ($q) use ($campaign) {
+                                $q->where('organizations.campaign_id', $campaign->id)
+                                  ->orWhere('organizations.is_competitor', false);
+                        });
 
 		// Bind parameters for the subquery
-		$bindings = [$teamId];
-		if ($startDate) $bindings[] = $startDate;
-		if ($endDate) $bindings[] = $endDate;
+                $bindings = [$teamId, $campaign->id];
+                if ($startDate) $bindings[] = $startDate;
+                if ($endDate) $bindings[] = $endDate;
 
 		$organizations = $organizationsWithMentions->addBinding($bindings, 'join')->get();
 
@@ -237,16 +243,20 @@ class OrganizationVisibilityController extends Controller
                 INNER JOIN term_response tr ON tr.term_id = t.id
                 INNER JOIN responses r ON r.id = tr.response_id
                 INNER JOIN prompts p ON p.id = r.prompt_id
-                WHERE p.team_id = ?
+                WHERE p.team_id = ? AND p.campaign_id = ?
                 ' . ($startDate ? 'AND r.created_at >= ?' : '') . '
                 ' . ($endDate ? 'AND r.created_at <= ?' : '') . '
                 GROUP BY t.organization_id
             ) as mention_data'), 'organizations.id', '=', 'mention_data.organization_id')
-			->where('organizations.team_id', $teamId);
+                        ->where('organizations.team_id', $teamId)
+                        ->where(function ($q) use ($campaign) {
+                                $q->where('organizations.campaign_id', $campaign->id)
+                                  ->orWhere('organizations.is_competitor', false);
+                        });
 
-		$bindings = [$teamId];
-		if ($startDate) $bindings[] = $startDate;
-		if ($endDate) $bindings[] = $endDate;
+                $bindings = [$teamId, $campaign->id];
+                if ($startDate) $bindings[] = $startDate;
+                if ($endDate) $bindings[] = $endDate;
 
 		$organizations = $organizationsWithMentions->addBinding($bindings, 'join')->get();
 

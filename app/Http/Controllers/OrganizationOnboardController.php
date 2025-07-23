@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Team;
+use App\Models\Campaign;
 use App\Services\JobDispatcherService;
 use App\Models\Term;
 use App\Jobs\GenerateOrganizationKeywords;
@@ -21,8 +22,8 @@ class OrganizationOnboardController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-        public function store(Request $request, Team $team): JsonResponse
-	{
+        public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
+        {
 		$validated = $request->validate([
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
@@ -40,7 +41,10 @@ class OrganizationOnboardController extends Controller
 		]);
 
 		// TODO: Move this term creation logic into the organization model boot method
-                $organization = $team->organizations()->create($validated);
+                $organization = $team->organizations()->create([
+                        ...$validated,
+                        'campaign_id' => ($validated['is_competitor'] ?? true) ? $campaign->id : null,
+                ]);
 
 		// Create a term for the competitor name
 		Term::create([

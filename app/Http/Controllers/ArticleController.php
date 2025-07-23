@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Team;
+use App\Models\Campaign;
 use Illuminate\Http\JsonResponse;
 use App\Services\PerplexityService;
 use App\Models\Organization;
@@ -16,13 +17,14 @@ class ArticleController extends Controller
 	/**
 	 * Display a listing of the resource.
 	 */
-        public function index(Team $team): JsonResponse
+        public function index(Team $team, Campaign $campaign): JsonResponse
         {
                 $teamId = $team->id;
 
-		$articles = Article::where('team_id', $teamId)
-			->latest()
-			->get();
+                $articles = Article::where('team_id', $teamId)
+                        ->where('campaign_id', $campaign->id)
+                        ->latest()
+                        ->get();
 
 		return response()->json($articles);
 	}
@@ -30,7 +32,7 @@ class ArticleController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-        public function store(Request $request, Team $team): JsonResponse
+        public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
 	{
 		// Get the users team id
                 $teamId = $team->id;
@@ -53,6 +55,7 @@ class ArticleController extends Controller
                 $article = $team->articles()->create([
                         ...$validated,
                         'team_id' => $teamId,
+                        'campaign_id' => $campaign->id,
                         'organization_id' => $ownedOrganization->id,
                 ]);
 

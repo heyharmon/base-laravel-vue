@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
+use App\Traits\BelongsToCampaign;
 use App\Models\Article;
 
 class Organization extends Model
 {
-	use HasFactory, HasJobStatus, BelongsToTeam;
+        use HasFactory, HasJobStatus, BelongsToTeam, BelongsToCampaign;
 
 	protected $guarded = [
 		'id'

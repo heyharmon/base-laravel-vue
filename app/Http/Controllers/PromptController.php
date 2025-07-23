@@ -4,17 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Prompt;
 use App\Models\Team;
+use App\Models\Campaign;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 class PromptController extends Controller
 {
-	public function index(Team $team): JsonResponse
-	{
-		// TODO: Change this if adding projects model
-		$prompts = Prompt::where('team_id', $team->id)
-			->withCount([
+        public function index(Team $team, Campaign $campaign): JsonResponse
+        {
+                // TODO: Change this if adding projects model
+                $prompts = Prompt::where('team_id', $team->id)
+                        ->where('campaign_id', $campaign->id)
+                        ->withCount([
 				// Count terms that are not competitor terms
 				'terms' => function ($query) {
 					$query->whereHas('organization', function ($q) {
@@ -42,8 +44,8 @@ class PromptController extends Controller
 		return response()->json($prompt);
 	}
 
-	public function store(Request $request, Team $team): JsonResponse
-	{
+        public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
+        {
 		$validated = $request->validate([
 			'name' => 'nullable|string',
 			'content' => 'required|string',
@@ -52,7 +54,8 @@ class PromptController extends Controller
 
 		// Add the team_id to the validated data
 		// TODO: Change this if adding projects model
-		$validated['team_id'] = $team->id;
+                $validated['team_id'] = $team->id;
+                $validated['campaign_id'] = $campaign->id;
 
 		$prompt = Prompt::create($validated);
 

@@ -23,9 +23,13 @@ class OrganizationController extends Controller
 	/**
 	 * Display a listing of the resource.
 	 */
-        public function index(Team $team): JsonResponse
+        public function index(Team $team, Campaign $campaign): JsonResponse
         {
                 $organizations = Organization::where('team_id', $team->id)
+                        ->where(function ($q) use ($campaign) {
+                                $q->where('campaign_id', $campaign->id)
+                                  ->orWhere('is_competitor', false);
+                        })
                         ->withCount('terms')
                         ->get();
 
@@ -35,8 +39,8 @@ class OrganizationController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-        public function store(Request $request, Team $team): JsonResponse
-	{
+        public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
+        {
 		$validated = $request->validate([
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
@@ -54,7 +58,10 @@ class OrganizationController extends Controller
 		]);
 
 		// TODO: Move this term creation logic into the organization model boot method
-                $organization = $team->organizations()->create($validated);
+                $organization = $team->organizations()->create([
+                        ...$validated,
+                        'campaign_id' => ($validated['is_competitor'] ?? true) ? $campaign->id : null,
+                ]);
 
 		// Create a term for the competitor name
 		$nameTerm = Term::create([

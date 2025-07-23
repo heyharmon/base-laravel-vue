@@ -60,14 +60,20 @@ class TeamController extends Controller
 	/**
 	 * Store a newly created team in storage.
 	 */
-	public function store(Request $request)
-	{
-		$validated = $request->validate([
-			'name' => ['required', 'string', 'max:255'],
-		]);
+        public function store(Request $request)
+        {
+                $validated = $request->validate([
+                        'name' => ['required', 'string', 'max:255'],
+                ]);
 
 		$validated['owner_id'] = Auth::id();
-		$team = Team::create($validated);
+                $team = Team::create($validated);
+
+                // Create a default campaign for the team
+                $team->campaigns()->create([
+                        'name' => 'Default Campaign',
+                        'is_default' => true,
+                ]);
 
 		// Add the owner as a team member with admin role
 		$team->users()->attach(Auth::id(), [
