@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
+import CloseIcon from '@/components/icons/CloseIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,14 +17,15 @@ const campaign = ref({
 	name: '',
 	description: '',
 	location: '',
-	keywords: ''
+	keywords: []
 })
 const originalCampaign = ref({
 	name: '',
 	description: '',
 	location: '',
-	keywords: ''
+	keywords: []
 })
+const newKeyword = ref('')
 const isSubmitting = ref(false)
 const isLoading = ref(true)
 
@@ -32,7 +34,7 @@ const hasChanges = computed(() => {
 		campaign.value.name !== originalCampaign.value.name ||
 		campaign.value.description !== originalCampaign.value.description ||
 		campaign.value.location !== originalCampaign.value.location ||
-		campaign.value.keywords !== originalCampaign.value.keywords
+		JSON.stringify(campaign.value.keywords) !== JSON.stringify(originalCampaign.value.keywords)
 	)
 })
 
@@ -52,6 +54,17 @@ const updateCampaign = async () => {
 	}
 }
 
+const addKeyword = () => {
+	if (newKeyword.value.trim() && !campaign.value.keywords.includes(newKeyword.value.trim())) {
+		campaign.value.keywords.push(newKeyword.value.trim())
+		newKeyword.value = ''
+	}
+}
+
+const removeKeyword = (index) => {
+	campaign.value.keywords.splice(index, 1)
+}
+
 const goBack = () => {
 	router.push({ name: 'campaigns.index', params: { teamId: teamId.value } })
 }
@@ -65,7 +78,7 @@ onMounted(async () => {
 				name: foundCampaign.name || '',
 				description: foundCampaign.description || '',
 				location: foundCampaign.location || '',
-				keywords: foundCampaign.keywords || ''
+				keywords: Array.isArray(foundCampaign.keywords) ? foundCampaign.keywords : (foundCampaign.keywords ? foundCampaign.keywords.split(',').map(k => k.trim()) : [])
 			}
 			originalCampaign.value = { ...campaign.value }
 		} else {

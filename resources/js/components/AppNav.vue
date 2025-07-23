@@ -118,7 +118,7 @@ onMounted(async () => {
 					<PopoverRoot v-if="currentTeam">
 						<PopoverTrigger as-child>
 							<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
-								<span class="text-sm font-medium">Settings</span>
+								<span class="text-sm font-medium">Team settings</span>
 								<ChevronDownIcon />
 							</div>
 						</PopoverTrigger>
@@ -132,7 +132,7 @@ onMounted(async () => {
 								<div class="py-1">
 									<PopoverClose as-child>
 										<router-link :to="`/teams/${currentTeam.id}/members`" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
-											Team settings
+											Users
 										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>

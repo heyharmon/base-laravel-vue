@@ -216,7 +216,7 @@ watch(campaignId, async (newId) => {
 	<GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" :campaign-id="campaignId" @close="isGenerateModalOpen = false" />
 
 	<!-- Prompt Modal -->
-	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" @close="isPromptCreateModalOpen = false" />
+	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" :campaign-id="campaignId" @close="isPromptCreateModalOpen = false" />
 
 	<!-- Prompt Detail Sheet -->
 	<PromptDetailSheet
