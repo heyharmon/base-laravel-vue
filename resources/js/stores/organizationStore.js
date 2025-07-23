@@ -55,14 +55,23 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function createOrganization(teamId, organizationData) {
-		console.log('Creating organization...', organizationData)
-		isLoading.value = true
+        async function createOrganization(teamId, campaignId, organizationData) {
+                console.log('Creating organization...', organizationData)
+                isLoading.value = true
 
-		try {
-                        const response = await api.post(`/teams/${teamId}/organizations`, organizationData)
-                        await fetchOrganizations(teamId)
-			return response // API interceptor already extracts response.data
+                try {
+                        const endpoint = organizationData.is_competitor 
+                                ? `/teams/${teamId}/campaigns/${campaignId}/organizations` 
+                                : `/teams/${teamId}/organizations`
+
+                        const response = await api.post(endpoint, organizationData)
+
+                        if (organizationData.is_competitor) {
+                                competitorOrganizations.value.push(response)
+                        } else {
+                                ownedOrganizations.value.push(response)
+                        }
+                        return response // API interceptor already extracts response.data
 		} catch (err) {
 			console.error('Error creating organization:', err)
 			throw err
@@ -125,31 +134,37 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function fetchVisibilityMetrics(teamId, params = null) {
-		console.log('Fetching visibility metrics...')
-		isLoadingVisibility.value = true
+        async function fetchVisibilityMetrics(teamId, campaignId) {
+                if (!campaignId) {
+                        console.error('Campaign ID is required')
+                        return
+                }
 
-		try {
-			// Use provided params or fall back to store's currentDateRange
-			const dateParams = params || currentDateRange.value
+                isLoadingVisibility.value = true
+                try {
+                        const params = {}
 
-			const queryParams = new URLSearchParams()
-			if (dateParams.startDate) queryParams.append('start_date', dateParams.startDate)
-			if (dateParams.endDate) queryParams.append('end_date', dateParams.endDate)
+                        if (dateRanges[teamId]) {
+                                if (dateRanges[teamId].startDate) {
+                                        params.start_date = dateRanges[teamId].startDate
+                                }
+                                if (dateRanges[teamId].endDate) {
+                                        params.end_date = dateRanges[teamId].endDate
+                                }
+                        }
 
-			const queryString = queryParams.toString()
-			// const url = `/organization-visibility${queryString ? `?${queryString}` : ''}`
-                        const url = `/teams/${teamId}/organization-visibility`
+                        const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organization-visibility`, {
+                                params
+                        })
 
-			const response = await api.get(url)
-			visibilityMetrics.value = response
-			return response
-		} catch (err) {
-			console.error('Error fetching organization visibility metrics:', err)
-		} finally {
-			isLoadingVisibility.value = false
-		}
-	}
+                        visibilityMetrics.value = response || []
+                } catch (error) {
+                        console.error('Error fetching visibility metrics:', error)
+                        visibilityMetrics.value = []
+                } finally {
+                        isLoadingVisibility.value = false
+                }
+        }
 
         async function findCompetitors(teamId) {
 		console.log('Finding competitors from past responses...')
@@ -170,10 +185,10 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	// Function to update date range and refresh visibility data
-        function setDateRange(teamId, dateRange) {
+        function setDateRange(teamId, campaignId, dateRange) {
                 console.log('Setting date range:', dateRange)
                 currentDateRange.value = dateRange
-                return fetchVisibilityMetrics(teamId)
+                return fetchVisibilityMetrics(teamId, campaignId)
         }
 
 	return {

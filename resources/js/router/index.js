@@ -3,6 +3,7 @@ import auth from '@/services/auth'
 
 // Import pages
 import Dashboard from '@/pages/Dashboard.vue'
+import { useCampaignStore } from '@/stores/campaignStore'
 import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
 import ForgotPassword from '@/pages/auth/ForgotPassword.vue'
@@ -16,6 +17,7 @@ import OrganizationEdit from '@/pages/organizations/Edit.vue'
 import PromptsIndex from '@/pages/prompts/Index.vue'
 import ArticlesIndex from '@/pages/articles/Index.vue'
 import ArticleEdit from '@/pages/articles/Edit.vue'
+import CampaignsIndex from '@/pages/campaigns/Index.vue'
 // Super Admin
 
 const routes = [
@@ -28,10 +30,27 @@ const routes = [
                 }
         },
         {
-                path: '/teams/:id?',
+                path: '/teams/:id/campaigns/:campaignId?',
                 name: 'home',
                 component: Dashboard,
-                meta: { requiresAuth: true }
+                meta: { requiresAuth: true },
+                beforeEnter: async (to, from, next) => {
+                        const campaignStore = useCampaignStore()
+                        const teamId = to.params.id
+
+                        if (campaignStore.campaigns.length === 0) {
+                                await campaignStore.fetchCampaigns(teamId)
+                        }
+
+                        if (!to.params.campaignId && campaignStore.defaultCampaign) {
+                                return next({
+                                        name: 'home',
+                                        params: { id: teamId, campaignId: campaignStore.defaultCampaign.id }
+                                })
+                        }
+
+                        next()
+                }
         },
         {
                 path: '/dashboard',
@@ -99,42 +118,48 @@ const routes = [
                 component: OrganizationCreate,
                 meta: { requiresAuth: true }
         },
-	{
-		path: '/organizations/:id/edit',
-		name: 'organizations.edit',
-		component: OrganizationEdit,
-		meta: { requiresAuth: true }
-	},
-	{
-		path: '/prompts',
-		redirect: () => {
-			// Get the current team ID from localStorage
-			const user = JSON.parse(localStorage.getItem('user') || '{}')
-			const teamId = user.current_team_id
+        {
+                path: '/organizations/:id/edit',
+                name: 'organizations.edit',
+                component: OrganizationEdit,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/teams/:teamId/campaigns',
+                name: 'campaigns.index',
+                component: CampaignsIndex,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/prompts',
+                redirect: () => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}')
+                        const teamId = user.current_team_id
+                        const campaign = teamId ? JSON.parse(localStorage.getItem(`team_${teamId}_current_campaign`) || '{}') : null
 
-			if (teamId) {
-				return `/teams/${teamId}/prompts`
-			}
-			// If no team ID, redirect to home
-			return '/'
-		}
-	},
-	{
-		path: '/teams/:teamId/prompts',
-		name: 'prompts.index',
-		component: PromptsIndex,
-		meta: { requiresAuth: true }
-	},
+                        if (teamId && campaign?.id) {
+                                return `/teams/${teamId}/campaigns/${campaign.id}/prompts`
+                        }
+                        return '/'
+                }
+        },
+        {
+                path: '/teams/:teamId/campaigns/:campaignId/prompts',
+                name: 'prompts.index',
+                component: PromptsIndex,
+                meta: { requiresAuth: true }
+        },
         {
                 path: '/articles',
                 redirect: () => {
                         const user = JSON.parse(localStorage.getItem('user') || '{}')
                         const teamId = user.current_team_id
-                        return teamId ? `/teams/${teamId}/articles` : '/'
+                        const campaign = teamId ? JSON.parse(localStorage.getItem(`team_${teamId}_current_campaign`) || '{}') : null
+                        return teamId && campaign?.id ? `/teams/${teamId}/campaigns/${campaign.id}/articles` : '/'
                 }
         },
         {
-                path: '/teams/:teamId/articles',
+                path: '/teams/:teamId/campaigns/:campaignId/articles',
                 name: 'articles.index',
                 component: ArticlesIndex,
                 meta: { requiresAuth: true }

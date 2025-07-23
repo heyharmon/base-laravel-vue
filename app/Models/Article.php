@@ -9,16 +9,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasVersions;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
+use App\Models\Campaign;
 
 class Article extends Model
 {
 	use HasFactory, HasJobStatus, HasVersions, BelongsToTeam;
 
-	protected $fillable = [
-		'team_id',
-		'organization_id',
-		'prompt_id',
-		'current_version',
+        protected $fillable = [
+                'team_id',
+                'campaign_id',
+                'organization_id',
+                'prompt_id',
+                'current_version',
 		'title',
 		'meta_title',
 		'meta_description',
@@ -43,10 +45,18 @@ class Article extends Model
 		return $this->belongsTo(Organization::class);
 	}
 
-	public function prompt(): BelongsTo
-	{
-		return $this->belongsTo(Prompt::class);
-	}
+        public function prompt(): BelongsTo
+        {
+                return $this->belongsTo(Prompt::class);
+        }
+
+        /**
+         * Get the campaign that owns the article.
+         */
+        public function campaign(): BelongsTo
+        {
+                return $this->belongsTo(Campaign::class);
+        }
 
 	public function conversations(): MorphMany
 	{

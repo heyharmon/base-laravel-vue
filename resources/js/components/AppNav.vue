@@ -71,7 +71,8 @@ onMounted(async () => {
 					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/prompts`" class="text-sm hover:text-neutral-300">Prompts</router-link>
                                         <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/organizations`" class="text-sm hover:text-neutral-300">Organizations</router-link>
                                         <router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/articles`" class="text-sm hover:text-neutral-300">Articles</router-link>
-				</div>
+                                        <router-link v-if="currentTeam" :to="{ name: 'campaigns.index', params: { teamId: currentTeam.id } }" class="text-sm hover:text-neutral-300">Campaigns</router-link>
+                                </div>
 			</div>
 
 			<div class="flex items-center gap-4">

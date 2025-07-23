@@ -10,6 +10,7 @@ use App\Services\JobDispatcherService;
 use App\Models\Organization;
 use App\Models\Term;
 use App\Jobs\CheckTermInPastResponsesJob;
+use App\Models\Campaign;
 
 class OrganizationController extends Controller
 {
@@ -35,8 +36,8 @@ class OrganizationController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-        public function store(Request $request, Team $team): JsonResponse
-	{
+        public function store(Request $request, Team $team, Campaign $campaign = null): JsonResponse
+        {
 		$validated = $request->validate([
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
@@ -54,6 +55,10 @@ class OrganizationController extends Controller
 		]);
 
 		// TODO: Move this term creation logic into the organization model boot method
+                if ($validated['is_competitor'] ?? false) {
+                        $validated['campaign_id'] = $campaign?->id;
+                }
+
                 $organization = $team->organizations()->create($validated);
 
 		// Create a term for the competitor name
