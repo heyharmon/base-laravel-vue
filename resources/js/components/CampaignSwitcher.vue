@@ -62,8 +62,10 @@ watch(
 <template>
 	<PopoverRoot v-if="campaignStore.campaigns.length > 0">
 		<PopoverTrigger as-child>
-			<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-white border border-neutral-300 hover:bg-neutral-50">
-				<span class="text-sm font-medium text-neutral-900">{{ campaignStore.currentCampaign?.name || 'Select Campaign' }}</span>
+			<div
+				class="flex items-center space-x-2 cursor-pointer h-9 px-4 py-2 rounded-md bg-white shadow-xs border border-neutral-400/70 hover:bg-neutral-100 transition-all"
+			>
+				<span class="text-sm font-medium text-neutral-700">{{ campaignStore.currentCampaign?.name || 'Select Campaign' }}</span>
 				<ChevronDownIcon class="text-neutral-600" />
 			</div>
 		</PopoverTrigger>
@@ -75,7 +77,7 @@ watch(
 				:side-offset="5"
 			>
 				<div class="p-2">
-					<p class="text-xs font-medium text-neutral-600 mb-2">Your campaigns</p>
+					<p class="text-xs font-medium text-neutral-600 mb-2">Campaigns</p>
 					<div class="mb-2">
 						<input
 							v-model="searchQuery"
@@ -108,7 +110,12 @@ watch(
 				</div>
 				<div class="border-t border-neutral-300 mt-1">
 					<PopoverClose as-child>
-						<a @click="createCampaign" class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"> Create campaign </a>
+						<router-link
+							:to="{ name: 'campaigns.index', params: { teamId: route.params.id } }"
+							class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"
+						>
+							Create campaign
+						</router-link>
 					</PopoverClose>
 				</div>
 			</PopoverContent>

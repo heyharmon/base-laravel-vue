@@ -9,97 +9,97 @@ use Illuminate\Http\JsonResponse;
 
 class CampaignController extends Controller
 {
-        /**
-         * Display a listing of campaigns for a team.
-         */
-        public function index(Team $team): JsonResponse
-        {
-                $campaigns = $team->campaigns()->latest()->get();
-                return response()->json($campaigns);
-        }
+	/**
+	 * Display a listing of campaigns for a team.
+	 */
+	public function index(Team $team): JsonResponse
+	{
+		$campaigns = $team->campaigns()->latest()->get();
+		return response()->json($campaigns);
+	}
 
-        /**
-         * Store a newly created campaign.
-         */
-        public function store(Request $request, Team $team): JsonResponse
-        {
-                $validated = $request->validate([
-                        'name' => 'required|string|max:255',
-                        'description' => 'nullable|string',
-                ]);
+	/**
+	 * Store a newly created campaign.
+	 */
+	public function store(Request $request, Team $team): JsonResponse
+	{
+		$validated = $request->validate([
+			'name' => 'required|string|max:255',
+			'description' => 'nullable|string',
+		]);
 
-                $campaign = $team->campaigns()->create($validated);
+		$campaign = $team->campaigns()->create($validated);
 
-                return response()->json($campaign, 201);
-        }
+		return response()->json($campaign, 201);
+	}
 
-        /**
-         * Display the specified campaign.
-         */
-        public function show(Team $team, Campaign $campaign): JsonResponse
-        {
-                if ($campaign->team_id !== $team->id) {
-                        return response()->json(['message' => 'Not found'], 404);
-                }
+	/**
+	 * Display the specified campaign.
+	 */
+	public function show(Team $team, Campaign $campaign): JsonResponse
+	{
+		if ($campaign->team_id !== $team->id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
-                return response()->json($campaign);
-        }
+		return response()->json($campaign);
+	}
 
-        /**
-         * Update the specified campaign.
-         */
-        public function update(Request $request, Team $team, Campaign $campaign): JsonResponse
-        {
-                if ($campaign->team_id !== $team->id) {
-                        return response()->json(['message' => 'Not found'], 404);
-                }
+	/**
+	 * Update the specified campaign.
+	 */
+	public function update(Request $request, Team $team, Campaign $campaign): JsonResponse
+	{
+		if ($campaign->team_id !== $team->id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
-                if ($campaign->is_default && $request->has('is_default') && !$request->is_default) {
-                        return response()->json(['message' => 'Cannot remove default status from default campaign'], 422);
-                }
+		if ($campaign->is_default && $request->has('is_default') && !$request->is_default) {
+			return response()->json(['message' => 'Cannot remove default status from default campaign'], 422);
+		}
 
-                $validated = $request->validate([
-                        'name' => 'sometimes|required|string|max:255',
-                        'description' => 'sometimes|nullable|string',
-                ]);
+		$validated = $request->validate([
+			'name' => 'sometimes|required|string|max:255',
+			'description' => 'sometimes|nullable|string',
+		]);
 
-                $campaign->update($validated);
+		$campaign->update($validated);
 
-                return response()->json($campaign);
-        }
+		return response()->json($campaign);
+	}
 
-        /**
-         * Remove the specified campaign.
-         */
-        public function destroy(Team $team, Campaign $campaign): JsonResponse
-        {
-                if ($campaign->team_id !== $team->id) {
-                        return response()->json(['message' => 'Not found'], 404);
-                }
+	/**
+	 * Remove the specified campaign.
+	 */
+	public function destroy(Team $team, Campaign $campaign): JsonResponse
+	{
+		if ($campaign->team_id !== $team->id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
-                if ($campaign->is_default) {
-                        return response()->json(['message' => 'Cannot delete the default campaign'], 422);
-                }
+		if ($campaign->is_default) {
+			return response()->json(['message' => 'Cannot delete the default campaign'], 422);
+		}
 
-                $campaign->delete();
+		$campaign->delete();
 
-                return response()->json(null, 204);
-        }
+		return response()->json(null, 204);
+	}
 
-        /**
-         * Switch the user's current campaign.
-         */
-        public function switch(Request $request, Team $team, Campaign $campaign): JsonResponse
-        {
-                if ($campaign->team_id !== $team->id) {
-                        return response()->json(['message' => 'Not found'], 404);
-                }
+	/**
+	 * Switch the user's current campaign.
+	 */
+	public function switch(Request $request, Team $team, Campaign $campaign): JsonResponse
+	{
+		if ($campaign->team_id !== $team->id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
-                session(['current_campaign_id' => $campaign->id]);
+		session(['current_campaign_id' => $campaign->id]);
 
-                return response()->json([
-                        'message' => 'Campaign switched successfully',
-                        'campaign' => $campaign,
-                ]);
-        }
+		return response()->json([
+			'message' => 'Campaign switched successfully',
+			'campaign' => $campaign,
+		]);
+	}
 }

@@ -94,9 +94,6 @@ onMounted(async () => {
 						class="text-sm hover:text-neutral-300"
 						>Articles</router-link
 					>
-					<router-link v-if="currentTeam" :to="{ name: 'campaigns.index', params: { teamId: currentTeam.id } }" class="text-sm hover:text-neutral-300"
-						>Campaigns</router-link
-					>
 				</div>
 			</div>
 
@@ -117,12 +114,44 @@ onMounted(async () => {
 						<span class="text-sm">Runs</span>
 					</button>
 
-					<router-link v-if="isSuperAdmin" to="/super-admin/organizations" class="text-sm hover:text-neutral-300">Super Admin</router-link>
-
-					<!-- Team settings link -->
-					<router-link v-if="currentTeam" :to="`/teams/${currentTeam.id}/members`" class="text-sm hover:text-neutral-300">
-						Team settings
-					</router-link>
+					<!-- Settings dropdown -->
+					<PopoverRoot v-if="currentTeam">
+						<PopoverTrigger as-child>
+							<div class="flex items-center space-x-2 cursor-pointer px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">
+								<span class="text-sm font-medium">Settings</span>
+								<ChevronDownIcon />
+							</div>
+						</PopoverTrigger>
+						<PopoverPortal>
+							<PopoverContent
+								class="w-48 p-0 bg-neutral-800 rounded shadow-lg overflow-hidden border border-neutral-700 z-50"
+								side="bottom"
+								align="end"
+								:side-offset="5"
+							>
+								<div class="py-1">
+									<PopoverClose as-child>
+										<router-link :to="`/teams/${currentTeam.id}/members`" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Team settings
+										</router-link>
+									</PopoverClose>
+									<PopoverClose as-child>
+										<router-link
+											:to="{ name: 'campaigns.index', params: { teamId: currentTeam.id } }"
+											class="block px-3 py-2 text-sm text-white hover:bg-neutral-700"
+										>
+											Campaigns
+										</router-link>
+									</PopoverClose>
+									<PopoverClose as-child v-if="isSuperAdmin">
+										<router-link to="/super-admin/organizations" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Super Admin
+										</router-link>
+									</PopoverClose>
+								</div>
+							</PopoverContent>
+						</PopoverPortal>
+					</PopoverRoot>
 
 					<!-- Teams dropdown -->
 					<PopoverRoot>
