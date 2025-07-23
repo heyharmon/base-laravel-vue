@@ -12,6 +12,7 @@ use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Prompt;
+use App\Models\Campaign;
 
 class GeneratePrompt extends TrackableJob
 {
@@ -80,15 +81,20 @@ class GeneratePrompt extends TrackableJob
 The prompt should elicit a response that mentions specific brands. So, let's pretend you are given the keyword, \"car loan\". In that case, an example of an acceptable prompt is, \"Where can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations that can provide a loan. On the other hand, a bad example is, \"Tell me about auto loans\", because that is likely to elicit a response that gives general information rather than recommending specific companies.")
 			];
 
+			// Get the default campaign for location and description
+			$campaign = Campaign::where('team_id', $this->teamId)
+				->where('is_default', true)
+				->first();
+
 			// Add location message conditionally if location is available
-			if (isset($this->model->location) && !empty($this->model->location)) {
-				$messages[] = new UserMessage("You also need to incorporate the brand location \"" . $this->model->location . "\" in the prompt when necessary.
-So, again pretend you are given the keyword, \"car loan\" and the location is \"" . $this->model->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $this->model->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $this->model->location . " that can provide a loan.");
+			if ($campaign && isset($campaign->location) && !empty($campaign->location)) {
+				$messages[] = new UserMessage("You also need to incorporate the brand location \"" . $campaign->location . "\" in the prompt when necessary.
+So, again pretend you are given the keyword, \"car loan\" and the location is \"" . $campaign->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $campaign->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $campaign->location . " that can provide a loan.");
 			}
 
 			// Add description message conditionally if description is available
-			if (isset($this->model->description) && !empty($this->model->description)) {
-				$messages[] = new UserMessage("Here is additional context about the organization that might help you create a more relevant prompt: \"" . $this->model->description . "\".
+			if ($campaign && isset($campaign->description) && !empty($campaign->description)) {
+				$messages[] = new UserMessage("Here is additional context about the organization that might help you create a more relevant prompt: \"" . $campaign->description . "\".
 Use this information to better understand what the organization does and create a prompt that would elicit responses mentioning organizations in this specific line of business. However, don't make the prompt too specific or narrow that it would only return this single organization.");
 			}
 

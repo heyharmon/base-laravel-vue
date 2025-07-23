@@ -16,6 +16,8 @@ class Campaign extends Model
                 'team_id',
                 'name',
                 'description',
+                'location',
+                'keywords',
                 'is_default',
         ];
 

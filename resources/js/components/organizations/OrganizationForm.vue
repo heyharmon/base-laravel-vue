@@ -31,26 +31,7 @@ const emit = defineEmits(['update'])
 					placeholder="Enter website URL"
 				/>
 			</div>
-			<div>
-				<label class="block text-sm font-medium text-neutral-700 mb-1">Location</label>
-				<input
-					v-model="organization.location"
-					type="text"
-					placeholder="Enter location (optional)"
-					class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-				/>
-				<p class="text-xs text-neutral-500 mt-1">Location where this organization primarily does business</p>
-			</div>
-			<div>
-				<label class="block text-sm font-medium text-neutral-700 mb-1">Description</label>
-				<textarea
-					v-model="organization.description"
-					rows="3"
-					placeholder="Enter description (optional)"
-					class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-				></textarea>
-				<p class="text-xs text-neutral-500">This description can help AI generate accurate prompts</p>
-			</div>
+
 			<div class="pt-4">
 				<Button v-if="hasChanges" type="submit" :disabled="isSubmitting" variant="dark">
 					{{ isSubmitting ? 'Saving...' : 'Save Changes' }}

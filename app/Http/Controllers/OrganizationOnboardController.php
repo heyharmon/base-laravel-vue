@@ -39,8 +39,28 @@ class OrganizationOnboardController extends Controller
 			'is_competitor' => 'boolean',
 		]);
 
+		// Extract campaign fields
+		$campaignFields = [
+			'location' => $validated['location'] ?? null,
+			'description' => $validated['description'] ?? null,
+		];
+
+		// Remove campaign fields from organization data
+		unset($validated['location'], $validated['description']);
+
 		// TODO: Move this term creation logic into the organization model boot method
-                $organization = $team->organizations()->create($validated);
+               $organization = $team->organizations()->create($validated);
+
+		// Update the default campaign with location and description
+		if (!empty(array_filter($campaignFields))) {
+			$defaultCampaign = \App\Models\Campaign::where('team_id', $team->id)
+				->where('is_default', true)
+				->first();
+
+			if ($defaultCampaign) {
+				$defaultCampaign->update(array_filter($campaignFields));
+			}
+		}
 
 		// Create a term for the competitor name
 		Term::create([

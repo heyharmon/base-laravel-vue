@@ -25,8 +25,6 @@ const organization = ref({
 	website: '',
 	founded: '',
 	employee_count: '',
-	location: '',
-	description: '',
 	is_competitor: false
 })
 const originalOrganization = ref({
@@ -34,8 +32,6 @@ const originalOrganization = ref({
 	website: '',
 	founded: '',
 	employee_count: '',
-	location: '',
-	description: '',
 	is_competitor: false
 })
 const isSubmitting = ref(false)
@@ -67,9 +63,7 @@ const hasChanges = computed(() => {
 		organization.value.website !== originalOrganization.value.website ||
 		organization.value.founded !== originalOrganization.value.founded ||
 		organization.value.employee_count !== originalOrganization.value.employee_count ||
-		organization.value.is_competitor !== originalOrganization.value.is_competitor ||
-		organization.value.location !== originalOrganization.value.location ||
-		organization.value.description !== originalOrganization.value.description
+		organization.value.is_competitor !== originalOrganization.value.is_competitor
 	)
 })
 

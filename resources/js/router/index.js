@@ -18,6 +18,7 @@ import PromptsIndex from '@/pages/prompts/Index.vue'
 import ArticlesIndex from '@/pages/articles/Index.vue'
 import ArticleEdit from '@/pages/articles/Edit.vue'
 import CampaignsIndex from '@/pages/campaigns/Index.vue'
+import CampaignsEdit from '@/pages/campaigns/Edit.vue'
 // Super Admin
 
 const routes = [
@@ -129,6 +130,12 @@ const routes = [
 		path: '/teams/:teamId/campaigns',
 		name: 'campaigns.index',
 		component: CampaignsIndex,
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/teams/:teamId/campaigns/:campaignId/edit',
+		name: 'campaigns.edit',
+		component: CampaignsEdit,
 		meta: { requiresAuth: true }
 	},
 	{

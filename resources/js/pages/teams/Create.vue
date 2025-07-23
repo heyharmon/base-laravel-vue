@@ -18,7 +18,6 @@ const organization = ref({
 	name: '',
 	website: '',
 	logo: '',
-	location: '',
 	is_competitor: false,
 	hasDetails: false
 })
@@ -34,7 +33,6 @@ const deselectOrganization = () => {
 		name: '',
 		website: '',
 		logo: '',
-		location: '',
 		is_competitor: false,
 		hasDetails: false
 	}
@@ -108,31 +106,7 @@ const createTeamAndOrganization = async () => {
 							<p class="text-xs text-neutral-500 mt-1">Customize the name of your organization</p>
 						</div>
 
-						<!-- Location Input -->
-						<div class="mt-4 border-t border-neutral-200 pt-4">
-							<label for="location-input" class="block text-sm font-medium text-neutral-700 mb-1">Location</label>
-							<input
-								id="location-input"
-								v-model="organization.location"
-								type="text"
-								placeholder="Enter location (optional)"
-								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-							/>
-							<p class="text-xs text-neutral-500 mt-1">Enter the location where this organization primarily does business</p>
-						</div>
 
-						<!-- Description Input -->
-						<div class="mt-4 border-t border-neutral-200 pt-4">
-							<label for="description-input" class="block text-sm font-medium text-neutral-700 mb-1">Description</label>
-							<textarea
-								id="description-input"
-								v-model="organization.description"
-								rows="3"
-								placeholder="Enter description (optional)"
-								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-							></textarea>
-							<p class="text-xs text-neutral-500">This description can help AI generate accurate prompts</p>
-						</div>
 					</div>
 				</div>
 

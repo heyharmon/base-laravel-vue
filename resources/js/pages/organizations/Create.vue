@@ -22,8 +22,6 @@ const organization = ref({
 	is_competitor: true,
 	founded: null,
 	employee_count: null,
-	location: '',
-	description: '',
 	logo: '',
 	hasDetails: false
 })
@@ -41,8 +39,6 @@ const deselectOrganization = () => {
 		is_competitor: true,
 		founded: null,
 		employee_count: null,
-		location: '',
-		description: '',
 		logo: '',
 		hasDetails: false
 	}

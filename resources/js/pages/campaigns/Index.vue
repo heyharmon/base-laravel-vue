@@ -11,7 +11,7 @@ const campaignStore = useCampaignStore()
 
 const teamId = computed(() => route.params.teamId)
 const showCreateModal = ref(false)
-const newCampaign = ref({ name: '', description: '' })
+const newCampaign = ref({ name: '', description: '', location: '' })
 const isSubmitting = ref(false)
 
 const createCampaign = async () => {
@@ -20,7 +20,7 @@ const createCampaign = async () => {
         try {
                 const campaign = await campaignStore.createCampaign(teamId.value, newCampaign.value)
                 showCreateModal.value = false
-                newCampaign.value = { name: '', description: '' }
+                newCampaign.value = { name: '', description: '', location: '' }
                 router.push({ name: 'home', params: { id: teamId.value, campaignId: campaign.id } })
         } catch (error) {
                 console.error('Error creating campaign:', error)
@@ -65,7 +65,10 @@ onMounted(() => {
                     <p v-if="campaign.description" class="text-neutral-600 text-sm mb-4">{{ campaign.description }}</p>
                     <div class="flex justify-between items-center">
                         <router-link :to="{ name: 'home', params: { id: teamId, campaignId: campaign.id } }" class="text-blue-600 hover:text-blue-800 text-sm font-medium">View Dashboard →</router-link>
-                        <button v-if="!campaign.is_default" @click="deleteCampaign(campaign.id)" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                        <div class="flex space-x-2">
+                            <router-link :to="{ name: 'campaigns.edit', params: { teamId: teamId, campaignId: campaign.id } }" class="text-neutral-600 hover:text-neutral-800 text-sm">Edit</router-link>
+                            <button v-if="!campaign.is_default" @click="deleteCampaign(campaign.id)" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -79,8 +82,14 @@ onMounted(() => {
                     <input v-model="newCampaign.name" type="text" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter campaign name" />
                 </div>
                 <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Location (optional)</label>
+                    <input v-model="newCampaign.location" type="text" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter location" />
+                    <p class="text-xs text-neutral-500 mt-1">Location where your business primarily operates</p>
+                </div>
+                <div class="mb-4">
                     <label class="block text-sm font-medium text-neutral-700 mb-1">Description (optional)</label>
                     <textarea v-model="newCampaign.description" rows="3" class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter campaign description"></textarea>
+                    <p class="text-xs text-neutral-500 mt-1">This description can help AI generate accurate prompts</p>
                 </div>
                 <div class="flex justify-end space-x-2">
                     <Button @click="showCreateModal = false" variant="neutral">Cancel</Button>

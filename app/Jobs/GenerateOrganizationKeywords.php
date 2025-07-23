@@ -15,6 +15,7 @@ use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Organization;
+use App\Models\Campaign;
 
 class GenerateOrganizationKeywords extends TrackableJob
 {
@@ -72,17 +73,22 @@ class GenerateOrganizationKeywords extends TrackableJob
 
 			$searchApiTool = new SearchApiTool();
 
+			// Get the default campaign for location and description
+			$campaign = Campaign::where('team_id', $this->teamId)
+				->where('is_default', true)
+				->first();
+
 			// Build organization context with available properties
 			$organizationContext = "Here is a company: \"" . $this->model->name . "\" (" . $this->model->website . ")";
 
-			// Add location if available
-			if (!empty($this->model->location)) {
-				$organizationContext .= " located in " . $this->model->location;
+			// Add location if available from campaign
+			if ($campaign && !empty($campaign->location)) {
+				$organizationContext .= " located in " . $campaign->location;
 			}
 
-			// Add description if available
-			if (!empty($this->model->description)) {
-				$organizationContext .= ". Description: " . $this->model->description;
+			// Add description if available from campaign
+			if ($campaign && !empty($campaign->description)) {
+				$organizationContext .= ". Description: " . $campaign->description;
 			}
 
 			$prompt = $organizationContext . ". Your job is to come up with a list of keywords relevent to this company.
@@ -123,16 +129,19 @@ Output keywords as a plain text list.";
 
 			$this->updateJobProgress(90, 'Saving keywords for ' . $this->model->name);
 
-			$this->model->update([
-				'keywords' => $result['keywords']
-			]);
+			// Save keywords to the campaign instead of organization
+			if ($campaign) {
+				$campaign->update([
+					'keywords' => $result['keywords']
+				]);
+			}
 
 			// Mark the job as completed
 			$this->markJobAsCompleted('Saved keywords for ' . $this->model->name);
 
 			// Generate prompts for keywords if this is the owned organization
-			if (!$this->model->is_competitor) {
-				foreach ($this->model->keywords as $keyword) {
+			if (!$this->model->is_competitor && $campaign) {
+				foreach ($result['keywords'] as $keyword) {
 					$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $keyword));
 				}
 			}
