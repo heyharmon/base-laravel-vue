@@ -40,7 +40,7 @@ const hasChanges = computed(() => {
 
 const updateCampaign = async () => {
 	if (!hasChanges.value) return
-	
+
 	isSubmitting.value = true
 	try {
 		await campaignStore.updateCampaign(teamId.value, campaignId.value, campaign.value)
@@ -72,15 +72,22 @@ const goBack = () => {
 onMounted(async () => {
 	try {
 		await campaignStore.fetchCampaigns(teamId.value)
-		const foundCampaign = campaignStore.campaigns.find(c => c.id == campaignId.value)
+		const foundCampaign = campaignStore.campaigns.find((c) => c.id == campaignId.value)
 		if (foundCampaign) {
 			campaign.value = {
 				name: foundCampaign.name || '',
 				description: foundCampaign.description || '',
 				location: foundCampaign.location || '',
-				keywords: Array.isArray(foundCampaign.keywords) ? foundCampaign.keywords : (foundCampaign.keywords ? foundCampaign.keywords.split(',').map(k => k.trim()) : [])
+				keywords: Array.isArray(foundCampaign.keywords)
+					? foundCampaign.keywords
+					: foundCampaign.keywords
+					? foundCampaign.keywords.split(',').map((k) => k.trim())
+					: []
 			}
-			originalCampaign.value = { ...campaign.value }
+			originalCampaign.value = {
+				...campaign.value,
+				keywords: [...campaign.value.keywords]
+			}
 		} else {
 			router.push({ name: 'campaigns.index', params: { teamId: teamId.value } })
 		}
@@ -96,9 +103,7 @@ onMounted(async () => {
 	<DefaultLayout>
 		<div class="container mx-auto py-8">
 			<div class="flex items-center mb-8">
-				<button @click="goBack" class="mr-4 text-neutral-600 hover:text-neutral-800">
-					← Back to Campaigns
-				</button>
+				<button @click="goBack" class="mr-4 text-neutral-600 hover:text-neutral-800 cursor-pointer">← Back to campaigns</button>
 				<h1 class="text-2xl font-bold">Edit Campaign</h1>
 			</div>
 
@@ -143,13 +148,35 @@ onMounted(async () => {
 						</div>
 
 						<div>
-							<label class="block text-sm font-medium text-neutral-700 mb-1">Keywords</label>
-							<textarea
-								v-model="campaign.keywords"
-								rows="3"
-								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-								placeholder="Enter keywords (optional)"
-							></textarea>
+							<label class="block text-sm font-medium text-neutral-700 mb-1">Keywords (optional)</label>
+							<div class="flex space-x-2 mb-2">
+								<input
+									v-model="newKeyword"
+									@keyup.enter="addKeyword"
+									type="text"
+									class="flex-1 px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+									placeholder="Add a keyword"
+								/>
+								<Button @click="addKeyword" :disabled="!newKeyword.trim()" variant="neutral">Add</Button>
+							</div>
+							<div v-if="campaign.keywords.length > 0">
+								<ul class="space-y-1">
+									<li
+										v-for="(keyword, index) in campaign.keywords"
+										:key="index"
+										class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1"
+									>
+										<span class="text-sm">{{ keyword }}</span>
+										<button
+											@click="removeKeyword(index)"
+											class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
+											type="button"
+										>
+											<CloseIcon />
+										</button>
+									</li>
+								</ul>
+							</div>
 							<p class="text-xs text-neutral-500 mt-1">Keywords that describe your business or campaign focus</p>
 						</div>
 

@@ -143,11 +143,6 @@ onMounted(async () => {
 											Campaigns
 										</router-link>
 									</PopoverClose>
-									<PopoverClose as-child v-if="isSuperAdmin">
-										<router-link to="/super-admin/organizations" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
-											Super Admin
-										</router-link>
-									</PopoverClose>
 								</div>
 							</PopoverContent>
 						</PopoverPortal>
@@ -179,7 +174,7 @@ onMounted(async () => {
 										/>
 									</div>
 									<div v-if="teams" class="space-y-1">
-										<div v-if="filteredTeams.length > 0" class="space-y-1.5 max-h-[calc(100vh-250px)] overflow-y-auto">
+										<div v-if="filteredTeams.length > 0" class="space-y-1.5 max-h-[calc(100vh-300px)] overflow-y-auto">
 											<PopoverClose as-child v-for="team in filteredTeams" :key="team.id">
 												<div
 													@click="switchTeam(team.id)"
@@ -218,6 +213,11 @@ onMounted(async () => {
 											>
 												{{ teams.pendingInvitations.length }}
 											</span>
+										</router-link>
+									</PopoverClose>
+									<PopoverClose as-child v-if="isSuperAdmin">
+										<router-link to="/super-admin/organizations" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+											Super Admin
 										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>

@@ -26,6 +26,9 @@ class CampaignController extends Controller
 		$validated = $request->validate([
 			'name' => 'required|string|max:255',
 			'description' => 'nullable|string',
+			'location' => 'nullable|string|max:255',
+			'keywords' => 'nullable|array',
+			'keywords.*' => 'string|max:255',
 		]);
 
 		$campaign = $team->campaigns()->create($validated);
@@ -61,6 +64,9 @@ class CampaignController extends Controller
 		$validated = $request->validate([
 			'name' => 'sometimes|required|string|max:255',
 			'description' => 'sometimes|nullable|string',
+			'location' => 'sometimes|nullable|string|max:255',
+			'keywords' => 'sometimes|nullable|array',
+			'keywords.*' => 'string|max:255',
 		]);
 
 		$campaign->update($validated);

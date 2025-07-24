@@ -134,7 +134,7 @@ onMounted(() => {
 					></textarea>
 					<p class="text-xs text-neutral-500 mt-1">This description can help AI generate accurate prompts</p>
 				</div>
-				<!-- <div class="mb-4">
+				<div class="mb-4">
 					<label class="block text-sm font-medium text-neutral-700 mb-1">Keywords (optional)</label>
 					<div class="flex space-x-2 mb-2">
 						<input
@@ -165,7 +165,7 @@ onMounted(() => {
 						</ul>
 					</div>
 					<p class="text-xs text-neutral-500 mt-1">Keywords that describe your business or campaign focus</p>
-				</div> -->
+				</div>
 				<div class="flex justify-end space-x-2">
 					<Button @click="showCreateModal = false" variant="neutral">Cancel</Button>
 					<Button @click="createCampaign" :disabled="isSubmitting || !newCampaign.name" variant="dark">{{

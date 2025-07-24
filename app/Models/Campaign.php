@@ -23,6 +23,7 @@ class Campaign extends Model
 
         protected $casts = [
                 'is_default' => 'boolean',
+                'keywords' => 'array',
         ];
 
         /**
