@@ -64,7 +64,7 @@ const runPrompt = async (id, count = 1) => {
 
 const runAllPrompts = async (count = 1) => {
 	try {
-		await promptStore.runAllPrompts(teamId.value, count)
+		await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
 		await jobStatusStore.pollTeamJobs(teamId.value)
 	} catch (error) {
 		console.error('Error running all prompts:', error)

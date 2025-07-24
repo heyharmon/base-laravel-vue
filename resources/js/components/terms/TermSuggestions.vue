@@ -9,14 +9,14 @@ const props = defineProps({
 		type: String,
 		required: true
 	},
-        organizationId: {
-                type: String,
-                default: null
-        },
-        teamId: {
-                type: [String, Number],
-                required: true
-        }
+	organizationId: {
+		type: String,
+		default: null
+	},
+	teamId: {
+		type: [String, Number],
+		required: true
+	}
 })
 
 const emit = defineEmits(['update:terms', 'create-terms'])
@@ -29,11 +29,11 @@ const termStore = useTermStore()
 // Generate terms on mount if domain is available
 onMounted(() => {
 	if (props.domain) {
-		GenerateOrganizationKeywords()
+		generateTerms()
 	}
 })
 
-const GenerateOrganizationKeywords = async () => {
+const generateTerms = async () => {
 	if (!props.domain) {
 		error.value = 'No website domain available.'
 		return
@@ -61,10 +61,10 @@ const removeTerm = (index) => {
 }
 
 const createTerms = async () => {
-        if (!generatedTerms.value.length || !props.organizationId) return
+	if (!generatedTerms.value.length || !props.organizationId) return
 
 	try {
-                const promises = generatedTerms.value.map((term) => termStore.createTerm(props.teamId, props.organizationId, { name: term }))
+		const promises = generatedTerms.value.map((term) => termStore.createTerm(props.teamId, props.organizationId, { name: term }))
 
 		await Promise.all(promises)
 		emit('create-terms')
@@ -75,7 +75,7 @@ const createTerms = async () => {
 }
 
 // Expose methods to parent components
-defineExpose({ GenerateOrganizationKeywords })
+defineExpose({ generateTerms })
 </script>
 
 <template>

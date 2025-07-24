@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Models\Team;
 use App\Services\JobDispatcherService;
 use App\Models\Term;
-use App\Jobs\GenerateOrganizationKeywords;
+use App\Models\Team;
+use App\Models\Campaign;
+use App\Jobs\GenerateCampaignKeywords;
 
 class OrganizationOnboardController extends Controller
 {
@@ -21,7 +22,7 @@ class OrganizationOnboardController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-        public function store(Request $request, Team $team): JsonResponse
+	public function store(Request $request, Team $team): JsonResponse
 	{
 		$validated = $request->validate([
 			'name' => 'nullable|string|max:255',
@@ -48,36 +49,33 @@ class OrganizationOnboardController extends Controller
 		// Remove campaign fields from organization data
 		unset($validated['location'], $validated['description']);
 
-		// TODO: Move this term creation logic into the organization model boot method
-               $organization = $team->organizations()->create($validated);
+		// Create the team's own organization
+		$organization = $team->organizations()->create($validated);
 
-		// Update the default campaign with location and description
-		if (!empty(array_filter($campaignFields))) {
-			$defaultCampaign = \App\Models\Campaign::where('team_id', $team->id)
-				->where('is_default', true)
-				->first();
+		// Create default campaign if it doesn't exist
+		$campaign = Campaign::create([
+			'team_id' => $team->id,
+			'name' => 'Default Campaign',
+			'is_default' => true,
+			...$campaignFields
+		]);
 
-			if ($defaultCampaign) {
-				$defaultCampaign->update(array_filter($campaignFields));
-			}
-		}
-
-		// Create a term for the competitor name
+		// Create a term for the organization's name
 		Term::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->name,
 		]);
 
-		// Create a term for the competitor website
+		// Create a term for the organization's website
 		Term::create([
 			'team_id' => $organization->team_id,
 			'organization_id' => $organization->id,
 			'name' => $organization->website,
 		]);
 
-		// Dispatch a job to generate keywords for this organization
-                $this->jobDispatcher->dispatch($organization, new GenerateOrganizationKeywords($organization, $organization->team_id));
+		// Dispatch a job to generate keywords for the campaign
+		$this->jobDispatcher->dispatch($organization, new GenerateCampaignKeywords($campaign, $organization, $organization->team_id));
 
 		return response()->json($organization, 201);
 	}

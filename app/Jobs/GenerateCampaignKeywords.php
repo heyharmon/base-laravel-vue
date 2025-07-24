@@ -17,7 +17,7 @@ use App\Services\JobDispatcherService;
 use App\Models\Organization;
 use App\Models\Campaign;
 
-class GenerateOrganizationKeywords extends TrackableJob
+class GenerateCampaignKeywords extends TrackableJob
 {
 	use Batchable;
 
@@ -29,31 +29,30 @@ class GenerateOrganizationKeywords extends TrackableJob
 	public $tries = 1;
 
 	/**
-	 * The model to use for job tracking.
+	 * The campaign keywords will belong to.
 	 *
-	 * @var \Illuminate\Database\Eloquent\Model
+	 * @var Campaign
 	 */
-	public $model;
+	public $campaign;
 
 	/**
-	 * The team ID.
+	 * The organization used to generate keywords.
 	 *
-	 * @var int
+	 * @var Organization
 	 */
-	protected $teamId;
+	public $organization;
 
 	/**
 	 * Create a new job instance.
 	 *
+	 * @param \App\Models\Campaign $campaign
 	 * @param  \App\Models\Prompt  $prompt
-	 * @param  array  $providers
-	 * @param  int  $teamId
 	 * @return void
 	 */
-	public function __construct(Organization $model, int $teamId)
+	public function __construct(Campaign $campaign, Organization $organization)
 	{
-		$this->model = $model;
-		$this->teamId = $teamId;
+		$this->campaign = $campaign;
+		$this->organization = $organization;
 	}
 
 	/**
@@ -68,32 +67,27 @@ class GenerateOrganizationKeywords extends TrackableJob
 			if ($this->isCancelled()) {
 				return;
 			}
-			// Mark the job as started
-			$this->markJobAsStarted('Finding keywords for ' . $this->model->name);
 
+			// Mark the job as started
+			$this->markJobAsStarted('Finding keywords for ' . $this->organization->name);
+
+			// Create a search API tool
 			$searchApiTool = new SearchApiTool();
 
-			// Get the default campaign for location and description
-			$campaign = Campaign::where('team_id', $this->teamId)
-				->where('is_default', true)
-				->first();
-
 			// Build organization context with available properties
-			$organizationContext = "Here is a company: \"" . $this->model->name . "\" (" . $this->model->website . ")";
+			$context = "Here is a company: \"" . $this->organization->name . "\" (" . $this->organization->website . ")";
 
 			// Add location if available from campaign
-			if ($campaign && !empty($campaign->location)) {
-				$organizationContext .= " located in " . $campaign->location;
+			if (!empty($this->campaign->location)) {
+				$context .= " located in " . $this->campaign->location;
 			}
 
 			// Add description if available from campaign
-			if ($campaign && !empty($campaign->description)) {
-				$organizationContext .= ". Description: " . $campaign->description;
+			if (!empty($this->campaign->description)) {
+				$context .= ". Description: " . $this->campaign->description;
 			}
 
-			$prompt = $organizationContext . ". Your job is to come up with a list of keywords relevent to this company.
-These are keywords people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with keywords like \"auto loan\", \"home loan\", \"checking account\", etc.
-Output keywords as a plain text list.";
+			$prompt = $context . ". Your job is to come up with a list of keywords relevent to this company. These are keywords people are likely to be searching for when looking for products and services this company offer. For example, if you are given the company, \"ACME bank\", you might come up with keywords like \"auto loan\", \"home loan\", \"checking account\", etc. Output keywords as a plain text list.";
 
 			$textResponse = Prism::text()
 				->using(Provider::OpenAI, 'gpt-4o')
@@ -127,24 +121,22 @@ Output keywords as a plain text list.";
 
 			$result = $response->structured;
 
-			$this->updateJobProgress(90, 'Saving keywords for ' . $this->model->name);
+			$this->updateJobProgress(90, 'Saving keywords for ' . $this->organization->name);
 
-			// Save keywords to the campaign instead of organization
-			if ($campaign) {
-				$campaign->update([
-					'keywords' => $result['keywords']
-				]);
+			// Save keywords to the campaign
+			$this->campaign->update([
+				'keywords' => $result['keywords']
+			]);
+
+			// Generate a prompt for each keyword
+			if (!$this->organization->is_competitor) {
+				foreach ($result['keywords'] as $keyword) {
+					$jobDispatcher->dispatch($this->organization, new GeneratePrompt($this->campaign, $this->organization, $keyword));
+				}
 			}
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Saved keywords for ' . $this->model->name);
-
-			// Generate prompts for keywords if this is the owned organization
-			if (!$this->model->is_competitor && $campaign) {
-				foreach ($result['keywords'] as $keyword) {
-					$jobDispatcher->dispatch($this->model, new GeneratePrompt($this->model, $this->teamId, $keyword));
-				}
-			}
+			$this->markJobAsCompleted('Saved keywords for ' . $this->organization->name);
 		} catch (Throwable $exception) {
 			Log::error('Keyword generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

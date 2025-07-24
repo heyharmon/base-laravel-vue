@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
-use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Organization;
 use App\Models\Term;
@@ -201,6 +200,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
 			// Check if this competitor already exists by website or name
 			$existingOrganization = Organization::where('team_id', $this->teamId)
+				->where('campaign_id', $this->model->campaign_id)
 				->where(function ($query) use ($competitor) {
 					$query->where('website', $competitor['website'])
 						->orWhere('name', $competitor['name']);
@@ -211,6 +211,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				// Create new competitor organization
 				$competitorOrg = Organization::create([
 					'team_id' => $this->teamId,
+					'campaign_id' => $this->model->campaign_id,
 					'name' => $competitor['name'],
 					'website' => $competitor['website'] ?? null,
 					'is_competitor' => true,
@@ -233,11 +234,8 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				// Dispatch a job to check past responses for this term
 				$jobDispatcher = app(JobDispatcherService::class);
 				foreach ([$nameTerm, $websiteTerm] as $term) {
-					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId));
+					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId, $this->model->campaign_id));
 				}
-
-				// Dispatch the GenerateOrganizationKeywords job for this organization
-				// $jobDispatcher->dispatch($competitorOrg, new GenerateOrganizationKeywords($competitorOrg, $this->teamId));
 
 				$createdCount++;
 			}

@@ -39,9 +39,8 @@ const routes = [
 			const campaignStore = useCampaignStore()
 			const teamId = to.params.id
 
-			if (campaignStore.campaigns.length === 0) {
-				await campaignStore.fetchCampaigns(teamId)
-			}
+			// Always fetch fresh campaign data for the team to ensure we have the correct campaigns
+			await campaignStore.fetchCampaigns(teamId)
 
 			if (!to.params.campaignId && campaignStore.defaultCampaign) {
 				return next({

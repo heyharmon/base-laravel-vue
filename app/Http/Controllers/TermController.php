@@ -19,12 +19,12 @@ class TermController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-        public function index(Team $team, Organization $organization, Request $request): JsonResponse
-        {
-                // Verify the organization belongs to the given team
-                if ($organization->team_id !== $team->id) {
-                        return response()->json(['message' => 'Organization not found'], 404);
-                }
+	public function index(Team $team, Organization $organization, Request $request): JsonResponse
+	{
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
+			return response()->json(['message' => 'Organization not found'], 404);
+		}
 
 		$terms = $organization->terms()
 			->withCount('prompts')
@@ -34,17 +34,17 @@ class TermController extends Controller
 		return response()->json($terms);
 	}
 
-        public function show(Team $team, Organization $organization, Term $term): JsonResponse
-        {
-                // Verify the organization belongs to the given team
-                if ($organization->team_id !== $team->id) {
-                        return response()->json(['message' => 'Organization not found'], 404);
-                }
+	public function show(Team $team, Organization $organization, Term $term): JsonResponse
+	{
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
+			return response()->json(['message' => 'Organization not found'], 404);
+		}
 
-                // Check if term belongs to organization owned by this team
-                if ($term->organization->team_id !== $team->id) {
-                        return response()->json(['message' => 'Not found'], 404);
-                }
+		// Check if term belongs to organization owned by this team
+		if ($term->organization->team_id !== $team->id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
 		// Load term prompts with pivot data
 		$term->load(['prompts' => function ($query) {
@@ -54,39 +54,39 @@ class TermController extends Controller
 		return response()->json($term);
 	}
 
-        public function store(Team $team, Organization $organization, Request $request): JsonResponse
+	public function store(Team $team, Organization $organization, Request $request): JsonResponse
 	{
 		$validated = $request->validate([
 			'name' => 'required|string',
 		]);
 
-                // Verify the organization belongs to the given team
-                if ($organization->team_id !== $team->id) {
-                        return response()->json(['message' => 'Organization not found'], 404);
-                }
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
+			return response()->json(['message' => 'Organization not found'], 404);
+		}
 
-                // Create term with both organization_id and team_id
-                $validated['team_id'] = $team->id;
-                $term = $organization->terms()->create($validated);
+		// Create term with both organization_id and team_id
+		$validated['team_id'] = $team->id;
+		$term = $organization->terms()->create($validated);
 
-                // Dispatch a job to check past responses for this term
-                $job = new CheckTermInPastResponsesJob($term, $team->id);
+		// Dispatch a job to check past responses for this term
+		$job = new CheckTermInPastResponsesJob($term, $team->id);
 		$jobStatus = $this->jobDispatcher->dispatch($term, $job);
 
 		return response()->json($term, 201);
 	}
 
-        public function destroy(Team $team, Organization $organization, Term $term): JsonResponse
-        {
-                // Verify the organization belongs to the given team
-                if ($organization->team_id !== $team->id) {
-                        return response()->json(['message' => 'Organization not found'], 404);
-                }
+	public function destroy(Team $team, Organization $organization, Term $term): JsonResponse
+	{
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
+			return response()->json(['message' => 'Organization not found'], 404);
+		}
 
-                // Check if term belongs to organization owned by this team
-                if ($term->organization->team_id !== $team->id) {
-                        return response()->json(['message' => 'Not found'], 404);
-                }
+		// Check if term belongs to organization owned by this team
+		if ($term->organization->team_id !== $team->id) {
+			return response()->json(['message' => 'Not found'], 404);
+		}
 
 		$term->delete();
 

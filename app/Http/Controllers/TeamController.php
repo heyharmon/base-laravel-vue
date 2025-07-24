@@ -169,17 +169,46 @@ class TeamController extends Controller
 			return response()->json(['message' => 'Unauthorized'], 403);
 		}
 
-		$team->delete();
+		DB::transaction(function () use ($team) {
+			// Detach all users from the team
+			$team->users()->detach();
+
+			// Delete related models via Eloquent so model events fire
+			$team->prompts()->get()->each->delete();
+			$team->terms()->get()->each->delete();
+			$team->organizations()->get()->each->delete();
+			$team->campaigns()->get()->each->delete();
+			$team->conversations()->get()->each->delete();
+
+			// Remove queued job data
+			$jobIds = $team->jobStatuses()->pluck('job_id')->toArray();
+			$batchIds = $team->jobStatuses()->whereNotNull('job_batch_id')->pluck('job_batch_id')->toArray();
+
+			// Delete job status records
+			$team->jobStatuses()->delete();
+
+			if (!empty($jobIds)) {
+				DB::table('jobs')->where(function ($query) use ($jobIds) {
+					foreach ($jobIds as $id) {
+						$query->orWhere('payload', 'like', '%' . $id . '%');
+					}
+				})->delete();
+
+				DB::table('failed_jobs')->where(function ($query) use ($jobIds) {
+					foreach ($jobIds as $id) {
+						$query->orWhere('payload', 'like', '%' . $id . '%');
+					}
+				})->delete();
+			}
+
+			if (!empty($batchIds)) {
+				DB::table('job_batches')->whereIn('id', $batchIds)->delete();
+			}
+
+			$team->delete();
+		});
 
 		return response()->json(['message' => 'Team deleted successfully']);
-	}
-
-	/**
-	 * Alias for destroy to support DELETE /teams/{team} via "delete" route if needed.
-	 */
-	public function delete(Team $team)
-	{
-		return $this->destroy($team);
 	}
 
 	/**

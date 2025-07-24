@@ -6,6 +6,7 @@ use App\Models\Team;
 use App\Models\Campaign;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class CampaignController extends Controller
 {
@@ -87,7 +88,14 @@ class CampaignController extends Controller
 			return response()->json(['message' => 'Cannot delete the default campaign'], 422);
 		}
 
-		$campaign->delete();
+		DB::transaction(function () use ($campaign) {
+			// Delete related models via Eloquent so model events fire
+			$campaign->prompts()->get()->each->delete();
+			$campaign->competitors()->get()->each->delete();
+			$campaign->articles()->get()->each->delete();
+
+			$campaign->delete();
+		});
 
 		return response()->json(null, 204);
 	}

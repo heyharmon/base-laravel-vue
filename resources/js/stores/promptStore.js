@@ -105,12 +105,12 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
-	async function runAllPrompts(teamId, count = 1) {
+	async function runAllPrompts(teamId, campaignId, count = 1) {
 		console.log('Running all prompts...')
 
 		isRunningAll.value = true
 		try {
-			return await api.post(`/teams/${teamId}/prompt-run-batch`, { count })
+			return await api.post(`/teams/${teamId}/campaigns/${campaignId}/prompt-run-batch`, { count })
 		} catch (error) {
 			console.error('Error running all prompts:', error)
 			throw error

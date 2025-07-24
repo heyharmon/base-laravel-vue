@@ -19,7 +19,9 @@ const organization = ref({
 	website: '',
 	logo: '',
 	is_competitor: false,
-	hasDetails: false
+	hasDetails: false,
+	location: '',
+	description: ''
 })
 
 // Handle organization selection from search component
@@ -34,7 +36,9 @@ const deselectOrganization = () => {
 		website: '',
 		logo: '',
 		is_competitor: false,
-		hasDetails: false
+		hasDetails: false,
+		location: '',
+		description: ''
 	}
 }
 
@@ -105,8 +109,34 @@ const createTeamAndOrganization = async () => {
 							/>
 							<p class="text-xs text-neutral-500 mt-1">Customize the name of your organization</p>
 						</div>
+					</div>
+				</div>
 
+				<!-- Campaign Details -->
+				<div v-if="organization.name || organization.website" class="mt-4">
+					<h3 class="text-sm font-medium text-neutral-700 mb-2">Campaign Details</h3>
+					<div class="p-6 border border-neutral-200 rounded-md bg-neutral-50 space-y-4">
+						<div>
+							<label class="block text-sm font-medium text-neutral-700 mb-1">Location</label>
+							<input
+								v-model="organization.location"
+								type="text"
+								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+								placeholder="Enter location (optional)"
+							/>
+							<p class="text-xs text-neutral-500 mt-1">Location where your business primarily operates</p>
+						</div>
 
+						<div>
+							<label class="block text-sm font-medium text-neutral-700 mb-1">Description</label>
+							<textarea
+								v-model="organization.description"
+								rows="4"
+								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+								placeholder="Enter campaign description (optional)"
+							></textarea>
+							<p class="text-xs text-neutral-500 mt-1">This description can help AI generate accurate prompts</p>
+						</div>
 					</div>
 				</div>
 

@@ -26,18 +26,16 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const competitorOrganizations = computed(() => (organizations.value ? organizations.value.filter((org) => org.is_competitor) : []))
 
 	// Actions
-       async function fetchOrganizations(teamId, campaignId = null) {
-               console.log('Fetching organizations...')
-               try {
-                       const endpoint = campaignId ?
-                               `/teams/${teamId}/campaigns/${campaignId}/organizations` :
-                               `/teams/${teamId}/organizations`
-                       const response = await api.get(endpoint)
-                       organizations.value = response
-               } catch (err) {
-                       console.error('Error fetching organizations:', err)
-               }
-       }
+	async function fetchOrganizations(teamId, campaignId = null) {
+		console.log('Fetching organizations...')
+		try {
+			const endpoint = campaignId ? `/teams/${teamId}/campaigns/${campaignId}/organizations` : `/teams/${teamId}/organizations`
+			const response = await api.get(endpoint)
+			organizations.value = response
+		} catch (err) {
+			console.error('Error fetching organizations:', err)
+		}
+	}
 
 	async function fetchOrganization(organizationId) {
 		isLoading.value = true
@@ -54,23 +52,21 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function createOrganization(teamId, campaignId, organizationData) {
-                console.log('Creating organization...', organizationData)
-                isLoading.value = true
+	async function createOrganization(teamId, campaignId, organizationData) {
+		console.log('Creating organization...', organizationData)
+		isLoading.value = true
 
-                try {
-                        const endpoint = organizationData.is_competitor 
-                                ? `/teams/${teamId}/campaigns/${campaignId}/organizations` 
-                                : `/teams/${teamId}/organizations`
+		try {
+			const endpoint = organizationData.is_competitor ? `/teams/${teamId}/campaigns/${campaignId}/organizations` : `/teams/${teamId}/organizations`
 
-                        const response = await api.post(endpoint, organizationData)
+			const response = await api.post(endpoint, organizationData)
 
-                        if (organizationData.is_competitor) {
-                                competitorOrganizations.value.push(response)
-                        } else {
-                                ownedOrganizations.value.push(response)
-                        }
-                        return response // API interceptor already extracts response.data
+			if (organizationData.is_competitor) {
+				competitorOrganizations.value.push(response)
+			} else {
+				ownedOrganizations.value.push(response)
+			}
+			return response // API interceptor already extracts response.data
 		} catch (err) {
 			console.error('Error creating organization:', err)
 			throw err
@@ -79,20 +75,20 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-       async function createAndOnboardOrganization(teamId, organizationData) {
-               console.log('Creating and onboarding organization...')
-               isLoading.value = true
+	async function createAndOnboardOrganization(teamId, organizationData) {
+		console.log('Creating and onboarding organization...')
+		isLoading.value = true
 
-               try {
-                       const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
-                       return response
-               } catch (err) {
-                       console.error('Error creating organization:', err)
-                       throw err
-               } finally {
-                       isLoading.value = false
-               }
-       }
+		try {
+			const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
+			return response
+		} catch (err) {
+			console.error('Error creating organization:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
 
 	async function updateOrganization(organizationId, organizationData) {
 		console.log('Updating organization ID:', organizationId)
@@ -116,13 +112,13 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-       async function deleteOrganization(teamId, organizationId, campaignId = null) {
-                console.log('Deleting organization ID:', organizationId)
+	async function deleteOrganization(teamId, organizationId, campaignId = null) {
+		console.log('Deleting organization ID:', organizationId)
 		// isLoading.value = true
 
 		try {
-                        const response = await api.delete(`/organizations/${organizationId}`)
-                        await fetchOrganizations(teamId, campaignId)
+			const response = await api.delete(`/organizations/${organizationId}`)
+			await fetchOrganizations(teamId, campaignId)
 			return response.data
 		} catch (err) {
 			console.error('Error deleting organization:', err)
@@ -132,44 +128,44 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function fetchVisibilityMetrics(teamId, campaignId) {
-                if (!campaignId) {
-                        console.error('Campaign ID is required')
-                        return
-                }
+	async function fetchVisibilityMetrics(teamId, campaignId) {
+		if (!campaignId) {
+			console.error('Campaign ID is required')
+			return
+		}
 
-                isLoadingVisibility.value = true
-                try {
-                        const params = {}
+		isLoadingVisibility.value = true
+		try {
+			const params = {}
 
-                        if (currentDateRange.value.startDate) {
-                                params.start_date = currentDateRange.value.startDate
-                        }
-                        if (currentDateRange.value.endDate) {
-                                params.end_date = currentDateRange.value.endDate
-                        }
+			if (currentDateRange.value.startDate) {
+				params.start_date = currentDateRange.value.startDate
+			}
+			if (currentDateRange.value.endDate) {
+				params.end_date = currentDateRange.value.endDate
+			}
 
-                        const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organization-visibility`, {
-                                params
-                        })
+			const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organization-visibility`, {
+				params
+			})
 
-                        visibilityMetrics.value = response || []
-                } catch (error) {
-                        console.error('Error fetching visibility metrics:', error)
-                        visibilityMetrics.value = []
-                } finally {
-                        isLoadingVisibility.value = false
-                }
-        }
+			visibilityMetrics.value = response || []
+		} catch (error) {
+			console.error('Error fetching visibility metrics:', error)
+			visibilityMetrics.value = []
+		} finally {
+			isLoadingVisibility.value = false
+		}
+	}
 
-        async function findCompetitors(teamId) {
+	async function findCompetitors(teamId) {
 		console.log('Finding competitors from past responses...')
 		isLoading.value = true
 
 		try {
-                        const response = await api.post(`/teams/${teamId}/organizations-find-competitors`)
+			const response = await api.post(`/teams/${teamId}/organizations-find-competitors`)
 
-                        await jobStatusStore.pollTeamJobs(teamId)
+			await jobStatusStore.pollTeamJobs(teamId)
 
 			return response
 		} catch (err) {
@@ -181,11 +177,11 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	// Function to update date range and refresh visibility data
-        function setDateRange(teamId, campaignId, dateRange) {
-                console.log('Setting date range:', dateRange)
-                currentDateRange.value = dateRange
-                return fetchVisibilityMetrics(teamId, campaignId)
-        }
+	function setDateRange(teamId, campaignId, dateRange) {
+		console.log('Setting date range:', dateRange)
+		currentDateRange.value = dateRange
+		return fetchVisibilityMetrics(teamId, campaignId)
+	}
 
 	return {
 		// State
