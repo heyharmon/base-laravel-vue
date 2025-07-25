@@ -4,12 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\Campaign;
+use App\Jobs\GenerateCampaignKeywords;
+use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class CampaignController extends Controller
 {
+        protected $jobDispatcher;
+
+        public function __construct(JobDispatcherService $jobDispatcher)
+        {
+                $this->jobDispatcher = $jobDispatcher;
+        }
 	/**
 	 * Display a listing of campaigns for a team.
 	 */
@@ -22,20 +30,51 @@ class CampaignController extends Controller
 	/**
 	 * Store a newly created campaign.
 	 */
-	public function store(Request $request, Team $team): JsonResponse
-	{
-		$validated = $request->validate([
-			'name' => 'required|string|max:255',
-			'description' => 'nullable|string',
-			'location' => 'nullable|string|max:255',
-			'keywords' => 'nullable|array',
-			'keywords.*' => 'string|max:255',
-		]);
+        public function store(Request $request, Team $team): JsonResponse
+        {
+                $validated = $request->validate([
+                        'name' => 'required|string|max:255',
+                        'description' => 'nullable|string',
+                        'location' => 'nullable|string|max:255',
+                        'keywords' => 'nullable|array',
+                        'keywords.*' => 'string|max:255',
+                        'is_default' => 'nullable|boolean',
+                ]);
 
-		$campaign = $team->campaigns()->create($validated);
+                $campaign = $team->campaigns()->create($validated);
 
-		return response()->json($campaign, 201);
-	}
+                if ($campaign->is_default && empty($validated['keywords'])) {
+                        $this->jobDispatcher->dispatch($campaign, new GenerateCampaignKeywords($campaign));
+                }
+
+                return response()->json($campaign, 201);
+        }
+
+        /**
+         * Create a default campaign for a newly created team.
+         */
+        public function createDefault(Request $request, Team $team): JsonResponse
+        {
+                $validated = $request->validate([
+                        'description' => 'nullable|string',
+                        'location' => 'nullable|string|max:255',
+                ]);
+
+                if ($team->campaigns()->where('is_default', true)->exists()) {
+                        return response()->json(['message' => 'Default campaign already exists'], 422);
+                }
+
+                $campaign = $team->campaigns()->create([
+                        'name' => 'Default Campaign',
+                        'is_default' => true,
+                        'description' => $validated['description'] ?? null,
+                        'location' => $validated['location'] ?? null,
+                ]);
+
+                $this->jobDispatcher->dispatch($campaign, new GenerateCampaignKeywords($campaign));
+
+                return response()->json($campaign, 201);
+        }
 
 	/**
 	 * Display the specified campaign.

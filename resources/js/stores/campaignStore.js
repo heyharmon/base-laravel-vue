@@ -36,6 +36,28 @@ export const useCampaignStore = defineStore('campaign', {
                         try {
                                 const response = await api.post(`/teams/${teamId}/campaigns`, campaignData)
                                 this.campaigns.push(response)
+
+                                if (response.is_default) {
+                                        this.currentCampaign = response
+                                        localStorage.setItem(`team_${teamId}_current_campaign`, JSON.stringify(response))
+                                }
+
+                                return response
+                        } catch (error) {
+                                this.error = error.message
+                                throw error
+                        }
+                },
+
+                async createDefaultCampaign(teamId, { location, description }) {
+                        try {
+                                const response = await api.post(`/teams/${teamId}/campaigns/default`, {
+                                        location,
+                                        description
+                                })
+                                this.campaigns.push(response)
+                                this.currentCampaign = response
+                                localStorage.setItem(`team_${teamId}_current_campaign`, JSON.stringify(response))
                                 return response
                         } catch (error) {
                                 this.error = error.message

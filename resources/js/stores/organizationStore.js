@@ -76,20 +76,20 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function createAndOnboardOrganization(teamId, organizationData) {
-		console.log('Creating and onboarding organization...')
-		isLoading.value = true
+        async function createOwnedOrganization(teamId, organizationData) {
+                console.log('Creating owned organization...')
+                isLoading.value = true
 
-		try {
-			const response = await api.post(`/teams/${teamId}/organizations-onboard`, organizationData)
-			return response
-		} catch (err) {
-			console.error('Error creating organization:', err)
-			throw err
-		} finally {
-			isLoading.value = false
-		}
-	}
+                try {
+                        const response = await api.post(`/teams/${teamId}/organizations`, organizationData)
+                        return response
+                } catch (err) {
+                        console.error('Error creating organization:', err)
+                        throw err
+                } finally {
+                        isLoading.value = false
+                }
+        }
 
 	async function updateOrganization(organizationId, organizationData) {
 		console.log('Updating organization ID:', organizationId)
@@ -195,9 +195,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 		// Actions
 		fetchOrganizations,
 		fetchOrganization,
-		createOrganization,
-		createAndOnboardOrganization,
-		updateOrganization,
+                createOrganization,
+                createOwnedOrganization,
+                updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
 		setDateRange,

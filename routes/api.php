@@ -17,7 +17,6 @@ use App\Http\Controllers\PromptController;
 use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationVisibilityChartController;
 use App\Http\Controllers\OrganizationSearchController;
-use App\Http\Controllers\OrganizationOnboardController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\OrganizationCompetitorController;
 use App\Http\Controllers\JobStatusController;
@@ -52,7 +51,6 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('teams/{team}/organizations', [OrganizationController::class, 'store']);
 	Route::post('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'store']);
 	Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);
-	Route::post('teams/{team}/organizations-onboard', [OrganizationOnboardController::class, 'store']);
 
 	// Organization Competitors
 	Route::post('teams/{team}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
@@ -74,8 +72,9 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Campaigns
-	Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
-	Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
+        Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
+        Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
+        Route::post('teams/{team}/campaigns/default', [CampaignController::class, 'createDefault']);
 	Route::get('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'show']);
 	Route::put('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'update']);
 	Route::delete('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'destroy']);

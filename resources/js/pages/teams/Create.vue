@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useCampaignStore } from '@/stores/campaignStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import OrganizationSearch from '@/components/OrganizationSearch.vue'
@@ -11,7 +12,9 @@ import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 const router = useRouter()
 const teamStore = useTeamStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 const isSubmitting = ref(false)
+const currentStep = ref('')
 
 // Organization data
 const organization = ref({
@@ -44,20 +47,42 @@ const deselectOrganization = () => {
 
 // Create team and organization
 const createTeamAndOrganization = async () => {
-	if (!organization.value.name) return
+        if (!organization.value.name) return
 
-	isSubmitting.value = true
-	try {
-        let team = await teamStore.createTeam({ name: organization.value.name })
-        await organizationStore.createAndOnboardOrganization(team.id, organization.value)
+        isSubmitting.value = true
+        try {
+                // Step 1: Create team
+                currentStep.value = 'Creating team...'
+                const team = await teamStore.createTeam({ name: organization.value.name })
 
-        await teamStore.switchTeam(team.id)
-        router.push({ name: 'home', params: { id: team.id } })
-	} catch (error) {
-		console.error('Error creating team and organization:', error)
-	} finally {
-		isSubmitting.value = false
-	}
+                // Step 2: Create organization
+                currentStep.value = 'Creating organization...'
+                const orgData = {
+                        name: organization.value.name,
+                        website: organization.value.website,
+                        logo: organization.value.logo,
+                        is_competitor: false
+                }
+                await organizationStore.createOwnedOrganization(team.id, orgData)
+
+                // Step 3: Create default campaign
+                currentStep.value = 'Setting up campaign...'
+                const campaign = await campaignStore.createDefaultCampaign(team.id, {
+                        location: organization.value.location,
+                        description: organization.value.description
+                })
+
+                // Step 4: Switch to new team and navigate
+                currentStep.value = 'Finalizing...'
+                await teamStore.switchTeam(team.id)
+                router.push({ name: 'home', params: { id: team.id, campaignId: campaign.id } })
+        } catch (error) {
+                console.error('Error creating team and organization:', error)
+                currentStep.value = ''
+        } finally {
+                isSubmitting.value = false
+                currentStep.value = ''
+        }
 }
 </script>
 
@@ -141,9 +166,10 @@ const createTeamAndOrganization = async () => {
 				</div>
 
 				<div class="mt-6 flex justify-end space-x-2">
-					<Button @click="createTeamAndOrganization" :disabled="isSubmitting || !organization.name" variant="dark">
-						{{ isSubmitting ? 'Creating...' : 'Create Team' }}
-					</Button>
+                <Button @click="createTeamAndOrganization" :disabled="isSubmitting || !organization.name" variant="dark">
+                        <span v-if="isSubmitting">{{ currentStep || 'Creating...' }}</span>
+                        <span v-else>Create Team</span>
+                </Button>
 				</div>
 			</div>
 		</div>
