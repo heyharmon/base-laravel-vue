@@ -12,35 +12,31 @@ const campaignStore = useCampaignStore()
 
 const teamId = computed(() => route.params.teamId)
 const showCreateModal = ref(false)
-const newCampaign = ref({ name: '', description: '', location: '', keywords: [] })
-const newKeyword = ref('')
+const newCampaign = ref({
+	name: '',
+	description: '',
+	location: ''
+})
 const isSubmitting = ref(false)
 
 const createCampaign = async () => {
 	if (!newCampaign.value.name) return
 	isSubmitting.value = true
 	try {
-		const campaign = await campaignStore.createCampaign(teamId.value, newCampaign.value)
+		const campaign = await campaignStore.createCampaign(teamId.value, {
+			is_default: false,
+			name: newCampaign.value.name,
+			description: newCampaign.value.description,
+			location: newCampaign.value.location
+		})
 		showCreateModal.value = false
-		newCampaign.value = { name: '', description: '', location: '', keywords: [] }
-		newKeyword.value = ''
+		newCampaign.value = { name: '', description: '', location: '' }
 		router.push({ name: 'home', params: { id: teamId.value, campaignId: campaign.id } })
 	} catch (error) {
 		console.error('Error creating campaign:', error)
 	} finally {
 		isSubmitting.value = false
 	}
-}
-
-const addKeyword = () => {
-	if (newKeyword.value.trim() && !newCampaign.value.keywords.includes(newKeyword.value.trim())) {
-		newCampaign.value.keywords.push(newKeyword.value.trim())
-		newKeyword.value = ''
-	}
-}
-
-const removeKeyword = (index) => {
-	newCampaign.value.keywords.splice(index, 1)
 }
 
 const deleteCampaign = async (campaignId) => {
@@ -133,38 +129,6 @@ onMounted(() => {
 						placeholder="Enter campaign description"
 					></textarea>
 					<p class="text-xs text-neutral-500 mt-1">This description can help AI generate accurate prompts</p>
-				</div>
-				<div class="mb-4">
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Keywords (optional)</label>
-					<div class="flex space-x-2 mb-2">
-						<input
-							v-model="newKeyword"
-							@keyup.enter="addKeyword"
-							type="text"
-							class="flex-1 px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-							placeholder="Add a keyword"
-						/>
-						<Button @click="addKeyword" :disabled="!newKeyword.trim()" variant="neutral">Add</Button>
-					</div>
-					<div v-if="newCampaign.keywords.length > 0">
-						<ul class="space-y-1">
-							<li
-								v-for="(keyword, index) in newCampaign.keywords"
-								:key="index"
-								class="flex items-center justify-between bg-neutral-100 px-2 py-1.5 rounded mb-1"
-							>
-								<span class="text-sm">{{ keyword }}</span>
-								<button
-									@click="removeKeyword(index)"
-									class="text-neutral-500 hover:text-red-500 ml-2 p-1 cursor-pointer rounded-lg hover:bg-red-100"
-									type="button"
-								>
-									<CloseIcon />
-								</button>
-							</li>
-						</ul>
-					</div>
-					<p class="text-xs text-neutral-500 mt-1">Keywords that describe your business or campaign focus</p>
 				</div>
 				<div class="flex justify-end space-x-2">
 					<Button @click="showCreateModal = false" variant="neutral">Cancel</Button>
