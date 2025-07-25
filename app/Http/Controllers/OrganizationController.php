@@ -77,7 +77,7 @@ class OrganizationController extends Controller
 		]);
 
                 foreach ([$nameTerm, $websiteTerm] as $term) {
-                        $this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $team->id));
+                        $this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $team->id, $campaign->id));
                 }
 
 		return response()->json($organization, 201);

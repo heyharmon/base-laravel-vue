@@ -232,7 +232,15 @@ class RunPromptJob extends TrackableJob
 	{
 		// Get terms for all organizations scoped to the team and campaign
 		$terms = Term::whereHas('organization', function ($query) {
-			$query->where("campaign_id", $this->campaignId);
+			$query->where('team_id', $this->teamId)
+				->where(function ($q) {
+					// Include competitor organizations for this campaign
+					$q->where('campaign_id', $this->campaignId)
+					  // OR include the owned organization (campaign_id is NULL and is_competitor is false)
+					  ->orWhere(function ($subQ) {
+						  $subQ->whereNull('campaign_id')->where('is_competitor', false);
+					  });
+				});
 		})->get();
 
 		$responseText = strtolower($response->content);
