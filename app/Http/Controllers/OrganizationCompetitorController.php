@@ -19,12 +19,12 @@ class OrganizationCompetitorController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-        public function find(Request $request, Team $team): JsonResponse
-        {
-                $teamId = $team->id;
+	public function find(Request $request, Team $team): JsonResponse
+	{
+		$teamId = $team->id;
 
-                // Get all prompts for the current team
-                $prompts = Prompt::where('team_id', $teamId)->get();
+		// Get all prompts for the current team
+		$prompts = Prompt::where('team_id', $teamId)->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([
