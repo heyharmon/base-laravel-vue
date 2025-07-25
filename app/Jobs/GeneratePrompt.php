@@ -55,13 +55,12 @@ class GeneratePrompt extends TrackableJob
 	 * @param  string  $keyword
 	 * @return void
 	 */
-        public function __construct(Campaign $campaign, Organization $organization, string $keyword)
-        {
-                $this->campaign = $campaign;
-                $this->organization = $organization;
-                $this->keyword = $keyword;
-                $this->model = $campaign;
-        }
+	public function __construct(Campaign $campaign, Organization $organization, string $keyword)
+	{
+		$this->campaign = $campaign;
+		$this->organization = $organization;
+		$this->keyword = $keyword;
+	}
 
 	/**
 	 * Execute the job.

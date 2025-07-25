@@ -31,8 +31,8 @@ class OrganizationOnboardController extends Controller
 			'is_competitor' => 'boolean',
 		]);
 
-                // Create the team's own organization
-                $organization = $team->organizations()->create($validated);
+		// Create the team's own organization
+		$organization = $team->organizations()->create($validated);
 
 		// Create a term for the organization's name
 		Term::create([
@@ -48,6 +48,6 @@ class OrganizationOnboardController extends Controller
 			'name' => $organization->website,
 		]);
 
-                return response()->json($organization, 201);
-        }
+		return response()->json($organization, 201);
+	}
 }

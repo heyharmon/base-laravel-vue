@@ -35,24 +35,23 @@ class GenerateCampaignKeywords extends TrackableJob
 	 */
 	public $campaign;
 
-        /**
-         * The organization used to generate keywords.
-         *
-         * @var Organization|null
-         */
-        protected $organization;
+	/**
+	 * The organization used to generate keywords.
+	 *
+	 * @var Organization|null
+	 */
+	protected $organization;
 
 	/**
 	 * Create a new job instance.
 	 *
-         * @param \App\Models\Campaign $campaign
-         * @return void
-         */
-        public function __construct(Campaign $campaign)
-        {
-                $this->campaign = $campaign;
-                $this->model = $campaign;
-        }
+	 * @param \App\Models\Campaign $campaign
+	 * @return void
+	 */
+	public function __construct(Campaign $campaign)
+	{
+		$this->campaign = $campaign;
+	}
 
 	/**
 	 * Execute the job.
@@ -62,22 +61,22 @@ class GenerateCampaignKeywords extends TrackableJob
 	 */
 	public function handle(JobDispatcherService $jobDispatcher)
 	{
-                try {
-                        if ($this->isCancelled()) {
-                                return;
-                        }
+		try {
+			if ($this->isCancelled()) {
+				return;
+			}
 
-                        $this->organization = Organization::where('team_id', $this->campaign->team_id)
-                                ->where('is_competitor', false)
-                                ->first();
+			$this->organization = Organization::where('team_id', $this->campaign->team_id)
+				->where('is_competitor', false)
+				->first();
 
-                        if (!$this->organization) {
-                                $this->markJobAsCompleted('No owned organization found for team');
-                                return;
-                        }
+			if (!$this->organization) {
+				$this->markJobAsCompleted('No owned organization found for team');
+				return;
+			}
 
-                        // Mark the job as started
-                        $this->markJobAsStarted('Finding keywords for ' . $this->organization->name);
+			// Mark the job as started
+			$this->markJobAsStarted('Finding keywords for ' . $this->organization->name);
 
 			// Create a search API tool
 			$searchApiTool = new SearchApiTool();

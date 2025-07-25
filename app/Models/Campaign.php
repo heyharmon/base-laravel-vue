@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\BelongsToTeam;
+use App\Traits\HasJobStatus;
 
 class Campaign extends Model
 {
-	use HasFactory, BelongsToTeam;
+	use HasFactory, BelongsToTeam, HasJobStatus;
 
 	protected $fillable = [
 		'team_id',
