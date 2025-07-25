@@ -74,8 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
 	// Campaigns
-	Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
-	Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
+        Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
+        Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
+        Route::post('teams/{team}/campaigns/default', [CampaignController::class, 'createDefault']);
 	Route::get('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'show']);
 	Route::put('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'update']);
 	Route::delete('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'destroy']);
