@@ -42,26 +42,17 @@ class CheckTermInPastResponsesJob extends TrackableJob
 	protected $teamId;
 
 	/**
-	 * The campaign ID.
-	 *
-	 * @var int
-	 */
-	protected $campaignId;
-
-	/**
 	 * Create a new job instance.
 	 *
 	 * @param  \App\Models\Term  $term
 	 * @param  int  $teamId
-	 * @param  int  $campaignId
 	 * @return void
 	 */
-	public function __construct(Term $term, int $teamId, int $campaignId)
+	public function __construct(Term $term, int $teamId)
 	{
 		$this->model = $term;
 		$this->term = $term;
 		$this->teamId = $teamId;
-		$this->campaignId = $campaignId;
 	}
 
 	/**
@@ -79,10 +70,13 @@ class CheckTermInPastResponsesJob extends TrackableJob
 			// Mark the job as started
 			$this->markJobAsStarted('Checking term in past responses');
 
-			// Get all responses for prompts in the same team and campaign
+			// Get all responses for prompts in the same team and campaign (if campaign_id is provided)
 			$responses = Response::whereHas("prompt", function ($query) {
-				// TODO: We only need the campaign_id as constraint, not the team_id
-				$query->where("campaign_id", $this->campaignId)->where("team_id", $this->teamId);
+				$query->where("team_id", $this->teamId);
+				// Only filter by campaign if the term's organization belongs to a specific campaign
+				if ($this->term->organization->campaign_id !== null) {
+					$query->where("campaign_id", $this->term->organization->campaign_id);
+				}
 			})->get();
 
 			$termName = strtolower($this->term->name);

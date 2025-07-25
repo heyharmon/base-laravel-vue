@@ -234,7 +234,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				// Dispatch a job to check past responses for this term
 				$jobDispatcher = app(JobDispatcherService::class);
 				foreach ([$nameTerm, $websiteTerm] as $term) {
-					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId, $this->model->campaign_id));
+					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId));
 				}
 
 				$createdCount++;

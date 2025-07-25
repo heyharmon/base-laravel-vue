@@ -82,7 +82,7 @@ const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
                 await organizationStore.updateOrganization(route.params.id, organization.value)
-                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: campaignStore.currentCampaign?.id } })
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: organization.value.campaign_id } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -92,15 +92,15 @@ const updateOrganization = async () => {
 
 const deleteOrganization = async () => {
         try {
-                await organizationStore.deleteOrganization(teamId.value, route.params.id, campaignStore.currentCampaign?.id)
-                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: campaignStore.currentCampaign?.id } })
+                await organizationStore.deleteOrganization(teamId.value, route.params.id, organization.value.campaign_id)
+                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: organization.value.campaign_id } })
         } catch (error) {
                 console.error('Error deleting organization:', error)
         }
 }
 
 const cancelEdit = () => {
-        router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: campaignStore.currentCampaign?.id } })
+        router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: organization.value.campaign_id } })
 }
 
 const handleDeleteTerm = (termId, termName) => {
