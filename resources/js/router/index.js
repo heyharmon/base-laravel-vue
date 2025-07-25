@@ -120,7 +120,7 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/organizations/:id/edit',
+		path: '/teams/:teamId/campaigns/:campaignId/organizations/:id/edit',
 		name: 'organizations.edit',
 		component: OrganizationEdit,
 		meta: { requiresAuth: true }
@@ -178,9 +178,9 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/super-admin/organizations',
-		name: 'super-admin.organizations',
-		component: () => import('@/pages/super-admin/Organizations.vue'),
+		path: '/super-admin/',
+		name: 'super-admin',
+		component: () => import('@/pages/super-admin/SuperAdmin.vue'),
 		meta: { requiresAuth: true }
 	}
 ]

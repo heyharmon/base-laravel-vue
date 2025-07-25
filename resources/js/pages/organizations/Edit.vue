@@ -46,10 +46,10 @@ const deletedTermMessage = ref(null)
 onMounted(async () => {
 	try {
                 const data = await organizationStore.fetchOrganization(route.params.id)
-                teamId.value = data.team_id
+                teamId.value = route.params.teamId
                 organization.value = { ...data }
                 originalOrganization.value = { ...data }
-                await termStore.fetchTerms(teamId.value, route.params.id)
+                await termStore.fetchTerms(route.params.teamId, route.params.id)
 	} catch (error) {
 		console.error('Error fetching organization:', error)
 	} finally {
@@ -82,7 +82,7 @@ const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
                 await organizationStore.updateOrganization(route.params.id, organization.value)
-                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: organization.value.campaign_id } })
+                router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -92,15 +92,15 @@ const updateOrganization = async () => {
 
 const deleteOrganization = async () => {
         try {
-                await organizationStore.deleteOrganization(teamId.value, route.params.id, organization.value.campaign_id)
-                router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: organization.value.campaign_id } })
+                await organizationStore.deleteOrganization(route.params.teamId, route.params.id, route.params.campaignId)
+                router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
         } catch (error) {
                 console.error('Error deleting organization:', error)
         }
 }
 
 const cancelEdit = () => {
-        router.push({ name: 'organizations.index', params: { teamId: teamId.value, campaignId: organization.value.campaign_id } })
+        router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 }
 
 const handleDeleteTerm = (termId, termName) => {

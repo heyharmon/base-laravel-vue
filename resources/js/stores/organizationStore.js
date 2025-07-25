@@ -29,8 +29,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 	async function fetchOrganizations(teamId, campaignId = null) {
 		console.log('Fetching organizations...')
 		try {
-			const endpoint = campaignId ? `/teams/${teamId}/campaigns/${campaignId}/organizations` : `/teams/${teamId}/organizations`
-			const response = await api.get(endpoint)
+			// const endpoint = campaignId ? `/teams/${teamId}/campaigns/${campaignId}/organizations` : `/teams/${teamId}/organizations`
+			// console.log('endpoint', endpoint)
+			const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organizations`)
 			organizations.value = response
 		} catch (err) {
 			console.error('Error fetching organizations:', err)
@@ -113,18 +114,13 @@ export const useOrganizationStore = defineStore('organization', () => {
 	}
 
 	async function deleteOrganization(teamId, organizationId, campaignId = null) {
-		console.log('Deleting organization ID:', organizationId)
-		// isLoading.value = true
-
 		try {
 			const response = await api.delete(`/organizations/${organizationId}`)
 			await fetchOrganizations(teamId, campaignId)
-			return response.data
+			return response
 		} catch (err) {
 			console.error('Error deleting organization:', err)
 			throw err
-		} finally {
-			// isLoading.value = false
 		}
 	}
 

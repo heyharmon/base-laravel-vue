@@ -78,13 +78,13 @@ watch(campaignId, async (newId) => {
 				<CampaignSwitcher />
 				<Button
 					v-if="organizationStore.ownedOrganizations.length > 0"
-					@click="organizationStore.findCompetitors(teamId.value)"
+					@click="organizationStore.findCompetitors(teamId)"
 					:disabled="activeCompetitorJobs.length > 0"
 					variant="outline"
 				>
 					{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
 				</Button>
-				<Button @click="router.push({ name: 'organizations.create', params: { teamId: teamId.value, campaignId: campaignId.value } })">
+				<Button @click="router.push({ name: 'organizations.create', params: { teamId: teamId, campaignId: campaignId } })">
 					{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 				</Button>
 			</div>
@@ -112,7 +112,7 @@ watch(campaignId, async (newId) => {
 					<router-link
 						v-for="org in organizationStore.ownedOrganizations"
 						:key="org.id"
-						:to="{ name: 'organizations.edit', params: { id: org.id } }"
+						:to="{ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, id: org.id } }"
 						class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 					>
 						<div class="flex justify-between items-start">
@@ -148,7 +148,7 @@ watch(campaignId, async (newId) => {
 					<div
 						v-for="org in organizationStore.competitorOrganizations"
 						:key="org.id"
-						@click="router.push({ name: 'organizations.edit', params: { id: org.id } })"
+						@click="router.push({ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, id: org.id } })"
 						class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 					>
 						<div class="flex justify-between items-start">
@@ -180,13 +180,13 @@ watch(campaignId, async (newId) => {
 						</div>
 						<div class="flex space-x-2 mt-4">
 							<router-link
-								:to="{ name: 'organizations.edit', params: { id: org.id } }"
+								:to="{ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, id: org.id } }"
 								class="text-blue-600 hover:text-blue-800 text-sm font-medium"
 							>
 								Edit
 							</router-link>
 							<button
-								@click.stop="organizationStore.deleteOrganization(teamId.value, org.id, campaignId.value)"
+								@click.stop="organizationStore.deleteOrganization(teamId, org.id, campaignId)"
 								class="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
 							>
 								Remove

@@ -216,7 +216,7 @@ onMounted(async () => {
 										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child v-if="isSuperAdmin">
-										<router-link to="/super-admin/organizations" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+										<router-link to="/super-admin" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
 											Super Admin
 										</router-link>
 									</PopoverClose>
