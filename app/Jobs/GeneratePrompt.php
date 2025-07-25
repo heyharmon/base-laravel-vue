@@ -82,18 +82,18 @@ class GeneratePrompt extends TrackableJob
 			];
 
 			// Get the default campaign for location and description
-			$campaign = Campaign::where('team_id', $this->organization->team_id)
-				->where('is_default', true)
-				->first();
+			// $campaign = Campaign::where('team_id', $this->organization->team_id)
+			// 	->where('is_default', true)
+			// 	->first();
 
 			// Add location message conditionally if location is available
-			if ($campaign && isset($campaign->location) && !empty($campaign->location)) {
-				$messages[] = new UserMessage("You also need to incorporate the brand location \"" . $campaign->location . "\" in the prompt when necessary. So, again pretend you are given the keyword, \"car loan\" and the location is \"" . $campaign->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $campaign->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $campaign->location . " that can provide a loan.");
+			if ($this->campaign && isset($this->campaign->location) && !empty($this->campaign->location)) {
+				$messages[] = new UserMessage("You also need to incorporate the brand location \"" . $this->campaign->location . "\" in the prompt when necessary. So, again pretend you are given the keyword, \"car loan\" and the location is \"" . $this->campaign->location . "\". In that case, an example of an acceptable prompt is, \"Where in " . $this->campaign->location . " can I get the best car loan?\" because ChatGPT is likely to respond to that prompt with a list of organizations in " . $this->campaign->location . " that can provide a loan.");
 			}
 
 			// Add description message conditionally if description is available
-			if ($campaign && isset($campaign->description) && !empty($campaign->description)) {
-				$messages[] = new UserMessage("Here is additional context about the organization that might help you create a more relevant prompt: \"" . $campaign->description . "\". Use this information to better understand what the organization does and create a prompt that would elicit responses mentioning organizations in this specific line of business. However, don't make the prompt too specific or narrow that it would only return this single organization.");
+			if ($this->campaign && isset($this->campaign->description) && !empty($this->campaign->description)) {
+				$messages[] = new UserMessage("Here is additional context about the organization that might help you create a more relevant prompt: \"" . $this->campaign->description . "\". Use this information to better understand what the organization does and create a prompt that would elicit responses mentioning organizations in this specific line of business. However, don't make the prompt too specific or narrow that it would only return this single organization.");
 			}
 
 			$messages[] = new UserMessage("Do not mention brand names or product names in the prompt. Also, remember to keep prompts simple. Don't make assumptions about the intent behind the keyword. Output your suggested prompt as plain text, without quotation marks, or any type of formatting.");

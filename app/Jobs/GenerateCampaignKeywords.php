@@ -38,21 +38,19 @@ class GenerateCampaignKeywords extends TrackableJob
 	/**
 	 * The organization used to generate keywords.
 	 *
-	 * @var Organization
+	 * @var Organization|null
 	 */
-	public $organization;
+	protected $organization;
 
 	/**
 	 * Create a new job instance.
 	 *
 	 * @param \App\Models\Campaign $campaign
-	 * @param  \App\Models\Prompt  $prompt
 	 * @return void
 	 */
-	public function __construct(Campaign $campaign, Organization $organization)
+	public function __construct(Campaign $campaign)
 	{
 		$this->campaign = $campaign;
-		$this->organization = $organization;
 	}
 
 	/**
@@ -65,6 +63,15 @@ class GenerateCampaignKeywords extends TrackableJob
 	{
 		try {
 			if ($this->isCancelled()) {
+				return;
+			}
+
+			$this->organization = Organization::where('team_id', $this->campaign->team_id)
+				->where('is_competitor', false)
+				->first();
+
+			if (!$this->organization) {
+				$this->markJobAsCompleted('No owned organization found for team');
 				return;
 			}
 

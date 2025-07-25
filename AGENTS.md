@@ -134,9 +134,6 @@ CRUD for organizations (owned brand or competitors).
 -   `update` – update organization details.
 -   `destroy` – delete a competitor organization.
 
-### OrganizationOnboardController
-
--   `store` – create an organization and dispatch a job to generate keywords.
 
 ### OrganizationCompetitorController
 

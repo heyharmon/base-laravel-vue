@@ -4,12 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\Campaign;
+use App\Jobs\GenerateCampaignKeywords;
+use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class CampaignController extends Controller
 {
+	protected $jobDispatcher;
+
+	public function __construct(JobDispatcherService $jobDispatcher)
+	{
+		$this->jobDispatcher = $jobDispatcher;
+	}
 	/**
 	 * Display a listing of campaigns for a team.
 	 */
@@ -25,14 +33,15 @@ class CampaignController extends Controller
 	public function store(Request $request, Team $team): JsonResponse
 	{
 		$validated = $request->validate([
+			'is_default' => 'nullable|boolean',
 			'name' => 'required|string|max:255',
 			'description' => 'nullable|string',
 			'location' => 'nullable|string|max:255',
-			'keywords' => 'nullable|array',
-			'keywords.*' => 'string|max:255',
 		]);
 
 		$campaign = $team->campaigns()->create($validated);
+
+		$this->jobDispatcher->dispatch($campaign, new GenerateCampaignKeywords($campaign));
 
 		return response()->json($campaign, 201);
 	}

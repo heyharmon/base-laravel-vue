@@ -11,7 +11,7 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
-it('onboards a new organization and dispatches a generate phrases job', function () {
+it('onboards a new organization and creates terms', function () {
 	Bus::fake();
 
 	$user = User::factory()->create();
@@ -20,10 +20,10 @@ it('onboards a new organization and dispatches a generate phrases job', function
 	$user->save();
 	Sanctum::actingAs($user);
 
-	$response = $this->postJson("/api/teams/{$team->id}/organizations-onboard", [
-		'name' => 'Acme',
-		'website' => 'acme.com',
-	]);
+        $response = $this->postJson("/api/teams/{$team->id}/organizations", [
+                'name' => 'Acme',
+                'website' => 'acme.com',
+        ]);
 
 	$response->assertStatus(201)
 		->assertJson(['name' => 'Acme']);
@@ -32,5 +32,5 @@ it('onboards a new organization and dispatches a generate phrases job', function
 
 	expect(Organization::find($organizationId))->not->toBeNull();
 	expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
-	expect(JobStatus::where('trackable_type', Organization::class)->count())->toBe(1);
+        expect(JobStatus::where('trackable_type', Organization::class)->count())->toBe(0);
 });
