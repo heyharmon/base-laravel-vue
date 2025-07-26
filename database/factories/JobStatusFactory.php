@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\JobStatus;
 use App\Models\Team;
 use App\Models\Prompt;
+use App\Models\Campaign;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -19,6 +20,7 @@ class JobStatusFactory extends Factory
     {
         return [
             'team_id' => Team::factory(),
+            'campaign_id' => Campaign::factory(),
             'job_id' => (string) Str::uuid(),
             'job_class' => 'App\\Jobs\\ExampleJob',
             'job_batch_id' => null,

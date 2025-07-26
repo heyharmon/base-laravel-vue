@@ -35,17 +35,32 @@ const handleDateRangeChange = (dateRange) => {
 	}
 }
 
-const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
+const processingJobsByClass = computed(() => {
+    const grouped = {}
+    const cid = Number(campaignId.value)
+    if (jobStatusStore.jobs) {
+        jobStatusStore.jobs
+            .filter((j) => j.campaign_id === cid && j.status === 'processing')
+            .forEach((job) => {
+                const jobClass = job.job_class || 'unknown'
+                if (!grouped[jobClass]) {
+                    grouped[jobClass] = []
+                }
+                grouped[jobClass].push(job)
+            })
+    }
+    return grouped
+})
 
 // Watch for job completions and refresh data
 watch(
-	() => jobStatusStore.completedJobs.length,
-	(newCount, oldCount) => {
-		if (newCount > oldCount) {
-			console.log('Jobs completed, refreshing visibility metrics')
-			fetchVisibilityData()
-		}
-	}
+        () => jobStatusStore.jobs.filter((j) => j.campaign_id === Number(campaignId.value) && j.status === 'completed').length,
+        (newCount, oldCount) => {
+                if (newCount > oldCount) {
+                        console.log('Jobs completed, refreshing visibility metrics')
+                        fetchVisibilityData()
+                }
+        }
 )
 
 // Computed property for the owned organization

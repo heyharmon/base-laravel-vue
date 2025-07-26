@@ -19,22 +19,25 @@ const campaignId = computed(() => route.params.campaignId)
 
 // Get active jobs related to competitors
 const activeCompetitorJobs = computed(() => {
-	return jobStatusStore.jobs.filter(
-		(job) => job.job_class.includes('FindCompetitorsInResponseJob') && (job.status === 'pending' || job.status === 'processing')
-	)
+        const cid = Number(campaignId.value)
+        return jobStatusStore.jobs.filter(
+                (job) => job.campaign_id === cid && job.job_class.includes('FindCompetitorsInResponseJob') && (job.status === 'pending' || job.status === 'processing')
+        )
 })
 
 // Watch for competitor job completions
 watch(
-	() => jobStatusStore.jobs,
-	(newJobs, oldJobs) => {
-		// Check if any competitor job has just completed
-		const completedCompetitorJob = newJobs.some(
-			(job) =>
-				job.job_class.includes('FindCompetitorsInResponseJob') &&
-				job.status === 'completed' &&
-				oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
-		)
+        () => jobStatusStore.jobs,
+        (newJobs, oldJobs) => {
+                // Check if any competitor job has just completed
+                const cid = Number(campaignId.value)
+                const completedCompetitorJob = newJobs.some(
+                        (job) =>
+                                job.campaign_id === cid &&
+                                job.job_class.includes('FindCompetitorsInResponseJob') &&
+                                job.status === 'completed' &&
+                                oldJobs.find((oldJob) => oldJob.job_id === job.job_id)?.status !== 'completed'
+                )
 
 		if (completedCompetitorJob) {
 			console.log('Competitor job completed, refreshing organizations')

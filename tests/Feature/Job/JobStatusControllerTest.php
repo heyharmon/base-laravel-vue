@@ -2,6 +2,7 @@
 
 use App\Models\JobStatus;
 use App\Models\Team;
+use App\Models\Campaign;
 use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,9 +15,11 @@ it('returns job statuses for the authenticated team', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	JobStatus::factory()->count(3)->for($team)->create();
-	$otherTeam = Team::factory()->create();
-	JobStatus::factory()->count(2)->for($otherTeam)->create();
+        $campaign = Campaign::factory()->for($team)->create();
+        JobStatus::factory()->count(3)->for($team)->for($campaign)->create();
+        $otherTeam = Team::factory()->create();
+        $otherCampaign = Campaign::factory()->for($otherTeam)->create();
+        JobStatus::factory()->count(2)->for($otherTeam)->for($otherCampaign)->create();
 
 	$response = $this->getJson("/api/teams/{$team->id}/jobs");
 
@@ -34,10 +37,11 @@ it('limits results to 100 in descending order', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	$jobs = JobStatus::factory()->for($team)
-		->count(105)
-		->sequence(fn($sequence) => ['created_at' => now()->addSeconds($sequence->index)])
-		->create();
+        $campaign = Campaign::factory()->for($team)->create();
+        $jobs = JobStatus::factory()->for($team)->for($campaign)
+                ->count(105)
+                ->sequence(fn($sequence) => ['created_at' => now()->addSeconds($sequence->index)])
+                ->create();
 
 	$response = $this->getJson("/api/teams/{$team->id}/jobs");
 	$response->assertStatus(200)
@@ -52,7 +56,8 @@ it('cancels pending jobs for the authenticated team', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	JobStatus::factory()->count(2)->for($team)->state(['status' => 'pending'])->create();
+        $campaign = Campaign::factory()->for($team)->create();
+        JobStatus::factory()->count(2)->for($team)->for($campaign)->state(['status' => 'pending'])->create();
 
 	$response = $this->postJson("/api/teams/{$team->id}/jobs/cancel");
 

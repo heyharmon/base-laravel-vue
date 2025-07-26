@@ -36,10 +36,11 @@ const sortOption = ref('default') // Default sort option
 // Using centralized date range from organizationStore
 
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
-	return (jobStatusStore.jobs || []).filter((job) => {
-		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
-	})
+        const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
+        const cid = Number(campaignId.value)
+        return (jobStatusStore.jobs || []).filter((job) => {
+                return job.campaign_id === cid && promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
+        })
 })
 
 watch(
