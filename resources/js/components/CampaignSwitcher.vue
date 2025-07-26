@@ -30,15 +30,18 @@ const switchCampaign = async (campaignId) => {
 	})
 }
 
-const createCampaign = () => {
-	router.push({ name: 'campaigns.create', params: { teamId: teamId.value } })
-}
-
 watch(
 	teamId,
 	async (newTeamId) => {
 		if (newTeamId) {
 			await campaignStore.fetchCampaigns(newTeamId)
+			// After fetching campaigns, sync with route if campaignId exists
+			if (campaignId.value && campaignStore.campaigns.length > 0) {
+				const found = campaignStore.campaigns.find((c) => c.id == campaignId.value)
+				if (found) {
+					campaignStore.currentCampaign = found
+				}
+			}
 		}
 	},
 	{ immediate: true }

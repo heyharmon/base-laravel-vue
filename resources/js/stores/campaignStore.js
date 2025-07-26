@@ -21,8 +21,14 @@ export const useCampaignStore = defineStore('campaign', {
 			try {
 				const response = await api.get(`/teams/${teamId}/campaigns`)
 				this.campaigns = response
+				// Only set default current campaign if none exists and we're not in a route context
 				if (!this.currentCampaign && this.campaigns.length > 0) {
-					this.currentCampaign = this.defaultCampaign || this.campaigns[0]
+					// Load from localStorage first
+					this.loadCurrentCampaign(teamId)
+					// If still no current campaign, use default
+					if (!this.currentCampaign) {
+						this.currentCampaign = this.defaultCampaign || this.campaigns[0]
+					}
 				}
 			} catch (error) {
 				this.error = error.message
