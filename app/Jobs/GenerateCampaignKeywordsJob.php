@@ -36,13 +36,6 @@ class GenerateCampaignKeywordsJob extends TrackableJob
 	public $campaign;
 
 	/**
-	 * The organization used to generate keywords.
-	 *
-	 * @var Organization|null
-	 */
-	protected $organization;
-
-	/**
 	 * Create a new job instance.
 	 *
 	 * @param \App\Models\Campaign $campaign
@@ -66,23 +59,23 @@ class GenerateCampaignKeywordsJob extends TrackableJob
 				return;
 			}
 
-			$this->organization = Organization::where('team_id', $this->campaign->team_id)
+			$ownOrganization = Organization::where('team_id', $this->campaign->team_id)
 				->where('is_competitor', false)
 				->first();
 
-			if (!$this->organization) {
+			if (!$ownOrganization) {
 				$this->markJobAsCompleted('No owned organization found for team');
 				return;
 			}
 
 			// Mark the job as started
-			$this->markJobAsStarted('Finding keywords for ' . $this->organization->name);
+			$this->markJobAsStarted('Finding keywords for ' . $ownOrganization->name);
 
 			// Create a search API tool
 			$searchApiTool = new SearchApiTool();
 
 			// Build organization context with available properties
-			$context = "Here is a company: \"" . $this->organization->name . "\" (" . $this->organization->website . ")";
+			$context = "Here is a company: \"" . $ownOrganization->name . "\" (" . $ownOrganization->website . ")";
 
 			// Add location if available from campaign
 			if (!empty($this->campaign->location)) {
@@ -128,7 +121,7 @@ class GenerateCampaignKeywordsJob extends TrackableJob
 
 			$result = $response->structured;
 
-			$this->updateJobProgress(90, 'Saving keywords for ' . $this->organization->name);
+			$this->updateJobProgress(90, 'Saving keywords for ' . $ownOrganization->name);
 
 			// Save keywords to the campaign
 			$this->campaign->update([
@@ -136,14 +129,14 @@ class GenerateCampaignKeywordsJob extends TrackableJob
 			]);
 
 			// Generate a prompt for each keyword
-			if (!$this->organization->is_competitor) {
+			if (!$ownOrganization->is_competitor) {
 				foreach ($result['keywords'] as $keyword) {
-					$jobDispatcher->dispatch($this->organization, new GeneratePrompt($this->campaign, $this->organization, $keyword));
+					$jobDispatcher->dispatch($ownOrganization, new GeneratePrompt($this->campaign, $ownOrganization, $keyword));
 				}
 			}
 
 			// Mark the job as completed
-			$this->markJobAsCompleted('Saved keywords for ' . $this->organization->name);
+			$this->markJobAsCompleted('Saved keywords for ' . $ownOrganization->name);
 		} catch (Throwable $exception) {
 			Log::error('Keyword generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

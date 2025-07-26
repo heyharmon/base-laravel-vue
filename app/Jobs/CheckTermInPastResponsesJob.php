@@ -28,31 +28,14 @@ class CheckTermInPastResponsesJob extends TrackableJob
 	protected $term;
 
 	/**
-	 * The model to use for job tracking.
-	 *
-	 * @var \Illuminate\Database\Eloquent\Model
-	 */
-	public $model;
-
-	/**
-	 * The team ID.
-	 *
-	 * @var int
-	 */
-	protected $teamId;
-
-	/**
 	 * Create a new job instance.
 	 *
 	 * @param  \App\Models\Term  $term
-	 * @param  int  $teamId
 	 * @return void
 	 */
-	public function __construct(Term $term, int $teamId)
+	public function __construct(Term $term)
 	{
-		$this->model = $term;
 		$this->term = $term;
-		$this->teamId = $teamId;
 	}
 
 	/**
@@ -72,7 +55,7 @@ class CheckTermInPastResponsesJob extends TrackableJob
 
 			// Get all responses for prompts in the same team and campaign (if campaign_id is provided)
 			$responses = Response::whereHas("prompt", function ($query) {
-				$query->where("team_id", $this->teamId);
+				$query->where("team_id", $this->term->team_id);
 				// Only filter by campaign if the term's organization belongs to a specific campaign
 				if ($this->term->organization->campaign_id !== null) {
 					$query->where("campaign_id", $this->term->organization->campaign_id);

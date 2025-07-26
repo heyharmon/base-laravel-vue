@@ -77,7 +77,7 @@ const createTeamAndOrganization = async () => {
 		// Step 4: Switch to new team and navigate
 		currentStep.value = 'Finalizing...'
 		await teamStore.switchTeam(team.id)
-		router.push({ name: 'home', params: { id: team.id, campaignId: campaign.id } })
+		router.push({ name: 'home', params: { teamId: team.id, campaignId: campaign.id } })
 	} catch (error) {
 		console.error('Error creating team and organization:', error)
 		currentStep.value = ''

@@ -16,39 +16,14 @@ const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 const campaignStore = useCampaignStore()
 
-// Use centralized state from the store
-
-// Use the store's fetchVisibilityMetrics directly
-const teamId = computed(() => route.params.id)
+// Route params
+const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
-const fetchVisibilityData = () => {
-	if (teamId.value && campaignId.value) {
-		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-	}
-}
-
-// Handle date range changes from dropdown
-const handleDateRangeChange = (dateRange) => {
-	if (teamId.value && campaignId.value) {
-		organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
-	}
-}
-
+// Jobs in progress by job class
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
-// Watch for job completions and refresh data
-watch(
-	() => jobStatusStore.completedJobs.length,
-	(newCount, oldCount) => {
-		if (newCount > oldCount) {
-			console.log('Jobs completed, refreshing visibility metrics')
-			fetchVisibilityData()
-		}
-	}
-)
-
-// Computed property for the owned organization
+// The owned organization
 const ownedOrg = computed(() => {
 	if (!organizationStore.visibilityMetrics.length) return null
 	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
@@ -64,12 +39,36 @@ onMounted(async () => {
 	}
 })
 
+// Watch for job completions and refresh data
+watch(
+	() => jobStatusStore.completedJobs.length,
+	(newCount, oldCount) => {
+		if (newCount > oldCount) {
+			console.log('Jobs completed, refreshing visibility metrics')
+			fetchVisibilityData()
+		}
+	}
+)
+
 watch(campaignId, async (newId) => {
 	if (newId) {
 		await campaignStore.switchCampaign(teamId.value, newId)
 		fetchVisibilityData()
 	}
 })
+
+const fetchVisibilityData = () => {
+	if (teamId.value && campaignId.value) {
+		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+	}
+}
+
+// Handle date range changes from dropdown
+const handleDateRangeChange = (dateRange) => {
+	if (teamId.value && campaignId.value) {
+		organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
+	}
+}
 
 const deleteOrganization = async (organizationId) => {
 	try {

@@ -29,9 +29,9 @@ const isRunMenuOpen = ref(false)
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 
 const hasActiveRunPromptJob = computed(() => {
-        let jobs = (jobStatusStore.jobs || []).filter(
-                (job) =>
-                        job.job_class.includes('RunPromptJob') &&
+	let jobs = (jobStatusStore.jobs || []).filter(
+		(job) =>
+			job.job_class.includes('RunPromptJob') &&
 			job.trackable_type === 'App\\Models\\Prompt' &&
 			job.trackable_id === props.prompt.id &&
 			(job.status === 'pending' || job.status === 'processing')
@@ -66,11 +66,11 @@ const runPrompt = (count) => {
 const confirmDelete = () => emit('delete', props.prompt)
 
 const createArticle = async () => {
-        const newArticle = await articleStore.createArticle(teamId, {
-                title: 'Untitled article',
-                prompt_id: props.prompt.id
-        })
-	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
+	const newArticle = await articleStore.createArticle(teamId, {
+		title: 'Untitled article',
+		prompt_id: props.prompt.id
+	})
+	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
 }
 </script>
 

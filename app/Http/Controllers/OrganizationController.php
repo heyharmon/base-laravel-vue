@@ -37,8 +37,8 @@ class OrganizationController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-        public function store(Request $request, Team $team, Campaign $campaign = null): JsonResponse
-        {
+	public function store(Request $request, Team $team, Campaign $campaign = null): JsonResponse
+	{
 		$validated = $request->validate([
 			'name' => 'nullable|string|max:255',
 			'website' => 'nullable|string|max:255',
@@ -55,34 +55,34 @@ class OrganizationController extends Controller
 			'is_competitor' => 'boolean',
 		]);
 
-                // TODO: Move this term creation logic into the organization model boot method
-                $isCompetitor = $validated['is_competitor'] ?? false;
+		// TODO: Move this term creation logic into the organization model boot method
+		$isCompetitor = $validated['is_competitor'] ?? false;
 
-                if ($isCompetitor) {
-                        $validated['campaign_id'] = $campaign?->id;
-                }
+		if ($isCompetitor) {
+			$validated['campaign_id'] = $campaign?->id;
+		}
 
-                $organization = $team->organizations()->create($validated);
+		$organization = $team->organizations()->create($validated);
 
-                // Create a term for the competitor name
-                $nameTerm = Term::create([
-                        'team_id' => $organization->team_id,
-                        'organization_id' => $organization->id,
-                        'name' => $organization->name,
-                ]);
+		// Create a term for the competitor name
+		$nameTerm = Term::create([
+			'team_id' => $organization->team_id,
+			'organization_id' => $organization->id,
+			'name' => $organization->name,
+		]);
 
 		// Create a term for the competitor website
-                $websiteTerm = Term::create([
-                        'team_id' => $organization->team_id,
-                        'organization_id' => $organization->id,
-                        'name' => $organization->website,
-                ]);
+		$websiteTerm = Term::create([
+			'team_id' => $organization->team_id,
+			'organization_id' => $organization->id,
+			'name' => $organization->website,
+		]);
 
-                if ($isCompetitor) {
-                        foreach ([$nameTerm, $websiteTerm] as $term) {
-                                $this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $team->id));
-                        }
-                }
+		if ($isCompetitor) {
+			foreach ([$nameTerm, $websiteTerm] as $term) {
+				$this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
+			}
+		}
 
 		return response()->json($organization, 201);
 	}

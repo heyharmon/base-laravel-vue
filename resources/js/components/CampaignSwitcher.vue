@@ -9,7 +9,7 @@ const route = useRoute()
 const router = useRouter()
 const campaignStore = useCampaignStore()
 
-const teamId = computed(() => route.params.teamId || route.params.id)
+const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 const searchQuery = ref('')
 
@@ -117,15 +117,15 @@ watch(
 				<div class="border-t border-neutral-300 mt-1">
 					<PopoverClose as-child>
 						<router-link
-							:to="{ name: 'campaigns.index', params: { teamId: route.params.id } }"
+							:to="{ name: 'campaigns.index', params: { teamId: route.params.teamId } }"
 							class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"
 						>
-							Edit campaigns
+							Manage campaigns
 						</router-link>
 					</PopoverClose>
 					<PopoverClose as-child>
 						<router-link
-							:to="{ name: 'campaigns.index', params: { teamId: route.params.id } }"
+							:to="{ name: 'campaigns.index', params: { teamId: route.params.teamId } }"
 							class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"
 						>
 							Create campaign

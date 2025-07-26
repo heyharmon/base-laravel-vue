@@ -99,7 +99,7 @@ watch(campaignId, async (newId) => {
 					<router-link
 						v-for="org in organizationStore.ownedOrganizations"
 						:key="org.id"
-						:to="{ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, id: org.id } }"
+						:to="{ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, organizationId: org.id } }"
 						class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 					>
 						<div class="flex justify-between items-start">
@@ -155,7 +155,7 @@ watch(campaignId, async (newId) => {
 					<div
 						v-for="org in organizationStore.competitorOrganizations"
 						:key="org.id"
-						@click="router.push({ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, id: org.id } })"
+						@click="router.push({ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, organizationId: org.id } })"
 						class="bg-white border border-neutral-200 p-4 rounded-lg shadow cursor-pointer hover:bg-neutral-50 transition-all"
 					>
 						<div class="flex justify-between items-start">
@@ -187,7 +187,7 @@ watch(campaignId, async (newId) => {
 						</div>
 						<div class="flex space-x-2 mt-4">
 							<router-link
-								:to="{ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, id: org.id } }"
+								:to="{ name: 'organizations.edit', params: { teamId: teamId, campaignId: campaignId, organizationId: org.id } }"
 								class="text-blue-600 hover:text-blue-800 text-sm font-medium"
 							>
 								Edit

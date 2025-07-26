@@ -16,14 +16,14 @@ const props = defineProps({
 		type: [Number, String],
 		default: null
 	},
-        term: {
-                type: Object,
-                default: null
-        },
-        teamId: {
-                type: [Number, String],
-                required: true
-        }
+	term: {
+		type: Object,
+		default: null
+	},
+	teamId: {
+		type: [Number, String],
+		required: true
+	}
 })
 
 const emit = defineEmits(['close'])
@@ -43,9 +43,9 @@ const showTerm = async () => {
 	selectedPromptId.value = null
 	selectedPrompt.value = null
 
-        if (props.termId) {
-                await termStore.showTerm(props.teamId, route.params.id, props.termId)
-        }
+	if (props.termId) {
+		await termStore.showTerm(props.teamId, route.params.organizationId, props.termId)
+	}
 }
 
 const getTermResponses = async (prompt) => {

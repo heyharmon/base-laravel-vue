@@ -42,7 +42,7 @@ const toggleDropdown = (id) => {
 }
 
 const loadTeam = async () => {
-	await teamStore.fetchTeam(route.params.id)
+	await teamStore.fetchTeam(route.params.teamId)
 	if (teamStore.currentTeam) {
 		editTeamName.value = teamStore.currentTeam.name
 	}
@@ -53,7 +53,7 @@ const updateTeam = async () => {
 
 	isSubmitting.value = true
 	try {
-		await teamStore.updateTeam(route.params.id, { name: editTeamName.value })
+		await teamStore.updateTeam(route.params.teamId, { name: editTeamName.value })
 		showEditModal.value = false
 	} catch (error) {
 		console.error('Error updating team:', error)
@@ -67,7 +67,7 @@ const inviteUser = async () => {
 
 	isSubmitting.value = true
 	try {
-		await teamStore.inviteUser(route.params.id, {
+		await teamStore.inviteUser(route.params.teamId, {
 			email: inviteEmail.value,
 			role: inviteRole.value
 		})
@@ -85,7 +85,7 @@ const removeMember = async (userId) => {
 	if (!confirm('Are you sure you want to remove this member?')) return
 
 	try {
-		await teamStore.removeMember(route.params.id, userId)
+		await teamStore.removeMember(route.params.teamId, userId)
 		activeDropdown.value = null
 	} catch (error) {
 		console.error('Error removing member:', error)
@@ -94,7 +94,7 @@ const removeMember = async (userId) => {
 
 const updateRole = async (userId, role) => {
 	try {
-		await teamStore.updateMemberRole(route.params.id, userId, { role })
+		await teamStore.updateMemberRole(route.params.teamId, userId, { role })
 		activeDropdown.value = null
 	} catch (error) {
 		console.error('Error updating role:', error)
@@ -105,7 +105,7 @@ const deleteTeam = async () => {
 	if (!confirm('Are you sure you want to delete this team? This action cannot be undone.')) return
 
 	try {
-		await teamStore.deleteTeam(route.params.id)
+		await teamStore.deleteTeam(route.params.teamId)
 
 		// Find another team to switch to
 		if (teamStore.ownedTeams.length > 0) {
@@ -154,7 +154,7 @@ const copyInviteUrl = async (url, memberId) => {
 
 const generatePasswordResetUrl = async (userId) => {
 	try {
-		const resetUrl = await teamStore.generatePasswordResetUrl(route.params.id, userId)
+		const resetUrl = await teamStore.generatePasswordResetUrl(route.params.teamId, userId)
 		// Copy the URL
 		await navigator.clipboard.writeText(resetUrl)
 		// Set copied state
@@ -215,7 +215,7 @@ const cancelInvitation = async (userId) => {
 	if (!confirm('Are you sure you want to cancel this invitation?')) return
 
 	try {
-		await teamStore.removeMember(route.params.id, userId)
+		await teamStore.removeMember(route.params.teamId, userId)
 		activeDropdown.value = null
 	} catch (error) {
 		console.error('Error canceling invitation:', error)

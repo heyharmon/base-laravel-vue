@@ -103,11 +103,11 @@ const exportPrompt = async () => {
 }
 
 const createArticle = async () => {
-        const newArticle = await articleStore.createArticle(teamId, {
-                title: 'Untitled article',
-                prompt_id: props.promptId
-        })
-	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
+	const newArticle = await articleStore.createArticle(teamId, {
+		title: 'Untitled article',
+		prompt_id: props.promptId
+	})
+	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
 }
 
 onMounted(fetchDetails)

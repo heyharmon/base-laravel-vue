@@ -70,8 +70,7 @@ class TermController extends Controller
 		$term = $organization->terms()->create($validated);
 
 		// Dispatch a job to check past responses for this term
-		$job = new CheckTermInPastResponsesJob($term, $team->id);
-		$jobStatus = $this->jobDispatcher->dispatch($term, $job);
+		$this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
 
 		return response()->json($term, 201);
 	}

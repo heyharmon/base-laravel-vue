@@ -31,13 +31,13 @@ const routes = [
 		}
 	},
 	{
-		path: '/teams/:id/campaigns/:campaignId?',
+		path: '/teams/:teamId/campaigns/:campaignId?',
 		name: 'home',
 		component: Dashboard,
 		meta: { requiresAuth: true },
 		beforeEnter: async (to, from, next) => {
 			const campaignStore = useCampaignStore()
-			const teamId = to.params.id
+			const teamId = to.params.teamId
 
 			// Always fetch fresh campaign data for the team to ensure we have the correct campaigns
 			await campaignStore.fetchCampaigns(teamId)
@@ -45,7 +45,7 @@ const routes = [
 			if (!to.params.campaignId && campaignStore.defaultCampaign) {
 				return next({
 					name: 'home',
-					params: { id: teamId, campaignId: campaignStore.defaultCampaign.id }
+					params: { teamId: teamId, campaignId: campaignStore.defaultCampaign.id }
 				})
 			}
 
@@ -87,7 +87,7 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/teams/:id/members',
+		path: '/teams/:teamId/members',
 		name: 'teams.show',
 		component: TeamShow,
 		meta: { requiresAuth: true }
@@ -120,7 +120,7 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/teams/:teamId/campaigns/:campaignId/organizations/:id/edit',
+		path: '/teams/:teamId/campaigns/:campaignId/organizations/:organizationId/edit',
 		name: 'organizations.edit',
 		component: OrganizationEdit,
 		meta: { requiresAuth: true }
@@ -172,7 +172,7 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/articles/:id/edit',
+		path: '/articles/:articleId/edit',
 		name: 'articles.edit',
 		component: ArticleEdit,
 		meta: { requiresAuth: true }

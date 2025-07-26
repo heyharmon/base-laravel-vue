@@ -43,17 +43,18 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	})
 
 	// Actions
-        async function pollTeamJobs(teamId) {
-                await fetchTeamJobs(teamId)
-                startAutoRefresh(teamId, 1500)
-        }
+	async function pollTeamJobs(teamId) {
+		await fetchTeamJobs(teamId)
+		startAutoRefresh(teamId, 1500)
+	}
 
-        async function fetchTeamJobs(teamId) {
+	async function fetchTeamJobs(teamId) {
 		console.log('Fetching team jobs...')
 		loading.value = true
 
 		try {
-                        const response = await api.get(`/teams/${teamId}/jobs`)
+			const response = await api.get(`/teams/${teamId}/jobs`)
+			// console.log('jobs response', response)
 			jobs.value = response
 			return jobs.value
 		} catch (err) {
@@ -64,29 +65,29 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		}
 	}
 
-        async function cancelTeamJobs(teamId) {
+	async function cancelTeamJobs(teamId) {
 		try {
-                        await api.post(`/teams/${teamId}/jobs/cancel`)
-                        await fetchTeamJobs(teamId)
+			await api.post(`/teams/${teamId}/jobs/cancel`)
+			await fetchTeamJobs(teamId)
 		} catch (err) {
 			console.error('Error cancelling jobs:', err)
 			throw err
 		}
 	}
 
-        function hasActiveJobs() {
-                return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
-        }
+	function hasActiveJobs() {
+		return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
+	}
 
-        function startAutoRefresh(teamId, interval = 2000) {
-                stopAutoRefresh()
+	function startAutoRefresh(teamId, interval = 2000) {
+		stopAutoRefresh()
 
-                refreshTimer.value = setInterval(() => {
-                        if (hasActiveJobs()) {
-                                fetchTeamJobs(teamId)
-                        }
-                }, interval)
-        }
+		refreshTimer.value = setInterval(() => {
+			if (hasActiveJobs()) {
+				fetchTeamJobs(teamId)
+			}
+		}, interval)
+	}
 
 	function stopAutoRefresh() {
 		if (refreshTimer.value) {

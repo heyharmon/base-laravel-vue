@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
@@ -10,6 +10,7 @@ import JobStatusSheet from '@/components/jobs/JobStatusSheet.vue'
 import SpinnerIcon from '@/components/icons/SpinnerIcon.vue'
 import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
+const route = useRoute()
 const router = useRouter()
 const teamStore = useTeamStore()
 const jobStatusStore = useJobStatusStore()
@@ -57,8 +58,8 @@ const switchTeam = async (teamId) => {
 }
 
 onMounted(async () => {
-	if (teamStore.currentTeam) {
-		jobStatusStore.pollTeamJobs(teamStore.currentTeam.id)
+	if (route.params.teamId) {
+		jobStatusStore.pollTeamJobs(route.params.teamId)
 	}
 	isTeamDropdownOpen.value = false
 })
@@ -72,7 +73,7 @@ onMounted(async () => {
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
 					<router-link
 						v-if="currentTeam && currentCampaign"
-						:to="{ name: 'home', params: { id: currentTeam.id, campaignId: currentCampaign.id } }"
+						:to="{ name: 'home', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
 						class="text-sm hover:text-neutral-300"
 						>Rankings</router-link
 					>

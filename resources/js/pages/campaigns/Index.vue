@@ -31,7 +31,7 @@ const createCampaign = async () => {
 		})
 		showCreateModal.value = false
 		newCampaign.value = { name: '', description: '', location: '' }
-		router.push({ name: 'home', params: { id: teamId.value, campaignId: campaign.id } })
+		router.push({ name: 'home', params: { teamId: teamId.value, campaignId: campaign.id } })
 	} catch (error) {
 		console.error('Error creating campaign:', error)
 	} finally {
@@ -79,7 +79,7 @@ onMounted(() => {
 					<p v-if="campaign.description" class="text-neutral-600 text-sm mb-4">{{ campaign.description }}</p>
 					<div class="flex justify-between items-center">
 						<router-link
-							:to="{ name: 'home', params: { id: teamId, campaignId: campaign.id } }"
+							:to="{ name: 'home', params: { teamId: teamId, campaignId: campaign.id } }"
 							class="text-blue-600 hover:text-blue-800 text-sm font-medium"
 							>View Rankings →</router-link
 						>

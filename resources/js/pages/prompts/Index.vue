@@ -17,29 +17,44 @@ import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const route = useRoute()
+
+// Stores
 const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 const campaignStore = useCampaignStore()
 
+// Route params
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
+// State for modals
 const isPromptCreateModalOpen = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const isGenerateModalOpen = ref(false)
 
+// State for viewing prompt details
 const selectedPrompt = ref(null)
 const selectedPromptId = ref(null)
+
+// Sorting
 const sortOption = ref('default') // Default sort option
 
-// Using centralized date range from organizationStore
-
+// Track active prompt jobs
 const activePromptJobs = computed(() => {
 	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
 	return (jobStatusStore.jobs || []).filter((job) => {
 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
 	})
+})
+
+onMounted(async () => {
+	await campaignStore.fetchCampaigns(teamId.value)
+	if (campaignId.value) {
+		await campaignStore.switchCampaign(teamId.value, campaignId.value)
+	}
+	await promptStore.fetchPrompts(teamId.value, campaignId.value)
+	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 })
 
 watch(
@@ -53,7 +68,26 @@ watch(
 	{ deep: true }
 )
 
+// Watch for job completions and refresh data
+watch(
+	() => jobStatusStore.completedJobs.length,
+	(newCount, oldCount) => {
+		if (newCount > oldCount) {
+			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+		}
+	}
+)
+
+watch(campaignId, async (newId) => {
+	if (newId) {
+		await campaignStore.switchCampaign(teamId.value, newId)
+		await promptStore.fetchPrompts(teamId.value, newId)
+		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+	}
+})
+
 // Track prompt deletion
+// TODO: Move prompt deletion logic to the prompt list item component
 const promptToDelete = ref(null)
 const showDeleteConfirmation = ref(false)
 
@@ -126,23 +160,6 @@ const ownedOrg = computed(() => {
 const handleDateRangeChange = (dateRange) => {
 	organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
 }
-
-onMounted(async () => {
-	await campaignStore.fetchCampaigns(teamId.value)
-	if (campaignId.value) {
-		await campaignStore.switchCampaign(teamId.value, campaignId.value)
-	}
-	await promptStore.fetchPrompts(teamId.value, campaignId.value)
-	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-})
-
-watch(campaignId, async (newId) => {
-	if (newId) {
-		await campaignStore.switchCampaign(teamId.value, newId)
-		await promptStore.fetchPrompts(teamId.value, newId)
-		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
-	}
-})
 </script>
 
 <template>

@@ -45,11 +45,11 @@ const deletedTermMessage = ref(null)
 
 onMounted(async () => {
 	try {
-                const data = await organizationStore.fetchOrganization(route.params.id)
-                teamId.value = route.params.teamId
-                organization.value = { ...data }
-                originalOrganization.value = { ...data }
-                await termStore.fetchTerms(route.params.teamId, route.params.id)
+		const data = await organizationStore.fetchOrganization(route.params.organizationId)
+		teamId.value = route.params.teamId
+		organization.value = { ...data }
+		originalOrganization.value = { ...data }
+		await termStore.fetchTerms(route.params.teamId, route.params.organizationId)
 	} catch (error) {
 		console.error('Error fetching organization:', error)
 	} finally {
@@ -74,15 +74,15 @@ const showTermDetails = (term) => {
 }
 
 const addTerm = (term) => {
-	term.organization_id = route.params.id
+	term.organization_id = route.params.organizationId
 	return term
 }
 
 const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
-                await organizationStore.updateOrganization(route.params.id, organization.value)
-                router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
+		await organizationStore.updateOrganization(route.params.organizationId, organization.value)
+		router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -91,21 +91,21 @@ const updateOrganization = async () => {
 }
 
 const deleteOrganization = async () => {
-        try {
-                await organizationStore.deleteOrganization(route.params.teamId, route.params.id, route.params.campaignId)
-                router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
-        } catch (error) {
-                console.error('Error deleting organization:', error)
-        }
+	try {
+		await organizationStore.deleteOrganization(route.params.teamId, route.params.organizationId, route.params.campaignId)
+		router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
+	} catch (error) {
+		console.error('Error deleting organization:', error)
+	}
 }
 
 const cancelEdit = () => {
-        router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
+	router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 }
 
 const handleDeleteTerm = (termId, termName) => {
 	deletedTermMessage.value = `The term "${termName}" and its history has been deleted.`
-    termStore.deleteTerm(teamId.value, route.params.id, termId)
+	termStore.deleteTerm(teamId.value, route.params.organizationId, termId)
 	setTimeout(() => {
 		deletedTermMessage.value = null
 	}, 10000)
@@ -204,23 +204,23 @@ const handleDeleteTerm = (termId, termName) => {
 	</DefaultLayout>
 
 	<!-- Term Modal -->
-        <TermCreateModal v-if="teamId" :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
+	<TermCreateModal v-if="teamId" :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
 	<!-- Generate Keywords Modal -->
 	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />
 
 	<!-- Term Detail Sheet -->
-        <TermDetailSheet
-                v-if="teamId"
-                :is-open="isTermDetailSheetOpen"
-                :term="selectedTerm"
-                :term-id="selectedTerm?.id"
-                :team-id="teamId"
-                @close="
-                        () => {
-                                isTermDetailSheetOpen = false
-                                selectedTermId = null
-                        }
-                "
-        />
+	<TermDetailSheet
+		v-if="teamId"
+		:is-open="isTermDetailSheetOpen"
+		:term="selectedTerm"
+		:term-id="selectedTerm?.id"
+		:team-id="teamId"
+		@close="
+			() => {
+				isTermDetailSheetOpen = false
+				selectedTermId = null
+			}
+		"
+	/>
 </template>
