@@ -6,21 +6,24 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\BelongsToTeam;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Campaign;
 
 class JobStatus extends Model
 {
 	use Prunable, HasFactory, BelongsToTeam;
 
-	protected $fillable = [
-		'job_id',
-		'job_class',
-		'job_batch_id',
-		'status',
-		'output',
-		'error',
-		'progress',
-		'team_id',
-	];
+        protected $fillable = [
+                'job_id',
+                'job_class',
+                'job_batch_id',
+                'status',
+                'output',
+                'error',
+                'progress',
+                'team_id',
+                'campaign_id',
+        ];
 
 	/**
 	 * Get the prunable model query.
@@ -76,8 +79,16 @@ class JobStatus extends Model
 	/**
 	 * Scope a query to only include cancelled jobs.
 	 */
-	public function scopeCancelled($query)
-	{
-		return $query->where('status', 'cancelled');
-	}
+        public function scopeCancelled($query)
+        {
+                return $query->where('status', 'cancelled');
+        }
+
+        /**
+         * Get the campaign that owns the job status.
+         */
+        public function campaign(): BelongsTo
+        {
+                return $this->belongsTo(Campaign::class);
+        }
 }

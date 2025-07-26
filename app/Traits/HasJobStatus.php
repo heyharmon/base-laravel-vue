@@ -42,13 +42,22 @@ trait HasJobStatus
 		$jobId = (string) Str::uuid();
 
 		// Create a job status record
-		$status = $this->jobStatuses()->create([
-			'job_id' => $jobId,
-			'job_class' => get_class($job),
-			'job_batch_id' => $batchId,
-			'status' => 'pending',
-			'team_id' => $this->team_id,
-		]);
+                $campaignId = null;
+
+                if (isset($this->campaign_id)) {
+                        $campaignId = $this->campaign_id;
+                } elseif (method_exists($this, 'organization')) {
+                        $campaignId = $this->organization->campaign_id ?? null;
+                }
+
+                $status = $this->jobStatuses()->create([
+                        'job_id' => $jobId,
+                        'job_class' => get_class($job),
+                        'job_batch_id' => $batchId,
+                        'status' => 'pending',
+                        'team_id' => $this->team_id,
+                        'campaign_id' => $campaignId,
+                ]);
 
 		return $status;
 	}

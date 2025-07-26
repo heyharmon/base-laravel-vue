@@ -20,9 +20,14 @@ class JobStatusController extends Controller
     {
         $teamId = $team->id;
 
+        $query = JobStatus::where('team_id', $teamId);
+
+        if ($request->filled('campaign_id')) {
+            $query->where('campaign_id', $request->input('campaign_id'));
+        }
+
         // Get job statuses for this team
-        $jobStatuses = JobStatus::where('team_id', $teamId)
-            ->orderBy('created_at', 'desc')
+        $jobStatuses = $query->orderBy('created_at', 'desc')
             ->limit(100)
             ->get();
 
