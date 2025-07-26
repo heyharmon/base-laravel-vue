@@ -89,7 +89,11 @@ onMounted(() => {
 								class="text-neutral-600 hover:text-neutral-800 text-sm"
 								>Edit</router-link
 							>
-							<button v-if="!campaign.is_default" @click="deleteCampaign(campaign.id)" class="text-red-600 hover:text-red-800 text-sm">
+							<button
+								v-if="!campaign.is_default"
+								@click="deleteCampaign(campaign.id)"
+								class="text-red-600 hover:text-red-800 text-sm cursor-pointer"
+							>
 								Delete
 							</button>
 						</div>
