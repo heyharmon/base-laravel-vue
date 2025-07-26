@@ -63,14 +63,14 @@ const deleteArticle = async (id) => {
 			<div class="flex items-center gap-4">
 				<h1 class="text-2xl font-bold">Articles</h1>
 			</div>
-			<div class="flex space-x-2">
-				<CampaignSwitcher />
-				<Button @click="createArticle">
-					<div class="flex items-center gap-2">
-						<PlusIcon />
+			<div class="flex items-center space-x-2">
+				<Button @click="createArticle" variant="link">
+					<div class="flex items-center gap-1">
+						<PlusIcon class="size-4" />
 						Create article
 					</div>
 				</Button>
+				<CampaignSwitcher />
 			</div>
 		</div>
 

@@ -17,7 +17,7 @@ use App\Services\JobDispatcherService;
 use App\Models\Organization;
 use App\Models\Campaign;
 
-class GenerateCampaignKeywords extends TrackableJob
+class GenerateCampaignKeywordsJob extends TrackableJob
 {
 	use Batchable;
 

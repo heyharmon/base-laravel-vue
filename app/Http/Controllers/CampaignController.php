@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\Campaign;
-use App\Jobs\GenerateCampaignKeywords;
+use App\Jobs\GenerateCampaignKeywordsJob;
 use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -41,7 +41,7 @@ class CampaignController extends Controller
 
 		$campaign = $team->campaigns()->create($validated);
 
-		$this->jobDispatcher->dispatch($campaign, new GenerateCampaignKeywords($campaign));
+		$this->jobDispatcher->dispatch($campaign, new GenerateCampaignKeywordsJob($campaign));
 
 		return response()->json($campaign, 201);
 	}

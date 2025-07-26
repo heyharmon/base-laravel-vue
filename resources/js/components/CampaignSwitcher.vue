@@ -63,9 +63,12 @@ watch(
 	<PopoverRoot v-if="campaignStore.campaigns.length > 0">
 		<PopoverTrigger as-child>
 			<div
-				class="flex items-center space-x-2 cursor-pointer h-9 px-4 py-2 rounded-md bg-white shadow-xs border border-neutral-400/70 hover:bg-neutral-100 transition-all"
+				class="flex items-center justify-between min-w-[200px] space-x-2 cursor-pointer px-3 py-1.5 rounded-md bg-white shadow-xs border border-neutral-400/70 hover:bg-neutral-100 transition-all"
 			>
-				<span class="text-sm font-medium text-neutral-700">{{ campaignStore.currentCampaign?.name || 'Select Campaign' }}</span>
+				<div class="flex flex-col pr-0.5">
+					<span v-if="campaignStore.currentCampaign" class="text-xs text-neutral-500">Campaign</span>
+					<span class="text-sm font-medium text-neutral-700 -mt-0.5">{{ campaignStore.currentCampaign?.name || 'Select Campaign' }}</span>
+				</div>
 				<ChevronDownIcon class="text-neutral-600" />
 			</div>
 		</PopoverTrigger>
@@ -109,6 +112,14 @@ watch(
 					<div v-else class="text-sm text-neutral-500 py-1">Loading campaigns...</div>
 				</div>
 				<div class="border-t border-neutral-300 mt-1">
+					<PopoverClose as-child>
+						<router-link
+							:to="{ name: 'campaigns.index', params: { teamId: route.params.id } }"
+							class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"
+						>
+							Edit campaigns
+						</router-link>
+					</PopoverClose>
 					<PopoverClose as-child>
 						<router-link
 							:to="{ name: 'campaigns.index', params: { teamId: route.params.id } }"

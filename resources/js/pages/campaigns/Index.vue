@@ -128,7 +128,7 @@ onMounted(() => {
 						class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 						placeholder="Enter campaign description"
 					></textarea>
-					<p class="text-xs text-neutral-500 mt-1">This description can help AI generate accurate prompts</p>
+					<p class="text-xs text-neutral-500">This description can help AI generate accurate prompts</p>
 				</div>
 				<div class="flex justify-end space-x-2">
 					<Button @click="showCreateModal = false" variant="neutral">Cancel</Button>

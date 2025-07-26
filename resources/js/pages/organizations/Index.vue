@@ -74,20 +74,7 @@ watch(campaignId, async (newId) => {
 			<div class="flex items-center gap-4">
 				<h1 class="text-2xl font-bold">Organizations</h1>
 			</div>
-			<div class="flex space-x-2">
-				<CampaignSwitcher />
-				<Button
-					v-if="organizationStore.ownedOrganizations.length > 0"
-					@click="organizationStore.findCompetitors(teamId)"
-					:disabled="activeCompetitorJobs.length > 0"
-					variant="outline"
-				>
-					{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
-				</Button>
-				<Button @click="router.push({ name: 'organizations.create', params: { teamId: teamId, campaignId: campaignId } })">
-					{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
-				</Button>
-			</div>
+			<CampaignSwitcher />
 		</div>
 
 		<!-- Active jobs message -->
@@ -142,7 +129,27 @@ watch(campaignId, async (newId) => {
 
 			<!-- Competitor Organizations -->
 			<div class="mb-8">
-				<h2 class="text-xl font-semibold mb-4">Competitors</h2>
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-xl font-semibold">Competitors</h2>
+					<div class="flex space-x-2">
+						<Button
+							v-if="organizationStore.ownedOrganizations.length > 0"
+							@click="organizationStore.findCompetitors(teamId)"
+							:disabled="activeCompetitorJobs.length > 0"
+							variant="outline"
+							size="sm"
+						>
+							{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
+						</Button>
+						<Button
+							@click="router.push({ name: 'organizations.create', params: { teamId: teamId, campaignId: campaignId } })"
+							variant="outline"
+							size="sm"
+						>
+							{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
+						</Button>
+					</div>
+				</div>
 				<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">You haven't added any competitors yet.</div>
 				<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 					<div
