@@ -19,7 +19,6 @@ import ArticlesIndex from '@/pages/articles/Index.vue'
 import ArticleEdit from '@/pages/articles/Edit.vue'
 import CampaignsIndex from '@/pages/campaigns/Index.vue'
 import CampaignsEdit from '@/pages/campaigns/Edit.vue'
-// Super Admin
 
 const routes = [
 	{
@@ -126,7 +125,7 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/teams/:teamId/campaigns',
+		path: '/teams/:teamId/campaigns/list',
 		name: 'campaigns.index',
 		component: CampaignsIndex,
 		meta: { requiresAuth: true }

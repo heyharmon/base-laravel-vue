@@ -51,7 +51,7 @@ const logout = async () => {
 const switchTeam = async (teamId) => {
 	try {
 		await teamStore.switchTeam(teamId)
-		window.location.href = `/teams/${teamId}/campaigns`
+		window.location.href = `/teams/${teamId}/campaigns/list`
 	} catch (error) {
 		console.error('Error switching team:', error)
 	}
