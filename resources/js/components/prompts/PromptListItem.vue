@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button.vue'
 const router = useRouter()
 const route = useRoute()
 const teamId = route.params.teamId
+const campaignId = route.params.campaignId
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
@@ -66,7 +67,7 @@ const runPrompt = (count) => {
 const confirmDelete = () => emit('delete', props.prompt)
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId, {
+	const newArticle = await articleStore.createArticle(teamId, campaignId, {
 		title: 'Untitled article',
 		prompt_id: props.prompt.id
 	})

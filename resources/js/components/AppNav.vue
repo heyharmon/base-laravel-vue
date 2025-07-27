@@ -133,7 +133,7 @@ onMounted(async () => {
 								<div class="py-1">
 									<PopoverClose as-child>
 										<router-link :to="`/teams/${currentTeam.id}/members`" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
-											Users
+											Manage team
 										</router-link>
 									</PopoverClose>
 									<PopoverClose as-child>

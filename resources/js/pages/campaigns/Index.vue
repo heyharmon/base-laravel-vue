@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -11,31 +11,12 @@ const campaignStore = useCampaignStore()
 
 const teamId = computed(() => route.params.teamId)
 const showCreateModal = ref(false)
-const newCampaign = ref({
-	name: '',
-	description: '',
-	location: ''
-})
-const isSubmitting = ref(false)
 
-const createCampaign = async () => {
-	if (!newCampaign.value.name) return
-	isSubmitting.value = true
-	try {
-		const campaign = await campaignStore.createCampaign(teamId.value, {
-			is_default: false,
-			name: newCampaign.value.name,
-			description: newCampaign.value.description,
-			location: newCampaign.value.location
-		})
-		showCreateModal.value = false
-		newCampaign.value = { name: '', description: '', location: '' }
-		router.push({ name: 'home', params: { teamId: teamId.value, campaignId: campaign.id } })
-	} catch (error) {
-		console.error('Error creating campaign:', error)
-	} finally {
-		isSubmitting.value = false
-	}
+// Dynamically load the CreateCampaignModal component
+const CreateCampaignModal = defineAsyncComponent(() => import('@/components/campaigns/CreateCampaignModal.vue'))
+
+const handleCampaignCreated = (campaign) => {
+	router.push({ name: 'home', params: { teamId: teamId.value, campaignId: campaign.id } })
 }
 
 const deleteCampaign = async (event, campaignId) => {
@@ -100,45 +81,13 @@ onMounted(() => {
 			</div>
 		</div>
 
-		<div v-if="showCreateModal" class="fixed inset-0 bg-neutral-300/50 flex items-center justify-center z-50">
-			<div class="bg-white rounded-lg p-6 w-full max-w-md">
-				<h2 class="text-xl font-bold mb-4">Create new campaign</h2>
-				<div class="mb-4">
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Campaign Name</label>
-					<input
-						v-model="newCampaign.name"
-						type="text"
-						class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						placeholder="Enter campaign name"
-					/>
-				</div>
-				<div class="mb-4">
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Location (optional)</label>
-					<input
-						v-model="newCampaign.location"
-						type="text"
-						class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						placeholder="Enter location"
-					/>
-					<p class="text-xs text-neutral-500 mt-1">Location where your business primarily operates</p>
-				</div>
-				<div class="mb-4">
-					<label class="block text-sm font-medium text-neutral-700 mb-1">Description (optional)</label>
-					<textarea
-						v-model="newCampaign.description"
-						rows="3"
-						class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-						placeholder="Enter campaign description"
-					></textarea>
-					<p class="text-xs text-neutral-500">This description can help AI generate accurate prompts</p>
-				</div>
-				<div class="flex justify-end space-x-2">
-					<Button @click="showCreateModal = false" variant="neutral">Cancel</Button>
-					<Button @click="createCampaign" :disabled="isSubmitting || !newCampaign.name" variant="dark">{{
-						isSubmitting ? 'Creating...' : 'Create Campaign'
-					}}</Button>
-				</div>
-			</div>
-		</div>
+		<!-- Create Campaign Modal - dynamically loaded -->
+		<CreateCampaignModal
+			v-if="showCreateModal"
+			:is-open="showCreateModal"
+			:team-id="teamId"
+			@close="showCreateModal = false"
+			@created="handleCampaignCreated"
+		/>
 	</DefaultLayout>
 </template>

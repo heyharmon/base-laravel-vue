@@ -24,6 +24,7 @@ const props = defineProps({
 const router = useRouter()
 const route = useRoute()
 const teamId = route.params.teamId
+const campaignId = route.params.campaignId
 
 const emit = defineEmits(['close'])
 
@@ -103,7 +104,7 @@ const exportPrompt = async () => {
 }
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId, {
+	const newArticle = await articleStore.createArticle(teamId, campaignId, {
 		title: 'Untitled article',
 		prompt_id: props.promptId
 	})
