@@ -81,10 +81,20 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 
 	function startAutoRefresh(teamId, interval = 2000) {
 		stopAutoRefresh()
+		let pollsAfterCompletion = 0
+		const maxPollsAfterCompletion = 3 // Poll 3 more times after completion
 
 		refreshTimer.value = setInterval(() => {
 			if (hasActiveJobs()) {
 				fetchTeamJobs(teamId)
+				pollsAfterCompletion = 0 // Reset counter when active jobs exist
+			} else if (pollsAfterCompletion < maxPollsAfterCompletion) {
+				// Continue polling for a few cycles after completion to catch final updates
+				fetchTeamJobs(teamId)
+				pollsAfterCompletion++
+			} else {
+				// Stop polling after we've checked enough times post-completion
+				stopAutoRefresh()
 			}
 		}, interval)
 	}

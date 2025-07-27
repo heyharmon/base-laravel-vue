@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import CloseIcon from '@/components/icons/CloseIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,10 +66,11 @@ onMounted(() => {
 			</div>
 
 			<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-				<div
+				<router-link
 					v-for="campaign in campaignStore.campaigns"
 					:key="campaign.id"
-					class="bg-white border border-neutral-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+					:to="{ name: 'home', params: { teamId: teamId, campaignId: campaign.id } }"
+					class="group block bg-white border border-neutral-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
 				>
 					<div class="flex justify-between items-start mb-4">
 						<h3 class="text-lg font-semibold">{{ campaign.name }}</h3>
@@ -80,25 +80,27 @@ onMounted(() => {
 					<div class="flex justify-between items-center">
 						<router-link
 							:to="{ name: 'home', params: { teamId: teamId, campaignId: campaign.id } }"
-							class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+							class="text-blue-600 hover:text-blue-800 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+							@click.stop
 							>View Rankings →</router-link
 						>
 						<div class="flex space-x-2">
 							<router-link
 								:to="{ name: 'campaigns.edit', params: { teamId: teamId, campaignId: campaign.id } }"
 								class="text-neutral-600 hover:text-neutral-800 text-sm"
+								@click.stop
 								>Edit</router-link
 							>
 							<button
 								v-if="!campaign.is_default"
-								@click="deleteCampaign(campaign.id)"
+								@click.stop="deleteCampaign(campaign.id)"
 								class="text-red-600 hover:text-red-800 text-sm cursor-pointer"
 							>
 								Delete
 							</button>
 						</div>
 					</div>
-				</div>
+				</router-link>
 			</div>
 		</div>
 
