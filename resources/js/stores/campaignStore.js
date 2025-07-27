@@ -75,6 +75,12 @@ export const useCampaignStore = defineStore('campaign', {
 				this.campaigns = this.campaigns.filter((c) => c.id !== campaignId)
 				if (this.currentCampaign?.id === campaignId) {
 					this.currentCampaign = this.defaultCampaign || this.campaigns[0] || null
+					// Update localStorage to reflect the new current campaign
+					if (this.currentCampaign) {
+						localStorage.setItem(`team_${teamId}_current_campaign`, JSON.stringify(this.currentCampaign))
+					} else {
+						localStorage.removeItem(`team_${teamId}_current_campaign`)
+					}
 				}
 			} catch (error) {
 				this.error = error.message

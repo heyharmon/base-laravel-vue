@@ -38,14 +38,10 @@ const createCampaign = async () => {
 	}
 }
 
-const deleteCampaign = async (campaignId) => {
+const deleteCampaign = async (event, campaignId) => {
 	if (!confirm('Are you sure you want to delete this campaign? All associated data will be permanently deleted.')) return
-	try {
-		await campaignStore.deleteCampaign(teamId.value, campaignId)
-	} catch (error) {
-		console.error('Error deleting campaign:', error)
-		alert(error.message || 'Failed to delete campaign')
-	}
+
+	await campaignStore.deleteCampaign(teamId.value, campaignId)
 }
 
 onMounted(() => {
@@ -93,7 +89,7 @@ onMounted(() => {
 							>
 							<button
 								v-if="!campaign.is_default"
-								@click.stop="deleteCampaign(campaign.id)"
+								@click.stop.prevent="deleteCampaign($event, campaign.id)"
 								class="text-red-600 hover:text-red-800 text-sm cursor-pointer"
 							>
 								Delete
