@@ -9,7 +9,7 @@ import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
-import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
+import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
 
 const route = useRoute()
 const jobStatusStore = useJobStatusStore()

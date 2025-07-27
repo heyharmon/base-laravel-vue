@@ -10,7 +10,7 @@ import EditIcon from '../../components/icons/EditIcon.vue'
 import TrashIcon from '../../components/icons/TrashIcon.vue'
 import PlusIcon from '../../components/icons/PlusIcon.vue'
 import DocumentIcon from '../../components/icons/DocumentIcon.vue'
-import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
+import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
 
 const router = useRouter()
 const route = useRoute()

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui'
@@ -12,6 +12,10 @@ const campaignStore = useCampaignStore()
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 const searchQuery = ref('')
+const showCreateModal = ref(false)
+
+// Dynamically load the CampaignCreateModal component
+const CampaignCreateModal = defineAsyncComponent(() => import('@/components/campaigns/CampaignCreateModal.vue'))
 
 // Filtered campaigns based on search query
 const filteredCampaigns = computed(() => {
@@ -28,6 +32,12 @@ const switchCampaign = async (campaignId) => {
 		name: route.name,
 		params: { ...route.params, campaignId }
 	})
+}
+
+const handleCampaignCreated = (campaign) => {
+	// Switch to the newly created campaign
+	switchCampaign(campaign.id)
+	showCreateModal.value = false
 }
 
 watch(
@@ -124,15 +134,24 @@ watch(
 						</router-link>
 					</PopoverClose>
 					<PopoverClose as-child>
-						<router-link
-							:to="{ name: 'campaigns.index', params: { teamId: route.params.teamId } }"
-							class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100"
+						<button
+							@click="showCreateModal = true"
+							class="cursor-pointer block px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100 w-full text-left"
 						>
 							Create campaign
-						</router-link>
+						</button>
 					</PopoverClose>
 				</div>
 			</PopoverContent>
 		</PopoverPortal>
 	</PopoverRoot>
+
+	<!-- Create Campaign Modal - dynamically loaded -->
+	<CampaignCreateModal
+		v-if="showCreateModal"
+		:is-open="showCreateModal"
+		:team-id="teamId"
+		@close="showCreateModal = false"
+		@created="handleCampaignCreated"
+	/>
 </template>

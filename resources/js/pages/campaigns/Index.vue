@@ -12,8 +12,8 @@ const campaignStore = useCampaignStore()
 const teamId = computed(() => route.params.teamId)
 const showCreateModal = ref(false)
 
-// Dynamically load the CreateCampaignModal component
-const CreateCampaignModal = defineAsyncComponent(() => import('@/components/campaigns/CreateCampaignModal.vue'))
+// Dynamically load the CampaignCreateModal component
+const CampaignCreateModal = defineAsyncComponent(() => import('@/components/campaigns/CampaignCreateModal.vue'))
 
 const handleCampaignCreated = (campaign) => {
 	router.push({ name: 'home', params: { teamId: teamId.value, campaignId: campaign.id } })
@@ -82,7 +82,7 @@ onMounted(() => {
 		</div>
 
 		<!-- Create Campaign Modal - dynamically loaded -->
-		<CreateCampaignModal
+		<CampaignCreateModal
 			v-if="showCreateModal"
 			:is-open="showCreateModal"
 			:team-id="teamId"

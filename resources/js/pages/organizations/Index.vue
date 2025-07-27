@@ -7,7 +7,7 @@ import { useCampaignStore } from '@/stores/campaignStore'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
-import CampaignSwitcher from '@/components/CampaignSwitcher.vue'
+import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
 
 const organizationStore = useOrganizationStore()
 const jobStatusStore = useJobStatusStore()
