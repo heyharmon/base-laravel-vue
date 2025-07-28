@@ -1,9 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\WebsiteController;
-use App\Http\Controllers\ConversationController;
-use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
@@ -15,13 +12,10 @@ Route::get('/invitations/verify', [InvitationController::class, 'verify']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+    // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
-    
-    Route::resource('conversations', ConversationController::class);
-    Route::resource('conversations/{conversation}/chats', ChatController::class);
-    Route::resource('websites', WebsiteController::class);
-    
+
     // Team routes
     Route::resource('teams', TeamController::class);
     Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
