@@ -6,6 +6,8 @@ import Login from '@/pages/auth/Login.vue';
 import Register from '@/pages/auth/Register.vue';
 import TeamsIndex from '@/pages/teams/Index.vue';
 import TeamShow from '@/pages/teams/Show.vue';
+import WebsitesIndex from '@/pages/websites/Index.vue';
+import WebsiteShow from '@/pages/websites/Show.vue';
 
 const routes = [
   {
@@ -36,6 +38,18 @@ const routes = [
     path: '/teams/:id',
     name: 'teams.show',
     component: TeamShow,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/websites',
+    name: 'websites.index',
+    component: WebsitesIndex,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/websites/:id',
+    name: 'websites.show',
+    component: WebsiteShow,
     meta: { requiresAuth: true }
   },
 ];
