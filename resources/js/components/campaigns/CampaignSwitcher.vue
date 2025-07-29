@@ -147,11 +147,5 @@ watch(
 	</PopoverRoot>
 
 	<!-- Create Campaign Modal - dynamically loaded -->
-	<CampaignCreateModal
-		v-if="showCreateModal"
-		:is-open="showCreateModal"
-		:team-id="teamId"
-		@close="showCreateModal = false"
-		@created="handleCampaignCreated"
-	/>
+	<CampaignCreateModal v-if="showCreateModal" :is-open="showCreateModal" @close="showCreateModal = false" @created="handleCampaignCreated" />
 </template>

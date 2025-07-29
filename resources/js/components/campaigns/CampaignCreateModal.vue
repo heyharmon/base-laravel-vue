@@ -1,6 +1,8 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
 import Modal from '@/components/ui/Modal.vue'
 import Button from '@/components/ui/Button.vue'
 
@@ -8,16 +10,15 @@ const props = defineProps({
 	isOpen: {
 		type: Boolean,
 		required: true
-	},
-	teamId: {
-		type: [Number, String],
-		required: true
 	}
 })
 
 const emit = defineEmits(['close', 'created'])
 
+const route = useRoute()
 const campaignStore = useCampaignStore()
+const jobStatusStore = useJobStatusStore()
+
 const isSubmitting = ref(false)
 const campaignNameInput = ref(null)
 const newCampaign = ref({
@@ -60,12 +61,14 @@ const createCampaign = async () => {
 
 	isSubmitting.value = true
 	try {
-		const campaign = await campaignStore.createCampaign(props.teamId, {
+		const campaign = await campaignStore.createCampaign(route.params.teamId, {
 			is_default: false,
 			name: newCampaign.value.name,
 			description: newCampaign.value.description,
 			location: newCampaign.value.location
 		})
+
+		await jobStatusStore.pollTeamJobs(route.params.teamId)
 
 		emit('created', campaign)
 		emit('close')

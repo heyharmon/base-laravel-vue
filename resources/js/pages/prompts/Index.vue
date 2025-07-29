@@ -40,13 +40,16 @@ const selectedPromptId = ref(null)
 // Sorting
 const sortOption = ref('default') // Default sort option
 
+// Jobs in progress by job class
+const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
+
 // Track active prompt jobs
-const activePromptJobs = computed(() => {
-	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
-	return (jobStatusStore.jobs || []).filter((job) => {
-		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
-	})
-})
+// const activePromptJobs = computed(() => {
+// 	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
+// 	return (jobStatusStore.jobs || []).filter((job) => {
+// 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
+// 	})
+// })
 
 onMounted(async () => {
 	await campaignStore.fetchCampaigns(teamId.value)
@@ -57,20 +60,21 @@ onMounted(async () => {
 	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 })
 
-watch(
-	activePromptJobs,
-	(newJobs, oldJobs) => {
-		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
-			// At least one job completed, or all jobs are done
-			promptStore.fetchPrompts(teamId.value, campaignId.value)
-		}
-	},
-	{ deep: true }
-)
+// watch(
+// 	activePromptJobs,
+// 	(newJobs, oldJobs) => {
+// 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
+// 			// At least one job completed, or all jobs are done
+// 			promptStore.fetchPrompts(teamId.value, campaignId.value)
+// 		}
+// 	},
+// 	{ deep: true }
+// )
 
 // Watch for job completions and refresh data
 watch(
-	() => jobStatusStore.completedJobs.length,
+	// () => jobStatusStore.completedJobs.length,
+	() => processingJobsByClass.value.length,
 	(newCount, oldCount) => {
 		if (newCount > oldCount) {
 			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
@@ -168,6 +172,7 @@ const handleDateRangeChange = (dateRange) => {
 			<h1 class="text-2xl font-bold">Prompts</h1>
 			<CampaignSwitcher />
 		</div>
+
 		<div class="flex flex-col space-y-6">
 			<!-- Date Filter -->
 			<!-- <DateFilterDropdown
@@ -200,7 +205,7 @@ const handleDateRangeChange = (dateRange) => {
 					</div>
 
 					<!-- Active jobs message -->
-					<div
+					<!-- <div
 						v-if="activePromptJobs.length > 0"
 						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 					>
@@ -209,6 +214,27 @@ const handleDateRangeChange = (dateRange) => {
 							{{ activePromptJobs.length }}
 							{{ activePromptJobs.length === 1 ? 'prompt related job is being run' : 'prompt related jobs are being run' }}
 						</span>
+					</div> -->
+
+					<!-- Jobs currently processing message -->
+					<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 mb-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+						<div class="flex items-center gap-4 mb-2">
+							<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+							<span class="font-semibold">Working</span>
+						</div>
+						<div class="pl-8 space-y-1">
+							<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
+								<div class="flex items-center justify-between">
+									<span>{{ jobs[0].output }}</span>
+								</div>
+								<div v-if="jobs.length > 1" class="flex items-center justify-between">
+									<span>{{ jobs[1].output }}</span>
+								</div>
+								<div v-if="jobs.length > 2" class="flex items-center justify-between">
+									<span>{{ jobs[2].output }}</span>
+								</div>
+							</div>
+						</div>
 					</div>
 
 					<div v-if="sortedPrompts.length" class="space-y-4">
@@ -223,7 +249,8 @@ const handleDateRangeChange = (dateRange) => {
 							@delete="confirmDeletePrompt"
 						/>
 					</div>
-					<div v-else class="text-center py-4 text-neutral-500 text-sm">No prompts data available</div>
+
+					<div v-else-if="processingJobsByClass.length <= 0" class="text-center py-4 text-neutral-500 text-sm">No prompts data available</div>
 				</div>
 			</div>
 		</div>
