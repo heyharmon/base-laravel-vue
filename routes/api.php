@@ -23,4 +23,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+
+    // Website bot accessibility routes
+    Route::get('websites', [\App\Http\Controllers\Api\WebsiteController::class, 'index']);
+    Route::post('websites', [\App\Http\Controllers\Api\WebsiteController::class, 'store']);
+    Route::post('websites/{website}/check-bots', [\App\Http\Controllers\Api\WebsiteController::class, 'checkBots']);
+    Route::get('websites/{website}/results', [\App\Http\Controllers\Api\WebsiteController::class, 'results']);
 });
