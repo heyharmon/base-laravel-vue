@@ -27,7 +27,7 @@ it('returns job statuses for the authenticated team', function () {
 		->assertJsonPath('2.team_id', $team->id);
 });
 
-it('limits results to 100 in descending order', function () {
+it('limits results to 150 in descending order', function () {
 	$team = Team::factory()->create();
 	$user = $team->owner;
 	$user->current_team_id = $team->id;
@@ -35,13 +35,13 @@ it('limits results to 100 in descending order', function () {
 	Sanctum::actingAs($user);
 
 	$jobs = JobStatus::factory()->for($team)
-		->count(105)
+		->count(155)
 		->sequence(fn($sequence) => ['created_at' => now()->addSeconds($sequence->index)])
 		->create();
 
 	$response = $this->getJson("/api/teams/{$team->id}/jobs");
 	$response->assertStatus(200)
-		->assertJsonCount(100)
+		->assertJsonCount(150)
 		->assertJsonPath('0.id', $jobs->last()->id);
 });
 
