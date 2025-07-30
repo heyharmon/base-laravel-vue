@@ -84,7 +84,7 @@ const deleteOrganization = async (organizationId) => {
 <template>
 	<DefaultLayout>
 		<div class="flex justify-between items-center pt-6">
-			<h1 class="text-2xl font-bold">Dashboard</h1>
+			<h1 class="text-2xl font-bold">Rankings</h1>
 			<CampaignSwitcher />
 		</div>
 		<!-- Jobs currently processing message -->
