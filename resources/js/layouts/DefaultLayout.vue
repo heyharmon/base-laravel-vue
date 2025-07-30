@@ -6,7 +6,7 @@ import AppNav from '@/components/AppNav.vue'
 	<div class="min-h-screen bg-white">
 		<AppNav />
 
-		<main class="max-w-7xl mx-auto px-4">
+		<main class="max-w-7xl mx-auto px-4 pb-12">
 			<slot />
 		</main>
 	</div>
