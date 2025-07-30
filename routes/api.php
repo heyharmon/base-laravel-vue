@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Website bot accessibility routes
     Route::get('websites', [\App\Http\Controllers\Api\WebsiteController::class, 'index']);
     Route::post('websites', [\App\Http\Controllers\Api\WebsiteController::class, 'store']);
+    Route::get('websites/{website}', [\App\Http\Controllers\Api\WebsiteController::class, 'show']);
     Route::post('websites/{website}/check-bots', [\App\Http\Controllers\Api\WebsiteController::class, 'checkBots']);
     Route::get('websites/{website}/results', [\App\Http\Controllers\Api\WebsiteController::class, 'results']);
 });

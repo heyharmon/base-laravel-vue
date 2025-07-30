@@ -29,7 +29,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->index(['website_id','checked_at']);
             $table->index(['user_agent_id','robots_txt_allowed']);
-            $table->index(['http_accessible','firewall_detected']);
+            $table->index(['http_accessible','firewall_detected'], 'bar_http_firewall_idx');
             $table->unique(['website_id','url_hash','user_agent_id','checked_at'], 'unique_result');
         });
     }

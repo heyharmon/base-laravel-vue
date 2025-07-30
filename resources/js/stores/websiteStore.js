@@ -4,6 +4,7 @@ import api from '@/services/api'
 export const useWebsiteStore = defineStore('website', {
   state: () => ({
     websites: [],
+    currentWebsite: null,
     loading: false,
     error: null
   }),
@@ -28,6 +29,20 @@ export const useWebsiteStore = defineStore('website', {
     },
     async loadResults(id) {
       return await api.get(`/websites/${id}/results`)
+    },
+    async fetchWebsite(id) {
+      this.loading = true
+      try {
+        const website = await api.get(`/websites/${id}`)
+        const results = await api.get(`/websites/${id}/results`)
+        this.currentWebsite = { ...website, results }
+        return this.currentWebsite
+      } catch (e) {
+        this.error = e.message
+        throw e
+      } finally {
+        this.loading = false
+      }
     }
   }
 })

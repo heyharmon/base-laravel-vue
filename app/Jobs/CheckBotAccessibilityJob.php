@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Jobs;
 
 use App\Models\Website;
@@ -16,7 +17,7 @@ class CheckBotAccessibilityJob implements ShouldQueue
 
     public function __construct(public Website $website, public array $userAgentIds = [])
     {
-        $this->onQueue('bot-checking');
+        // $this->onQueue('bot-checking');
     }
 
     public function handle(BotAccessibilityService $service): void

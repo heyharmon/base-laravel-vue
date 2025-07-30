@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -10,7 +11,12 @@ class WebsiteController extends Controller
 {
     public function index()
     {
-        return Website::orderBy('created_at','desc')->get();
+        return Website::orderBy('created_at', 'desc')->get();
+    }
+
+    public function show(Website $website)
+    {
+        return $website;
     }
 
     public function store(Request $request)
@@ -27,11 +33,11 @@ class WebsiteController extends Controller
     public function checkBots(Website $website)
     {
         CheckBotAccessibilityJob::dispatch($website);
-        return response()->json(['message'=>'Bot accessibility check initiated']);
+        return response()->json(['message' => 'Bot accessibility check initiated']);
     }
 
     public function results(Website $website)
     {
-        return $website->accessibilityResults()->with('userAgent')->orderBy('checked_at','desc')->get();
+        return $website->accessibilityResults()->with('userAgent')->orderBy('checked_at', 'desc')->get();
     }
 }
