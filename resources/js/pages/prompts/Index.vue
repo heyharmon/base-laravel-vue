@@ -65,7 +65,9 @@ watch(
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
+            console.log('Jobs completed, refreshing prompts and visibility metrics')
 			promptStore.fetchPrompts(teamId.value, campaignId.value)
+            organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }

@@ -1,3 +1,4 @@
+p
 <script setup>
 import { onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -43,6 +44,7 @@ onMounted(async () => {
 watch(
 	() => jobStatusStore.completedJobs.length,
 	(newCount, oldCount) => {
+        console.log(`Jobs completed: ${newCount}, Previous count: ${oldCount}`)
 		if (newCount > oldCount) {
 			console.log('Jobs completed, refreshing visibility metrics')
 			fetchVisibilityData()
