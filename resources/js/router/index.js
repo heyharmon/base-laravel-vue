@@ -195,7 +195,7 @@ router.beforeEach(async (to, from, next) => {
 
 	// Handle guest routes
 	if (to.matched.some((record) => record.meta.guest)) {
-		return token ? next({ name: 'home' }) : next()
+		return token ? next('/') : next()
 	}
 
 	// Handle non-auth routes
