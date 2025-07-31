@@ -1,5 +1,8 @@
+p
 <script setup>
 import { onMounted, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
@@ -7,28 +10,41 @@ import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TrashIcon from '../components/icons/TrashIcon.vue'
+import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
 
+const route = useRoute()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 
-// Use centralized state from the store
+// Route params
+const teamId = computed(() => route.params.teamId)
+const campaignId = computed(() => route.params.campaignId)
 
-// Use the store's fetchVisibilityMetrics directly
-const fetchVisibilityData = () => {
-	organizationStore.fetchVisibilityMetrics()
-}
-
-// Handle date range changes from dropdown
-const handleDateRangeChange = (dateRange) => {
-	organizationStore.setDateRange(dateRange)
-}
-
+// Jobs in progress by job class
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
+
+// The owned organization
+const ownedOrg = computed(() => {
+	if (!organizationStore.visibilityMetrics.length) return null
+	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+})
+
+onMounted(async () => {
+	if (teamId.value) {
+		await campaignStore.fetchCampaigns(teamId.value)
+		if (campaignId.value) {
+			await campaignStore.switchCampaign(teamId.value, campaignId.value)
+			fetchVisibilityData()
+		}
+	}
+})
 
 // Watch for job completions and refresh data
 watch(
 	() => jobStatusStore.completedJobs.length,
 	(newCount, oldCount) => {
+        console.log(`Jobs completed: ${newCount}, Previous count: ${oldCount}`)
 		if (newCount > oldCount) {
 			console.log('Jobs completed, refreshing visibility metrics')
 			fetchVisibilityData()
@@ -36,23 +52,31 @@ watch(
 	}
 )
 
-// Computed property for the owned organization
-const ownedOrg = computed(() => {
-	if (!organizationStore.visibilityMetrics.length) return null
-	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+watch(campaignId, async (newId) => {
+	if (newId) {
+		await campaignStore.switchCampaign(teamId.value, newId)
+		fetchVisibilityData()
+	}
 })
 
-onMounted(() => {
-	// Initial fetch will be handled by the DateFilterDropdown component
-	// No need to duplicate the logic here
-	fetchVisibilityData()
-})
+const fetchVisibilityData = () => {
+	if (teamId.value && campaignId.value) {
+		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+	}
+}
+
+// Handle date range changes from dropdown
+const handleDateRangeChange = (dateRange) => {
+	if (teamId.value && campaignId.value) {
+		organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
+	}
+}
 
 const deleteOrganization = async (organizationId) => {
 	try {
-		await organizationStore.deleteOrganization(organizationId)
+		await organizationStore.deleteOrganization(teamId.value, organizationId, campaignId.value)
 		// Refresh visibility data
-		organizationStore.fetchVisibilityMetrics()
+		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 	} catch (error) {
 		console.error('Error deleting organization:', error)
 	}
@@ -61,6 +85,10 @@ const deleteOrganization = async (organizationId) => {
 
 <template>
 	<DefaultLayout>
+		<div class="flex justify-between items-center pt-6">
+			<h1 class="text-2xl font-bold">Rankings</h1>
+			<CampaignSwitcher />
+		</div>
 		<!-- Jobs currently processing message -->
 		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
 			<div class="flex items-center gap-4 mb-2">

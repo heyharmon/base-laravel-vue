@@ -36,7 +36,7 @@ const presetPrompts = [
 
 // Watch for route changes to reset conversation state
 watch(
-	() => route.params.id,
+	() => route.params.articleId,
 	(newId) => {
 		if (newId) {
 			// Reset conversation state when switching articles
@@ -48,7 +48,7 @@ watch(
 )
 
 // Listen for new chat events on the article
-useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
+useEcho(`article.${route.params.articleId}`, 'ArticleChatCreated', (e) => {
 	if (e.role !== 'user') {
 		console.log('Received new chat with ID:', e.id)
 		articleStore.chats.push(e)
@@ -56,7 +56,7 @@ useEcho(`article.${route.params.id}`, 'ArticleChatCreated', (e) => {
 })
 
 // Listen for chat processing completion events
-useEcho(`article.${route.params.id}`, 'ArticleChatAgentFinished', (e) => {
+useEcho(`article.${route.params.articleId}`, 'ArticleChatAgentFinished', (e) => {
 	console.log('Chat processing completed:', e)
 
 	// Reset loading state
@@ -182,7 +182,7 @@ const getRoleLabel = (role) => {
 	<div class="flex-1 overflow-hidden flex flex-col h-full">
 		<!-- Messages top bar -->
 		<div class="py-2 px-6">
-			<ChatsDropdown :article-id="route.params.id" @conversation-changed="handleConversationChanged" />
+			<ChatsDropdown :article-id="route.params.articleId" @conversation-changed="handleConversationChanged" />
 		</div>
 
 		<!-- Messages area (scrollable) -->

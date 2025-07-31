@@ -11,27 +11,26 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
-it('onboards a new organization and dispatches a generate phrases job', function () {
-    Bus::fake();
+it('onboards a new organization and creates terms', function () {
+	Bus::fake();
 
-    $user = User::factory()->create();
-    $team = Team::factory()->for($user, 'owner')->create();
-    $user->current_team_id = $team->id;
-    $user->save();
-    Sanctum::actingAs($user);
+	$user = User::factory()->create();
+	$team = Team::factory()->for($user, 'owner')->create();
+	$user->current_team_id = $team->id;
+	$user->save();
+	Sanctum::actingAs($user);
 
-    $response = $this->postJson('/api/organizations-onboard', [
-        'name' => 'Acme',
-        'website' => 'acme.com',
-    ]);
+        $response = $this->postJson("/api/teams/{$team->id}/organizations", [
+                'name' => 'Acme',
+                'website' => 'acme.com',
+        ]);
 
-    $response->assertStatus(201)
-        ->assertJson(['name' => 'Acme']);
+	$response->assertStatus(201)
+		->assertJson(['name' => 'Acme']);
 
-    $organizationId = $response->json('id');
+	$organizationId = $response->json('id');
 
-    expect(Organization::find($organizationId))->not->toBeNull();
-    expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
-    expect(JobStatus::where('trackable_type', Organization::class)->count())->toBe(1);
+	expect(Organization::find($organizationId))->not->toBeNull();
+	expect(Term::where('organization_id', $organizationId)->count())->toBe(2);
+        expect(JobStatus::where('trackable_type', Organization::class)->count())->toBe(0);
 });
-

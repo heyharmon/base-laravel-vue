@@ -32,7 +32,7 @@ class PromptRunController extends Controller
         
         if ($count === 1) {
             // Create a single job
-            $job = new RunPromptJob($prompt, $providers, $teamId);
+            $job = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id);
             
             // Dispatch the job with tracking
             $jobStatus = $this->jobDispatcher->dispatch($prompt, $job);
@@ -45,7 +45,7 @@ class PromptRunController extends Controller
             // Create multiple jobs for batch processing
             $jobs = [];
             for ($i = 0; $i < $count; $i++) {
-                $jobs[] = new RunPromptJob($prompt, $providers, $teamId);
+                $jobs[] = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id);
             }
             
             // Dispatch as a batch with tracking

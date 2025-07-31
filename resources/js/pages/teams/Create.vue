@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useCampaignStore } from '@/stores/campaignStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
 import OrganizationSearch from '@/components/OrganizationSearch.vue'
@@ -11,16 +12,19 @@ import OrganizationLogo from '@/components/organizations/OrganizationLogo.vue'
 const router = useRouter()
 const teamStore = useTeamStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 const isSubmitting = ref(false)
+const currentStep = ref('')
 
 // Organization data
 const organization = ref({
 	name: '',
 	website: '',
 	logo: '',
-	location: '',
 	is_competitor: false,
-	hasDetails: false
+	hasDetails: false,
+	location: '',
+	description: ''
 })
 
 // Handle organization selection from search component
@@ -34,9 +38,10 @@ const deselectOrganization = () => {
 		name: '',
 		website: '',
 		logo: '',
-		location: '',
 		is_competitor: false,
-		hasDetails: false
+		hasDetails: false,
+		location: '',
+		description: ''
 	}
 }
 
@@ -46,15 +51,39 @@ const createTeamAndOrganization = async () => {
 
 	isSubmitting.value = true
 	try {
-		let team = await teamStore.createTeam({ name: organization.value.name })
-		await organizationStore.createAndOnboardOrganization(organization.value)
+		// Step 1: Create team
+		currentStep.value = 'Creating team...'
+		const team = await teamStore.createTeam({ name: organization.value.name })
 
+		// Step 2: Create organization
+		currentStep.value = 'Creating organization...'
+		const orgData = {
+			name: organization.value.name,
+			website: organization.value.website,
+			logo: organization.value.logo,
+			is_competitor: false
+		}
+		await organizationStore.createOwnedOrganization(team.id, orgData)
+
+		// Step 3: Create default campaign
+		currentStep.value = 'Setting up campaign...'
+		const campaign = await campaignStore.createCampaign(team.id, {
+			is_default: true,
+			name: 'Default Campaign',
+			description: organization.value.description,
+			location: organization.value.location
+		})
+
+		// Step 4: Switch to new team and navigate
+		currentStep.value = 'Finalizing...'
 		await teamStore.switchTeam(team.id)
-		router.push({ name: 'dashboard' })
+		router.push({ name: 'home', params: { teamId: team.id, campaignId: campaign.id } })
 	} catch (error) {
 		console.error('Error creating team and organization:', error)
+		currentStep.value = ''
 	} finally {
 		isSubmitting.value = false
+		currentStep.value = ''
 	}
 }
 </script>
@@ -107,38 +136,41 @@ const createTeamAndOrganization = async () => {
 							/>
 							<p class="text-xs text-neutral-500 mt-1">Customize the name of your organization</p>
 						</div>
+					</div>
+				</div>
 
-						<!-- Location Input -->
-						<div class="mt-4 border-t border-neutral-200 pt-4">
-							<label for="location-input" class="block text-sm font-medium text-neutral-700 mb-1">Location</label>
+				<!-- Campaign Details -->
+				<div v-if="organization.name || organization.website" class="mt-4">
+					<h3 class="text-sm font-medium text-neutral-700 mb-2">Campaign Details</h3>
+					<div class="p-6 border border-neutral-200 rounded-md bg-neutral-50 space-y-4">
+						<div>
+							<label class="block text-sm font-medium text-neutral-700 mb-1">Location</label>
 							<input
-								id="location-input"
 								v-model="organization.location"
 								type="text"
-								placeholder="Enter location (optional)"
 								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+								placeholder="Enter location (optional)"
 							/>
-							<p class="text-xs text-neutral-500 mt-1">Enter the location where this organization primarily does business</p>
+							<p class="text-xs text-neutral-500 mt-1">Location where your business primarily operates</p>
 						</div>
 
-						<!-- Description Input -->
-						<div class="mt-4 border-t border-neutral-200 pt-4">
-							<label for="description-input" class="block text-sm font-medium text-neutral-700 mb-1">Description</label>
+						<div>
+							<label class="block text-sm font-medium text-neutral-700 mb-1">Description</label>
 							<textarea
-								id="description-input"
 								v-model="organization.description"
-								rows="3"
-								placeholder="Enter description (optional)"
+								rows="4"
 								class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+								placeholder="Enter campaign description (optional)"
 							></textarea>
-							<p class="text-xs text-neutral-500">This description can help AI generate accurate prompts</p>
+							<p class="text-xs text-neutral-500 mt-1">This description can help AI generate accurate prompts</p>
 						</div>
 					</div>
 				</div>
 
 				<div class="mt-6 flex justify-end space-x-2">
 					<Button @click="createTeamAndOrganization" :disabled="isSubmitting || !organization.name" variant="dark">
-						{{ isSubmitting ? 'Creating...' : 'Create Team' }}
+						<span v-if="isSubmitting">{{ currentStep || 'Creating...' }}</span>
+						<span v-else>Create Team</span>
 					</Button>
 				</div>
 			</div>

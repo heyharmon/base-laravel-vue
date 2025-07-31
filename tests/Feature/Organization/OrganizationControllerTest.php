@@ -17,13 +17,15 @@ it('lists organizations for the current team', function () {
 	$user->current_team_id = $team->id;
 	$user->save();
 
-	$org1 = Organization::factory()->for($team)->owned()->create();
-	$org2 = Organization::factory()->for($team)->create();
+	$campaign = \App\Models\Campaign::factory()->for($team)->create();
+
+	$org1 = Organization::factory()->for($team)->for($campaign)->owned()->create();
+	$org2 = Organization::factory()->for($team)->for($campaign)->create();
 	$otherOrg = Organization::factory()->create();
 
 	Sanctum::actingAs($user);
 
-	$response = $this->getJson('/api/organizations');
+	$response = $this->getJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/organizations");
 
 	$response->assertStatus(200)
 		->assertJsonCount(2)
@@ -41,7 +43,9 @@ it('creates an organization with terms for name and website', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	$response = $this->postJson('/api/organizations', [
+	$campaign = \App\Models\Campaign::factory()->for($team)->create();
+
+	$response = $this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/organizations", [
 		'name' => 'Acme',
 		'website' => 'acme.com',
 		'is_competitor' => true,
@@ -52,6 +56,7 @@ it('creates an organization with terms for name and website', function () {
 			'name' => 'Acme',
 			'website' => 'acme.com',
 			'team_id' => $team->id,
+			'campaign_id' => $campaign->id,
 		]);
 
 	$organizationId = $response->json('id');

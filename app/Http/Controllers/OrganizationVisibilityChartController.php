@@ -7,14 +7,16 @@ use App\Models\Response;
 use App\Models\Term;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Models\Team;
+use App\Models\Campaign;
 
 class OrganizationVisibilityChartController extends Controller
 {
 	/**
 	 * Get visibility data over time for charting
 	 */
-	public function chartData(Request $request)
-	{
+        public function chartData(Request $request, Team $team, Campaign $campaign)
+        {
 		$request->validate([
 			'start_date' => 'nullable|date',
 			'end_date' => 'nullable|date|after_or_equal:start_date',
@@ -23,16 +25,17 @@ class OrganizationVisibilityChartController extends Controller
 			'organization_ids.*' => 'exists:organizations,id'
 		]);
 
-		$teamId = $request->user()->currentTeam->id;
+                $teamId = $team->id;
+                $campaignId = $campaign->id;
 
 		// Handle "all_time" case - if dates are not provided, get the date range from responses
 		if (!$request->start_date || !$request->end_date) {
-			$firstResponse = Response::whereHas('prompt', function ($query) use ($teamId) {
-				$query->where('team_id', $teamId);
+			$firstResponse = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
+				$query->where('team_id', $teamId)->where('campaign_id', $campaignId);
 			})->orderBy('created_at')->first();
 
-			$lastResponse = Response::whereHas('prompt', function ($query) use ($teamId) {
-				$query->where('team_id', $teamId);
+			$lastResponse = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
+				$query->where('team_id', $teamId)->where('campaign_id', $campaignId);
 			})->orderBy('created_at', 'desc')->first();
 
 			if (!$firstResponse || !$lastResponse) {
@@ -55,7 +58,8 @@ class OrganizationVisibilityChartController extends Controller
 		$requestedOrgIds = $request->input('organization_ids', []);
 
 		// Get organizations to track
-		$organizationsQuery = Organization::where('team_id', $teamId);
+		$organizationsQuery = Organization::where('team_id', $teamId)
+			->forCampaign($campaignId);
 
 		if (!empty($requestedOrgIds)) {
 			$organizationsQuery->whereIn('id', $requestedOrgIds);
@@ -84,16 +88,16 @@ class OrganizationVisibilityChartController extends Controller
 				$intervalEnd = $intervalData['end'];
 
 				// Calculate visibility for this interval
-				$totalResponses = Response::whereHas('prompt', function ($query) use ($teamId) {
-					$query->where('team_id', $teamId);
+				$totalResponses = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
+					$query->where('team_id', $teamId)->where('campaign_id', $campaignId);
 				})
 					->whereBetween('created_at', [$intervalStart, $intervalEnd])
 					->count();
 
 				$totalMentions = 0;
 				if (!empty($termIds) && $totalResponses > 0) {
-					$totalMentions = Response::whereHas('prompt', function ($query) use ($teamId) {
-						$query->where('team_id', $teamId);
+					$totalMentions = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
+						$query->where('team_id', $teamId)->where('campaign_id', $campaignId);
 					})
 						->whereHas('terms', function ($query) use ($termIds) {
 							$query->whereIn('terms.id', $termIds);

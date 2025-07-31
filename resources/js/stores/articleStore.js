@@ -19,21 +19,21 @@ export const useArticleStore = defineStore('article', () => {
 	const conversationId = ref(null)
 	const newMessage = ref('')
 
-	const fetchArticles = async () => {
-		console.log('Fetching articles...')
-		isLoading.value = true
+        const fetchArticles = async (teamId, campaignId) => {
+                console.log('Fetching articles...')
+                isLoading.value = true
 
-		try {
-			const response = await api.get('/articles')
-			articles.value = response
-			return response
-		} catch (err) {
-			console.error('Error fetching articles:', err)
-			throw err
-		} finally {
-			isLoading.value = false
-		}
-	}
+                try {
+                        const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/articles`)
+                        articles.value = response
+                        return response
+                } catch (err) {
+                        console.error('Error fetching articles:', err)
+                        throw err
+                } finally {
+                        isLoading.value = false
+                }
+        }
 
 	const fetchArticle = async (id) => {
 		console.log('Fetching article...')
@@ -91,18 +91,18 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	const createArticle = async (articleData) => {
-		console.log('Creating article...')
-		isLoading.value = true
+        const createArticle = async (teamId, campaignId, articleData) => {
+                console.log('Creating article...')
+                isLoading.value = true
 
-		try {
-			const response = await api.post('/articles', articleData)
-			await fetchArticles()
-			return response
-		} catch (err) {
-			console.error('Error creating article:', err)
-			throw err
-		} finally {
+                try {
+                        const response = await api.post(`/teams/${teamId}/campaigns/${campaignId}/articles`, articleData)
+                        await fetchArticles(teamId, campaignId)
+                        return response
+                } catch (err) {
+                        console.error('Error creating article:', err)
+                        throw err
+                } finally {
 			isLoading.value = false
 		}
 	}
@@ -128,9 +128,9 @@ export const useArticleStore = defineStore('article', () => {
 		}
 	}
 
-	const deleteArticle = async (id) => {
-		console.log('Deleting article...')
-		isLoading.value = true
+        const deleteArticle = async (teamId, campaignId, id) => {
+                console.log('Deleting article...')
+                isLoading.value = true
 
 		try {
 			await api.delete(`/articles/${id}`)
@@ -140,8 +140,8 @@ export const useArticleStore = defineStore('article', () => {
 				article.value = null
 			}
 
-			// Refresh the articles list
-			await fetchArticles()
+                        // Refresh the articles list
+                        await fetchArticles(teamId, campaignId)
 
 			return true
 		} catch (err) {

@@ -58,28 +58,28 @@ api.interceptors.response.use(
 			window.location.href = '/login'
 		}
 
-		// let message = 'An error occurred. Please try again.'
-		// const data = error.response.data
-		// if (data) {
-		// 	if (typeof data === 'string') {
-		// 		message = data
-		// 	} else if (data.message) {
-		// 		message = data.message
-		// 	} else if (data.error) {
-		// 		message = data.error
-		// 	}
-		// 	if (status === 422 && data.errors) {
-		// 		const firstKey = Object.keys(data.errors)[0]
-		// 		message = data.errors[firstKey][0] || message
-		// 	}
-		// }
+		let message = 'An error occurred. Please try again.'
+		const data = error.response.data
+		if (data) {
+			if (typeof data === 'string') {
+				message = data
+			} else if (data.message) {
+				message = data.message
+			} else if (data.error) {
+				message = data.error
+			}
+			if (status === 422 && data.errors) {
+				const firstKey = Object.keys(data.errors)[0]
+				message = data.errors[firstKey][0] || message
+			}
+		}
 
-		// notificationStore.addNotification({
-		// 	type: 'error',
-		// 	message
-		// })
+		// Create a proper error object with the message
+		const errorObj = new Error(message)
+		errorObj.response = error.response
+		errorObj.status = status
 
-		// return Promise.reject(error.response.data)
+		return Promise.reject(errorObj)
 	}
 )
 

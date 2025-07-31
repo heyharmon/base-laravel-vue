@@ -5,23 +5,25 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use App\Services\PerplexityService;
 use App\Models\Organization;
 use App\Models\Article;
+use App\Models\Campaign;
 
 class ArticleController extends Controller
 {
 	/**
 	 * Display a listing of the resource.
 	 */
-	public function index(): JsonResponse
-	{
-		$teamId = Auth::user()->current_team_id;
-
-		$articles = Article::where('team_id', $teamId)
-			->latest()
-			->get();
+        public function index(Team $team, Campaign $campaign): JsonResponse
+        {
+                $teamId = $team->id;
+                $articles = Article::where('team_id', $teamId)
+                        ->where('campaign_id', $campaign->id)
+                        ->latest()
+                        ->get();
 
 		return response()->json($articles);
 	}
@@ -29,10 +31,10 @@ class ArticleController extends Controller
 	/**
 	 * Store a newly created resource in storage.
 	 */
-	public function store(Request $request): JsonResponse
-	{
-		// Get the users team id
-		$teamId = $request->user()->currentTeam->id;
+        public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
+        {
+                // Get the users team id
+                $teamId = $team->id;
 
 		// Get the owned organization for this team
 		$ownedOrganization = Organization::where('team_id', $teamId)
@@ -49,11 +51,12 @@ class ArticleController extends Controller
 			'content' => 'nullable|string',
 		]);
 
-		$article = request()->user()->currentTeam->articles()->create([
-			...$validated,
-			'team_id' => $teamId,
-			'organization_id' => $ownedOrganization->id,
-		]);
+                $article = $team->articles()->create([
+                        ...$validated,
+                        'team_id' => $teamId,
+                        'campaign_id' => $campaign->id,
+                        'organization_id' => $ownedOrganization->id,
+                ]);
 
 		return response()->json($article, 201);
 	}

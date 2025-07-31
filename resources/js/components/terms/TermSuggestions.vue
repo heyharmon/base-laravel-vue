@@ -12,6 +12,10 @@ const props = defineProps({
 	organizationId: {
 		type: String,
 		default: null
+	},
+	teamId: {
+		type: [String, Number],
+		required: true
 	}
 })
 
@@ -25,11 +29,11 @@ const termStore = useTermStore()
 // Generate terms on mount if domain is available
 onMounted(() => {
 	if (props.domain) {
-		GenerateOrganizationKeywords()
+		generateTerms()
 	}
 })
 
-const GenerateOrganizationKeywords = async () => {
+const generateTerms = async () => {
 	if (!props.domain) {
 		error.value = 'No website domain available.'
 		return
@@ -60,7 +64,7 @@ const createTerms = async () => {
 	if (!generatedTerms.value.length || !props.organizationId) return
 
 	try {
-		const promises = generatedTerms.value.map((term) => termStore.createTerm(props.organizationId, { name: term }))
+		const promises = generatedTerms.value.map((term) => termStore.createTerm(props.teamId, props.organizationId, { name: term }))
 
 		await Promise.all(promises)
 		emit('create-terms')
@@ -71,7 +75,7 @@ const createTerms = async () => {
 }
 
 // Expose methods to parent components
-defineExpose({ GenerateOrganizationKeywords })
+defineExpose({ generateTerms })
 </script>
 
 <template>

@@ -19,6 +19,10 @@ const props = defineProps({
 	term: {
 		type: Object,
 		default: null
+	},
+	teamId: {
+		type: [Number, String],
+		required: true
 	}
 })
 
@@ -40,7 +44,7 @@ const showTerm = async () => {
 	selectedPrompt.value = null
 
 	if (props.termId) {
-		await termStore.showTerm(route.params.id, props.termId)
+		await termStore.showTerm(props.teamId, route.params.organizationId, props.termId)
 	}
 }
 

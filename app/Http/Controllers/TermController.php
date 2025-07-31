@@ -7,7 +7,7 @@ use App\Models\Term;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Team;
 use App\Services\JobDispatcherService;
 
 class TermController extends Controller
@@ -19,12 +19,10 @@ class TermController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-	public function index(Organization $organization, Request $request): JsonResponse
+	public function index(Team $team, Organization $organization, Request $request): JsonResponse
 	{
-		$teamId = Auth::user()->current_team_id;
-
-		// Verify the organization belongs to the user's team
-		if ($organization->team_id !== $teamId) {
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
 			return response()->json(['message' => 'Organization not found'], 404);
 		}
 
@@ -36,17 +34,15 @@ class TermController extends Controller
 		return response()->json($terms);
 	}
 
-	public function show(Organization $organization, Term $term): JsonResponse
+	public function show(Team $team, Organization $organization, Term $term): JsonResponse
 	{
-		$teamId = Auth::user()->current_team_id;
-
-		// Verify the organization belongs to the user's team
-		if ($organization->team_id !== $teamId) {
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
 			return response()->json(['message' => 'Organization not found'], 404);
 		}
 
-		// Check if term belongs to organization owned by user's current team
-		if ($term->organization->team_id !== $teamId) {
+		// Check if term belongs to organization owned by this team
+		if ($term->organization->team_id !== $team->id) {
 			return response()->json(['message' => 'Not found'], 404);
 		}
 
@@ -58,41 +54,36 @@ class TermController extends Controller
 		return response()->json($term);
 	}
 
-	public function store(Organization $organization, Request $request): JsonResponse
+	public function store(Team $team, Organization $organization, Request $request): JsonResponse
 	{
 		$validated = $request->validate([
 			'name' => 'required|string',
 		]);
 
-		$teamId = Auth::user()->current_team_id;
-
-		// Verify the organization belongs to the user's team
-		if ($organization->team_id !== $teamId) {
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
 			return response()->json(['message' => 'Organization not found'], 404);
 		}
 
 		// Create term with both organization_id and team_id
-		$validated['team_id'] = $teamId;
+		$validated['team_id'] = $team->id;
 		$term = $organization->terms()->create($validated);
 
 		// Dispatch a job to check past responses for this term
-		$job = new CheckTermInPastResponsesJob($term, $teamId);
-		$jobStatus = $this->jobDispatcher->dispatch($term, $job);
+		$this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
 
 		return response()->json($term, 201);
 	}
 
-	public function destroy(Organization $organization, Term $term): JsonResponse
+	public function destroy(Team $team, Organization $organization, Term $term): JsonResponse
 	{
-		$teamId = Auth::user()->current_team_id;
-
-		// Verify the organization belongs to the user's team
-		if ($organization->team_id !== $teamId) {
+		// Verify the organization belongs to the given team
+		if ($organization->team_id !== $team->id) {
 			return response()->json(['message' => 'Organization not found'], 404);
 		}
 
-		// Check if term belongs to organization owned by user's current team
-		if ($term->organization->team_id !== $teamId) {
+		// Check if term belongs to organization owned by this team
+		if ($term->organization->team_id !== $team->id) {
 			return response()->json(['message' => 'Not found'], 404);
 		}
 

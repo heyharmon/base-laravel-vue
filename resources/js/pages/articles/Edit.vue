@@ -196,7 +196,7 @@ watch(
 )
 
 // Listen for article updates
-useEcho(`article.${route.params.id}`, 'ArticleUpdated', async (e) => {
+useEcho(`article.${route.params.articleId}`, 'ArticleUpdated', async (e) => {
 	console.log('Echo: Received article update for ID:', e.id)
 
 	if (e.id === articleStore.article?.id) {
@@ -213,7 +213,7 @@ useEcho(`article.${route.params.id}`, 'ArticleUpdated', async (e) => {
 })
 
 // Listen for deep research updates
-useEcho(`article.${route.params.id}`, 'ArticleDeepResearchUpdated', (e) => {
+useEcho(`article.${route.params.articleId}`, 'ArticleDeepResearchUpdated', (e) => {
 	console.log('Deep research completed for article ID:', e.article_id)
 
 	// Refresh the article data when deep research is completed
@@ -254,7 +254,7 @@ const loadArticle = async (articleId) => {
 
 // Watch for route changes to load new article
 watch(
-	() => route.params.id,
+	() => route.params.articleId,
 	(newId) => {
 		if (newId) {
 			loadArticle(newId)

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useTermStore } from '@/stores/termStore'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -17,13 +18,13 @@ const route = useRoute()
 const router = useRouter()
 const organizationStore = useOrganizationStore()
 const termStore = useTermStore()
+const teamId = ref(null)
+const campaignStore = useCampaignStore()
 const organization = ref({
 	name: '',
 	website: '',
 	founded: '',
 	employee_count: '',
-	location: '',
-	description: '',
 	is_competitor: false
 })
 const originalOrganization = ref({
@@ -31,8 +32,6 @@ const originalOrganization = ref({
 	website: '',
 	founded: '',
 	employee_count: '',
-	location: '',
-	description: '',
 	is_competitor: false
 })
 const isSubmitting = ref(false)
@@ -46,10 +45,11 @@ const deletedTermMessage = ref(null)
 
 onMounted(async () => {
 	try {
-		const data = await organizationStore.fetchOrganization(route.params.id)
+		const data = await organizationStore.fetchOrganization(route.params.organizationId)
+		teamId.value = route.params.teamId
 		organization.value = { ...data }
 		originalOrganization.value = { ...data }
-		await termStore.fetchTerms(route.params.id)
+		await termStore.fetchTerms(route.params.teamId, route.params.organizationId)
 	} catch (error) {
 		console.error('Error fetching organization:', error)
 	} finally {
@@ -63,9 +63,7 @@ const hasChanges = computed(() => {
 		organization.value.website !== originalOrganization.value.website ||
 		organization.value.founded !== originalOrganization.value.founded ||
 		organization.value.employee_count !== originalOrganization.value.employee_count ||
-		organization.value.is_competitor !== originalOrganization.value.is_competitor ||
-		organization.value.location !== originalOrganization.value.location ||
-		organization.value.description !== originalOrganization.value.description
+		organization.value.is_competitor !== originalOrganization.value.is_competitor
 	)
 })
 
@@ -76,15 +74,15 @@ const showTermDetails = (term) => {
 }
 
 const addTerm = (term) => {
-	term.organization_id = route.params.id
+	term.organization_id = route.params.organizationId
 	return term
 }
 
 const updateOrganization = async () => {
 	isSubmitting.value = true
 	try {
-		await organizationStore.updateOrganization(route.params.id, organization.value)
-		router.push({ name: 'organizations.index' })
+		await organizationStore.updateOrganization(route.params.organizationId, organization.value)
+		router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 	} catch (error) {
 		console.error('Error updating organization:', error)
 	} finally {
@@ -94,20 +92,20 @@ const updateOrganization = async () => {
 
 const deleteOrganization = async () => {
 	try {
-		await organizationStore.deleteOrganization(route.params.id)
-		router.push({ name: 'organizations.index' })
+		await organizationStore.deleteOrganization(route.params.teamId, route.params.organizationId, route.params.campaignId)
+		router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 	} catch (error) {
 		console.error('Error deleting organization:', error)
 	}
 }
 
 const cancelEdit = () => {
-	router.push({ name: 'organizations.index' })
+	router.push({ name: 'organizations.index', params: { teamId: route.params.teamId, campaignId: route.params.campaignId } })
 }
 
 const handleDeleteTerm = (termId, termName) => {
 	deletedTermMessage.value = `The term "${termName}" and its history has been deleted.`
-	termStore.deleteTerm(route.params.id, termId)
+	termStore.deleteTerm(teamId.value, route.params.organizationId, termId)
 	setTimeout(() => {
 		deletedTermMessage.value = null
 	}, 10000)
@@ -206,16 +204,18 @@ const handleDeleteTerm = (termId, termName) => {
 	</DefaultLayout>
 
 	<!-- Term Modal -->
-	<TermCreateModal :is-open="isTermCreateModalOpen" @close="isTermCreateModalOpen = false" @create="addTerm" />
+	<TermCreateModal v-if="teamId" :is-open="isTermCreateModalOpen" :team-id="teamId" @close="isTermCreateModalOpen = false" @create="addTerm" />
 
 	<!-- Generate Keywords Modal -->
 	<GenerateTermsModal :is-open="isGenerateTermsModalOpen" @close="isGenerateTermsModalOpen = false" />
 
 	<!-- Term Detail Sheet -->
 	<TermDetailSheet
+		v-if="teamId"
 		:is-open="isTermDetailSheetOpen"
 		:term="selectedTerm"
 		:term-id="selectedTerm?.id"
+		:team-id="teamId"
 		@close="
 			() => {
 				isTermDetailSheetOpen = false

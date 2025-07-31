@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import api from '@/services/api.js'
@@ -22,6 +22,9 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const route = useRoute()
+const teamId = route.params.teamId
+const campaignId = route.params.campaignId
 
 const emit = defineEmits(['close'])
 
@@ -101,11 +104,11 @@ const exportPrompt = async () => {
 }
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle({
+	const newArticle = await articleStore.createArticle(teamId, campaignId, {
 		title: 'Untitled article',
 		prompt_id: props.promptId
 	})
-	router.push({ name: 'articles.edit', params: { id: newArticle.id } })
+	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
 }
 
 onMounted(fetchDetails)

@@ -43,17 +43,18 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	})
 
 	// Actions
-	async function pollTeamJobs() {
-		await fetchTeamJobs()
-		startAutoRefresh(1500)
+	async function pollTeamJobs(teamId) {
+		await fetchTeamJobs(teamId)
+		startAutoRefresh(teamId, 1500)
 	}
 
-	async function fetchTeamJobs() {
+	async function fetchTeamJobs(teamId) {
 		console.log('Fetching team jobs...')
 		loading.value = true
 
 		try {
-			const response = await api.get('/team-jobs')
+			const response = await api.get(`/teams/${teamId}/jobs`)
+			// console.log('jobs response', response)
 			jobs.value = response
 			return jobs.value
 		} catch (err) {
@@ -64,10 +65,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		}
 	}
 
-	async function cancelTeamJobs() {
+	async function cancelTeamJobs(teamId) {
 		try {
-			await api.post('/team-jobs/cancel')
-			await fetchTeamJobs()
+			await api.post(`/teams/${teamId}/jobs/cancel`)
+			await fetchTeamJobs(teamId)
 		} catch (err) {
 			console.error('Error cancelling jobs:', err)
 			throw err
@@ -75,15 +76,25 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	}
 
 	function hasActiveJobs() {
-		return jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
+		return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
 	}
 
-	function startAutoRefresh(interval = 2000) {
+	function startAutoRefresh(teamId, interval = 2000) {
 		stopAutoRefresh()
+		let pollsAfterCompletion = 0
+		const maxPollsAfterCompletion = 3 // Poll 3 more times after completion
 
 		refreshTimer.value = setInterval(() => {
 			if (hasActiveJobs()) {
-				fetchTeamJobs()
+				fetchTeamJobs(teamId)
+				pollsAfterCompletion = 0 // Reset counter when active jobs exist
+			} else if (pollsAfterCompletion < maxPollsAfterCompletion) {
+				// Continue polling for a few cycles after completion to catch final updates
+				fetchTeamJobs(teamId)
+				pollsAfterCompletion++
+			} else {
+				// Stop polling after we've checked enough times post-completion
+				stopAutoRefresh()
 			}
 		}, interval)
 	}

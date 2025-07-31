@@ -30,13 +30,13 @@ watch(
 )
 
 const fetchOrganization = async () => {
-	if (!route.params.id) {
+	if (!route.params.organizationId) {
 		error.value = 'No organization ID found in route.'
 		return
 	}
 
 	try {
-		const data = await organizationStore.fetchOrganization(route.params.id)
+		const data = await organizationStore.fetchOrganization(route.params.organizationId)
 		organization.value = data
 
 		if (!data.website) {
@@ -76,7 +76,8 @@ const handleCreateTerms = () => {
 			<TermSuggestions
 				v-if="organization?.website"
 				:domain="organization.website"
-				:organization-id="route.params.id"
+				:organization-id="route.params.organizationId"
+				:team-id="organization.team_id"
 				@create-terms="handleCreateTerms"
 			/>
 		</div>

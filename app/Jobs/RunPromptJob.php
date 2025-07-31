@@ -56,6 +56,13 @@ class RunPromptJob extends TrackableJob
 	protected $teamId;
 
 	/**
+	 * The campaign ID.
+	 *
+	 * @var int
+	 */
+	protected $campaignId;
+
+	/**
 	 * Available LLM providers.
 	 *
 	 * @var array
@@ -76,10 +83,11 @@ class RunPromptJob extends TrackableJob
 	 * @param  int  $teamId
 	 * @return void
 	 */
-	public function __construct(Prompt $prompt, array $providers = [], ?int $teamId = null)
+	public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId)
 	{
 		$this->model = $prompt;
 		$this->teamId = $teamId;
+		$this->campaignId = $campaignId;
 		$this->prompt = $prompt;
 		$this->providers = $providers;
 	}
@@ -222,9 +230,17 @@ class RunPromptJob extends TrackableJob
 	 */
 	private function checkForTerms(Response $response, Prompt $prompt): void
 	{
-		// Get terms for all organizations scoped to the team
+		// Get terms for all organizations scoped to the team and campaign
 		$terms = Term::whereHas('organization', function ($query) {
-			$query->where('team_id', $this->teamId);
+			$query->where('team_id', $this->teamId)
+				->where(function ($q) {
+					// Include competitor organizations for this campaign
+					$q->where('campaign_id', $this->campaignId)
+					  // OR include the owned organization (campaign_id is NULL and is_competitor is false)
+					  ->orWhere(function ($subQ) {
+						  $subQ->whereNull('campaign_id')->where('is_competitor', false);
+					  });
+				});
 		})->get();
 
 		$responseText = strtolower($response->content);

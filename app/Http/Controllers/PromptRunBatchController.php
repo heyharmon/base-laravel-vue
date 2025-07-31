@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Team;
+use App\Models\Campaign;
 use App\Models\Prompt;
 use App\Jobs\RunAllPromptsJob;
 
@@ -19,7 +20,7 @@ class PromptRunBatchController extends Controller
 		$this->jobDispatcher = $jobDispatcher;
 	}
 
-	public function store(Request $request): JsonResponse
+	public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
 	{
 		$validated = $request->validate([
 			'providers' => 'nullable|array',
@@ -29,10 +30,9 @@ class PromptRunBatchController extends Controller
 
 		$providers = $validated['providers'] ?? ['openai'];
 		$count = $validated['count'] ?? 1;
-		$teamId = Auth::user()->current_team_id;
 
 		// Get all prompts
-		$prompts = Prompt::where('team_id', $teamId)->get();
+		$prompts = Prompt::where('team_id', $team->id)->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([
@@ -41,7 +41,7 @@ class PromptRunBatchController extends Controller
 		}
 
 		// Dispatch the job to run all prompts
-		$job = new RunAllPromptsJob($prompts->first(), $teamId, $providers, $count);
+		$job = new RunAllPromptsJob($prompts->first(), $team->id, $campaign->id, $providers, $count);
 		$this->jobDispatcher->dispatch($prompts->first(), $job);
 
 		return response()->json([

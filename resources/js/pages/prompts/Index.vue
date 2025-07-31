@@ -1,8 +1,11 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useCampaignStore } from '@/stores/campaignStore'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
 import GeneratePromptsModal from '@/components/prompts/GeneratePromptsModal.vue'
@@ -13,25 +16,48 @@ import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
+const route = useRoute()
+
+// Stores
 const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
+const campaignStore = useCampaignStore()
 
+// Route params
+const teamId = computed(() => route.params.teamId)
+const campaignId = computed(() => route.params.campaignId)
+
+// State for modals
 const isPromptCreateModalOpen = ref(false)
 const isPromptDetailSheetOpen = ref(false)
 const isGenerateModalOpen = ref(false)
 
+// State for viewing prompt details
 const selectedPrompt = ref(null)
 const selectedPromptId = ref(null)
+
+// Sorting
 const sortOption = ref('default') // Default sort option
 
-// Using centralized date range from organizationStore
+// Jobs in progress by job class
+const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
+// Track active prompt jobs
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['RunPromptJob', 'FindCompetitorsInResponseJob']
-	return jobStatusStore.jobs.filter((job) => {
+	const promptJobClasses = ['GenerateCampaignKeywordsJob', 'GeneratePrompt', 'RunPromptJob', 'FindCompetitorsInResponseJob']
+	return (jobStatusStore.jobs || []).filter((job) => {
 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
 	})
+})
+
+onMounted(async () => {
+	await campaignStore.fetchCampaigns(teamId.value)
+	if (campaignId.value) {
+		await campaignStore.switchCampaign(teamId.value, campaignId.value)
+	}
+	await promptStore.fetchPrompts(teamId.value, campaignId.value)
+	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 })
 
 watch(
@@ -39,25 +65,47 @@ watch(
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-			promptStore.fetchPrompts()
+            console.log('Jobs completed, refreshing prompts and visibility metrics')
+			promptStore.fetchPrompts(teamId.value, campaignId.value)
+            organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }
 )
 
+// Watch for job completions and refresh data
+// watch(
+// 	// () => jobStatusStore.completedJobs.length,
+// 	() => processingJobsByClass.length,
+// 	(newCount, oldCount) => {
+// 		if (newCount > oldCount) {
+// 			promptStore.fetchPrompts(teamId.value, campaignId.value)
+// 		}
+// 	}
+// )
+
+watch(campaignId, async (newId) => {
+	if (newId) {
+		await campaignStore.switchCampaign(teamId.value, newId)
+		await promptStore.fetchPrompts(teamId.value, newId)
+		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+	}
+})
+
 // Track prompt deletion
+// TODO: Move prompt deletion logic to the prompt list item component
 const promptToDelete = ref(null)
 const showDeleteConfirmation = ref(false)
 
 const runPrompt = async (id, count = 1) => {
 	await promptStore.runPrompt(id, count)
-	await jobStatusStore.pollTeamJobs()
+	await jobStatusStore.pollTeamJobs(teamId.value)
 }
 
 const runAllPrompts = async (count = 1) => {
 	try {
-		await promptStore.runAllPrompts(count)
-		await jobStatusStore.pollTeamJobs()
+		await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
+		await jobStatusStore.pollTeamJobs(teamId.value)
 	} catch (error) {
 		console.error('Error running all prompts:', error)
 	}
@@ -116,18 +164,18 @@ const ownedOrg = computed(() => {
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-	organizationStore.setDateRange(dateRange)
+	organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
 }
-
-onMounted(async () => {
-	await promptStore.fetchPrompts()
-	await organizationStore.fetchVisibilityMetrics()
-})
 </script>
 
 <template>
 	<DefaultLayout>
-		<div class="flex flex-col space-y-6 my-6">
+		<div class="flex justify-between items-center py-6">
+			<h1 class="text-2xl font-bold">Prompts</h1>
+			<CampaignSwitcher />
+		</div>
+
+		<div class="flex flex-col space-y-6">
 			<!-- Date Filter -->
 			<!-- <DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
@@ -170,6 +218,27 @@ onMounted(async () => {
 						</span>
 					</div>
 
+					<!-- Jobs currently processing message -->
+					<!-- <div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 mb-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+						<div class="flex items-center gap-4 mb-2">
+							<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+							<span class="font-semibold">Working</span>
+						</div>
+						<div class="pl-8 space-y-1">
+							<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
+								<div class="flex items-center justify-between">
+									<span>{{ jobs[0].output }}</span>
+								</div>
+								<div v-if="jobs.length > 1" class="flex items-center justify-between">
+									<span>{{ jobs[1].output }}</span>
+								</div>
+								<div v-if="jobs.length > 2" class="flex items-center justify-between">
+									<span>{{ jobs[2].output }}</span>
+								</div>
+							</div>
+						</div>
+					</div> -->
+
 					<div v-if="sortedPrompts.length" class="space-y-4">
 						<PromptListItem
 							v-for="prompt in sortedPrompts"
@@ -182,17 +251,18 @@ onMounted(async () => {
 							@delete="confirmDeletePrompt"
 						/>
 					</div>
-					<div v-else class="text-center py-4 text-neutral-500 text-sm">No prompts data available</div>
+
+					<div v-else-if="activePromptJobs.length <= 0" class="text-center py-4 text-neutral-500 text-sm">No prompts data available</div>
 				</div>
 			</div>
 		</div>
 	</DefaultLayout>
 
 	<!-- Generate Modal -->
-	<GeneratePromptsModal :is-open="isGenerateModalOpen" @close="isGenerateModalOpen = false" />
+	<GeneratePromptsModal :is-open="isGenerateModalOpen" :team-id="teamId" :campaign-id="campaignId" @close="isGenerateModalOpen = false" />
 
 	<!-- Prompt Modal -->
-	<PromptCreateModal :is-open="isPromptCreateModalOpen" @close="isPromptCreateModalOpen = false" />
+	<PromptCreateModal :is-open="isPromptCreateModalOpen" :team-id="teamId" :campaign-id="campaignId" @close="isPromptCreateModalOpen = false" />
 
 	<!-- Prompt Detail Sheet -->
 	<PromptDetailSheet

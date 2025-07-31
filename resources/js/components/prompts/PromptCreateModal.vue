@@ -7,6 +7,14 @@ const props = defineProps({
 	isOpen: {
 		type: Boolean,
 		required: true
+	},
+	teamId: {
+		type: [String, Number],
+		required: true
+	},
+	campaignId: {
+		type: [String, Number],
+		required: true
 	}
 })
 
@@ -36,7 +44,7 @@ const closeModal = () => {
 
 const addPrompt = async () => {
 	if (newPrompt.value.content.trim()) {
-		await promptStore.createPrompt(newPrompt.value)
+		await promptStore.createPrompt(props.teamId, props.campaignId, newPrompt.value)
 		closeModal()
 	}
 }

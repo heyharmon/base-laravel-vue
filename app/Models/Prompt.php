@@ -10,19 +10,21 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
 use App\Models\Organization;
+use App\Models\Campaign;
 
 class Prompt extends Model
 {
 	use HasFactory, HasJobStatus, BelongsToTeam;
 
-	protected $fillable = [
-		'team_id',
-		'name',
-		'content',
-		'description',
-		'is_active',
-		'frequency',
-	];
+        protected $fillable = [
+                'team_id',
+                'campaign_id',
+                'name',
+                'content',
+                'description',
+                'is_active',
+                'frequency',
+        ];
 
 	protected $casts = [
 		'is_active' => 'boolean',
@@ -53,10 +55,18 @@ class Prompt extends Model
 	/**
 	 * Get the articles that are associated with this prompt.
 	 */
-	public function articles(): HasMany
-	{
-		return $this->hasMany(Article::class)->latest();
-	}
+        public function articles(): HasMany
+        {
+                return $this->hasMany(Article::class)->latest();
+        }
+
+        /**
+         * Get the campaign that owns the prompt.
+         */
+        public function campaign(): BelongsTo
+        {
+                return $this->belongsTo(Campaign::class);
+        }
 
 	/**
 	 * Get the mentions percentage for this prompt.

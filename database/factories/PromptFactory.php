@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Prompt;
 use App\Models\Team;
+use App\Models\Campaign;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -11,15 +12,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PromptFactory extends Factory
 {
-    protected $model = Prompt::class;
+	protected $model = Prompt::class;
 
-    public function definition(): array
-    {
-        return [
-            'team_id' => Team::factory(),
-            'name' => $this->faker->sentence(3),
-            'content' => $this->faker->paragraph(),
-            'description' => $this->faker->optional()->sentence(),
-        ];
-    }
+	public function definition(): array
+	{
+		$team = Team::factory();
+
+		return [
+			'team_id' => $team,
+			'campaign_id' => Campaign::factory()->for($team, 'team'),
+			'name' => $this->faker->sentence(3),
+			'content' => $this->faker->paragraph(),
+			'description' => $this->faker->optional()->sentence(),
+		];
+	}
 }

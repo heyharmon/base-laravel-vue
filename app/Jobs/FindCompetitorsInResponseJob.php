@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
-use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Organization;
 use App\Models\Term;
@@ -31,30 +30,21 @@ class FindCompetitorsInResponseJob extends TrackableJob
 	public $tries = 1;
 
 	/**
-	 * The model to use for job tracking.
+	 * The prompt instance.
 	 *
-	 * @var \Illuminate\Database\Eloquent\Model
+	 * @var \App\Models\Prompt
 	 */
-	public $model;
-
-	/**
-	 * The team ID.
-	 *
-	 * @var int
-	 */
-	protected $teamId;
+	protected $prompt;
 
 	/**
 	 * Create a new job instance.
 	 *
 	 * @param  \App\Models\Prompt  $prompt
-	 * @param  int|null  $teamId
 	 * @return void
 	 */
-	public function __construct(Prompt $prompt, int $teamId)
+	public function __construct(Prompt $prompt)
 	{
-		$this->model = $prompt;
-		$this->teamId = $teamId;
+		$this->prompt = $prompt;
 	}
 
 	/**
@@ -75,8 +65,10 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			// Update progress
 			$this->updateJobProgress(10, 'Finding competitors in response');
 
-			// Skip if team already has 100 competitors
-			$competitorCount = Organization::where('team_id', $this->teamId)->where('is_competitor', true)->count();
+			// Skip if campaign already has 100 competitors
+			$competitorCount = Organization::where('campaign_id', $this->prompt->campaign_id)
+				->where('is_competitor', true)
+				->count();
 
 			if ($competitorCount >= 100) {
 				$this->markJobAsCompleted('Skipping prompt, max 50 competitors reached');
@@ -84,7 +76,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			}
 
 			// Get the owned organization for this team
-			$ownedOrganization = Organization::where('team_id', $this->teamId)
+			$ownedOrganization = Organization::where('team_id', $this->prompt->team_id)
 				->where('is_competitor', false)
 				->first();
 
@@ -94,7 +86,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			}
 
 			// Get the last 5 responses for this prompt
-			$recentResponses = $this->model->responses()->latest()->take(5)->get();
+			$recentResponses = $this->prompt->responses()->latest()->take(5)->get();
 
 			// Skip prompts without responses
 			if ($recentResponses->isEmpty()) {
@@ -200,7 +192,7 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			}
 
 			// Check if this competitor already exists by website or name
-			$existingOrganization = Organization::where('team_id', $this->teamId)
+			$existingOrganization = Organization::where('campaign_id', $this->prompt->campaign_id)
 				->where(function ($query) use ($competitor) {
 					$query->where('website', $competitor['website'])
 						->orWhere('name', $competitor['name']);
@@ -210,7 +202,8 @@ class FindCompetitorsInResponseJob extends TrackableJob
 			if (!$existingOrganization) {
 				// Create new competitor organization
 				$competitorOrg = Organization::create([
-					'team_id' => $this->teamId,
+					'team_id' => $this->prompt->team_id,
+					'campaign_id' => $this->prompt->campaign_id,
 					'name' => $competitor['name'],
 					'website' => $competitor['website'] ?? null,
 					'is_competitor' => true,
@@ -218,14 +211,14 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
 				// Create a term for the competitor name
 				$nameTerm = Term::create([
-					'team_id' => $this->teamId,
+					'team_id' => $this->prompt->team_id,
 					'organization_id' => $competitorOrg->id,
 					'name' => $competitor['name'],
 				]);
 
 				// Create a term for the competitor website
 				$websiteTerm = Term::create([
-					'team_id' => $this->teamId,
+					'team_id' => $this->prompt->team_id,
 					'organization_id' => $competitorOrg->id,
 					'name' => $competitor['website'],
 				]);
@@ -233,11 +226,8 @@ class FindCompetitorsInResponseJob extends TrackableJob
 				// Dispatch a job to check past responses for this term
 				$jobDispatcher = app(JobDispatcherService::class);
 				foreach ([$nameTerm, $websiteTerm] as $term) {
-					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term, $this->teamId));
+					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
 				}
-
-				// Dispatch the GenerateOrganizationKeywords job for this organization
-				// $jobDispatcher->dispatch($competitorOrg, new GenerateOrganizationKeywords($competitorOrg, $this->teamId));
 
 				$createdCount++;
 			}
