@@ -4,10 +4,11 @@ import api from '@/services/api'
 
 export const useJobStatusStore = defineStore('jobStatus', () => {
 	// State
-	const jobs = ref([])
-	const batch = ref(null)
-	const loading = ref(false)
-	let refreshTimer = ref(null)
+       const jobs = ref([])
+       const loading = ref(false)
+       let refreshTimer = ref(null)
+       const currentTeamId = ref(null)
+       const currentCampaignId = ref(null)
 
 	// Getters
 	const activeJobs = computed(() => (jobs.value ? jobs.value.filter((job) => job.status === 'pending' || job.status === 'processing') : []))
@@ -43,61 +44,73 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	})
 
 	// Actions
-	async function pollTeamJobs(teamId) {
-		await fetchTeamJobs(teamId)
-		startAutoRefresh(teamId, 1500)
-	}
+       async function pollJobs(teamId, campaignId = null) {
+               currentTeamId.value = teamId
+               currentCampaignId.value = campaignId
+               await fetchJobs()
+               startAutoRefresh()
+       }
 
-	async function fetchTeamJobs(teamId) {
-		console.log('Fetching team jobs...')
-		loading.value = true
+       async function fetchJobs() {
+               if (!currentTeamId.value) return
 
-		try {
-			const response = await api.get(`/teams/${teamId}/jobs`)
-			// console.log('jobs response', response)
-			jobs.value = response
-			return jobs.value
-		} catch (err) {
-			console.error('Error loading team jobs:', err)
-			throw err
-		} finally {
-			loading.value = false
-		}
-	}
+               loading.value = true
 
-	async function cancelTeamJobs(teamId) {
-		try {
-			await api.post(`/teams/${teamId}/jobs/cancel`)
-			await fetchTeamJobs(teamId)
-		} catch (err) {
-			console.error('Error cancelling jobs:', err)
-			throw err
-		}
-	}
+               try {
+                       const endpoint = currentCampaignId.value
+                               ? `/teams/${currentTeamId.value}/campaigns/${currentCampaignId.value}/jobs`
+                               : `/teams/${currentTeamId.value}/jobs`
+
+                       const response = await api.get(endpoint)
+                       jobs.value = response
+                       return jobs.value
+               } catch (err) {
+                       console.error('Error loading jobs:', err)
+                       throw err
+               } finally {
+                       loading.value = false
+               }
+       }
+
+       async function cancelJobs() {
+               if (!currentTeamId.value) return
+
+               try {
+                       const endpoint = currentCampaignId.value
+                               ? `/teams/${currentTeamId.value}/campaigns/${currentCampaignId.value}/jobs/cancel`
+                               : `/teams/${currentTeamId.value}/jobs/cancel`
+
+                       await api.post(endpoint)
+                       await fetchJobs()
+               } catch (err) {
+                       console.error('Error cancelling jobs:', err)
+                       throw err
+               }
+       }
 
 	function hasActiveJobs() {
 		return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
 	}
 
-	function startAutoRefresh(teamId, interval = 2000) {
-		stopAutoRefresh()
-		let pollsAfterCompletion = 0
-		const maxPollsAfterCompletion = 3 // Poll 3 more times after completion
+       function startAutoRefresh(interval = 2000) {
+               stopAutoRefresh()
+               let pollsAfterCompletion = 0
+               const maxPollsAfterCompletion = 3 // Poll 3 more times after completion
 
-		refreshTimer.value = setInterval(() => {
-			if (hasActiveJobs()) {
-				fetchTeamJobs(teamId)
-				pollsAfterCompletion = 0 // Reset counter when active jobs exist
-			} else if (pollsAfterCompletion < maxPollsAfterCompletion) {
-				// Continue polling for a few cycles after completion to catch final updates
-				fetchTeamJobs(teamId)
-				pollsAfterCompletion++
-			} else {
-				// Stop polling after we've checked enough times post-completion
-				stopAutoRefresh()
-			}
-		}, interval)
-	}
+               refreshTimer.value = setInterval(() => {
+                       if (hasActiveJobs()) {
+                               fetchJobs()
+                               pollsAfterCompletion = 0 // Reset counter when active jobs exist
+                       } else if (pollsAfterCompletion < maxPollsAfterCompletion) {
+                               // Continue polling for a few cycles after completion to catch final updates
+                               fetchJobs()
+                               pollsAfterCompletion++
+                       } else {
+                               // Stop polling after we've checked enough times post-completion
+                               stopAutoRefresh()
+                       }
+               }, interval)
+       }
 
 	function stopAutoRefresh() {
 		if (refreshTimer.value) {
@@ -110,18 +123,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		return jobs.value.find((job) => job.job_id === jobId)
 	}
 
-	function getBatchById(batchId) {
-		if (batch.value && batch.value.id === batchId) {
-			return batch.value
-		}
-		return null
-	}
-
-	return {
-		// State
-		jobs: computed(() => jobs.value),
-		batch: computed(() => batch.value),
-		loading,
+       return {
+               // State
+               jobs: computed(() => jobs.value),
+               loading,
 
 		// Getters
 		activeJobs,
@@ -131,13 +136,16 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		completedJobsByClass,
 
 		// Actions
-		pollTeamJobs,
-		fetchTeamJobs,
-		hasActiveJobs,
-		startAutoRefresh,
-		stopAutoRefresh,
-		getJobById,
-		getBatchById,
-		cancelTeamJobs
-	}
+               pollJobs,
+               fetchJobs,
+               hasActiveJobs,
+               startAutoRefresh,
+               stopAutoRefresh,
+               getJobById,
+               cancelJobs,
+               // Backward compatibility
+               pollTeamJobs: pollJobs,
+               fetchTeamJobs: fetchJobs,
+               cancelTeamJobs: cancelJobs
+       }
 })

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\JobStatus;
 use App\Models\Prompt;
+use App\Models\Campaign;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use App\Models\Team;
@@ -16,13 +17,15 @@ class JobStatusController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getTeamJobs(Request $request, Team $team)
+    public function getTeamJobs(Request $request, Team $team, ?Campaign $campaign = null)
     {
-        $teamId = $team->id;
+        $query = JobStatus::where('team_id', $team->id);
 
-        // Get job statuses for this team
-        $jobStatuses = JobStatus::where('team_id', $teamId)
-            ->orderBy('created_at', 'desc')
+        if ($campaign) {
+            $query->where('campaign_id', $campaign->id);
+        }
+
+        $jobStatuses = $query->orderBy('created_at', 'desc')
             ->limit(150)
             ->get();
 
@@ -32,13 +35,16 @@ class JobStatusController extends Controller
     /**
      * Cancel all pending jobs for the current team.
      */
-    public function cancelTeamJobs(Request $request, Team $team)
+    public function cancelTeamJobs(Request $request, Team $team, ?Campaign $campaign = null)
     {
-        $teamId = $team->id;
+        $query = JobStatus::where('team_id', $team->id)
+            ->where('status', 'pending');
 
-        $pendingJobs = JobStatus::where('team_id', $teamId)
-            ->where('status', 'pending')
-            ->get();
+        if ($campaign) {
+            $query->where('campaign_id', $campaign->id);
+        }
+
+        $pendingJobs = $query->get();
 
         $batchIds = $pendingJobs->pluck('job_batch_id')->filter()->unique();
 
@@ -46,9 +52,16 @@ class JobStatusController extends Controller
             Bus::findBatch($batchId)?->cancel();
         }
 
-        JobStatus::where('team_id', $teamId)
-            ->where('status', 'pending')
-            ->update(['status' => 'cancelled']);
+        if ($campaign) {
+            JobStatus::where('team_id', $team->id)
+                ->where('campaign_id', $campaign->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'cancelled']);
+        } else {
+            JobStatus::where('team_id', $team->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'cancelled']);
+        }
 
         return response()->json(['message' => 'Jobs cancelled']);
     }

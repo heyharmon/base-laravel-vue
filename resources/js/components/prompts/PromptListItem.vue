@@ -29,16 +29,12 @@ const isRunMenuOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 
-const hasActiveRunPromptJob = computed(() => {
-	let jobs = (jobStatusStore.jobs || []).filter(
-		(job) =>
-			job.job_class.includes('RunPromptJob') &&
-			job.trackable_type === 'App\\Models\\Prompt' &&
-			job.trackable_id === props.prompt.id &&
-			(job.status === 'pending' || job.status === 'processing')
-	)
-
-	return jobs.length > 0
+const hasActiveJob = computed(() => {
+        return jobStatusStore.activeJobs.some(
+                (job) =>
+                        job.trackable_type === 'App\\Models\\Prompt' &&
+                        job.trackable_id === props.prompt.id
+        )
 })
 
 const formattedCreatedAt = computed(() => {
@@ -111,9 +107,9 @@ const createArticle = async () => {
 
 			<!-- Run prompt button -->
 			<div class="relative flex items-center">
-				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
-					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
-				</Button>
+                                <Button @click.stop="toggleRunMenu" :loading="hasActiveJob" :disabled="isLoading" variant="outline" size="sm">
+                                        <span>{{ hasActiveJob ? 'Running' : 'Run' }}</span>
+                                </Button>
 
 				<div
 					v-if="isRunMenuOpen"

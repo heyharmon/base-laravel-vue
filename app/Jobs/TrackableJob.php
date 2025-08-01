@@ -19,7 +19,14 @@ abstract class TrackableJob implements ShouldQueue
 	 *
 	 * @var string
 	 */
-	protected $jobStatusId;
+    protected $jobStatusId;
+
+    /**
+     * The campaign ID if applicable.
+     *
+     * @var int|null
+     */
+    protected $campaignId;
 
 	/**
 	 * Set the job status ID.
@@ -79,13 +86,14 @@ abstract class TrackableJob implements ShouldQueue
 	 *
 	 * @return void
 	 */
-	protected function markJobAsStarted($output = null)
-	{
-		$this->updateJobStatus([
-			'status' => 'processing',
-			'output' => is_string($output) ? $output : json_encode($output),
-		]);
-	}
+    protected function markJobAsStarted($output = null)
+    {
+            $this->updateJobStatus([
+                    'status' => 'processing',
+                    'output' => is_string($output) ? $output : json_encode($output),
+                    'campaign_id' => $this->campaignId ?? $this->model->campaign_id ?? null,
+            ]);
+    }
 
 	/**
 	 * Mark the job as completed.
@@ -123,7 +131,7 @@ abstract class TrackableJob implements ShouldQueue
 	 * @param string|null $message
 	 * @return void
 	 */
-	protected function updateJobProgress(int $progress, string $message = null)
+        protected function updateJobProgress(int $progress, ?string $message = null)
 	{
 		$data = ['progress' => $progress];
 

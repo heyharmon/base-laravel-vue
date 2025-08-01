@@ -2,6 +2,7 @@
 import { onMounted, computed, watch } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import ActiveJobsIndicator from '@/components/jobs/ActiveJobsIndicator.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import moment from 'moment'
@@ -17,12 +18,10 @@ const route = useRoute()
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
-// Get active jobs related to competitors
-const activeCompetitorJobs = computed(() => {
-	return jobStatusStore.jobs.filter(
-		(job) => job.job_class.includes('FindCompetitorsInResponseJob') && (job.status === 'pending' || job.status === 'processing')
-	)
-})
+const activeCompetitorJobs = computed(() =>
+        jobStatusStore.activeJobs.filter((job) => job.job_class.includes('FindCompetitorsInResponseJob'))
+)
+
 
 // Watch for competitor job completions
 watch(
@@ -51,19 +50,20 @@ const isNewOrganization = (createdAt) => {
 }
 
 onMounted(async () => {
-	await campaignStore.fetchCampaigns(teamId.value)
-	if (campaignId.value) {
-		await campaignStore.switchCampaign(teamId.value, campaignId.value)
-	}
-	await organizationStore.fetchOrganizations(teamId.value, campaignId.value)
-	await jobStatusStore.pollTeamJobs(teamId.value)
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+                await campaignStore.switchCampaign(teamId.value, campaignId.value)
+        }
+        await organizationStore.fetchOrganizations(teamId.value, campaignId.value)
+        await jobStatusStore.pollJobs(teamId.value, campaignId.value)
 })
 
 watch(campaignId, async (newId) => {
-	if (newId) {
-		await campaignStore.switchCampaign(teamId.value, newId)
-		await organizationStore.fetchOrganizations(teamId.value, newId)
-	}
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                await organizationStore.fetchOrganizations(teamId.value, newId)
+                await jobStatusStore.pollJobs(teamId.value, newId)
+        }
 })
 </script>
 
@@ -77,13 +77,7 @@ watch(campaignId, async (newId) => {
 			<CampaignSwitcher />
 		</div>
 
-		<!-- Active jobs message -->
-		<div v-if="activeCompetitorJobs.length > 0" class="p-4 mt-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
-			<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-			<span>
-				Looking for new competitors in {{ activeCompetitorJobs.length }} prompt {{ activeCompetitorJobs.length === 1 ? 'response' : 'responses' }}.
-			</span>
-		</div>
+                <ActiveJobsIndicator filter-class="FindCompetitorsInResponseJob" :show-details="true" class="mt-4" />
 
 		<!-- Loading state -->
 		<div v-if="organizationStore.isLoading" class="flex justify-center py-8">

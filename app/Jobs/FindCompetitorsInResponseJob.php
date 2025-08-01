@@ -42,10 +42,11 @@ class FindCompetitorsInResponseJob extends TrackableJob
 	 * @param  \App\Models\Prompt  $prompt
 	 * @return void
 	 */
-	public function __construct(Prompt $prompt)
-	{
-		$this->prompt = $prompt;
-	}
+       public function __construct(Prompt $prompt)
+       {
+                $this->prompt = $prompt;
+                $this->campaignId = $prompt->campaign_id;
+       }
 
 	/**
 	 * Execute the job.

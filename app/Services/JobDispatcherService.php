@@ -17,10 +17,14 @@ class JobDispatcherService
 	 * @param mixed $job
 	 * @return void
 	 */
-	public function dispatch(Model $model, $job)
-	{
-		// Create a job status record and get the ID
-		$jobStatus = $model->trackJob($job);
+        public function dispatch(Model $model, $job, $campaignId = null)
+        {
+                if (!$campaignId && method_exists($model, 'campaign')) {
+                        $campaignId = $model->campaign_id;
+                }
+
+                // Create a job status record and get the ID
+                $jobStatus = $model->trackJob($job, null, $campaignId);
 
 		// Attach the job status ID to the job
 		$job->withJobStatus($jobStatus->job_id);

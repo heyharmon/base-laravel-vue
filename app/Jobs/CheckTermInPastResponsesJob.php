@@ -33,10 +33,11 @@ class CheckTermInPastResponsesJob extends TrackableJob
 	 * @param  \App\Models\Term  $term
 	 * @return void
 	 */
-	public function __construct(Term $term)
-	{
-		$this->term = $term;
-	}
+       public function __construct(Term $term)
+       {
+                $this->term = $term;
+                $this->campaignId = $term->organization->campaign_id ?? null;
+       }
 
 	/**
 	 * Execute the job.
