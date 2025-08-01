@@ -103,8 +103,10 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
 	// Job status routes
-	Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
-	Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+        Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
+        Route::get('teams/{team}/campaigns/{campaign}/jobs', [JobStatusController::class, 'getTeamJobs']);
+        Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+        Route::post('teams/{team}/campaigns/{campaign}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 
 	// Articles
 	Route::get('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'index']);

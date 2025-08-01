@@ -6,21 +6,23 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\BelongsToTeam;
+use App\Models\Campaign;
 
 class JobStatus extends Model
 {
 	use Prunable, HasFactory, BelongsToTeam;
 
-	protected $fillable = [
-		'job_id',
-		'job_class',
-		'job_batch_id',
-		'status',
-		'output',
-		'error',
-		'progress',
-		'team_id',
-	];
+        protected $fillable = [
+                'job_id',
+                'job_class',
+                'job_batch_id',
+                'status',
+                'output',
+                'error',
+                'progress',
+                'team_id',
+                'campaign_id',
+        ];
 
 	/**
 	 * Get the prunable model query.
@@ -36,10 +38,18 @@ class JobStatus extends Model
 	/**
 	 * Get the owning trackable model.
 	 */
-	public function trackable()
-	{
-		return $this->morphTo();
-	}
+        public function trackable()
+        {
+                return $this->morphTo();
+        }
+
+        /**
+         * Get the campaign associated with the job.
+         */
+        public function campaign()
+        {
+                return $this->belongsTo(Campaign::class);
+        }
 
 	/**
 	 * Scope a query to only include pending jobs.

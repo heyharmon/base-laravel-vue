@@ -36,19 +36,24 @@ trait HasJobStatus
 	/**
 	 * Create a job status for a new job.
 	 */
-	public function trackJob($job, $batchId = null)
-	{
-		// Generate a UUID for this job
-		$jobId = (string) Str::uuid();
+        public function trackJob($job, $batchId = null, $campaignId = null)
+        {
+                // Generate a UUID for this job
+                $jobId = (string) Str::uuid();
 
-		// Create a job status record
-		$status = $this->jobStatuses()->create([
-			'job_id' => $jobId,
-			'job_class' => get_class($job),
-			'job_batch_id' => $batchId,
-			'status' => 'pending',
-			'team_id' => $this->team_id,
-		]);
+                if (!$campaignId && method_exists($this, 'campaign')) {
+                        $campaignId = $this->campaign_id;
+                }
+
+                // Create a job status record
+                $status = $this->jobStatuses()->create([
+                        'job_id' => $jobId,
+                        'job_class' => get_class($job),
+                        'job_batch_id' => $batchId,
+                        'status' => 'pending',
+                        'team_id' => $this->team_id,
+                        'campaign_id' => $campaignId,
+                ]);
 
 		return $status;
 	}

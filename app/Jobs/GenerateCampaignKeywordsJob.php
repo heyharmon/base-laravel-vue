@@ -41,10 +41,11 @@ class GenerateCampaignKeywordsJob extends TrackableJob
 	 * @param \App\Models\Campaign $campaign
 	 * @return void
 	 */
-	public function __construct(Campaign $campaign)
-	{
-		$this->campaign = $campaign;
-	}
+        public function __construct(Campaign $campaign)
+        {
+                $this->campaign = $campaign;
+                $this->campaignId = $campaign->id;
+        }
 
 	/**
 	 * Execute the job.

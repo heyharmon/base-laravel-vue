@@ -4,6 +4,7 @@ import { onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import ActiveJobsIndicator from '@/components/jobs/ActiveJobsIndicator.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import VisibilityChart from '@/components/VisibilityChart.vue'
@@ -31,13 +32,14 @@ const ownedOrg = computed(() => {
 })
 
 onMounted(async () => {
-	if (teamId.value) {
-		await campaignStore.fetchCampaigns(teamId.value)
-		if (campaignId.value) {
-			await campaignStore.switchCampaign(teamId.value, campaignId.value)
-			fetchVisibilityData()
-		}
-	}
+        if (teamId.value) {
+                await campaignStore.fetchCampaigns(teamId.value)
+                if (campaignId.value) {
+                        await campaignStore.switchCampaign(teamId.value, campaignId.value)
+                        fetchVisibilityData()
+                        await jobStatusStore.pollJobs(teamId.value, campaignId.value)
+                }
+        }
 })
 
 // Watch for job completions and refresh data
@@ -53,10 +55,11 @@ watch(
 )
 
 watch(campaignId, async (newId) => {
-	if (newId) {
-		await campaignStore.switchCampaign(teamId.value, newId)
-		fetchVisibilityData()
-	}
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                fetchVisibilityData()
+                await jobStatusStore.pollJobs(teamId.value, newId)
+        }
 })
 
 const fetchVisibilityData = () => {
@@ -89,26 +92,7 @@ const deleteOrganization = async (organizationId) => {
 			<h1 class="text-2xl font-bold">Rankings</h1>
 			<CampaignSwitcher />
 		</div>
-		<!-- Jobs currently processing message -->
-		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-			<div class="flex items-center gap-4 mb-2">
-				<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-				<span class="font-semibold">Working</span>
-			</div>
-			<div class="pl-8 space-y-1">
-				<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
-					<div class="flex items-center justify-between">
-						<span>{{ jobs[0].output }}</span>
-					</div>
-					<div v-if="jobs.length > 1" class="flex items-center justify-between">
-						<span>{{ jobs[1].output }}</span>
-					</div>
-					<div v-if="jobs.length > 2" class="flex items-center justify-between">
-						<span>{{ jobs[2].output }}</span>
-					</div>
-				</div>
-			</div>
-		</div>
+               <ActiveJobsIndicator :show-details="true" :max-items="3" class="mt-6" />
 
 		<!-- Simplified Date Filter -->
 		<!-- <div class="mt-6">
