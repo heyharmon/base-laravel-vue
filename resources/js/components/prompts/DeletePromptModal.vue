@@ -14,13 +14,13 @@ const emit = defineEmits(['confirm', 'cancel'])
 			<div class="flex justify-end space-x-3">
 				<button
 					@click="$emit('cancel')"
-					class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
+					class="inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
 				>
 					Cancel
 				</button>
 				<button
 					@click="$emit('confirm')"
-					class="ml-3 inline-flex justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md cursor-pointer"
+					class="inline-flex justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md cursor-pointer"
 				>
 					Delete
 				</button>

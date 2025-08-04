@@ -81,12 +81,12 @@ const generatePrompts = async () => {
   generatedPrompts.value = [];
 
   try {
-    const response = await api.post(`/organizations/${selectedOrganizationId.value}/generate-prompts`);
+    const response = await api.post(`/teams/${props.teamId}/campaigns/${props.campaignId}/generate-prompts`);
     generatedPrompts.value = response || [];
   } catch (err) {
     console.error('Error generating prompts:', err);
     if (err.response?.status === 422) {
-      error.value = 'The selected organization must have a website domain.';
+      error.value = 'Campaign does not have any keywords.';
     } else {
       error.value = 'Failed to generate prompts. Please try again.';
     }
@@ -182,7 +182,7 @@ const createPrompts = async () => {
 		<button
         v-if="generatedPrompts.length > 0"
         @click="createPrompts"
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
+        class="inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
         :disabled="isLoadingPrompts || !selectedOrganizationId"
       >
         Create Prompts
@@ -191,7 +191,7 @@ const createPrompts = async () => {
 	  <button
         v-if="!isLoadingPrompts && generatedPrompts.length === 0"
         @click="generatePrompts"
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
+        class="inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
         :disabled="isLoadingPrompts || !selectedOrganizationId"
       >
         Generate
@@ -200,7 +200,7 @@ const createPrompts = async () => {
       <button
         v-if="!isLoadingPrompts && generatedPrompts.length > 0"
         @click="generatePrompts"
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
+        class="inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
         :disabled="isLoadingPrompts || !selectedOrganizationId"
       >
         Regenerate
@@ -208,7 +208,7 @@ const createPrompts = async () => {
 
       <button
         @click="closeModal"
-        class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
+        class="inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
       >
 	  Cancel
       </button>

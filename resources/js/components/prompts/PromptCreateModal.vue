@@ -63,14 +63,14 @@ const addPrompt = async () => {
 		<template #footer>
 			<button
 				@click="addPrompt"
-				class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
+				class="inline-flex justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md cursor-pointer"
 				:disabled="promptStore.isLoading"
 			>
 				Add
 			</button>
 			<button
 				@click="closeModal"
-				class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
+				class="inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
 			>
 				Cancel
 			</button>

@@ -36,100 +36,106 @@ Route::post('/reset-password', [AuthPasswordController::class, 'resetPassword'])
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
-	// Team password reset
-	Route::post('/teams/{team}/members/{user}/password-reset', [App\Http\Controllers\TeamPasswordResetController::class, 'generateResetUrl']);
+    // Team password reset
+    Route::post('/teams/{team}/members/{user}/password-reset', [App\Http\Controllers\TeamPasswordResetController::class, 'generateResetUrl']);
 
-	// Auth
-	Route::get('/user', function (Request $request) {
-		return $request->user();
-	});
+    // Auth
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 
-	Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-	// Organizations
-	Route::get('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'index']);
-	Route::post('teams/{team}/organizations', [OrganizationController::class, 'store']);
-	Route::post('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'store']);
-	Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);
+    // Organizations
+    Route::get('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'index']);
+    Route::post('teams/{team}/organizations', [OrganizationController::class, 'store']);
+    Route::post('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'store']);
+    Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);
 
-	// Organization Competitors
-	Route::post('teams/{team}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
+    // Organization Competitors
+    Route::post('teams/{team}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
 
-	// Organization Visibility
-	Route::get('teams/{team}/campaigns/{campaign}/organization-visibility', [OrganizationVisibilityController::class, 'index']);
-	Route::get('teams/{team}/campaigns/{campaign}/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
+    // Organization Visibility
+    Route::get('teams/{team}/campaigns/{campaign}/organization-visibility', [OrganizationVisibilityController::class, 'index']);
+    Route::get('teams/{team}/campaigns/{campaign}/organization-visibility/chart', [OrganizationVisibilityChartController::class, 'chartData']);
 
-	// Organization Search
-	Route::get('organization-search', [OrganizationSearchController::class, 'search']);
-	Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
+    // Organization Search
+    Route::get('organization-search', [OrganizationSearchController::class, 'search']);
+    Route::get('brand-details', [OrganizationSearchController::class, 'brandDetails']); // TODO: Maybe remove
 
-	// Terms
-	Route::get('teams/{team}/organizations/{organization}/terms', [TermController::class, 'index']);
-	Route::post('teams/{team}/organizations/{organization}/terms', [TermController::class, 'store']);
-	Route::get('teams/{team}/organizations/{organization}/terms/{term}', [TermController::class, 'show']);
-	Route::delete('teams/{team}/organizations/{organization}/terms/{term}', [TermController::class, 'destroy']);
-	Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
-	Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
+    // Terms
+    Route::get('teams/{team}/organizations/{organization}/terms', [TermController::class, 'index']);
+    Route::post('teams/{team}/organizations/{organization}/terms', [TermController::class, 'store']);
+    Route::get('teams/{team}/organizations/{organization}/terms/{term}', [TermController::class, 'show']);
+    Route::delete('teams/{team}/organizations/{organization}/terms/{term}', [TermController::class, 'destroy']);
+    Route::post('generate-terms', [TermGeneratorController::class, 'generate']);
+    Route::get('terms/{term}/prompts/{prompt}/responses', [TermResponsesController::class, 'index']);
 
-	// Campaigns
-	Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
-	Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
-	Route::get('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'show']);
-	Route::put('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'update']);
-	Route::delete('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'destroy']);
-	Route::post('teams/{team}/campaigns/{campaign}/switch', [CampaignController::class, 'switch']);
+    // Campaigns
+    Route::get('teams/{team}/campaigns', [CampaignController::class, 'index']);
+    Route::post('teams/{team}/campaigns', [CampaignController::class, 'store']);
+    Route::get('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'show']);
+    Route::put('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'update']);
+    Route::delete('teams/{team}/campaigns/{campaign}', [CampaignController::class, 'destroy']);
+    Route::post('teams/{team}/campaigns/{campaign}/switch', [CampaignController::class, 'switch']);
 
-	// Prompts
-	Route::get('teams/{team}/campaigns/{campaign}/prompts', [PromptController::class, 'index']);
-	Route::post('teams/{team}/campaigns/{campaign}/prompts', [PromptController::class, 'store']);
-	Route::get('prompts/{prompt}', [PromptController::class, 'show']);
-	Route::put('prompts/{prompt}', [PromptController::class, 'update']);
-	Route::delete('prompts/{prompt}', [PromptController::class, 'destroy']);
-	Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
-	Route::post('organizations/{organization}/generate-prompts', [PromptGeneratorController::class, 'generate']);
-	Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
+    // Prompts
+    Route::get('teams/{team}/campaigns/{campaign}/prompts', [PromptController::class, 'index']);
+    Route::post('teams/{team}/campaigns/{campaign}/prompts', [PromptController::class, 'store']);
+    Route::get('prompts/{prompt}', [PromptController::class, 'show']);
+    Route::put('prompts/{prompt}', [PromptController::class, 'update']);
+    Route::delete('prompts/{prompt}', [PromptController::class, 'destroy']);
 
-	// Running prompts
-	Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
-	Route::post('teams/{team}/campaigns/{campaign}/prompt-run-batch', [PromptRunBatchController::class, 'store']);
+    // Prompt generation
+    Route::post('teams/{team}/campaigns/{campaign}/generate-prompts', [PromptGeneratorController::class, 'generate']);
 
-	// Team routes
-	Route::resource('teams', TeamController::class);
-	Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
-	Route::post('teams/{team}/switch', [TeamController::class, 'switchTeam']);
-	Route::post('teams/{team}/accept-invitation', [TeamController::class, 'acceptInvitation']);
-	Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
-	Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
-	Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+    // Prompt responses
+    Route::get('prompts/{prompt}/responses', [PromptResponsesController::class, 'index']);
 
-	// Job status routes
-	Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
-	Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
+    // Prompt export
+    Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
 
-	// Articles
-	Route::get('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'index']);
-	Route::post('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'store']);
-	Route::resource('articles', ArticleController::class)->except(['index', 'store']);
-	Route::get('articles/{article}/perplexity-response', [ArticleController::class, 'getPerplexityResponse']);
+    // Running prompts
+    Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);
+    Route::post('teams/{team}/campaigns/{campaign}/prompt-run-batch', [PromptRunBatchController::class, 'store']);
 
-	// Article Versions
-	Route::post('articles/{article}/versions/{version}/revert', [ArticleVersionController::class, 'revert']);
+    // Team routes
+    Route::resource('teams', TeamController::class);
+    Route::post('teams/{team}/invite', [TeamController::class, 'invite']);
+    Route::post('teams/{team}/switch', [TeamController::class, 'switchTeam']);
+    Route::post('teams/{team}/accept-invitation', [TeamController::class, 'acceptInvitation']);
+    Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
+    Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
+    Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
 
-	// Article Chat
-	Route::get('articles/{article}/chats', [ArticleChatController::class, 'index']);
-	Route::post('articles/{article}/chats', [ArticleChatController::class, 'store']);
+    // Job status routes
+    Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
+    Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 
-	// Article Conversations
-	Route::get('articles/{article}/conversations', [ArticleConversationController::class, 'index']);
-	Route::post('articles/{article}/conversations', [ArticleConversationController::class, 'store']);
+    // Articles
+    Route::get('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'index']);
+    Route::post('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'store']);
+    Route::resource('articles', ArticleController::class)->except(['index', 'store']);
+    Route::get('articles/{article}/perplexity-response', [ArticleController::class, 'getPerplexityResponse']);
 
-	// Super Admin routes
-	Route::prefix('super-admin')->middleware('super_admin')->group(function () {
-		Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
-		Route::get('/organizations/stats', [SuperAdminOrganizationController::class, 'stats']);
-		Route::get('/organizations/teams', [SuperAdminOrganizationController::class, 'teams']);
+    // Article Versions
+    Route::post('articles/{article}/versions/{version}/revert', [ArticleVersionController::class, 'revert']);
 
-		// Export organizations data
-		Route::post('/organizations/export', [SuperAdminOrganizationExportController::class, 'export']);
-	});
+    // Article Chat
+    Route::get('articles/{article}/chats', [ArticleChatController::class, 'index']);
+    Route::post('articles/{article}/chats', [ArticleChatController::class, 'store']);
+
+    // Article Conversations
+    Route::get('articles/{article}/conversations', [ArticleConversationController::class, 'index']);
+    Route::post('articles/{article}/conversations', [ArticleConversationController::class, 'store']);
+
+    // Super Admin routes
+    Route::prefix('super-admin')->middleware('super_admin')->group(function () {
+        Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
+        Route::get('/organizations/stats', [SuperAdminOrganizationController::class, 'stats']);
+        Route::get('/organizations/teams', [SuperAdminOrganizationController::class, 'teams']);
+
+        // Export organizations data
+        Route::post('/organizations/export', [SuperAdminOrganizationExportController::class, 'export']);
+    });
 });

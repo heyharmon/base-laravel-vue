@@ -82,13 +82,13 @@ const handleCreateTerms = () => {
 			/>
 		</div>
 
-		<!-- <template #footer>
+		<template #footer>
 			<button
 				@click="closeModal"
-				class="ml-3 inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
+				class="inline-flex justify-center px-4 py-2 bg-neutral-200 hover:bg-neutral-100 text-neutral-800 rounded-md cursor-pointer"
 			>
 				Cancel
 			</button>
-		</template> -->
+		</template>
 	</Modal>
 </template>
