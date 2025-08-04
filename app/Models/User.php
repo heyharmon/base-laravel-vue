@@ -6,6 +6,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Account;
+use App\Models\Category;
+use App\Models\Transaction;
+use App\Models\CategorizationJob;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -81,5 +85,25 @@ class User extends Authenticatable
     public function pendingTeamInvitations(): BelongsToMany
     {
         return $this->teams()->wherePivot('invitation_accepted', false);
+    }
+
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class);
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function categorizationJobs(): HasMany
+    {
+        return $this->hasMany(CategorizationJob::class);
     }
 }
