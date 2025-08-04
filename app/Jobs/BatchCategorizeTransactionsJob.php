@@ -38,8 +38,7 @@ class BatchCategorizeTransactionsJob implements ShouldQueue
             $transaction = \App\Models\Transaction::find($transactionId);
 
             if ($transaction && $transaction->user_id === $this->userId) {
-                CategorizeTransactionJob::dispatch($transaction, $categorizationJob)
-                    ->onQueue('categorization');
+                CategorizeTransactionJob::dispatch($transaction, $categorizationJob);
             }
         }
     }

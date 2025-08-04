@@ -13,16 +13,13 @@ class CategorizationController extends Controller
 {
     public function categorizeTransaction(Transaction $transaction)
     {
-        $this->authorize('update', $transaction);
-
         if ($transaction->category_id) {
             return response()->json([
                 'message' => 'Transaction is already categorized',
             ], 422);
         }
 
-        CategorizeTransactionJob::dispatch($transaction)
-            ->onQueue('categorization');
+        CategorizeTransactionJob::dispatch($transaction);
 
         return response()->json([
             'message' => 'Transaction categorization started',
@@ -51,7 +48,7 @@ class CategorizationController extends Controller
             $transactions,
             Auth::id(),
             'batch'
-        )->onQueue('categorization');
+        );
 
         return response()->json([
             'message' => 'Batch categorization started',
@@ -76,7 +73,7 @@ class CategorizationController extends Controller
             $uncategorizedTransactions,
             Auth::id(),
             'all'
-        )->onQueue('categorization');
+        );
 
         return response()->json([
             'message' => 'Categorization of all uncategorized transactions started',

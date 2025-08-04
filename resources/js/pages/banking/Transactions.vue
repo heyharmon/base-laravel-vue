@@ -52,8 +52,8 @@ watch(() => transactionStore.filters, async () => {
 }, { deep: true });
 
 const loadMore = async () => {
-  const nextPage = transactionStore.transactions.meta.current_page + 1;
-  if (nextPage <= transactionStore.transactions.meta.last_page) {
+  const nextPage = (transactionStore.transactions.meta?.current_page || 1) + 1;
+  if (nextPage <= (transactionStore.transactions.meta?.last_page || 1)) {
     await transactionStore.fetchTransactions(nextPage);
   }
 };
@@ -95,7 +95,7 @@ const bulkUpdateCategory = async () => {
 };
 
 const canLoadMore = computed(() => {
-  return transactionStore.transactions.meta.current_page < transactionStore.transactions.meta.last_page;
+  return (transactionStore.transactions.meta?.current_page || 1) < (transactionStore.transactions.meta?.last_page || 1);
 });
 
 const allSelected = computed(() => {
@@ -319,7 +319,7 @@ const categorizeTransaction = async (transactionId) => {
           </div>
 
           <div class="px-4 py-3 border-t border-neutral-200 bg-neutral-50 text-sm text-neutral-600">
-            Showing {{ transactionStore.transactions.data.length }} of {{ transactionStore.transactions.meta.total }} transactions
+            Showing {{ transactionStore.transactions.data.length }} of {{ transactionStore.transactions.meta?.total || 0 }} transactions
           </div>
         </div>
       </div>

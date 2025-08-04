@@ -69,6 +69,12 @@ const clearSelection = () => {
   isOpen.value = false;
 };
 
+const handleBlur = () => {
+  setTimeout(() => {
+    isOpen.value = false;
+  }, 200);
+};
+
 if (selectedCategory.value) {
   searchTerm.value = selectedCategory.value.name;
 }
@@ -83,7 +89,7 @@ if (selectedCategory.value) {
         :placeholder="placeholder"
         class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         @focus="isOpen = true"
-        @blur="setTimeout(() => isOpen = false, 200)"
+        @blur="handleBlur"
       />
       <button
         v-if="selectedCategory"

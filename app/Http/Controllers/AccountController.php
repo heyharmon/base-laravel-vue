@@ -29,8 +29,6 @@ class AccountController extends Controller
 
     public function show(Account $account)
     {
-        $this->authorize('view', $account);
-
         $account->load(['transactions' => function ($query) {
             $query->latest('date')->limit(10);
         }]);
@@ -40,8 +38,6 @@ class AccountController extends Controller
 
     public function update(Request $request, Account $account)
     {
-        $this->authorize('update', $account);
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'provider' => 'required|string|max:255',
@@ -54,8 +50,6 @@ class AccountController extends Controller
 
     public function destroy(Account $account)
     {
-        $this->authorize('delete', $account);
-
         $account->delete();
 
         return response()->json(['message' => 'Account deleted successfully']);

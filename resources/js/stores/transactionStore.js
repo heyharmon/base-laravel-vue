@@ -40,7 +40,7 @@ export const useTransactionStore = defineStore('transaction', {
       try {
         const params = {
           page,
-          per_page: this.transactions.meta.per_page,
+          per_page: this.transactions.meta?.per_page || 50,
           ...this.filters
         };
 

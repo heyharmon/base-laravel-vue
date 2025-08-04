@@ -76,8 +76,6 @@ class TransactionController extends Controller
 
     public function show(Transaction $transaction)
     {
-        $this->authorize('view', $transaction);
-
         $transaction->load(['account', 'category']);
 
         return response()->json($transaction);
@@ -85,8 +83,6 @@ class TransactionController extends Controller
 
     public function update(Request $request, Transaction $transaction)
     {
-        $this->authorize('update', $transaction);
-
         $validated = $request->validate([
             'date' => 'required|date',
             'amount' => 'required|numeric',
@@ -103,8 +99,6 @@ class TransactionController extends Controller
 
     public function destroy(Transaction $transaction)
     {
-        $this->authorize('delete', $transaction);
-
         $transaction->delete();
 
         return response()->json(['message' => 'Transaction deleted successfully']);
@@ -118,7 +112,6 @@ class TransactionController extends Controller
         ]);
 
         $account = Account::findOrFail($request->account_id);
-        $this->authorize('view', $account);
 
         $file = $request->file('file');
         $csvData = array_map('str_getcsv', file($file->getPathname()));

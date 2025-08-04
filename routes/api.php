@@ -31,9 +31,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Banking routes
     Route::resource('accounts', AccountController::class);
     Route::resource('categories', CategoryController::class);
-    Route::resource('transactions', TransactionController::class);
     Route::post('transactions/upload-csv', [TransactionController::class, 'uploadCsv']);
     Route::put('transactions/bulk-update-category', [TransactionController::class, 'bulkUpdateCategory']);
+    Route::resource('transactions', TransactionController::class);
 
     // Categorization routes
     Route::post('transactions/{transaction}/categorize', [CategorizationController::class, 'categorizeTransaction']);
