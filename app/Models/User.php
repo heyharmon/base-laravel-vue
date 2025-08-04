@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Models\CategorizationJob;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -99,5 +100,10 @@ class User extends Authenticatable
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function categorizationJobs(): HasMany
+    {
+        return $this->hasMany(CategorizationJob::class);
     }
 }

@@ -8,6 +8,8 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import Button from '@/components/ui/Button.vue';
 import CategorySelector from '@/components/CategorySelector.vue';
 import CsvUpload from '@/components/CsvUpload.vue';
+import CategorizationProgress from '@/components/CategorizationProgress.vue';
+import CategorizationActions from '@/components/CategorizationActions.vue';
 
 const route = useRoute();
 const transactionStore = useTransactionStore();
@@ -17,6 +19,7 @@ const categoryStore = useCategoryStore();
 const showCsvUpload = ref(false);
 const showBulkCategory = ref(false);
 const bulkCategoryId = ref(null);
+const categorizationActions = ref(null);
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
@@ -96,9 +99,15 @@ const canLoadMore = computed(() => {
 });
 
 const allSelected = computed(() => {
-  return transactionStore.transactions.data.length > 0 &&
+  return transactionStore.transactions.data.length > 0 && 
          transactionStore.selectedTransactions.length === transactionStore.transactions.data.length;
 });
+
+const categorizeTransaction = async (transactionId) => {
+  if (categorizationActions.value) {
+    await categorizationActions.value.categorizeTransaction(transactionId);
+  }
+};
 </script>
 
 <template>
@@ -107,13 +116,15 @@ const allSelected = computed(() => {
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold">Transactions</h1>
         <div class="flex space-x-2">
-          <Button
-            v-if="transactionStore.hasSelectedTransactions"
-            @click="showBulkCategory = true"
-            variant="outline"
-          >
-            Set Category ({{ transactionStore.selectedTransactions.length }})
-          </Button>
+          <div v-if="transactionStore.hasSelectedTransactions">
+            <Button
+              @click="showBulkCategory = true"
+              variant="outline"
+            >
+              Set Category ({{ transactionStore.selectedTransactions.length }})
+            </Button>
+          </div>
+          <CategorizationActions ref="categorizationActions" />
           <Button @click="showCsvUpload = true">Upload CSV</Button>
         </div>
       </div>
@@ -233,6 +244,7 @@ const allSelected = computed(() => {
                   <th class="px-4 py-3 text-left font-medium">Description</th>
                   <th class="px-4 py-3 text-right font-medium">Amount</th>
                   <th class="px-4 py-3 text-left font-medium">Category</th>
+                  <th class="px-4 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-neutral-200">
@@ -266,10 +278,30 @@ const allSelected = computed(() => {
                     </span>
                   </td>
                   <td class="px-4 py-3 text-sm">
-                    <span v-if="transaction.category" class="bg-neutral-100 text-neutral-800 px-2 py-1 rounded text-xs">
-                      {{ transaction.category.name }}
-                    </span>
-                    <span v-else class="text-neutral-400 text-xs">Uncategorized</span>
+                    <div class="flex items-center">
+                      <span v-if="transaction.category" class="bg-neutral-100 text-neutral-800 px-2 py-1 rounded text-xs">
+                        {{ transaction.category.name }}
+                      </span>
+                      <span v-else class="text-neutral-400 text-xs">Uncategorized</span>
+
+                      <span
+                        v-if="transaction.is_ai_categorized"
+                        class="ml-1 text-xs text-purple-600"
+                        title="Categorized by AI"
+                      >
+                        🤖
+                      </span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <button
+                      v-if="!transaction.category_id"
+                      @click="categorizeTransaction(transaction.id)"
+                      class="text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-2 py-1 rounded"
+                      title="Categorize with AI"
+                    >
+                      🤖 AI
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -317,4 +349,5 @@ const allSelected = computed(() => {
       </div>
     </div>
   </DefaultLayout>
+  <CategorizationProgress />
 </template>

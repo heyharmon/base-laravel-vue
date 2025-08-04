@@ -72,6 +72,15 @@ return [
             'after_commit' => false,
         ],
 
+        'categorization' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'categorization',
+            'retry_after' => 180,
+            'after_commit' => false,
+        ],
+
     ],
 
     /*

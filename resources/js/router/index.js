@@ -8,6 +8,7 @@ import TeamsIndex from '@/pages/teams/Index.vue';
 import TeamShow from '@/pages/teams/Show.vue';
 import BankingAccounts from '@/pages/banking/Accounts.vue';
 import BankingTransactions from '@/pages/banking/Transactions.vue';
+import CategorizationHistory from '@/pages/banking/CategorizationHistory.vue';
 
 const routes = [
   {
@@ -50,6 +51,12 @@ const routes = [
     path: '/banking/transactions',
     name: 'banking.transactions',
     component: BankingTransactions,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/banking/categorization-history',
+    name: 'banking.categorization-history',
+    component: CategorizationHistory,
     meta: { requiresAuth: true }
   },
 ];
