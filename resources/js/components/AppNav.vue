@@ -21,6 +21,8 @@ const logout = async () => {
         <div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
           <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
           <router-link to="/teams" class="text-sm hover:text-neutral-300">Teams</router-link>
+          <router-link to="/banking/accounts" class="text-sm hover:text-neutral-300">Accounts</router-link>
+          <router-link to="/banking/transactions" class="text-sm hover:text-neutral-300">Transactions</router-link>
         </div>
       </div>
       

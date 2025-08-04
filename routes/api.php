@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TransactionController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -23,4 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+
+    // Banking routes
+    Route::resource('accounts', AccountController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::resource('transactions', TransactionController::class);
+    Route::post('transactions/upload-csv', [TransactionController::class, 'uploadCsv']);
+    Route::put('transactions/bulk-update-category', [TransactionController::class, 'bulkUpdateCategory']);
 });
