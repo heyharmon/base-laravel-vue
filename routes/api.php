@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('organizations', OrganizationController::class)->except(['index', 'store']);
 
     // Organization Competitors
-    Route::post('teams/{team}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
+    Route::post('teams/{team}/campaigns/{campaign}/organizations-find-competitors', [OrganizationCompetitorController::class, 'find']);
 
     // Organization Visibility
     Route::get('teams/{team}/campaigns/{campaign}/organization-visibility', [OrganizationVisibilityController::class, 'index']);

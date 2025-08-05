@@ -134,7 +134,7 @@ watch(campaignId, async (newId) => {
 					<div class="flex space-x-2">
 						<Button
 							v-if="organizationStore.ownedOrganizations.length > 0"
-							@click="organizationStore.findCompetitors(teamId)"
+							@click="organizationStore.findCompetitors(teamId, campaignId)"
 							:disabled="activeCompetitorJobs.length > 0"
 							variant="outline"
 							size="sm"

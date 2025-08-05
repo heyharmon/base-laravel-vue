@@ -154,12 +154,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function findCompetitors(teamId) {
+	async function findCompetitors(teamId, campaignId) {
 		console.log('Finding competitors from past responses...')
 		isLoading.value = true
 
 		try {
-			const response = await api.post(`/teams/${teamId}/organizations-find-competitors`)
+			const response = await api.post(`/teams/${teamId}/campaigns/${campaignId}/organizations-find-competitors`)
 
 			await jobStatusStore.pollTeamJobs(teamId)
 
