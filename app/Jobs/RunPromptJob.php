@@ -3,281 +3,285 @@
 namespace App\Jobs;
 
 use Throwable;
-use Prism\Prism\ValueObjects\Messages\UserMessage;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\ToolChoice;
-use Prism\Prism\Enums\Provider;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Batchable;
-use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
+use App\Services\OpenAIPromptService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Term;
 
 class RunPromptJob extends TrackableJob
 {
-	use Batchable;
+    use Batchable;
 
-	/**
-	 * The number of times the job may be attempted.
-	 *
-	 * @var int
-	 */
-	public $tries = 1;
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 1;
 
-	/**
-	 * The prompt instance.
-	 *
-	 * @var \App\Models\Prompt
-	 */
-	protected $prompt;
+    /**
+     * The prompt instance.
+     *
+     * @var \App\Models\Prompt
+     */
+    protected $prompt;
 
-	/**
-	 * The model to use for job tracking.
-	 *
-	 * @var \Illuminate\Database\Eloquent\Model
-	 */
-	public $model;
+    /**
+     * The model to use for job tracking.
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    public $model;
 
-	/**
-	 * The providers to use for running the prompt.
-	 *
-	 * @var array
-	 */
-	protected $providers;
+    /**
+     * The providers to use for running the prompt.
+     *
+     * @var array
+     */
+    protected $providers;
 
-	/**
-	 * The team ID.
-	 *
-	 * @var int
-	 */
-	protected $teamId;
+    /**
+     * The team ID.
+     *
+     * @var int
+     */
+    protected $teamId;
 
-	/**
-	 * The campaign ID.
-	 *
-	 * @var int
-	 */
-	protected $campaignId;
+    /**
+     * The campaign ID.
+     *
+     * @var int
+     */
+    protected $campaignId;
 
-	/**
-	 * Available LLM providers.
-	 *
-	 * @var array
-	 */
-	private array $availableProviders = [
-		'openai' => ['gpt-4o', Provider::OpenAI],
-		'anthropic' => ['claude-3-5-haiku-latest', Provider::Anthropic],
-		'gemini' => ['gemini-pro', Provider::Gemini],
-		'xai' => ['grok-1', Provider::XAI],
-		'deepseek' => ['deepseek-chat', Provider::DeepSeek],
-	];
+    /**
+     * Available LLM providers and their models.
+     *
+     * @var array
+     */
+    private array $availableProviders = [
+        'openai' => 'gpt-4o',
+    ];
 
-	/**
-	 * Create a new job instance.
-	 *
-	 * @param  \App\Models\Prompt  $prompt
-	 * @param  array  $providers
-	 * @param  int  $teamId
-	 * @return void
-	 */
-	public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId)
-	{
-		$this->model = $prompt;
-		$this->teamId = $teamId;
-		$this->campaignId = $campaignId;
-		$this->prompt = $prompt;
-		$this->providers = $providers;
-	}
+    /**
+     * Create a new job instance.
+     *
+     * @param  \App\Models\Prompt  $prompt
+     * @param  array  $providers
+     * @param  int  $teamId
+     * @param  int  $campaignId
+     * @return void
+     */
+    public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId)
+    {
+        $this->model = $prompt;
+        $this->teamId = $teamId;
+        $this->campaignId = $campaignId;
+        $this->prompt = $prompt;
+        $this->providers = $providers;
+    }
 
-	/**
-	 * Execute the job.
-	 *
-	 * @return void
-	 */
-	public function handle(JobDispatcherService $jobDispatcher)
-	{
-		try {
-			if ($this->isCancelled()) {
-				return;
-			}
-			// Mark the job as started
-			$this->markJobAsStarted('Running a prompt');
+    /**
+     * Execute the job.
+     *
+     * @return void
+     */
+    public function handle(JobDispatcherService $jobDispatcher)
+    {
+        try {
+            if ($this->isCancelled()) {
+                return;
+            }
+            // Mark the job as started
+            $this->markJobAsStarted('Running a prompt');
 
-			// If no providers specified, use all
-			if (!$this->providers) {
-				$this->providers = array_keys($this->availableProviders);
-			}
+            // If no providers specified, use OpenAI as default
+            if (!$this->providers) {
+                $this->providers = ['openai'];
+            }
 
-			$responses = [];
+            // Filter providers to only include supported ones
+            $this->providers = array_intersect($this->providers, array_keys($this->availableProviders));
 
-			$this->updateJobProgress(20, 'Preparing to send prompt to LLMs');
+            if (empty($this->providers)) {
+                throw new \Exception('No supported providers specified');
+            }
 
-			// Run the prompt with each provider
-			$totalProviders = count($this->providers);
-			$currentProvider = 0;
+            $responses = [];
 
-			foreach ($this->providers as $providerName) {
-				$currentProvider++;
-				$progress = 20 + (60 * ($currentProvider / $totalProviders));
+            $this->updateJobProgress(20, 'Preparing to send prompt to LLMs');
 
-				// Setup the LLM provider
-				if (!isset($this->availableProviders[$providerName])) {
-					continue;
-				}
+            // Run the prompt with each provider
+            $totalProviders = count($this->providers);
+            $currentProvider = 0;
 
-				[$model, $provider] = $this->availableProviders[$providerName];
+            foreach ($this->providers as $providerName) {
+                $currentProvider++;
+                $progress = 20 + (60 * ($currentProvider / $totalProviders));
 
-				$this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);
+                // Setup the LLM provider
+                if (!isset($this->availableProviders[$providerName])) {
+                    continue;
+                }
 
-				try {
-					// Get response from the LLM
-					$llm = $this->getLlmResponse($this->prompt->content, $model, $provider);
+                $model = $this->availableProviders[$providerName];
 
-					// Store the LLM's response
-					$response = $this->prompt->responses()->create([
-						'provider' => $providerName,
-						'model' => $model,
-						'content' => $llm->responseMessages->last()->content,
-						'metadata' => [
-							'usage' => $llm->usage ?? null,
-						],
-					]);
+                $this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);
 
-					$responses[] = $response;
+                try {
+                    // Get response from the LLM
+                    $llm = $this->getLlmResponse($this->prompt->content, $model, $providerName);
 
-					// Save search tool results
-					$this->saveSearchToolResults($llm->steps, $response);
+                    // Store the LLM's response
+                    $response = $this->prompt->responses()->create([
+                        'provider' => $providerName,
+                        'model' => $model,
+                        'content' => $llm->responseMessages[0]->content ?? '',
+                        'metadata' => [
+                            'usage' => $llm->usage ?? null,
+                        ],
+                    ]);
 
-					// Check for terms in the response
-					$this->checkForTerms($response, $this->prompt);
-				} catch (\Exception $e) {
-					// Log the error but continue with other providers
-					Log::error('Error running prompt: ' . $e);
-				}
-			}
+                    $responses[] = $response;
 
-			$this->updateJobProgress(90, 'Processing LLM response');
+                    // Save search tool results
+                    $this->saveSearchToolResults($llm, $response);
 
-			// Find competitors in response if this is the first response to this prompt
-			if ($this->prompt->responses()->count() == 1) {
-				$jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt, $this->prompt->team_id));
-			}
+                    // Check for terms in the response
+                    $this->checkForTerms($response, $this->prompt);
+                } catch (\Exception $e) {
+                    // Log the error but continue with other providers
+                    Log::error('Error running prompt: ' . $e->getMessage(), [
+                        'provider' => $providerName,
+                        'prompt_id' => $this->prompt->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
 
-			// Mark the job as completed
-			$this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt');
-		} catch (Throwable $exception) {
-			Log::error('Prompt run failed: ' . $exception->getMessage());
-			$this->markJobAsFailed($exception);
-			throw $exception;
-		}
-	}
+            $this->updateJobProgress(90, 'Processing LLM response');
 
-	/**
-	 * Get response from the LLM.
-	 *
-	 * @param  string  $promptContent
-	 * @param  string  $model
-	 * @param  Provider  $provider
-	 * @return mixed
-	 */
-	private function getLlmResponse(string $promptContent, string $model, Provider $provider)
-	{
-		$searchApiTool = new SearchApiTool();
+            // Find competitors in response if this is the first response to this prompt
+            if ($this->prompt->responses()->count() == 1) {
+                $jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt));
+            }
 
-		$response = Prism::text()
-			->using($provider, $model)
-			->withMaxSteps(10)
-			->withMessages([new UserMessage($promptContent)])
-			->withTools([$searchApiTool])
-			->withToolChoice(ToolChoice::Auto)
-			->asText();
+            // Mark the job as completed
+            $this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt');
+        } catch (Throwable $exception) {
+            Log::error('Prompt run failed: ' . $exception->getMessage());
+            $this->markJobAsFailed($exception);
+            throw $exception;
+        }
+    }
 
-		return $response;
-	}
+    /**
+     * Get response from the LLM using the appropriate service.
+     *
+     * @param  string  $promptContent
+     * @param  string  $model
+     * @param  string  $provider
+     * @return mixed
+     */
+    private function getLlmResponse(string $promptContent, string $model, string $provider)
+    {
+        switch ($provider) {
+            case 'openai':
+                $service = new OpenAIPromptService();
+                return $service->getResponse($promptContent, $model);
 
-	/**
-	 * Save search tool results.
-	 *
-	 * @param  iterable  $steps
-	 * @param  Response  $response
-	 * @return void
-	 */
-	private function saveSearchToolResults(iterable $steps, Response $response): void
-	{
-		$searchQueries = [];
+            default:
+                throw new \Exception("Unsupported provider: {$provider}");
+        }
+    }
 
-		foreach ($steps as $step) {
-			foreach ($step->toolResults as $tool) {
-				if ($tool->toolName == 'search_api') {
-					$searchQueries[] = $tool->args['query'];
-				}
-			}
-		}
+    /**
+     * Save search tool results.
+     *
+     * @param  object  $llmResponse
+     * @param  Response  $response
+     * @return void
+     */
+    private function saveSearchToolResults(object $llmResponse, Response $response): void
+    {
+        $searchData = [
+            'search_calls' => $llmResponse->searchData ?? [],
+            'annotations' => $llmResponse->annotations ?? [],
+        ];
 
-		$response->update(['search' => ['queries' => $searchQueries]]);
-	}
+        // For backward compatibility, also extract just the queries
+        $queries = [];
+        foreach ($llmResponse->searchData ?? [] as $searchCall) {
+            if (isset($searchCall['query'])) {
+                $queries[] = $searchCall['query'];
+            }
+        }
+        $searchData['queries'] = $queries;
 
-	/**
-	 * Check for terms in the response.
-	 *
-	 * @param  iterable  $terms
-	 * @param  Response  $response
-	 * @param  Prompt  $prompt
-	 * @return void
-	 */
-	private function checkForTerms(Response $response, Prompt $prompt): void
-	{
-		// Get terms for all organizations scoped to the team and campaign
-		$terms = Term::whereHas('organization', function ($query) {
-			$query->where('team_id', $this->teamId)
-				->where(function ($q) {
-					// Include competitor organizations for this campaign
-					$q->where('campaign_id', $this->campaignId)
-					  // OR include the owned organization (campaign_id is NULL and is_competitor is false)
-					  ->orWhere(function ($subQ) {
-						  $subQ->whereNull('campaign_id')->where('is_competitor', false);
-					  });
-				});
-		})->get();
+        $response->update(['search' => $searchData]);
+    }
 
-		$responseText = strtolower($response->content);
-		$foundTerms = [];
+    /**
+     * Check for terms in the response.
+     *
+     * @param  Response  $response
+     * @param  Prompt  $prompt
+     * @return void
+     */
+    private function checkForTerms(Response $response, Prompt $prompt): void
+    {
+        // Get terms for all organizations scoped to the team and campaign
+        $terms = Term::whereHas('organization', function ($query) {
+            $query->where('team_id', $this->teamId)
+                ->where(function ($q) {
+                    // Include competitor organizations for this campaign
+                    $q->where('campaign_id', $this->campaignId)
+                        // OR include the owned organization (campaign_id is NULL and is_competitor is false)
+                        ->orWhere(function ($subQ) {
+                            $subQ->whereNull('campaign_id')->where('is_competitor', false);
+                        });
+                });
+        })->get();
 
-		foreach ($terms as $term) {
-			$termName = strtolower($term->name);
+        $responseText = strtolower($response->content);
+        $foundTerms = [];
 
-			// Check if the term exists in the response
-			if (str_contains($responseText, $termName)) {
-				$foundTerms[] = $term->id;
+        foreach ($terms as $term) {
+            $termName = strtolower($term->name);
 
-				// Check if the relationship already exists
-				$existingRelation = $prompt->terms()->where('term_id', $term->id)->exists();
+            // Check if the term exists in the response
+            if (str_contains($responseText, $termName)) {
+                $foundTerms[] = $term->id;
 
-				if (!$existingRelation) {
-					// Create new relationship
-					$prompt->terms()->attach($term->id, [
-						'count' => 1,
-						'last_found_at' => now(),
-						'created_at' => now(),
-						'updated_at' => now(),
-					]);
-				} else {
-					// Update existing relationship
-					$prompt->terms()->updateExistingPivot($term->id, [
-						'count' => DB::raw('count + 1'),
-						'last_found_at' => now(),
-						'updated_at' => now(),
-					]);
-				}
-			}
-		}
+                // Check if the relationship already exists
+                $existingRelation = $prompt->terms()->where('term_id', $term->id)->exists();
 
-		// Attach found terms to the response and record a mention
-		if (!empty($foundTerms)) {
-			$response->terms()->syncWithoutDetaching($foundTerms);
-		}
-	}
+                if (!$existingRelation) {
+                    // Create new relationship
+                    $prompt->terms()->attach($term->id, [
+                        'count' => 1,
+                        'last_found_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    // Update existing relationship
+                    $prompt->terms()->updateExistingPivot($term->id, [
+                        'count' => DB::raw('count + 1'),
+                        'last_found_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
+
+        // Attach found terms to the response and record a mention
+        if (!empty($foundTerms)) {
+            $response->terms()->syncWithoutDetaching($foundTerms);
+        }
+    }
 }

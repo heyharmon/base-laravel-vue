@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "40b3d8b15aae6932fcff7702c09a9c7b",
+    "content-hash": "be54cce34ddfb9e9cbbbb5d90c3c35b7",
     "packages": [
         {
             "name": "brick/math",
@@ -3462,26 +3462,27 @@
         },
         {
             "name": "prism-php/prism",
-            "version": "v0.67.0",
+            "version": "v0.83.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/prism-php/prism.git",
-                "reference": "d08aa262736de355654c359f240d74421b095bfb"
+                "reference": "085c6693dc8be85baf020d2fa93b859b91c031bf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/prism-php/prism/zipball/d08aa262736de355654c359f240d74421b095bfb",
-                "reference": "d08aa262736de355654c359f240d74421b095bfb",
+                "url": "https://api.github.com/repos/prism-php/prism/zipball/085c6693dc8be85baf020d2fa93b859b91c031bf",
+                "reference": "085c6693dc8be85baf020d2fa93b859b91c031bf",
                 "shasum": ""
             },
             "require": {
+                "ext-fileinfo": "*",
                 "laravel/framework": "^11.0|^12.0",
                 "php": "^8.2"
             },
             "require-dev": {
                 "laravel/pint": "^1.14",
                 "mockery/mockery": "^1.6",
-                "orchestra/testbench": "^9.4",
+                "orchestra/testbench": "^10",
                 "pestphp/pest": "^3.0",
                 "pestphp/pest-plugin-arch": "^3.0",
                 "pestphp/pest-plugin-laravel": "^3.0",
@@ -3526,7 +3527,7 @@
             "description": "A powerful Laravel package for integrating Large Language Models (LLMs) into your applications.",
             "support": {
                 "issues": "https://github.com/prism-php/prism/issues",
-                "source": "https://github.com/prism-php/prism/tree/v0.67.0"
+                "source": "https://github.com/prism-php/prism/tree/v0.83.1"
             },
             "funding": [
                 {
@@ -3534,7 +3535,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-05-12T15:31:56+00:00"
+            "time": "2025-08-03T13:07:03+00:00"
         },
         {
             "name": "psr/clock",
