@@ -20,6 +20,7 @@ const logout = async () => {
         <router-link to="/" class="text-xl font-bold">Paraloom</router-link>
         <div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
           <router-link to="/" class="text-sm hover:text-neutral-300">Dashboard</router-link>
+          <router-link to="/organizations" class="text-sm hover:text-neutral-300">Organizations</router-link>
           <router-link to="/teams" class="text-sm hover:text-neutral-300">Teams</router-link>
         </div>
       </div>
