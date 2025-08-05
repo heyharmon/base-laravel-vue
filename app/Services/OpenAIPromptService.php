@@ -19,7 +19,7 @@ class OpenAIPromptService
      *
      * @param string $promptContent The prompt content to send
      * @param string $model The OpenAI model to use (default: gpt-4o)
-     * @return object Response object with content, usage, and search data
+     * @return object Response object with content and search data
      * @throws \Exception
      */
     public function getResponse(string $promptContent, string $model = 'gpt-4o'): object
@@ -48,12 +48,11 @@ class OpenAIPromptService
      * Process the OpenAI response and extract relevant data.
      *
      * @param mixed $response The raw OpenAI response
-     * @return object Processed response with content, usage, and search data
+     * @return object Processed response with content and search data
      */
     protected function processResponse($response): object
     {
         $content = '';
-        $usage = null;
         $searchData = [];
         $annotations = [];
 
@@ -78,21 +77,11 @@ class OpenAIPromptService
             }
         }
 
-        // Extract usage information if available
-        if (isset($response->usage)) {
-            $usage = [
-                'input_tokens' => $response->usage->input_tokens ?? 0,
-                'output_tokens' => $response->usage->output_tokens ?? 0,
-                'total_tokens' => $response->usage->total_tokens ?? 0,
-            ];
-        }
-
         // Create a response object that matches what RunPromptJob expects
         return (object) [
             'responseMessages' => [
                 (object) ['content' => $content]
             ],
-            'usage' => $usage,
             'annotations' => $annotations,
             'rawResponse' => $response, // Keep the raw response for debugging
         ];
