@@ -11,38 +11,42 @@ use Laravel\Sanctum\Sanctum;
 uses(RefreshDatabase::class);
 
 it('returns not found when there are no prompts', function () {
-	Bus::fake();
+    Bus::fake();
 
-	$user = User::factory()->create();
-	$team = Team::factory()->for($user, 'owner')->create();
-	$user->current_team_id = $team->id;
-	$user->save();
-	Sanctum::actingAs($user);
+    $user = User::factory()->create();
+    $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
+    Sanctum::actingAs($user);
 
-	$response = $this->postJson("/api/teams/{$team->id}/organizations-find-competitors");
+    $campaign = \App\Models\Campaign::factory()->for($team)->create();
 
-	$response->assertStatus(404);
+    $response = $this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/organizations-find-competitors");
+
+    $response->assertStatus(404);
 });
 
 it('dispatches competitor jobs for each prompt', function () {
-	Bus::fake();
+    Bus::fake();
 
-	$user = User::factory()->create();
-	$team = Team::factory()->for($user, 'owner')->create();
-	$user->current_team_id = $team->id;
-	$user->save();
-	Sanctum::actingAs($user);
+    $user = User::factory()->create();
+    $team = Team::factory()->for($user, 'owner')->create();
+    $user->current_team_id = $team->id;
+    $user->save();
+    Sanctum::actingAs($user);
 
-	$prompt1 = Prompt::factory()->for($team)->create();
-	$prompt2 = Prompt::factory()->for($team)->create();
+    $campaign = \App\Models\Campaign::factory()->for($team)->create();
 
-	$response = $this->postJson("/api/teams/{$team->id}/organizations-find-competitors");
+    $prompt1 = Prompt::factory()->for($team)->for($campaign)->create();
+    $prompt2 = Prompt::factory()->for($team)->for($campaign)->create();
 
-	$response->assertStatus(200)
-		->assertJson([
-			'prompts_count' => 2,
-			'total_jobs' => 2,
-		]);
+    $response = $this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/organizations-find-competitors");
 
-	expect(JobStatus::where('trackable_type', Prompt::class)->count())->toBe(2);
+    $response->assertStatus(200)
+        ->assertJson([
+            'prompts_count' => 2,
+            'total_jobs' => 2,
+        ]);
+
+    expect(JobStatus::where('trackable_type', Prompt::class)->count())->toBe(2);
 });
