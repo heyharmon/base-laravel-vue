@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\ApifyImportController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -23,4 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+
+    // Organization routes
+    Route::resource('organizations', OrganizationController::class);
+    Route::post('organizations/{id}/restore', [OrganizationController::class, 'restore']);
+
+    // Apify import routes
+    Route::prefix('apify')->group(function () {
+        Route::post('start-import', [ApifyImportController::class, 'startImport']);
+        Route::get('imports', [ApifyImportController::class, 'getImports']);
+        Route::get('imports/{apifyRun}', [ApifyImportController::class, 'getImport']);
+    });
 });
