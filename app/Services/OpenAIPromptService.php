@@ -72,27 +72,6 @@ class OpenAIPromptService
                     }
                     break;
 
-                case 'web_search_call':
-                    // Extract comprehensive search call data
-                    $searchCall = [
-                        'id' => $item->id ?? null,
-                        'status' => $item->status ?? null,
-                    ];
-
-                    // Add action-specific data if available
-                    if (isset($item->action)) {
-                        $searchCall['action'] = $item->action;
-                    }
-                    if (isset($item->query)) {
-                        $searchCall['query'] = $item->query;
-                    }
-                    if (isset($item->domains)) {
-                        $searchCall['domains'] = $item->domains;
-                    }
-
-                    $searchData[] = $searchCall;
-                    break;
-
                 case 'function_call':
                     // Handle any other function calls if needed
                     break;
@@ -114,7 +93,6 @@ class OpenAIPromptService
                 (object) ['content' => $content]
             ],
             'usage' => $usage,
-            'searchData' => $searchData,
             'annotations' => $annotations,
             'rawResponse' => $response, // Keep the raw response for debugging
         ];
