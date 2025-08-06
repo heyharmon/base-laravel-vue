@@ -89,11 +89,11 @@ const createArticle = async () => {
 					{{ prompt.responses_count }}
 					{{ prompt.responses_count === 1 ? 'response' : 'responses' }}
 				</p>
-				<p>•</p>
-				<p>
+				<!-- <p>•</p> -->
+				<!-- <p>
 					{{ prompt.terms_count }} term
 					{{ prompt.terms_count === 1 ? 'occurrence' : 'occurrences' }}
-				</p>
+				</p> -->
 			</div>
 			<div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
 

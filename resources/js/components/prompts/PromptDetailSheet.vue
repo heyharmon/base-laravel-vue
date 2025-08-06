@@ -108,7 +108,7 @@ const createArticle = async () => {
 		title: 'Untitled article',
 		prompt_id: props.promptId
 	})
-	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
+	router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
 }
 
 onMounted(fetchDetails)
@@ -142,12 +142,12 @@ watch(() => props.promptId, fetchDetails)
 						<span class="text-neutral-500">Mentioned:</span>
 						<span class="text-neutral-800 ml-2">{{ mentionsPercentage }}% of the time</span>
 					</div>
-					<div class="mb-2 text-sm">
+					<!-- <div class="mb-2 text-sm">
 						<span class="text-neutral-500">Term occurrences:</span>
 						<span class="text-neutral-800 ml-2">
 							{{ promptDetails.terms?.length || 0 }} {{ promptDetails.terms?.length === 1 ? 'term' : 'terms' }}
 						</span>
-					</div>
+					</div> -->
 				</div>
 
 				<!-- Articles section -->
@@ -167,7 +167,7 @@ watch(() => props.promptId, fetchDetails)
 						<RouterLink
 							v-for="article in promptDetails.articles"
 							:key="article.id"
-							:to="`/articles/${article.id}/edit`"
+							:to="{ name: 'articles.edit', params: { teamId, campaignId, articleId: article.id } }"
 							class="block bg-white border border-neutral-200 p-4 rounded-lg hover:bg-neutral-50 transition-colors"
 						>
 							<div class="flex justify-between items-center mb-3">

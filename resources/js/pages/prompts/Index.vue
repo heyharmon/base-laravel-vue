@@ -56,7 +56,7 @@ onMounted(async () => {
 	if (campaignId.value) {
 		await campaignStore.switchCampaign(teamId.value, campaignId.value)
 	}
-	await promptStore.fetchPrompts(teamId.value, campaignId.value)
+	await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
 	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 })
 
@@ -66,7 +66,7 @@ watch(
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
 			console.log('Jobs completed, refreshing prompts and visibility metrics')
-			promptStore.fetchPrompts(teamId.value, campaignId.value)
+			promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
 			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 		}
 	},
@@ -87,7 +87,7 @@ watch(
 watch(campaignId, async (newId) => {
 	if (newId) {
 		await campaignStore.switchCampaign(teamId.value, newId)
-		await promptStore.fetchPrompts(teamId.value, newId)
+		await promptStore.fetchPrompts(teamId.value, newId, organizationStore.currentDateRange)
 		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
 	}
 })
@@ -165,6 +165,8 @@ const ownedOrg = computed(() => {
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
 	organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
+	// Refresh prompts with new date range
+	promptStore.fetchPrompts(teamId.value, campaignId.value, dateRange)
 }
 </script>
 
