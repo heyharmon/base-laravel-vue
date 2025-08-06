@@ -26,14 +26,14 @@ class OrganizationCompetitorController extends Controller
         $teamId = $team->id;
         $campaignId = $campaign->id;
 
-        // Check if campaign already has 150 competitors
+        // Check if campaign already has 500 competitors
         $competitorCount = Organization::where('campaign_id', $campaignId)
             ->where('is_competitor', true)
             ->count();
 
-        if ($competitorCount >= 150) {
+        if ($competitorCount >= 500) {
             return response()->json([
-                'message' => 'Maximum competitor limit of 150 has been reached for this campaign'
+                'message' => 'Maximum competitor limit of 500 has been reached for this campaign'
             ], 422);
         }
 

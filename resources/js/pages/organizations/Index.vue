@@ -173,7 +173,7 @@ watch(campaignId, async (newId) => {
 						{{
 							isCompetitorLimitReached
 								? 'You have reached the maximum number of competitors. The "Find competitors" feature is disabled.'
-								: 'Automatic competitor discovery will stop when you reach 150 competitors.'
+								: 'Automatic competitor discovery will stop when you reach 500 competitors.'
 						}}
 					</p>
 				</div>

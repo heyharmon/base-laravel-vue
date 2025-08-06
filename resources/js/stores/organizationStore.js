@@ -12,7 +12,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const visibilityMetrics = ref([])
 	const isLoadingVisibility = ref(false)
 	const competitorCount = ref(0)
-	const competitorLimit = ref(150)
+	const competitorLimit = ref(500)
 
 	// Date range for visibility metrics
 	const currentDateRange = ref({
@@ -39,7 +39,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 			if (response.organizations) {
 				organizations.value = response.organizations
 				competitorCount.value = response.competitor_count || 0
-				competitorLimit.value = response.competitor_limit || 150
+				competitorLimit.value = response.competitor_limit || 500
 			} else {
 				// Fallback for old response format
 				organizations.value = response

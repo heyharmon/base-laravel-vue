@@ -36,7 +36,7 @@ class OrganizationController extends Controller
         return response()->json([
             'organizations' => $organizations,
             'competitor_count' => $competitorCount,
-            'competitor_limit' => 150
+            'competitor_limit' => 500
         ]);
     }
 
