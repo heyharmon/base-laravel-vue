@@ -130,7 +130,7 @@ watch(campaignId, async (newId) => {
 			<!-- Competitor Organizations -->
 			<div class="mb-8">
 				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-xl font-semibold">Competitors</h2>
+					<h2 class="text-xl font-semibold">Competitors ({{ organizationStore.competitorOrganizations.length }})</h2>
 					<div class="flex space-x-2">
 						<Button
 							v-if="organizationStore.ownedOrganizations.length > 0"
