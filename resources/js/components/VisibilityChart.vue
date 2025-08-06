@@ -60,7 +60,9 @@
 			<div ref="chartContainer"></div>
 		</div>
 
-		<div v-if="!isLoading && chartData.length === 0" class="text-center py-8 text-neutral-500">No data available for the selected date range</div>
+		<div v-if="!isLoading && (!chartData || chartData.length === 0)" class="text-center py-8 text-neutral-500">
+			No data available for the selected date range
+		</div>
 	</div>
 </template>
 
@@ -72,7 +74,9 @@ import api from '@/services/api'
 
 const props = defineProps({
 	startDate: String,
-	endDate: String
+	endDate: String,
+	teamId: String,
+	campaignId: String
 })
 
 const organizationStore = useOrganizationStore()
@@ -81,7 +85,7 @@ const chartContainer = ref(null)
 const chart = ref(null)
 const isLoading = ref(false)
 const chartData = ref([])
-const selectedInterval = ref('daily')
+const selectedInterval = ref('monthly')
 const selectedCompetitors = ref([])
 const showCompetitorDropdown = ref(false)
 
@@ -108,16 +112,16 @@ const vClickOutside = {
 let latestRequestId = 0
 
 const fetchChartData = async () => {
-	// Don't fetch if we're unmounting
-	if (isUnmounting.value) return
-	
+	// Don't fetch if we're unmounting or missing required props
+	if (isUnmounting.value || !props.teamId || !props.campaignId) return
+
 	isLoading.value = true
 
 	try {
 		// Prevent multiple simultaneous requests with a more robust ID system
 		const currentRequestId = Date.now()
 		latestRequestId = currentRequestId
-		
+
 		const params = new URLSearchParams({
 			start_date: props.startDate,
 			end_date: props.endDate,
@@ -137,21 +141,21 @@ const fetchChartData = async () => {
 			params.append('organization_ids[]', id)
 		})
 
-		const response = await api.get(`/organization-visibility/chart?${params}`)
-		
+		const response = await api.get(`/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart?${params}`)
+
 		// Check if a newer request has come in while we were waiting or if unmounting
 		if (currentRequestId !== latestRequestId || isUnmounting.value) {
 			return // Abandon this update as it's stale or component is unmounting
 		}
-		
-		chartData.value = response.organizations
+
+		chartData.value = response.organizations || []
 
 		// If component is unmounting, don't proceed with chart update
 		if (isUnmounting.value) return
 
 		// Ensure DOM is updated before updating chart
 		await nextTick()
-		
+
 		// Final check before updating chart
 		if (!isUnmounting.value && chartContainer.value) {
 			updateChart()
@@ -190,17 +194,20 @@ const updateChart = () => {
 		nextTick(() => {
 			// Make sure container is still available and we're not unmounting
 			if (!chartContainer.value || isUnmounting.value) return
-			
+
+			// Check if chartData is valid before proceeding
+			if (!chartData.value || !Array.isArray(chartData.value) || chartData.value.length === 0) {
+				return
+			}
+
 			// Format the data for ApexCharts
 			const series = chartData.value.map((org) => ({
 				name: org.name,
-				data: org.data.map((point) => point.visibility)
+				data: org.data?.map((point) => point.visibility) || []
 			}))
 
 			// Get categories (dates) from the first organization's data points
-			const categories = chartData.value.length > 0
-				? chartData.value[0].data.map((point) => point.date)
-				: []
+			const categories = chartData.value.length > 0 && chartData.value[0].data ? chartData.value[0].data.map((point) => point.date) : []
 
 			// Prepare colors array
 			const colors = chartData.value.map((org) => org.color)
@@ -241,7 +248,7 @@ const updateChart = () => {
 					decimals: 0,
 					labels: {
 						formatter: function (value) {
-							return value + '%';
+							return value + '%'
 						}
 					}
 				},
@@ -253,10 +260,19 @@ const updateChart = () => {
 							return value + '%'
 						}
 					},
-					custom: function({ series, seriesIndex, dataPointIndex, w }) {
-						const orgData = chartData.value[seriesIndex];
-						const point = orgData.data[dataPointIndex];
-						
+					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+						if (
+							!chartData.value ||
+							!chartData.value[seriesIndex] ||
+							!chartData.value[seriesIndex].data ||
+							!chartData.value[seriesIndex].data[dataPointIndex]
+						) {
+							return '<div class="p-2 bg-white border border-neutral-200 rounded shadow">No data available</div>'
+						}
+
+						const orgData = chartData.value[seriesIndex]
+						const point = orgData.data[dataPointIndex]
+
 						return `
 						<div class="p-2 bg-white border border-neutral-200 rounded shadow">
 							<div class="font-bold">${orgData.name}</div>
@@ -264,7 +280,7 @@ const updateChart = () => {
 							<div>Mentions: ${point.mentions}</div>
 							<div>Total Responses: ${point.responses}</div>
 						</div>
-						`;
+						`
 					}
 				},
 				legend: {
@@ -290,14 +306,14 @@ const updateChart = () => {
 						size: 6
 					}
 				}
-			};
+			}
 
 			// Create new chart with robust error handling
 			try {
 				// Final check before creating chart
 				if (!isUnmounting.value && chartContainer.value) {
-					chart.value = new ApexCharts(chartContainer.value, options);
-					chart.value.render();
+					chart.value = new ApexCharts(chartContainer.value, options)
+					chart.value.render()
 				}
 			} catch (chartError) {
 				console.error('Error creating chart:', chartError)

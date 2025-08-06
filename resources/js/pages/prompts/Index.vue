@@ -65,9 +65,9 @@ watch(
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-            console.log('Jobs completed, refreshing prompts and visibility metrics')
+			console.log('Jobs completed, refreshing prompts and visibility metrics')
 			promptStore.fetchPrompts(teamId.value, campaignId.value)
-            organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }
@@ -177,11 +177,11 @@ const handleDateRangeChange = (dateRange) => {
 
 		<div class="flex flex-col space-y-6">
 			<!-- Date Filter -->
-			<!-- <DateFilterDropdown
+			<DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				@date-range-changed="handleDateRangeChange"
-			/> -->
+			/>
 
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
