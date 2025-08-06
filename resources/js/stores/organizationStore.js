@@ -11,6 +11,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 	const isLoading = ref(false)
 	const visibilityMetrics = ref([])
 	const isLoadingVisibility = ref(false)
+	const competitorCount = ref(0)
+	const competitorLimit = ref(150)
 
 	// Date range for visibility metrics
 	const currentDateRange = ref({
@@ -32,7 +34,16 @@ export const useOrganizationStore = defineStore('organization', () => {
 			// const endpoint = campaignId ? `/teams/${teamId}/campaigns/${campaignId}/organizations` : `/teams/${teamId}/organizations`
 			// console.log('endpoint', endpoint)
 			const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organizations`)
-			organizations.value = response
+
+			// Handle new response format with competitor count and limit
+			if (response.organizations) {
+				organizations.value = response.organizations
+				competitorCount.value = response.competitor_count || 0
+				competitorLimit.value = response.competitor_limit || 150
+			} else {
+				// Fallback for old response format
+				organizations.value = response
+			}
 		} catch (err) {
 			console.error('Error fetching organizations:', err)
 		}
@@ -76,20 +87,20 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-        async function createOwnedOrganization(teamId, organizationData) {
-                console.log('Creating owned organization...')
-                isLoading.value = true
+	async function createOwnedOrganization(teamId, organizationData) {
+		console.log('Creating owned organization...')
+		isLoading.value = true
 
-                try {
-                        const response = await api.post(`/teams/${teamId}/organizations`, organizationData)
-                        return response
-                } catch (err) {
-                        console.error('Error creating organization:', err)
-                        throw err
-                } finally {
-                        isLoading.value = false
-                }
-        }
+		try {
+			const response = await api.post(`/teams/${teamId}/organizations`, organizationData)
+			return response
+		} catch (err) {
+			console.error('Error creating organization:', err)
+			throw err
+		} finally {
+			isLoading.value = false
+		}
+	}
 
 	async function updateOrganization(organizationId, organizationData) {
 		console.log('Updating organization ID:', organizationId)
@@ -187,6 +198,8 @@ export const useOrganizationStore = defineStore('organization', () => {
 		isLoadingVisibility,
 		visibilityMetrics,
 		currentDateRange,
+		competitorCount,
+		competitorLimit,
 
 		// Getters
 		ownedOrganizations,
@@ -195,9 +208,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 		// Actions
 		fetchOrganizations,
 		fetchOrganization,
-                createOrganization,
-                createOwnedOrganization,
-                updateOrganization,
+		createOrganization,
+		createOwnedOrganization,
+		updateOrganization,
 		deleteOrganization,
 		fetchVisibilityMetrics,
 		setDateRange,

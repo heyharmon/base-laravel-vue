@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Team;
 use App\Models\Campaign;
+use App\Models\Organization;
 use Illuminate\Http\JsonResponse;
 use App\Services\JobDispatcherService;
 use App\Models\Prompt;
@@ -24,6 +25,17 @@ class OrganizationCompetitorController extends Controller
     {
         $teamId = $team->id;
         $campaignId = $campaign->id;
+
+        // Check if campaign already has 150 competitors
+        $competitorCount = Organization::where('campaign_id', $campaignId)
+            ->where('is_competitor', true)
+            ->count();
+
+        if ($competitorCount >= 150) {
+            return response()->json([
+                'message' => 'Maximum competitor limit of 150 has been reached for this campaign'
+            ], 422);
+        }
 
         // Get all prompts for the current team and campaign
         $prompts = Prompt::where('team_id', $teamId)

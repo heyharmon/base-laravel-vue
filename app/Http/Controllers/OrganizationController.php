@@ -14,140 +14,146 @@ use App\Models\Campaign;
 
 class OrganizationController extends Controller
 {
-	protected $jobDispatcher;
+    protected $jobDispatcher;
 
-	public function __construct(JobDispatcherService $jobDispatcher)
-	{
-		$this->jobDispatcher = $jobDispatcher;
-	}
+    public function __construct(JobDispatcherService $jobDispatcher)
+    {
+        $this->jobDispatcher = $jobDispatcher;
+    }
 
-	/**
-	 * Display a listing of the resource.
-	 */
-	public function index(Team $team, Campaign $campaign): JsonResponse
-	{
-		$organizations = Organization::where('team_id', $team->id)
-			->forCampaign($campaign->id)
-			->withCount('terms')
-			->get();
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Team $team, Campaign $campaign): JsonResponse
+    {
+        $organizations = Organization::where('team_id', $team->id)
+            ->forCampaign($campaign->id)
+            ->withCount('terms')
+            ->get();
 
-		return response()->json($organizations);
-	}
+        $competitorCount = $organizations->where('is_competitor', true)->count();
 
-	/**
-	 * Store a newly created resource in storage.
-	 */
-	public function store(Request $request, Team $team, Campaign $campaign = null): JsonResponse
-	{
-		$validated = $request->validate([
-			'name' => 'nullable|string|max:255',
-			'website' => 'nullable|string|max:255',
-			'logo' => 'nullable|string|max:1000',
-			'color' => 'nullable|string|max:255',
-			'description' => 'nullable|string|max:65535',
-			'long_description' => 'nullable|string|max:65535',
-			'location' => 'nullable|string|max:255',
-			'city' => 'nullable|string|max:255',
-			'state' => 'nullable|string|max:255',
-			'country' => 'nullable|string|max:255',
-			'founded' => 'nullable|string|max:255',
-			'employee_count' => 'nullable|string|max:255',
-			'is_competitor' => 'boolean',
-		]);
+        return response()->json([
+            'organizations' => $organizations,
+            'competitor_count' => $competitorCount,
+            'competitor_limit' => 150
+        ]);
+    }
 
-		// TODO: Move this term creation logic into the organization model boot method
-		$isCompetitor = $validated['is_competitor'] ?? false;
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request, Team $team, Campaign $campaign = null): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'website' => 'nullable|string|max:255',
+            'logo' => 'nullable|string|max:1000',
+            'color' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:65535',
+            'long_description' => 'nullable|string|max:65535',
+            'location' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'founded' => 'nullable|string|max:255',
+            'employee_count' => 'nullable|string|max:255',
+            'is_competitor' => 'boolean',
+        ]);
 
-		if ($isCompetitor) {
-			$validated['campaign_id'] = $campaign?->id;
-		}
+        // TODO: Move this term creation logic into the organization model boot method
+        $isCompetitor = $validated['is_competitor'] ?? false;
 
-		$organization = $team->organizations()->create($validated);
+        if ($isCompetitor) {
+            $validated['campaign_id'] = $campaign?->id;
+        }
 
-		// Create a term for the competitor name
-		$nameTerm = Term::create([
-			'team_id' => $organization->team_id,
-			'organization_id' => $organization->id,
-			'name' => $organization->name,
-		]);
+        $organization = $team->organizations()->create($validated);
 
-		// Create a term for the competitor website
-		$websiteTerm = Term::create([
-			'team_id' => $organization->team_id,
-			'organization_id' => $organization->id,
-			'name' => $organization->website,
-		]);
+        // Create a term for the competitor name
+        $nameTerm = Term::create([
+            'team_id' => $organization->team_id,
+            'organization_id' => $organization->id,
+            'name' => $organization->name,
+        ]);
 
-		if ($isCompetitor) {
-			foreach ([$nameTerm, $websiteTerm] as $term) {
-				$this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
-			}
-		}
+        // Create a term for the competitor website
+        $websiteTerm = Term::create([
+            'team_id' => $organization->team_id,
+            'organization_id' => $organization->id,
+            'name' => $organization->website,
+        ]);
 
-		return response()->json($organization, 201);
-	}
+        if ($isCompetitor) {
+            foreach ([$nameTerm, $websiteTerm] as $term) {
+                $this->jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
+            }
+        }
 
-	/**
-	 * Display the specified resource.
-	 */
-	public function show(Organization $organization): JsonResponse
-	{
-		// Ensure the organization belongs to the current team
-		if ($organization->team_id !== request()->user()->currentTeam->id) {
-			return response()->json(['message' => 'Unauthorized'], 403);
-		}
+        return response()->json($organization, 201);
+    }
 
-		return response()->json($organization);
-	}
+    /**
+     * Display the specified resource.
+     */
+    public function show(Organization $organization): JsonResponse
+    {
+        // Ensure the organization belongs to the current team
+        if ($organization->team_id !== request()->user()->currentTeam->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, Organization $organization): JsonResponse
-	{
-		// Ensure the organization belongs to the current team
-		if ($organization->team_id !== request()->user()->currentTeam->id) {
-			return response()->json(['message' => 'Unauthorized'], 403);
-		}
+        return response()->json($organization);
+    }
 
-		$validated = $request->validate([
-			'name' => 'sometimes|nullable|string|max:255',
-			'website' => 'sometimes|nullable|string|max:255',
-			'logo' => 'sometimes|nullable|string|max:1000',
-			'color' => 'sometimes|nullable|string|max:255',
-			'description' => 'sometimes|nullable|string|max:65535',
-			'long_description' => 'sometimes|nullable|string|max:65535',
-			'location' => 'sometimes|nullable|string|max:255',
-			'city' => 'sometimes|nullable|string|max:255',
-			'state' => 'sometimes|nullable|string|max:255',
-			'country' => 'sometimes|nullable|string|max:255',
-			'founded' => 'sometimes|nullable|string|max:255',
-			'employee_count' => 'sometimes|nullable|string|max:255',
-		]);
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Organization $organization): JsonResponse
+    {
+        // Ensure the organization belongs to the current team
+        if ($organization->team_id !== request()->user()->currentTeam->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-		$organization->update($validated);
+        $validated = $request->validate([
+            'name' => 'sometimes|nullable|string|max:255',
+            'website' => 'sometimes|nullable|string|max:255',
+            'logo' => 'sometimes|nullable|string|max:1000',
+            'color' => 'sometimes|nullable|string|max:255',
+            'description' => 'sometimes|nullable|string|max:65535',
+            'long_description' => 'sometimes|nullable|string|max:65535',
+            'location' => 'sometimes|nullable|string|max:255',
+            'city' => 'sometimes|nullable|string|max:255',
+            'state' => 'sometimes|nullable|string|max:255',
+            'country' => 'sometimes|nullable|string|max:255',
+            'founded' => 'sometimes|nullable|string|max:255',
+            'employee_count' => 'sometimes|nullable|string|max:255',
+        ]);
 
-		return response()->json($organization);
-	}
+        $organization->update($validated);
 
-	/**
-	 * Remove the specified resource from storage.
-	 */
-	public function destroy(Organization $organization): JsonResponse
-	{
-		// Ensure the organization belongs to the current team
-		if ($organization->team_id !== request()->user()->currentTeam->id) {
-			return response()->json(['message' => 'Unauthorized'], 403);
-		}
+        return response()->json($organization);
+    }
 
-		// Prevent deleting the default organization (non-competitor)
-		if (!$organization->is_competitor) {
-			return response()->json(['message' => 'Cannot delete the default organization'], 422);
-		}
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Organization $organization): JsonResponse
+    {
+        // Ensure the organization belongs to the current team
+        if ($organization->team_id !== request()->user()->currentTeam->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-		// Delete the organization
-		$organization->delete();
+        // Prevent deleting the default organization (non-competitor)
+        if (!$organization->is_competitor) {
+            return response()->json(['message' => 'Cannot delete the default organization'], 422);
+        }
 
-		return response()->json(null, 204);
-	}
+        // Delete the organization
+        $organization->delete();
+
+        return response()->json(null, 204);
+    }
 }
