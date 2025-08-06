@@ -8,7 +8,7 @@ const api = axios.create({
 		Accept: 'application/json',
 		'X-Requested-With': 'XMLHttpRequest'
 	},
-	withCredentials: true // Required for CSRF cookie to be sent with requests
+	withCredentials: false
 })
 
 // Request interceptor for adding auth token
