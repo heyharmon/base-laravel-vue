@@ -58,7 +58,11 @@ const props = defineProps({
 	startDate: String,
 	endDate: String,
 	teamId: String,
-	campaignId: String
+	campaignId: String,
+	defaultInterval: {
+		type: String,
+		default: 'monthly'
+	}
 })
 
 const organizationStore = useOrganizationStore()
@@ -307,7 +311,20 @@ watch(
 	}
 )
 
+// Watch for defaultInterval changes and update selectedInterval
+watch(
+	() => props.defaultInterval,
+	(newInterval) => {
+		if (newInterval && newInterval !== selectedInterval.value) {
+			selectedInterval.value = newInterval
+			fetchChartData()
+		}
+	}
+)
+
 onMounted(() => {
+	// Initialize selectedInterval with defaultInterval prop
+	selectedInterval.value = props.defaultInterval
 	fetchChartData()
 })
 

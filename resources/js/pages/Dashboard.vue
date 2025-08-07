@@ -1,10 +1,11 @@
 p
 <script setup>
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch, computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import moment from 'moment'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import VisibilityChart from '@/components/VisibilityChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
@@ -21,6 +22,9 @@ const campaignStore = useCampaignStore()
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
+// Chart interval based on date range
+const chartInterval = ref('monthly')
+
 // Jobs in progress by job class
 const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
 
@@ -36,6 +40,11 @@ onMounted(async () => {
 		if (campaignId.value) {
 			await campaignStore.switchCampaign(teamId.value, campaignId.value)
 			fetchVisibilityData()
+
+			// Set initial chart interval based on current date range
+			if (organizationStore.currentDateRange.startDate && organizationStore.currentDateRange.endDate) {
+				chartInterval.value = calculateInterval(organizationStore.currentDateRange.startDate, organizationStore.currentDateRange.endDate)
+			}
 		}
 	}
 })
@@ -65,9 +74,26 @@ const fetchVisibilityData = () => {
 	}
 }
 
+// Calculate appropriate interval based on date range
+const calculateInterval = (startDate, endDate) => {
+	const start = moment(startDate)
+	const end = moment(endDate)
+	const daysDiff = end.diff(start, 'days')
+
+	if (daysDiff <= 7) {
+		return 'daily'
+	} else if (daysDiff <= 30) {
+		return 'weekly'
+	} else {
+		return 'monthly'
+	}
+}
+
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
 	if (teamId.value && campaignId.value) {
+		// Calculate and set the appropriate interval
+		chartInterval.value = calculateInterval(dateRange.startDate, dateRange.endDate)
 		organizationStore.setDateRange(teamId.value, campaignId.value, dateRange)
 	}
 }
@@ -111,28 +137,29 @@ const deleteOrganization = async (organizationId) => {
 		</div>
 
 		<!-- Simplified Date Filter -->
-		<!-- <div class="mt-6">
+		<div class="mt-6">
 			<DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				@date-range-changed="handleDateRangeChange"
 			/>
-		</div> -->
+		</div>
 
 		<!-- Visibility score -->
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
 		<!-- Visibility chart -->
-		<!-- <div class="mt-6">
+		<div class="mt-6">
 			<VisibilityChart
 				v-if="organizationStore.visibilityMetrics.length > 0"
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				:team-id="teamId"
 				:campaign-id="campaignId"
+				:default-interval="chartInterval"
 				class="mt-6"
 			/>
-		</div> -->
+		</div>
 
 		<!-- Rankings -->
 		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">

@@ -179,11 +179,11 @@ const handleDateRangeChange = (dateRange) => {
 
 		<div class="flex flex-col space-y-6">
 			<!-- Date Filter -->
-			<!-- <DateFilterDropdown
+			<DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				@date-range-changed="handleDateRangeChange"
-			/> -->
+			/>
 
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />

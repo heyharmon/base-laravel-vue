@@ -185,7 +185,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 	// Function to update date range and refresh visibility data
 	function setDateRange(teamId, campaignId, dateRange) {
-		console.log('Setting date range:', dateRange)
 		currentDateRange.value = dateRange
 		return fetchVisibilityMetrics(teamId, campaignId)
 	}
