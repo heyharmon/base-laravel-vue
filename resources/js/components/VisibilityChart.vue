@@ -347,6 +347,14 @@ watch(
 	}
 )
 
+// Watch for campaign changes
+watch(
+	() => props.campaignId,
+	() => {
+		fetchChartData()
+	}
+)
+
 // Watch for defaultInterval changes and update selectedInterval
 watch(
 	() => props.defaultInterval,
