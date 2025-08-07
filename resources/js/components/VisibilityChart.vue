@@ -133,10 +133,16 @@ const fetchChartData = async () => {
 		latestRequestId = currentRequestId
 
 		const params = new URLSearchParams({
-			start_date: props.startDate,
-			end_date: props.endDate,
 			interval: selectedInterval.value
 		})
+
+		// Only add date parameters if they are not null
+		if (props.startDate) {
+			params.append('start_date', props.startDate)
+		}
+		if (props.endDate) {
+			params.append('end_date', props.endDate)
+		}
 
 		// Determine which endpoint to use
 		let endpoint

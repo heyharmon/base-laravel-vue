@@ -145,10 +145,11 @@ export const useOrganizationStore = defineStore('organization', () => {
 		try {
 			const params = {}
 
-			if (currentDateRange.value.startDate) {
+			// Only add date parameters if they are not null
+			if (currentDateRange.value.startDate && currentDateRange.value.startDate !== null) {
 				params.start_date = currentDateRange.value.startDate
 			}
-			if (currentDateRange.value.endDate) {
+			if (currentDateRange.value.endDate && currentDateRange.value.endDate !== null) {
 				params.end_date = currentDateRange.value.endDate
 			}
 
