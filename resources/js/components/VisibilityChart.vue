@@ -50,6 +50,7 @@
 <script setup>
 import { ref, onMounted, watch, computed, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useJobStatusStore } from '@/stores/jobStatusStore'
 import ApexCharts from 'apexcharts'
 import api from '@/services/api'
 import moment from 'moment'
@@ -75,6 +76,7 @@ const props = defineProps({
 })
 
 const organizationStore = useOrganizationStore()
+const jobStatusStore = useJobStatusStore()
 
 const chartContainer = ref(null)
 const chart = ref(null)
@@ -352,6 +354,16 @@ watch(
 	() => props.campaignId,
 	() => {
 		fetchChartData()
+	}
+)
+
+// Watch for job completions and refresh data
+watch(
+	() => jobStatusStore.completedJobs.length,
+	(newCount, oldCount) => {
+		if (newCount > oldCount) {
+			fetchChartData()
+		}
 	}
 )
 
