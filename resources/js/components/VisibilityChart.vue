@@ -1,10 +1,10 @@
 <template>
-        <div class="bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-2">
-                                <h2 class="text-xl font-bold">{{ title }}</h2>
-                                <div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
-                        </div>
+	<div class="bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+		<div class="flex items-center justify-between mb-4">
+			<div class="flex items-center gap-2">
+				<h2 class="text-xl font-bold">{{ title }}</h2>
+				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+			</div>
 
 			<!-- Interval selector -->
 			<div class="relative">
@@ -55,22 +55,22 @@ import api from '@/services/api'
 import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const props = defineProps({
-        startDate: String,
-        endDate: String,
-        teamId: String,
-        campaignId: String,
-        promptId: {
-                type: [String, Number],
-                default: null
-        },
-        defaultInterval: {
-                type: String,
-                default: 'monthly'
-        },
-        title: {
-                type: String,
-                default: 'Visibility Over Time'
-        }
+	startDate: String,
+	endDate: String,
+	teamId: String,
+	campaignId: String,
+	promptId: {
+		type: [String, Number],
+		default: null
+	},
+	defaultInterval: {
+		type: String,
+		default: 'monthly'
+	},
+	title: {
+		type: String,
+		default: 'Visibility over time'
+	}
 })
 
 const organizationStore = useOrganizationStore()
@@ -103,57 +103,57 @@ const selectInterval = (value) => {
 let latestRequestId = 0
 
 const fetchChartData = async () => {
-        // Don't fetch if we're unmounting or missing required props
-        if (isUnmounting.value || !props.teamId || (!props.campaignId && !props.promptId)) return
+	// Don't fetch if we're unmounting or missing required props
+	if (isUnmounting.value || !props.teamId || (!props.campaignId && !props.promptId)) return
 
-        isLoading.value = true
+	isLoading.value = true
 
-        try {
-                const currentRequestId = Date.now()
-                latestRequestId = currentRequestId
+	try {
+		const currentRequestId = Date.now()
+		latestRequestId = currentRequestId
 
-                const params = new URLSearchParams({
-                        start_date: props.startDate,
-                        end_date: props.endDate,
-                        interval: selectedInterval.value
-                })
+		const params = new URLSearchParams({
+			start_date: props.startDate,
+			end_date: props.endDate,
+			interval: selectedInterval.value
+		})
 
-                // Determine which endpoint to use
-                let endpoint
-                if (props.promptId) {
-                        // Prompt-specific visibility
-                        endpoint = `/prompts/${props.promptId}/visibility-chart`
-                } else {
-                        // Overall campaign visibility
-                        endpoint = `/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart`
+		// Determine which endpoint to use
+		let endpoint
+		if (props.promptId) {
+			// Prompt-specific visibility
+			endpoint = `/prompts/${props.promptId}/visibility-chart`
+		} else {
+			// Overall campaign visibility
+			endpoint = `/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart`
 
-                        // For campaign view, include owned org
-                        const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
-                        if (ownedOrg) {
-                                params.append('organization_ids[]', ownedOrg.id)
-                        }
-                }
+			// For campaign view, include owned org
+			const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+			if (ownedOrg) {
+				params.append('organization_ids[]', ownedOrg.id)
+			}
+		}
 
-                const response = await api.get(`${endpoint}?${params}`)
+		const response = await api.get(`${endpoint}?${params}`)
 
-                if (currentRequestId !== latestRequestId || isUnmounting.value) {
-                        return
-                }
+		if (currentRequestId !== latestRequestId || isUnmounting.value) {
+			return
+		}
 
-                chartData.value = response.organizations || []
+		chartData.value = response.organizations || []
 
-                if (isUnmounting.value) return
+		if (isUnmounting.value) return
 
-                await nextTick()
+		await nextTick()
 
-                if (!isUnmounting.value && chartContainer.value) {
-                        updateChart()
-                }
-        } catch (error) {
-                console.error('Error fetching chart data:', error)
-        } finally {
-                isLoading.value = false
-        }
+		if (!isUnmounting.value && chartContainer.value) {
+			updateChart()
+		}
+	} catch (error) {
+		console.error('Error fetching chart data:', error)
+	} finally {
+		isLoading.value = false
+	}
 }
 
 // Flag to track if component is being unmounted
