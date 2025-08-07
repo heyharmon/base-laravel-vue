@@ -171,7 +171,7 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/articles/:articleId/edit',
+		path: '/teams/:teamId/campaigns/:campaignId/articles/:articleId/edit',
 		name: 'articles.edit',
 		component: ArticleEdit,
 		meta: { requiresAuth: true }

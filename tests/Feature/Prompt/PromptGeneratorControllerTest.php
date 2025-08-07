@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Team;
-use App\Models\Organization;
+use App\Models\Campaign;
 use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -13,9 +13,11 @@ it('requires terms to generate prompts', function () {
     $user->current_team_id = $team->id;
     $user->save();
     Sanctum::actingAs($user);
-    
-    $organization = Organization::factory()->for($team)->create();
 
-    $this->postJson("/api/organizations/{$organization->id}/generate-prompts", [])
+    $campaign = Campaign::factory()->for($team)->create([
+        'keywords' => null
+    ]);
+
+    $this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/generate-prompts", [])
         ->assertStatus(422);
 });

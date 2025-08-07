@@ -5,104 +5,104 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use App\Services\OpenAIService;
+use App\Services\OpenAIArticleAgentService;
 use App\Models\Article;
 
 class ArticleChatController extends Controller
 {
-	protected $openAIService;
+    protected $articleAgent;
 
-	public function __construct(OpenAIService $openAIService)
-	{
-		$this->openAIService = $openAIService;
-	}
+    public function __construct(OpenAIArticleAgentService $articleAgent)
+    {
+        $this->articleAgent = $articleAgent;
+    }
 
-	/**
-	 * Get chats for an article
-	 *
-	 * @param Request $request
-	 * @param Article $article
-	 * @return \Illuminate\Http\JsonResponse
-	 */
-	public function index(Request $request, Article $article)
-	{
-		// Check if a specific conversation ID was requested
-		if ($request->has('conversation_id')) {
-			$conversation = $article->conversations()->where('id', $request->conversation_id)->first();
+    /**
+     * Get chats for an article
+     *
+     * @param Request $request
+     * @param Article $article
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request, Article $article)
+    {
+        // Check if a specific conversation ID was requested
+        if ($request->has('conversation_id')) {
+            $conversation = $article->conversations()->where('id', $request->conversation_id)->first();
 
-			if (!$conversation) {
-				return response()->json([]);
-			}
-		} else {
-			// Get the first conversation for this article (default behavior)
-			$conversation = $article->conversations()->first();
+            if (!$conversation) {
+                return response()->json([]);
+            }
+        } else {
+            // Get the first conversation for this article (default behavior)
+            $conversation = $article->conversations()->first();
 
-			if (!$conversation) {
-				return response()->json([]);
-			}
-		}
+            if (!$conversation) {
+                return response()->json([]);
+            }
+        }
 
-		// Return the chats for this conversation
-		$chats = $conversation->chats()->orderBy('created_at')->get();
-		return response()->json($chats);
-	}
+        // Return the chats for this conversation
+        $chats = $conversation->chats()->orderBy('created_at')->get();
+        return response()->json($chats);
+    }
 
-	/**
-	 * Send a message to the AI about an article
-	 *
-	 * @param Request $request
-	 * @param Article $article
-	 * @return \Illuminate\Http\JsonResponse
-	 */
-	public function store(Request $request, Article $article)
-	{
-		$request->validate([
-			'content' => 'required|string',
-			'context' => 'sometimes|array',
-			'conversation_id' => 'nullable|integer|exists:conversations,id'
-		]);
+    /**
+     * Send a message to the AI about an article
+     *
+     * @param Request $request
+     * @param Article $article
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(Request $request, Article $article)
+    {
+        $request->validate([
+            'content' => 'required|string',
+            'context' => 'sometimes|array',
+            'conversation_id' => 'nullable|integer|exists:conversations,id'
+        ]);
 
-		try {
-			// Get or create a conversation for this article
-			$conversation = null;
+        try {
+            // Get or create a conversation for this article
+            $conversation = null;
 
-			if ($request->has('conversation_id')) {
-				// Use the specified conversation if it belongs to this article
-				$conversation = $article->conversations()->where('id', $request->conversation_id)->first();
+            if ($request->has('conversation_id')) {
+                // Use the specified conversation if it belongs to this article
+                $conversation = $article->conversations()->where('id', $request->conversation_id)->first();
 
-				if (!$conversation) {
-					return response()->json(['error' => 'Conversation not found for this article'], 404);
-				}
-			} else {
-				// Get or create a conversation
-				$conversation = $article->conversations()->firstOrCreate([
-					'team_id' => $article->team_id,
-					'title' => 'Chat for article: ' . $article->title
-				]);
-			}
+                if (!$conversation) {
+                    return response()->json(['error' => 'Conversation not found for this article'], 404);
+                }
+            } else {
+                // Get or create a conversation
+                $conversation = $article->conversations()->firstOrCreate([
+                    'team_id' => $article->team_id,
+                    'title' => 'Chat for article: ' . $article->title
+                ]);
+            }
 
-			// Store user message immediately
-			$conversation->chats()->create([
-				'role' => 'user',
-				'content' => $request->input('content')
-			]);
+            // Store user message immediately
+            $conversation->chats()->create([
+                'role' => 'user',
+                'content' => $request->input('content')
+            ]);
 
-			// Process message asynchronously with context
-			$this->openAIService
-				->processMessageAsync(
-					$conversation,
-					$request->input('content'),
-					$request->input('context', [])
-				);
+            // Process message asynchronously with context
+            $this->articleAgent
+                ->processMessageAsync(
+                    $conversation,
+                    $request->input('content'),
+                    $request->input('context', [])
+                );
 
-			return response()->json([
-				'conversation' => $conversation->fresh(),
-				'chats' => $conversation->chats
-			]);
-		} catch (\Exception $e) {
+            return response()->json([
+                'conversation' => $conversation->fresh(),
+                'chats' => $conversation->chats
+            ]);
+        } catch (\Exception $e) {
 
-			Log::error('Error generating article chat response: ' . $e->getMessage());
-			return response()->json(['error' => 'Failed to generate response'], 500);
-		}
-	}
+            Log::error('Error generating article chat response: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to generate response'], 500);
+        }
+    }
 }

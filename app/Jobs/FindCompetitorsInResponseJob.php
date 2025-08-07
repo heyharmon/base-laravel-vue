@@ -3,236 +3,280 @@
 namespace App\Jobs;
 
 use Throwable;
-use Prism\Prism\ValueObjects\Messages\UserMessage;
-use Prism\Prism\Schema\StringSchema;
-use Prism\Prism\Schema\ObjectSchema;
-use Prism\Prism\Schema\ArraySchema;
-use Prism\Prism\Prism;
-use Prism\Prism\Enums\ToolChoice;
-use Prism\Prism\Enums\Provider;
+use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Bus\Batchable;
-use App\Tools\SearchApiTool;
 use App\Services\JobDispatcherService;
 use App\Models\Prompt;
 use App\Models\Organization;
 use App\Models\Term;
+use App\Jobs\CheckTermInPastResponsesJob;
 
 class FindCompetitorsInResponseJob extends TrackableJob
 {
-	use Batchable;
+    use Batchable;
 
-	/**
-	 * The number of times the job may be attempted.
-	 *
-	 * @var int
-	 */
-	public $tries = 1;
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 1;
 
-	/**
-	 * The prompt instance.
-	 *
-	 * @var \App\Models\Prompt
-	 */
-	protected $prompt;
+    /**
+     * The prompt instance.
+     *
+     * @var \App\Models\Prompt
+     */
+    protected $prompt;
 
-	/**
-	 * Create a new job instance.
-	 *
-	 * @param  \App\Models\Prompt  $prompt
-	 * @return void
-	 */
-	public function __construct(Prompt $prompt)
-	{
-		$this->prompt = $prompt;
-	}
+    /**
+     * Create a new job instance.
+     *
+     * @param  \App\Models\Prompt  $prompt
+     * @return void
+     */
+    public function __construct(Prompt $prompt)
+    {
+        $this->prompt = $prompt;
+    }
 
-	/**
-	 * Execute the job.
-	 *
-	 * @return void
-	 */
-	public function handle()
-	{
-		try {
-			if ($this->isCancelled()) {
-				return;
-			}
+    /**
+     * Execute the job.
+     *
+     * @return void
+     */
+    public function handle()
+    {
+        try {
+            if ($this->isCancelled()) {
+                return;
+            }
 
-			// Mark the job as started
-			$this->markJobAsStarted('Finding competitors in response');
+            // Mark the job as started
+            $this->markJobAsStarted('Finding competitors in response');
 
-			// Update progress
-			$this->updateJobProgress(10, 'Finding competitors in response');
+            // Update progress
+            $this->updateJobProgress(10, 'Finding competitors in response');
 
-			// Skip if campaign already has 100 competitors
-			$competitorCount = Organization::where('campaign_id', $this->prompt->campaign_id)
-				->where('is_competitor', true)
-				->count();
+            // Skip if campaign already has 500 competitors
+            $competitorCount = Organization::where('campaign_id', $this->prompt->campaign_id)
+                ->where('is_competitor', true)
+                ->count();
 
-			if ($competitorCount >= 100) {
-				$this->markJobAsCompleted('Skipping prompt, max 50 competitors reached');
-				return;
-			}
+            if ($competitorCount >= 500) {
+                $this->markJobAsCompleted('Skipping prompt, max 500 competitors reached');
+                return;
+            }
 
-			// Get the owned organization for this team
-			$ownedOrganization = Organization::where('team_id', $this->prompt->team_id)
-				->where('is_competitor', false)
-				->first();
+            // Get the owned organization for this team
+            $ownedOrganization = Organization::where('team_id', $this->prompt->team_id)
+                ->where('is_competitor', false)
+                ->first();
 
-			if (!$ownedOrganization) {
-				$this->markJobAsCompleted('Skipping prompt without owned organization');
-				return;
-			}
+            if (!$ownedOrganization) {
+                Log::info('FindCompetitorsInResponseJob: No owned organization found', [
+                    'prompt_id' => $this->prompt->id,
+                    'team_id' => $this->prompt->team_id
+                ]);
+                $this->markJobAsCompleted('Skipping prompt without owned organization');
+                return;
+            }
 
-			// Get the last 5 responses for this prompt
-			$recentResponses = $this->prompt->responses()->latest()->take(5)->get();
+            // Get the last 5 responses for this prompt
+            $recentResponses = $this->prompt->responses()->latest()->take(5)->get();
 
-			// Skip prompts without responses
-			if ($recentResponses->isEmpty()) {
-				$this->markJobAsCompleted('Skipping prompt because it has no responses');
-				return;
-			}
+            // Skip prompts without responses
+            if ($recentResponses->isEmpty()) {
+                Log::info('FindCompetitorsInResponseJob: No responses found for prompt', [
+                    'prompt_id' => $this->prompt->id
+                ]);
+                $this->markJobAsCompleted('Skipping prompt because it has no responses');
+                return;
+            }
 
-			// Combine content from all recent responses
-			$combinedContent = $recentResponses->pluck('content')->implode('\n\n---\n\n');
+            Log::info('FindCompetitorsInResponseJob: Processing prompt', [
+                'prompt_id' => $this->prompt->id,
+                'owned_organization' => $ownedOrganization->name,
+                'responses_count' => $recentResponses->count(),
+                'content_length' => strlen($recentResponses->pluck('content')->implode('\n\n---\n\n'))
+            ]);
 
-			// Get competitors from the LLM
-			$competitors = $this->findCompetitorsWithLlm($combinedContent, $ownedOrganization);
+            // Combine content from all recent responses
+            $combinedContent = $recentResponses->pluck('content')->implode('\n\n---\n\n');
 
-			// Create competitor
-			$createdCount = $this->createCompetitorOrganizations($competitors);
+            // Get competitors from the LLM
+            $competitors = $this->findCompetitorsWithLlm($combinedContent, $ownedOrganization);
 
-			// Mark the job as completed
-			$this->markJobAsCompleted('Successfully processed response and found ' . $createdCount . ' competitors');
-		} catch (Throwable $exception) {
-			Log::error('Find competitors job failed: ' . $exception->getMessage());
-			$this->markJobAsFailed($exception);
-			throw $exception;
-		}
-	}
+            Log::info('FindCompetitorsInResponseJob: Found competitors from LLM', [
+                'prompt_id' => $this->prompt->id,
+                'competitors_count' => count($competitors),
+                'competitors' => $competitors
+            ]);
 
-	/**
-	 * Find competitors in response content using LLM.
-	 *
-	 * @param  string  $responseContent
-	 * @param  \App\Models\Organization  $ownedOrganization
-	 * @return array
-	 */
-	private function findCompetitorsWithLlm(string $responseContent, Organization $ownedOrganization): array
-	{
-		$searchApiTool = new SearchApiTool();
+            // Create competitor organizations
+            $createdCount = $this->createCompetitorOrganizations($competitors);
 
-		// Get a text response containing recommended competitors
-		$textResponse = Prism::text()
-			->using(Provider::OpenAI, 'gpt-4o')
-			->withMaxSteps(10)
-			->withMessages([
-				new UserMessage('Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '".'),
-				new UserMessage('Find other organizations mentioned in the prompt response that may be potential competitors. Include their name, and website. Only use the search tool to find an organizations website if you do not already know the website from your own knowledge. Use the organizations own website and never directories like Yelp, Thumbtack, Yellowpages, etc. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE THAT MAY BE COMPETITORS!')
-			])
-			->withTools([$searchApiTool])
-			->withToolChoice(ToolChoice::Auto)
-			->asText();
+            // Mark the job as completed
+            $this->markJobAsCompleted('Successfully processed response and found ' . $createdCount . ' competitors');
+        } catch (Throwable $exception) {
+            Log::error('Find competitors job failed: ' . $exception->getMessage());
+            $this->markJobAsFailed($exception);
+            throw $exception;
+        }
+    }
 
-		// Define the schema for structured output
-		$schema = new ObjectSchema(
-			name: 'competitor_suggestions',
-			description: 'Competitor suggestions',
-			properties: [
-				new ArraySchema(
-					name: 'competitors',
-					description: 'List of organizations that may be competitors',
-					items: new ObjectSchema(
-						name: 'competitor',
-						description: 'An organization that may be a competitor',
-						properties: [
-							new StringSchema(
-								name: 'name',
-								description: 'The normalized name of the organization. If the name provided contains a location (e.g. "ACME bank in New York"), only return the name (e.g. "ACME bank"). If the name includes a suffix (e.g. "ACME bank, Inc."), only return the name (e.g. "ACME bank"). IF the name is long, convoluted or contains descriptions of service (e.g. "Manwill Plumbing Heating & Air Conditioning"), only return the identifiable portion of the name (e.g. "Manwill").'
-							),
-							new StringSchema(
-								name: 'website',
-								description: 'The root domain of the organization (e.g. google.com) without scheme, subdomain or path'
-							),
-						],
-						requiredFields: ['name']
-					),
-				)
-			],
-			requiredFields: ['competitors']
-		);
+    /**
+     * Find competitors in response content using OpenAI directly.
+     *
+     * @param  string  $responseContent
+     * @param  \App\Models\Organization  $ownedOrganization
+     * @return array
+     */
+    private function findCompetitorsWithLlm(string $responseContent, Organization $ownedOrganization): array
+    {
+        try {
+            // Use the Responses API with structured output to extract competitors
+            $response = OpenAI::responses()->create([
+                'model' => 'gpt-4o',
+                'input' => 'Here is a prompt response about my organization ' . $ownedOrganization->name . ': "' . $responseContent . '". Find other organizations mentioned in the prompt response that may be potential competitors. Return them as a structured array including the competitor\'s name and website root domain if you know it. IMPORTANT: ONLY GIVE ME ORGANIZATIONS MENTIONED IN THE PROMPT RESPONSE THAT MAY BE COMPETITORS!',
+                'text' => [
+                    'format' => [
+                        'type' => 'json_schema',
+                        'name' => 'competitor_suggestions',
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'competitors' => [
+                                    'type' => 'array',
+                                    'description' => 'List of organizations that may be competitors',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'name' => [
+                                                'type' => 'string',
+                                                'description' => 'The normalized name of the organization. If the name provided contains a location (e.g. "ACME bank in New York"), only return the name (e.g. "ACME bank"). If the name includes a suffix (e.g. "ACME bank, Inc."), only return the name (e.g. "ACME bank"). If the name is long, convoluted or contains descriptions of service (e.g. "Manwill Plumbing Heating & Air Conditioning"), only return the identifiable portion of the name (e.g. "Manwill").'
+                                            ],
+                                            'website' => [
+                                                'type' => ['string', 'null'],
+                                                'description' => 'The root domain of the organization (e.g. google.com) without scheme, subdomain or path. Use null if website is unknown.'
+                                            ]
+                                        ],
+                                        'required' => ['name', 'website'],
+                                        'additionalProperties' => false
+                                    ]
+                                ]
+                            ],
+                            'required' => ['competitors'],
+                            'additionalProperties' => false
+                        ],
+                        'strict' => true
+                    ]
+                ],
+                'store' => false,
+            ]);
 
-		// Get structured response from LLM
-		$response = Prism::structured()
-			->using(Provider::OpenAI, 'gpt-4o')
-			->withSchema($schema)
-			->withPrompt('Look at this list of my competitors and return them as a structured array including the competitor\'s name and website root domain: "' . $textResponse->text . '"')
-			->asStructured();
+            // Extract the content from the response based on the Responses API structure
+            $competitorText = '';
+            if (isset($response->output) && is_array($response->output)) {
+                foreach ($response->output as $item) {
+                    if ($item->type === 'message' && isset($item->content[0]->text)) {
+                        $competitorText = $item->content[0]->text;
+                        break;
+                    }
+                }
+            }
 
-		$result = $response->structured;
+            if (empty($competitorText)) {
+                Log::warning('No competitor text extracted from OpenAI response', [
+                    'response_structure' => json_encode($response)
+                ]);
+                return [];
+            }
 
-		return $result['competitors'] ?? [];
-	}
+            $result = json_decode($competitorText, true);
 
-	/**
-	 * Create or update competitor organizations.
-	 *
-	 * @param  array  $competitors
-	 * @return int
-	 */
-	private function createCompetitorOrganizations(array $competitors): int
-	{
-		$createdCount = 0;
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('Failed to decode JSON from structured response', [
+                    'content' => $competitorText,
+                    'json_error' => json_last_error_msg()
+                ]);
+                return [];
+            }
 
-		foreach ($competitors as $competitor) {
-			// Skip if name or website is empty
-			if (empty($competitor['name']) || empty($competitor['website'])) {
-				continue;
-			}
+            return $result['competitors'] ?? [];
+        } catch (\Exception $e) {
+            Log::error('Error in findCompetitorsWithLlm: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return [];
+        }
+    }
 
-			// Check if this competitor already exists by website or name
-			$existingOrganization = Organization::where('campaign_id', $this->prompt->campaign_id)
-				->where(function ($query) use ($competitor) {
-					$query->where('website', $competitor['website'])
-						->orWhere('name', $competitor['name']);
-				})
-				->first();
+    /**
+     * Create or update competitor organizations.
+     *
+     * @param  array  $competitors
+     * @return int
+     */
+    private function createCompetitorOrganizations(array $competitors): int
+    {
+        $createdCount = 0;
 
-			if (!$existingOrganization) {
-				// Create new competitor organization
-				$competitorOrg = Organization::create([
-					'team_id' => $this->prompt->team_id,
-					'campaign_id' => $this->prompt->campaign_id,
-					'name' => $competitor['name'],
-					'website' => $competitor['website'] ?? null,
-					'is_competitor' => true,
-				]);
+        foreach ($competitors as $competitor) {
+            // Skip if name is empty
+            if (empty($competitor['name'])) {
+                continue;
+            }
 
-				// Create a term for the competitor name
-				$nameTerm = Term::create([
-					'team_id' => $this->prompt->team_id,
-					'organization_id' => $competitorOrg->id,
-					'name' => $competitor['name'],
-				]);
+            // Check if this competitor already exists by website or name
+            $existingOrganization = Organization::where('campaign_id', $this->prompt->campaign_id)
+                ->where(function ($query) use ($competitor) {
+                    $query->where('name', $competitor['name']);
+                    if (!empty($competitor['website'])) {
+                        $query->orWhere('website', $competitor['website']);
+                    }
+                })
+                ->first();
 
-				// Create a term for the competitor website
-				$websiteTerm = Term::create([
-					'team_id' => $this->prompt->team_id,
-					'organization_id' => $competitorOrg->id,
-					'name' => $competitor['website'],
-				]);
+            if (!$existingOrganization) {
+                // Create new competitor organization
+                $competitorOrg = Organization::create([
+                    'team_id' => $this->prompt->team_id,
+                    'campaign_id' => $this->prompt->campaign_id,
+                    'name' => $competitor['name'],
+                    'website' => $competitor['website'] ?? null,
+                    'is_competitor' => true,
+                ]);
 
-				// Dispatch a job to check past responses for this term
-				$jobDispatcher = app(JobDispatcherService::class);
-				foreach ([$nameTerm, $websiteTerm] as $term) {
-					$jobDispatcher->dispatch($term, new CheckTermInPastResponsesJob($term));
-				}
+                // Create a term for the competitor name
+                $nameTerm = Term::create([
+                    'team_id' => $this->prompt->team_id,
+                    'organization_id' => $competitorOrg->id,
+                    'name' => $competitor['name'],
+                ]);
 
-				$createdCount++;
-			}
-		}
+                // Create a term for the competitor website if it exists
+                if (!empty($competitor['website'])) {
+                    $websiteTerm = Term::create([
+                        'team_id' => $this->prompt->team_id,
+                        'organization_id' => $competitorOrg->id,
+                        'name' => $competitor['website'],
+                    ]);
+                }
 
-		return $createdCount;
-	}
+                // Dispatch a job to check past responses for this term
+                $jobDispatcher = app(JobDispatcherService::class);
+                $jobDispatcher->dispatch($nameTerm, new CheckTermInPastResponsesJob($nameTerm));
+
+                if (!empty($competitor['website'])) {
+                    $jobDispatcher->dispatch($websiteTerm, new CheckTermInPastResponsesJob($websiteTerm));
+                }
+
+                $createdCount++;
+            }
+        }
+
+        return $createdCount;
+    }
 }

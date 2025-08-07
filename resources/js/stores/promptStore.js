@@ -14,22 +14,36 @@ export const usePromptStore = defineStore('prompts', () => {
 	const isRunningAll = ref(false)
 
 	// Actions
-        async function fetchPrompts(teamId, campaignId) {
-                if (!campaignId) {
-                        console.error('Campaign ID is required')
-                        return
-                }
-                console.log('Fetching prompts...')
+	async function fetchPrompts(teamId, campaignId, dateRange = null) {
+		if (!campaignId) {
+			console.error('Campaign ID is required')
+			return
+		}
+		console.log('Fetching prompts...')
 
-                isLoading.value = true
-                try {
-                        prompts.value = await api.get(`/teams/${teamId}/campaigns/${campaignId}/prompts`)
-                } catch (error) {
-                        console.error('Error fetching prompts:', error)
-                } finally {
-                        isLoading.value = false
-                }
-        }
+		isLoading.value = true
+		try {
+			let url = `/teams/${teamId}/campaigns/${campaignId}/prompts`
+			const params = new URLSearchParams()
+
+			if (dateRange?.startDate) {
+				params.append('start_date', dateRange.startDate)
+			}
+			if (dateRange?.endDate) {
+				params.append('end_date', dateRange.endDate)
+			}
+
+			if (params.toString()) {
+				url += `?${params.toString()}`
+			}
+
+			prompts.value = await api.get(url)
+		} catch (error) {
+			console.error('Error fetching prompts:', error)
+		} finally {
+			isLoading.value = false
+		}
+	}
 
 	async function showPrompt(id) {
 		console.log('Fetching prompt details for prompt ID:', id)
@@ -44,14 +58,14 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
-        async function createPrompt(teamId, campaignId, data) {
-                console.log('Creating prompt...')
+	async function createPrompt(teamId, campaignId, data) {
+		console.log('Creating prompt...')
 
-                isLoading.value = true
-                try {
-                        const newPrompt = await api.post(`/teams/${teamId}/campaigns/${campaignId}/prompts`, data)
-                        prompts.value.unshift(newPrompt)
-                        return newPrompt
+		isLoading.value = true
+		try {
+			const newPrompt = await api.post(`/teams/${teamId}/campaigns/${campaignId}/prompts`, data)
+			prompts.value.unshift(newPrompt)
+			return newPrompt
 		} catch (error) {
 			console.error('Error creating prompt:', error)
 			throw error

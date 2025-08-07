@@ -6,53 +6,34 @@
 				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
-			<div class="flex items-center gap-4">
-				<!-- Interval selector -->
-				<select v-model="selectedInterval" @change="fetchChartData" class="text-sm border border-neutral-200 rounded-md px-3 py-1.5">
-					<option value="daily">Daily</option>
-					<option value="weekly">Weekly</option>
-					<option value="monthly">Monthly</option>
-				</select>
+			<!-- Interval selector -->
+			<div class="relative">
+				<button
+					@click="isDropdownOpen = !isDropdownOpen"
+					class="flex items-center justify-between gap-2 text-sm border border-neutral-200 rounded-md px-3 py-1.5 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+				>
+					<span>{{ selectedIntervalLabel }}</span>
+					<ChevronDownIcon class="text-neutral-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
+				</button>
 
-				<!-- Competitor selector -->
-				<div class="relative">
+				<!-- Dropdown Content -->
+				<div v-if="isDropdownOpen" class="absolute top-full right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg z-50 min-w-[120px]">
 					<button
-						@click="showCompetitorDropdown = !showCompetitorDropdown"
-						class="text-sm border border-neutral-200 rounded-md px-3 py-1.5 flex items-center gap-2 hover:bg-neutral-50"
+						v-for="option in intervalOptions"
+						:key="option.value"
+						@click="selectInterval(option.value)"
+						:class="{
+							'bg-blue-50 text-blue-700': selectedInterval === option.value,
+							'text-neutral-700 hover:bg-neutral-50': selectedInterval !== option.value
+						}"
+						class="w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer first:rounded-t-md last:rounded-b-md"
 					>
-						<span>Compare with competitors</span>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-						</svg>
+						{{ option.label }}
 					</button>
-
-					<div
-						v-if="showCompetitorDropdown"
-						v-click-outside="() => (showCompetitorDropdown = false)"
-						class="absolute right-0 mt-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto"
-					>
-						<div class="p-2">
-							<div v-for="org in availableCompetitors" :key="org.id" class="flex items-center gap-2 p-2 hover:bg-neutral-50 rounded">
-								<input
-									type="checkbox"
-									:id="`competitor-${org.id}`"
-									v-model="selectedCompetitors"
-									:value="org.id"
-									@change="fetchChartData"
-									class="rounded border-neutral-300"
-								/>
-								<label :for="`competitor-${org.id}`" class="flex items-center gap-2 cursor-pointer flex-1">
-									<img
-										:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
-										:alt="org.name + ' logo'"
-										class="size-5 object-contain bg-white rounded border border-neutral-200"
-									/>
-									<span class="text-sm">{{ org.name || 'Unnamed Competitor' }}</span>
-								</label>
-							</div>
-						</div>
-					</div>
 				</div>
+
+				<!-- Backdrop -->
+				<div v-if="isDropdownOpen" @click="isDropdownOpen = false" class="fixed inset-0 z-40"></div>
 			</div>
 		</div>
 
@@ -60,7 +41,9 @@
 			<div ref="chartContainer"></div>
 		</div>
 
-		<div v-if="!isLoading && chartData.length === 0" class="text-center py-8 text-neutral-500">No data available for the selected date range</div>
+		<div v-if="!isLoading && (!chartData || chartData.length === 0)" class="text-center py-8 text-neutral-500">
+			No data available for the selected date range
+		</div>
 	</div>
 </template>
 
@@ -69,10 +52,13 @@ import { ref, onMounted, watch, computed, nextTick, onUnmounted, onBeforeUnmount
 import { useOrganizationStore } from '@/stores/organizationStore'
 import ApexCharts from 'apexcharts'
 import api from '@/services/api'
+import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const props = defineProps({
 	startDate: String,
-	endDate: String
+	endDate: String,
+	teamId: String,
+	campaignId: String
 })
 
 const organizationStore = useOrganizationStore()
@@ -81,77 +67,67 @@ const chartContainer = ref(null)
 const chart = ref(null)
 const isLoading = ref(false)
 const chartData = ref([])
-const selectedInterval = ref('daily')
-const selectedCompetitors = ref([])
-const showCompetitorDropdown = ref(false)
+const selectedInterval = ref('monthly')
+const isDropdownOpen = ref(false)
 
-const availableCompetitors = computed(() => {
-	return organizationStore.visibilityMetrics.filter((org) => org.is_competitor)
+const intervalOptions = [
+	{ value: 'daily', label: 'Daily' },
+	{ value: 'weekly', label: 'Weekly' },
+	{ value: 'monthly', label: 'Monthly' }
+]
+
+const selectedIntervalLabel = computed(() => {
+	const option = intervalOptions.find((opt) => opt.value === selectedInterval.value)
+	return option ? option.label : 'Monthly'
 })
 
-// Click outside directive
-const vClickOutside = {
-	mounted(el, binding) {
-		el.clickOutsideEvent = function (event) {
-			if (!(el === event.target || el.contains(event.target))) {
-				binding.value()
-			}
-		}
-		document.addEventListener('click', el.clickOutsideEvent)
-	},
-	unmounted(el) {
-		document.removeEventListener('click', el.clickOutsideEvent)
-	}
+const selectInterval = (value) => {
+	selectedInterval.value = value
+	isDropdownOpen.value = false
+	fetchChartData()
 }
 
 // Keep track of the latest request ID
 let latestRequestId = 0
 
 const fetchChartData = async () => {
-	// Don't fetch if we're unmounting
-	if (isUnmounting.value) return
-	
+	// Don't fetch if we're unmounting or missing required props
+	if (isUnmounting.value || !props.teamId || !props.campaignId) return
+
 	isLoading.value = true
 
 	try {
 		// Prevent multiple simultaneous requests with a more robust ID system
 		const currentRequestId = Date.now()
 		latestRequestId = currentRequestId
-		
+
 		const params = new URLSearchParams({
 			start_date: props.startDate,
 			end_date: props.endDate,
 			interval: selectedInterval.value
 		})
 
-		// Add selected organizations
-		const orgIds = [...selectedCompetitors.value]
-
 		// Always include the owned organization
 		const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
-		if (ownedOrg && !orgIds.includes(ownedOrg.id)) {
-			orgIds.push(ownedOrg.id)
+		if (ownedOrg) {
+			params.append('organization_ids[]', ownedOrg.id)
 		}
 
-		orgIds.forEach((id) => {
-			params.append('organization_ids[]', id)
-		})
+		const response = await api.get(`/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart?${params}`)
 
-		const response = await api.get(`/organization-visibility/chart?${params}`)
-		
 		// Check if a newer request has come in while we were waiting or if unmounting
 		if (currentRequestId !== latestRequestId || isUnmounting.value) {
 			return // Abandon this update as it's stale or component is unmounting
 		}
-		
-		chartData.value = response.organizations
+
+		chartData.value = response.organizations || []
 
 		// If component is unmounting, don't proceed with chart update
 		if (isUnmounting.value) return
 
 		// Ensure DOM is updated before updating chart
 		await nextTick()
-		
+
 		// Final check before updating chart
 		if (!isUnmounting.value && chartContainer.value) {
 			updateChart()
@@ -190,17 +166,20 @@ const updateChart = () => {
 		nextTick(() => {
 			// Make sure container is still available and we're not unmounting
 			if (!chartContainer.value || isUnmounting.value) return
-			
+
+			// Check if chartData is valid before proceeding
+			if (!chartData.value || !Array.isArray(chartData.value) || chartData.value.length === 0) {
+				return
+			}
+
 			// Format the data for ApexCharts
 			const series = chartData.value.map((org) => ({
 				name: org.name,
-				data: org.data.map((point) => point.visibility)
+				data: org.data?.map((point) => point.visibility) || []
 			}))
 
 			// Get categories (dates) from the first organization's data points
-			const categories = chartData.value.length > 0
-				? chartData.value[0].data.map((point) => point.date)
-				: []
+			const categories = chartData.value.length > 0 && chartData.value[0].data ? chartData.value[0].data.map((point) => point.date) : []
 
 			// Prepare colors array
 			const colors = chartData.value.map((org) => org.color)
@@ -218,6 +197,9 @@ const updateChart = () => {
 						enabled: true,
 						easing: 'easeinout',
 						speed: 800
+					},
+					zoom: {
+						enabled: false
 					}
 				},
 				colors: colors,
@@ -241,7 +223,7 @@ const updateChart = () => {
 					decimals: 0,
 					labels: {
 						formatter: function (value) {
-							return value + '%';
+							return value + '%'
 						}
 					}
 				},
@@ -253,10 +235,19 @@ const updateChart = () => {
 							return value + '%'
 						}
 					},
-					custom: function({ series, seriesIndex, dataPointIndex, w }) {
-						const orgData = chartData.value[seriesIndex];
-						const point = orgData.data[dataPointIndex];
-						
+					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+						if (
+							!chartData.value ||
+							!chartData.value[seriesIndex] ||
+							!chartData.value[seriesIndex].data ||
+							!chartData.value[seriesIndex].data[dataPointIndex]
+						) {
+							return '<div class="p-2 bg-white border border-neutral-200 rounded shadow">No data available</div>'
+						}
+
+						const orgData = chartData.value[seriesIndex]
+						const point = orgData.data[dataPointIndex]
+
 						return `
 						<div class="p-2 bg-white border border-neutral-200 rounded shadow">
 							<div class="font-bold">${orgData.name}</div>
@@ -264,7 +255,7 @@ const updateChart = () => {
 							<div>Mentions: ${point.mentions}</div>
 							<div>Total Responses: ${point.responses}</div>
 						</div>
-						`;
+						`
 					}
 				},
 				legend: {
@@ -290,14 +281,14 @@ const updateChart = () => {
 						size: 6
 					}
 				}
-			};
+			}
 
 			// Create new chart with robust error handling
 			try {
 				// Final check before creating chart
 				if (!isUnmounting.value && chartContainer.value) {
-					chart.value = new ApexCharts(chartContainer.value, options);
-					chart.value.render();
+					chart.value = new ApexCharts(chartContainer.value, options)
+					chart.value.render()
 				}
 			} catch (chartError) {
 				console.error('Error creating chart:', chartError)
@@ -313,15 +304,6 @@ watch(
 	() => [props.startDate, props.endDate],
 	() => {
 		fetchChartData()
-	}
-)
-
-// Watch for visibility metrics updates
-watch(
-	() => organizationStore.visibilityMetrics,
-	() => {
-		// Reset selected competitors if they're no longer in the list
-		selectedCompetitors.value = selectedCompetitors.value.filter((id) => availableCompetitors.value.some((org) => org.id === id))
 	}
 )
 

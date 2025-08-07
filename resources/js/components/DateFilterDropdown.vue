@@ -4,6 +4,8 @@ import moment from 'moment'
 import { useDateRangeUtils } from '@/composables/useDateRangeUtils'
 
 import DatePickerRange from '@/components/DatePickerRange.vue'
+import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
+import CalendarIcon from '@/components/icons/CalendarIcon.vue'
 
 const props = defineProps({
 	startDate: {
@@ -123,25 +125,10 @@ watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 			class="flex items-center justify-between w-full max-w-xs px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 		>
 			<span class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"
-					></path>
-				</svg>
+				<CalendarIcon class="w-4 h-4 text-neutral-500" />
 				{{ selectedTimeframeLabel }}
 			</span>
-			<svg
-				class="w-4 h-4 text-neutral-500 transition-transform"
-				:class="{ 'rotate-180': isDropdownOpen }"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-			</svg>
+			<ChevronDownIcon class="w-4 h-4 text-neutral-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
 		</button>
 
 		<!-- Dropdown Content -->

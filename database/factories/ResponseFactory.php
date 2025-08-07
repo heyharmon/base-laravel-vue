@@ -20,7 +20,6 @@ class ResponseFactory extends Factory
             'provider' => $this->faker->randomElement(['openai', 'anthropic']),
             'model' => $this->faker->word(),
             'content' => $this->faker->paragraph(),
-            'metadata' => null,
             'search' => null,
         ];
     }

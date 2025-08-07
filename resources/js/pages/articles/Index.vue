@@ -38,11 +38,25 @@ const createArticle = async () => {
 	const newArticle = await articleStore.createArticle(teamId.value, campaignId.value, {
 		title: 'Untitled article'
 	})
-	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
+	router.push({
+		name: 'articles.edit',
+		params: {
+			teamId: teamId.value,
+			campaignId: campaignId.value,
+			articleId: newArticle.id
+		}
+	})
 }
 
 const editArticle = (id) => {
-	router.push({ name: 'articles.edit', params: { articleId: id } })
+	router.push({
+		name: 'articles.edit',
+		params: {
+			teamId: teamId.value,
+			campaignId: campaignId.value,
+			articleId: id
+		}
+	})
 }
 
 const deleteArticle = async (id) => {

@@ -44,7 +44,7 @@ onMounted(async () => {
 watch(
 	() => jobStatusStore.completedJobs.length,
 	(newCount, oldCount) => {
-        console.log(`Jobs completed: ${newCount}, Previous count: ${oldCount}`)
+		console.log(`Jobs completed: ${newCount}, Previous count: ${oldCount}`)
 		if (newCount > oldCount) {
 			console.log('Jobs completed, refreshing visibility metrics')
 			fetchVisibilityData()
@@ -128,6 +128,8 @@ const deleteOrganization = async (organizationId) => {
 				v-if="organizationStore.visibilityMetrics.length > 0"
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
+				:team-id="teamId"
+				:campaign-id="campaignId"
 				class="mt-6"
 			/>
 		</div> -->

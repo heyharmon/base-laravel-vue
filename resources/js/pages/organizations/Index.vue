@@ -17,6 +17,10 @@ const route = useRoute()
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
+// Computed properties for competitor limit logic
+const isCompetitorLimitReached = computed(() => organizationStore.competitorCount >= organizationStore.competitorLimit)
+const shouldDisableFindButton = computed(() => isCompetitorLimitReached.value || activeCompetitorJobs.value.length > 0)
+
 // Get active jobs related to competitors
 const activeCompetitorJobs = computed(() => {
 	return jobStatusStore.jobs.filter(
@@ -130,16 +134,16 @@ watch(campaignId, async (newId) => {
 			<!-- Competitor Organizations -->
 			<div class="mb-8">
 				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-xl font-semibold">Competitors</h2>
+					<h2 class="text-xl font-semibold">Competitors ({{ organizationStore.competitorOrganizations.length }})</h2>
 					<div class="flex space-x-2">
 						<Button
 							v-if="organizationStore.ownedOrganizations.length > 0"
-							@click="organizationStore.findCompetitors(teamId)"
-							:disabled="activeCompetitorJobs.length > 0"
+							@click="organizationStore.findCompetitors(teamId, campaignId)"
+							:disabled="shouldDisableFindButton"
 							variant="outline"
 							size="sm"
 						>
-							{{ activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
+							{{ isCompetitorLimitReached ? 'Limit reached' : activeCompetitorJobs.length > 0 ? 'Finding competitors...' : 'Find competitors' }}
 						</Button>
 						<Button
 							@click="router.push({ name: 'organizations.create', params: { teamId: teamId, campaignId: campaignId } })"
@@ -149,6 +153,29 @@ watch(campaignId, async (newId) => {
 							{{ organizationStore.ownedOrganizations.length === 0 ? 'Add your organization' : 'Add competitor' }}
 						</Button>
 					</div>
+				</div>
+
+				<!-- Competitor limit message -->
+				<div class="mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+					<div class="flex items-center justify-between text-sm">
+						<span class="text-neutral-600">
+							Competitor limit: {{ organizationStore.competitorCount }} / {{ organizationStore.competitorLimit }}
+						</span>
+						<div class="w-32 bg-neutral-200 rounded-full h-2">
+							<div
+								class="h-2 rounded-full transition-all duration-300"
+								:class="isCompetitorLimitReached ? 'bg-red-500' : 'bg-blue-500'"
+								:style="{ width: Math.min((organizationStore.competitorCount / organizationStore.competitorLimit) * 100, 100) + '%' }"
+							></div>
+						</div>
+					</div>
+					<p class="text-xs text-neutral-500 mt-1">
+						{{
+							isCompetitorLimitReached
+								? 'You have reached the maximum number of competitors. The "Find competitors" feature is disabled.'
+								: 'Automatic competitor discovery will stop when you reach 500 competitors.'
+						}}
+					</p>
 				</div>
 				<div v-if="organizationStore.competitorOrganizations.length === 0" class="text-neutral-500">You haven't added any competitors yet.</div>
 				<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

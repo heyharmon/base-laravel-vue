@@ -17,12 +17,10 @@ class Response extends Model
         'provider',
         'model',
         'content',
-        'metadata',
         'search',
     ];
 
     protected $casts = [
-        'metadata' => 'array',
         'search' => 'array',
     ];
 
@@ -42,6 +40,4 @@ class Response extends Model
         return $this->belongsToMany(Term::class, 'term_response')
             ->withTimestamps();
     }
-
-
 }

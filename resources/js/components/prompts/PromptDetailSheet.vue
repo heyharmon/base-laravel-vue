@@ -108,7 +108,7 @@ const createArticle = async () => {
 		title: 'Untitled article',
 		prompt_id: props.promptId
 	})
-	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
+	router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
 }
 
 onMounted(fetchDetails)
@@ -142,12 +142,12 @@ watch(() => props.promptId, fetchDetails)
 						<span class="text-neutral-500">Mentioned:</span>
 						<span class="text-neutral-800 ml-2">{{ mentionsPercentage }}% of the time</span>
 					</div>
-					<div class="mb-2 text-sm">
+					<!-- <div class="mb-2 text-sm">
 						<span class="text-neutral-500">Term occurrences:</span>
 						<span class="text-neutral-800 ml-2">
 							{{ promptDetails.terms?.length || 0 }} {{ promptDetails.terms?.length === 1 ? 'term' : 'terms' }}
 						</span>
-					</div>
+					</div> -->
 				</div>
 
 				<!-- Articles section -->
@@ -167,7 +167,7 @@ watch(() => props.promptId, fetchDetails)
 						<RouterLink
 							v-for="article in promptDetails.articles"
 							:key="article.id"
-							:to="`/articles/${article.id}/edit`"
+							:to="{ name: 'articles.edit', params: { teamId, campaignId, articleId: article.id } }"
 							class="block bg-white border border-neutral-200 p-4 rounded-lg hover:bg-neutral-50 transition-colors"
 						>
 							<div class="flex justify-between items-center mb-3">
@@ -214,7 +214,7 @@ watch(() => props.promptId, fetchDetails)
 								></div>
 
 								<!-- Response search queries -->
-								<div v-if="response.search?.queries?.length > 0" class="p-2 rounded border border-neutral-200">
+								<div v-if="response.search?.queries?.length > 0" class="p-2 rounded border border-neutral-200 mb-3">
 									<div class="text-sm text-neutral-500 mb-2">Google searches performed by the agent</div>
 									<div class="flex flex-wrap gap-2 mb-2">
 										<a
@@ -231,10 +231,27 @@ watch(() => props.promptId, fetchDetails)
 									<div class="text-xs text-neutral-500">Agent may perform Google searches at its discretion to provide accurate answers.</div>
 								</div>
 
+								<!-- Response annotations -->
+								<div v-if="response.search?.annotations?.length > 0" class="p-2 rounded border border-neutral-200">
+									<div class="text-sm text-neutral-500 mb-2">Citations referenced by the agent</div>
+									<div class="space-y-2 mb-2">
+										<a
+											v-for="(annotation, index) in response.search.annotations"
+											:key="index"
+											:href="annotation.url"
+											target="_blank"
+											class="block text-sm bg-white p-2 rounded border border-neutral-200 hover:bg-neutral-100"
+										>
+											<div class="font-medium text-neutral-800">{{ annotation.title }}</div>
+											<div class="text-xs text-neutral-500 mt-1">{{ annotation.url }}</div>
+										</a>
+									</div>
+									<div class="text-xs text-neutral-500">Agent may reference external sources to provide accurate information.</div>
+								</div>
+
 								<!-- Response metadata -->
 								<div class="mt-3 text-xs text-neutral-500 flex justify-between">
 									<span>Date: {{ new Date(response.created_at).toLocaleString() }}</span>
-									<span>Tokens: {{ response.metadata.usage.promptTokens + response.metadata.usage.completionTokens }}</span>
 								</div>
 							</div>
 						</div>
