@@ -85,7 +85,14 @@ const deleteOrganization = async (organizationId) => {
 	<DefaultLayout>
 		<div class="flex justify-between items-center pt-6">
 			<h1 class="text-2xl font-bold">Rankings</h1>
-			<CampaignSwitcher />
+			<div class="flex items-center gap-3">
+				<DateFilterDropdown
+					:start-date="organizationStore.currentDateRange.startDate"
+					:end-date="organizationStore.currentDateRange.endDate"
+					@date-range-changed="handleDateRangeChange"
+				/>
+				<CampaignSwitcher />
+			</div>
 		</div>
 		<!-- Jobs currently processing message -->
 		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
@@ -106,15 +113,6 @@ const deleteOrganization = async (organizationId) => {
 					</div>
 				</div>
 			</div>
-		</div>
-
-		<!-- Date Filter -->
-		<div class="mt-6">
-			<DateFilterDropdown
-				:start-date="organizationStore.currentDateRange.startDate"
-				:end-date="organizationStore.currentDateRange.endDate"
-				@date-range-changed="handleDateRangeChange"
-			/>
 		</div>
 
 		<!-- Visibility score -->

@@ -122,7 +122,7 @@ watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
 				class="flex items-center justify-between min-w-[200px] space-x-2 cursor-pointer px-3 py-1.5 rounded-md bg-white shadow-xs border border-neutral-400/70 hover:bg-neutral-100 transition-all"
 			>
 				<div class="flex flex-col pr-0.5">
-					<span class="text-xs text-neutral-500">Timeframe</span>
+					<span class="text-xs text-neutral-500">Date range</span>
 					<span class="text-sm font-medium text-neutral-700 -mt-0.5">{{ selectedTimeframeLabel }}</span>
 				</div>
 				<ChevronDownIcon class="text-neutral-600" />
