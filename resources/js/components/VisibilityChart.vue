@@ -6,53 +6,34 @@
 				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
-			<div class="flex items-center gap-4">
-				<!-- Interval selector -->
-				<select v-model="selectedInterval" @change="fetchChartData" class="text-sm border border-neutral-200 rounded-md px-3 py-1.5">
-					<option value="daily">Daily</option>
-					<option value="weekly">Weekly</option>
-					<option value="monthly">Monthly</option>
-				</select>
+			<!-- Interval selector -->
+			<div class="relative">
+				<button
+					@click="isDropdownOpen = !isDropdownOpen"
+					class="flex items-center justify-between gap-2 text-sm border border-neutral-200 rounded-md px-3 py-1.5 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+				>
+					<span>{{ selectedIntervalLabel }}</span>
+					<ChevronDownIcon class="text-neutral-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
+				</button>
 
-				<!-- Competitor selector -->
-				<div class="relative">
+				<!-- Dropdown Content -->
+				<div v-if="isDropdownOpen" class="absolute top-full right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg z-50 min-w-[120px]">
 					<button
-						@click="showCompetitorDropdown = !showCompetitorDropdown"
-						class="text-sm border border-neutral-200 rounded-md px-3 py-1.5 flex items-center gap-2 hover:bg-neutral-50"
+						v-for="option in intervalOptions"
+						:key="option.value"
+						@click="selectInterval(option.value)"
+						:class="{
+							'bg-blue-50 text-blue-700': selectedInterval === option.value,
+							'text-neutral-700 hover:bg-neutral-50': selectedInterval !== option.value
+						}"
+						class="w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer first:rounded-t-md last:rounded-b-md"
 					>
-						<span>Compare with competitors</span>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-						</svg>
+						{{ option.label }}
 					</button>
-
-					<div
-						v-if="showCompetitorDropdown"
-						v-click-outside="() => (showCompetitorDropdown = false)"
-						class="absolute right-0 mt-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto"
-					>
-						<div class="p-2">
-							<div v-for="org in availableCompetitors" :key="org.id" class="flex items-center gap-2 p-2 hover:bg-neutral-50 rounded">
-								<input
-									type="checkbox"
-									:id="`competitor-${org.id}`"
-									v-model="selectedCompetitors"
-									:value="org.id"
-									@change="fetchChartData"
-									class="rounded border-neutral-300"
-								/>
-								<label :for="`competitor-${org.id}`" class="flex items-center gap-2 cursor-pointer flex-1">
-									<img
-										:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
-										:alt="org.name + ' logo'"
-										class="size-5 object-contain bg-white rounded border border-neutral-200"
-									/>
-									<span class="text-sm">{{ org.name || 'Unnamed Competitor' }}</span>
-								</label>
-							</div>
-						</div>
-					</div>
 				</div>
+
+				<!-- Backdrop -->
+				<div v-if="isDropdownOpen" @click="isDropdownOpen = false" class="fixed inset-0 z-40"></div>
 			</div>
 		</div>
 
@@ -71,6 +52,7 @@ import { ref, onMounted, watch, computed, nextTick, onUnmounted, onBeforeUnmount
 import { useOrganizationStore } from '@/stores/organizationStore'
 import ApexCharts from 'apexcharts'
 import api from '@/services/api'
+import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const props = defineProps({
 	startDate: String,
@@ -86,26 +68,23 @@ const chart = ref(null)
 const isLoading = ref(false)
 const chartData = ref([])
 const selectedInterval = ref('monthly')
-const selectedCompetitors = ref([])
-const showCompetitorDropdown = ref(false)
+const isDropdownOpen = ref(false)
 
-const availableCompetitors = computed(() => {
-	return organizationStore.visibilityMetrics.filter((org) => org.is_competitor)
+const intervalOptions = [
+	{ value: 'daily', label: 'Daily' },
+	{ value: 'weekly', label: 'Weekly' },
+	{ value: 'monthly', label: 'Monthly' }
+]
+
+const selectedIntervalLabel = computed(() => {
+	const option = intervalOptions.find((opt) => opt.value === selectedInterval.value)
+	return option ? option.label : 'Monthly'
 })
 
-// Click outside directive
-const vClickOutside = {
-	mounted(el, binding) {
-		el.clickOutsideEvent = function (event) {
-			if (!(el === event.target || el.contains(event.target))) {
-				binding.value()
-			}
-		}
-		document.addEventListener('click', el.clickOutsideEvent)
-	},
-	unmounted(el) {
-		document.removeEventListener('click', el.clickOutsideEvent)
-	}
+const selectInterval = (value) => {
+	selectedInterval.value = value
+	isDropdownOpen.value = false
+	fetchChartData()
 }
 
 // Keep track of the latest request ID
@@ -128,18 +107,11 @@ const fetchChartData = async () => {
 			interval: selectedInterval.value
 		})
 
-		// Add selected organizations
-		const orgIds = [...selectedCompetitors.value]
-
 		// Always include the owned organization
 		const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
-		if (ownedOrg && !orgIds.includes(ownedOrg.id)) {
-			orgIds.push(ownedOrg.id)
+		if (ownedOrg) {
+			params.append('organization_ids[]', ownedOrg.id)
 		}
-
-		orgIds.forEach((id) => {
-			params.append('organization_ids[]', id)
-		})
 
 		const response = await api.get(`/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart?${params}`)
 
@@ -225,6 +197,9 @@ const updateChart = () => {
 						enabled: true,
 						easing: 'easeinout',
 						speed: 800
+					},
+					zoom: {
+						enabled: false
 					}
 				},
 				colors: colors,
@@ -329,15 +304,6 @@ watch(
 	() => [props.startDate, props.endDate],
 	() => {
 		fetchChartData()
-	}
-)
-
-// Watch for visibility metrics updates
-watch(
-	() => organizationStore.visibilityMetrics,
-	() => {
-		// Reset selected competitors if they're no longer in the list
-		selectedCompetitors.value = selectedCompetitors.value.filter((id) => availableCompetitors.value.some((org) => org.id === id))
 	}
 )
 
