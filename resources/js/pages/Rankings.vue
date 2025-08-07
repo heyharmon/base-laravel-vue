@@ -138,7 +138,7 @@ const deleteOrganization = async (organizationId) => {
 						</tr>
 					</thead>
 					<tbody class="bg-white divide-y divide-neutral-200">
-						<tr v-for="org in organizationStore.visibilityMetrics" :key="org.id" class="group">
+						<tr v-for="org in organizationStore.visibilityMetrics" :key="org.id" class="group" :class="{ 'bg-green-50': !org.is_competitor }">
 							<td class="px-3 py-2 text-left whitespace-nowrap font-medium text-neutral-500">#{{ org.visibility_rank }}</td>
 							<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 								<img
