@@ -111,19 +111,19 @@ const deleteOrganization = async (organizationId) => {
 		</div>
 
 		<!-- Simplified Date Filter -->
-		<div class="mt-6">
+		<!-- <div class="mt-6">
 			<DateFilterDropdown
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
 				@date-range-changed="handleDateRangeChange"
 			/>
-		</div>
+		</div> -->
 
 		<!-- Visibility score -->
 		<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" class="mt-6" />
 
 		<!-- Visibility chart -->
-		<div class="mt-6">
+		<!-- <div class="mt-6">
 			<VisibilityChart
 				v-if="organizationStore.visibilityMetrics.length > 0"
 				:start-date="organizationStore.currentDateRange.startDate"
@@ -132,7 +132,7 @@ const deleteOrganization = async (organizationId) => {
 				:campaign-id="campaignId"
 				class="mt-6"
 			/>
-		</div>
+		</div> -->
 
 		<!-- Rankings -->
 		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
