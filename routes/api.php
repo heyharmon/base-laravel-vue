@@ -14,6 +14,7 @@ use App\Http\Controllers\PromptResponsesController;
 use App\Http\Controllers\PromptGeneratorController;
 use App\Http\Controllers\PromptExportController;
 use App\Http\Controllers\PromptController;
+use App\Http\Controllers\PromptVisibilityChartController;
 use App\Http\Controllers\OrganizationVisibilityController;
 use App\Http\Controllers\OrganizationVisibilityChartController;
 use App\Http\Controllers\OrganizationSearchController;
@@ -94,6 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Prompt export
     Route::get('prompts/{prompt}/export', [PromptExportController::class, 'show']);
+
+    // Prompt visibility chart
+    Route::get('prompts/{prompt}/visibility-chart', [PromptVisibilityChartController::class, 'chartData']);
 
     // Running prompts
     Route::post('prompts/{prompt}/run', [PromptRunController::class, 'store']);

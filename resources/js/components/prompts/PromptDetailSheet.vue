@@ -3,6 +3,8 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import VisibilityChart from '@/components/VisibilityChart.vue'
+import { useOrganizationStore } from '@/stores/organizationStore'
 import api from '@/services/api.js'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
@@ -30,7 +32,11 @@ const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const organizationStore = useOrganizationStore()
 const isCopied = ref(false)
+
+// Add a ref to control chart visibility
+const showChart = ref(false)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
@@ -63,10 +69,12 @@ watch(
 
 // Fetch prompt details when component mounts or promptId changes
 const fetchDetails = async () => {
-	if (props.promptId) {
-		await promptStore.showPrompt(props.promptId)
-		await promptStore.getPromptResponses(props.promptId)
-	}
+        if (props.promptId) {
+                showChart.value = false // Hide chart while loading
+                await promptStore.showPrompt(props.promptId)
+                await promptStore.getPromptResponses(props.promptId)
+                showChart.value = true // Show chart after data is loaded
+        }
 }
 
 // Method to highlight terms in response content
@@ -150,8 +158,30 @@ watch(() => props.promptId, fetchDetails)
 					</div> -->
 				</div>
 
-				<!-- Articles section -->
-				<div class="mt-6">
+                                <!-- Visibility Chart for this Prompt -->
+                                <div v-if="showChart && promptDetails" class="mt-6">
+                                        <VisibilityChart
+                                                :prompt-id="props.promptId"
+                                                :team-id="teamId"
+                                                :campaign-id="campaignId"
+                                                :start-date="organizationStore.currentDateRange.startDate"
+                                                :end-date="organizationStore.currentDateRange.endDate"
+                                                :title="`Visibility for: ${promptDetails.content?.substring(0, 50)}${promptDetails.content?.length > 50 ? '...' : ''}`"
+                                                :default-interval="'daily'"
+                                        />
+                                </div>
+
+                                <!-- Loading state for chart -->
+                                <div v-if="!showChart && promptStore.isLoadingDetails" class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+                                        <div class="flex items-center gap-2 mb-4">
+                                                <h2 class="text-xl font-bold">Loading Visibility Chart...</h2>
+                                                <div class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+                                        </div>
+                                        <div class="h-[400px] bg-neutral-100 animate-pulse rounded"></div>
+                                </div>
+
+                                <!-- Articles section -->
+                                <div class="mt-6">
 					<div class="flex items-center justify-between gap-6 mb-6">
 						<div>
 							<h3 class="text-lg font-medium text-neutral-800 mb-1">Articles</h3>
