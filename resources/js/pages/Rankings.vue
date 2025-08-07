@@ -86,11 +86,7 @@ const deleteOrganization = async (organizationId) => {
 		<div class="flex justify-between items-center pt-6">
 			<h1 class="text-2xl font-bold">Rankings</h1>
 			<div class="flex items-center gap-3">
-				<DateFilterDropdown
-					:start-date="organizationStore.currentDateRange.startDate"
-					:end-date="organizationStore.currentDateRange.endDate"
-					@date-range-changed="handleDateRangeChange"
-				/>
+				<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
 				<CampaignSwitcher />
 			</div>
 		</div>

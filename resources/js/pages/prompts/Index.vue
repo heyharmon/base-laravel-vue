@@ -175,11 +175,7 @@ const handleDateRangeChange = (dateRange) => {
 		<div class="flex justify-between items-center py-6">
 			<h1 class="text-2xl font-bold">Prompts</h1>
 			<div class="flex items-center gap-3">
-				<DateFilterDropdown
-					:start-date="organizationStore.currentDateRange.startDate"
-					:end-date="organizationStore.currentDateRange.endDate"
-					@date-range-changed="handleDateRangeChange"
-				/>
+				<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
 				<CampaignSwitcher />
 			</div>
 		</div>

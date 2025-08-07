@@ -39,10 +39,6 @@ const isCopied = ref(false)
 // Add a ref to control chart visibility
 const showChart = ref(false)
 
-// Date range management for the prompt detail sheet
-const chartStartDate = ref(organizationStore.currentDateRange.startDate)
-const chartEndDate = ref(organizationStore.currentDateRange.endDate)
-
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
 })
@@ -126,14 +122,11 @@ const createArticle = async () => {
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
-	chartStartDate.value = dateRange.startDate
-	chartEndDate.value = dateRange.endDate
+	// The DateFilterDropdown will update the organizationStore directly
+	// We just need to trigger any necessary data fetches here if needed
 }
 
 onMounted(() => {
-	// Initialize date range from organization store
-	chartStartDate.value = organizationStore.currentDateRange.startDate
-	chartEndDate.value = organizationStore.currentDateRange.endDate
 	fetchDetails()
 })
 
@@ -172,14 +165,14 @@ watch(() => props.promptId, fetchDetails)
 				<div v-if="showChart && promptDetails" class="mt-6">
 					<div class="flex justify-between items-center mb-4">
 						<!-- <h3 class="text-lg font-medium text-neutral-800">Prompt visibility</h3> -->
-						<DateFilterDropdown :start-date="chartStartDate" :end-date="chartEndDate" @date-range-changed="handleDateRangeChange" />
+						<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
 					</div>
 					<VisibilityChart
 						:prompt-id="props.promptId"
 						:team-id="teamId"
 						:campaign-id="campaignId"
-						:start-date="chartStartDate"
-						:end-date="chartEndDate"
+						:start-date="organizationStore.currentDateRange.startDate"
+						:end-date="organizationStore.currentDateRange.endDate"
 						title="Prompt visibility"
 					/>
 				</div>

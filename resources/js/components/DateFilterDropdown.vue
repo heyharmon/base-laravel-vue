@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import moment from 'moment'
 import { useDateRangeUtils } from '@/composables/useDateRangeUtils'
+import { useOrganizationStore } from '@/stores/organizationStore'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClose } from 'reka-ui'
 
 import DatePickerRange from '@/components/DatePickerRange.vue'
@@ -16,11 +17,16 @@ const props = defineProps({
 	endDate: {
 		type: String,
 		default: null
+	},
+	useSharedState: {
+		type: Boolean,
+		default: true
 	}
 })
 
 const emit = defineEmits(['dateRangeChanged'])
 
+const organizationStore = useOrganizationStore()
 const { getDateRangeForTimeframe, detectTimeframe, formatDateRange } = useDateRangeUtils()
 
 const selectedTimeframe = ref('last_30_days')
@@ -35,8 +41,24 @@ const timeframeOptions = [
 	{ value: 'all_time', label: 'All time' }
 ]
 
-const customStartDate = ref(props.startDate)
-const customEndDate = ref(props.endDate)
+// Use shared state from organization store when useSharedState is true
+const customStartDate = computed({
+	get: () => (props.useSharedState ? organizationStore.currentDateRange.startDate : props.startDate),
+	set: (value) => {
+		if (props.useSharedState) {
+			organizationStore.currentDateRange.startDate = value
+		}
+	}
+})
+
+const customEndDate = computed({
+	get: () => (props.useSharedState ? organizationStore.currentDateRange.endDate : props.endDate),
+	set: (value) => {
+		if (props.useSharedState) {
+			organizationStore.currentDateRange.endDate = value
+		}
+	}
+})
 
 const selectedTimeframeLabel = computed(() => {
 	if (selectedTimeframe.value === 'custom' && customStartDate.value && customEndDate.value) {
@@ -51,15 +73,21 @@ const selectTimeframe = (value) => {
 
 	if (value !== 'custom') {
 		const range = getDateRangeForTimeframe(value)
-		customStartDate.value = range.startDate
-		customEndDate.value = range.endDate
+
+		if (props.useSharedState) {
+			organizationStore.currentDateRange.startDate = range.startDate
+			organizationStore.currentDateRange.endDate = range.endDate
+		}
+
 		emit('dateRangeChanged', range)
 	}
 }
 
 // Fixed: Handle date updates separately and more carefully
 const handleStartDateUpdate = (startDate) => {
-	customStartDate.value = startDate
+	if (props.useSharedState) {
+		organizationStore.currentDateRange.startDate = startDate
+	}
 	selectedTimeframe.value = 'custom'
 
 	// Emit when we have both dates
@@ -72,7 +100,9 @@ const handleStartDateUpdate = (startDate) => {
 }
 
 const handleEndDateUpdate = (endDate) => {
-	customEndDate.value = endDate
+	if (props.useSharedState) {
+		organizationStore.currentDateRange.endDate = endDate
+	}
 	selectedTimeframe.value = 'custom'
 
 	// Emit when we have both dates OR when we're completing a range selection
@@ -91,26 +121,52 @@ const handleEndDateUpdate = (endDate) => {
 
 onMounted(() => {
 	const availableTimeframes = timeframeOptions.map((opt) => opt.value)
-	selectedTimeframe.value = detectTimeframe(props.startDate, props.endDate, availableTimeframes) || 'last_30_days'
 
+	// Detect timeframe based on current values
+	const startDate = props.useSharedState ? organizationStore.currentDateRange.startDate : props.startDate
+	const endDate = props.useSharedState ? organizationStore.currentDateRange.endDate : props.endDate
+
+	selectedTimeframe.value = detectTimeframe(startDate, endDate, availableTimeframes) || 'this_year'
+
+	// Initialize dates if not set
 	if (!customStartDate.value || !customEndDate.value) {
 		const range = getDateRangeForTimeframe(selectedTimeframe.value)
-		customStartDate.value = range.startDate
-		customEndDate.value = range.endDate
-	}
 
-	emit('dateRangeChanged', {
-		startDate: customStartDate.value,
-		endDate: customEndDate.value
-	})
+		if (props.useSharedState) {
+			organizationStore.currentDateRange.startDate = range.startDate
+			organizationStore.currentDateRange.endDate = range.endDate
+		}
+
+		emit('dateRangeChanged', {
+			startDate: range.startDate,
+			endDate: range.endDate
+		})
+	} else {
+		// Emit current values
+		emit('dateRangeChanged', {
+			startDate: customStartDate.value,
+			endDate: customEndDate.value
+		})
+	}
 })
 
+// Watch for changes in shared state
+watch(
+	() => organizationStore.currentDateRange,
+	(newRange) => {
+		if (props.useSharedState) {
+			const availableTimeframes = timeframeOptions.map((opt) => opt.value)
+			selectedTimeframe.value = detectTimeframe(newRange.startDate, newRange.endDate, availableTimeframes) || 'custom'
+		}
+	},
+	{ deep: true }
+)
+
+// Watch for prop changes when not using shared state
 watch([() => props.startDate, () => props.endDate], ([newStart, newEnd]) => {
-	if (newStart !== customStartDate.value || newEnd !== customEndDate.value) {
-		customStartDate.value = newStart
-		customEndDate.value = newEnd
+	if (!props.useSharedState) {
 		const availableTimeframes = timeframeOptions.map((opt) => opt.value)
-		selectedTimeframe.value = detectTimeframe(newStart, newEnd, availableTimeframes)
+		selectedTimeframe.value = detectTimeframe(newStart, newEnd, availableTimeframes) || 'custom'
 	}
 })
 </script>
