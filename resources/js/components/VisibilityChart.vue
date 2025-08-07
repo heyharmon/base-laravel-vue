@@ -2,7 +2,7 @@
 	<div class="bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
 		<div class="flex items-center justify-between mb-4">
 			<div class="flex items-center gap-2">
-				<h2 class="text-xl font-bold">Visibility Over Time</h2>
+				<h2 class="text-xl font-bold">{{ title }}</h2>
 				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
@@ -59,9 +59,17 @@ const props = defineProps({
 	endDate: String,
 	teamId: String,
 	campaignId: String,
+	promptId: {
+		type: [String, Number],
+		default: null
+	},
 	defaultInterval: {
 		type: String,
 		default: 'monthly'
+	},
+	title: {
+		type: String,
+		default: 'Visibility over time'
 	}
 })
 
@@ -96,12 +104,11 @@ let latestRequestId = 0
 
 const fetchChartData = async () => {
 	// Don't fetch if we're unmounting or missing required props
-	if (isUnmounting.value || !props.teamId || !props.campaignId) return
+	if (isUnmounting.value || !props.teamId || (!props.campaignId && !props.promptId)) return
 
 	isLoading.value = true
 
 	try {
-		// Prevent multiple simultaneous requests with a more robust ID system
 		const currentRequestId = Date.now()
 		latestRequestId = currentRequestId
 
@@ -111,28 +118,34 @@ const fetchChartData = async () => {
 			interval: selectedInterval.value
 		})
 
-		// Always include the owned organization
-		const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
-		if (ownedOrg) {
-			params.append('organization_ids[]', ownedOrg.id)
+		// Determine which endpoint to use
+		let endpoint
+		if (props.promptId) {
+			// Prompt-specific visibility
+			endpoint = `/prompts/${props.promptId}/visibility-chart`
+		} else {
+			// Overall campaign visibility
+			endpoint = `/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart`
+
+			// For campaign view, include owned org
+			const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+			if (ownedOrg) {
+				params.append('organization_ids[]', ownedOrg.id)
+			}
 		}
 
-		const response = await api.get(`/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart?${params}`)
+		const response = await api.get(`${endpoint}?${params}`)
 
-		// Check if a newer request has come in while we were waiting or if unmounting
 		if (currentRequestId !== latestRequestId || isUnmounting.value) {
-			return // Abandon this update as it's stale or component is unmounting
+			return
 		}
 
 		chartData.value = response.organizations || []
 
-		// If component is unmounting, don't proceed with chart update
 		if (isUnmounting.value) return
 
-		// Ensure DOM is updated before updating chart
 		await nextTick()
 
-		// Final check before updating chart
 		if (!isUnmounting.value && chartContainer.value) {
 			updateChart()
 		}

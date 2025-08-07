@@ -3,6 +3,8 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import VisibilityChart from '@/components/VisibilityChart.vue'
+import { useOrganizationStore } from '@/stores/organizationStore'
 import api from '@/services/api.js'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
@@ -30,7 +32,11 @@ const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const organizationStore = useOrganizationStore()
 const isCopied = ref(false)
+
+// Add a ref to control chart visibility
+const showChart = ref(false)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
@@ -64,8 +70,10 @@ watch(
 // Fetch prompt details when component mounts or promptId changes
 const fetchDetails = async () => {
 	if (props.promptId) {
+		showChart.value = false // Hide chart while loading
 		await promptStore.showPrompt(props.promptId)
 		await promptStore.getPromptResponses(props.promptId)
+		showChart.value = true // Show chart after data is loaded
 	}
 }
 
@@ -142,12 +150,28 @@ watch(() => props.promptId, fetchDetails)
 						<span class="text-neutral-500">Mentioned:</span>
 						<span class="text-neutral-800 ml-2">{{ mentionsPercentage }}% of the time</span>
 					</div>
-					<!-- <div class="mb-2 text-sm">
-						<span class="text-neutral-500">Term occurrences:</span>
-						<span class="text-neutral-800 ml-2">
-							{{ promptDetails.terms?.length || 0 }} {{ promptDetails.terms?.length === 1 ? 'term' : 'terms' }}
-						</span>
-					</div> -->
+				</div>
+
+				<!-- Visibility Chart for this Prompt -->
+				<div v-if="showChart && promptDetails" class="mt-6">
+					<VisibilityChart
+						:prompt-id="props.promptId"
+						:team-id="teamId"
+						:campaign-id="campaignId"
+						:start-date="organizationStore.currentDateRange.startDate"
+						:end-date="organizationStore.currentDateRange.endDate"
+						title="Prompt visibility"
+						:default-interval="'daily'"
+					/>
+				</div>
+
+				<!-- Loading state for chart -->
+				<div v-if="!showChart && promptStore.isLoadingDetails" class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
+					<div class="flex items-center gap-2 mb-4">
+						<h2 class="text-xl font-bold">Loading Visibility Chart...</h2>
+						<div class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
+					</div>
+					<div class="h-[400px] bg-neutral-100 animate-pulse rounded"></div>
 				</div>
 
 				<!-- Articles section -->
@@ -170,14 +194,14 @@ watch(() => props.promptId, fetchDetails)
 							:to="{ name: 'articles.edit', params: { teamId, campaignId, articleId: article.id } }"
 							class="block bg-white border border-neutral-200 p-4 rounded-lg hover:bg-neutral-50 transition-colors"
 						>
-							<div class="flex justify-between items-center mb-3">
+							<div class="flex justify-between items-center">
 								<h4 class="font-medium text-neutral-800">{{ article.title }}</h4>
 								<span class="text-xs text-neutral-500">{{ new Date(article.created_at).toLocaleDateString() }}</span>
 							</div>
 
-							<div class="text-sm text-neutral-600 mb-3 line-clamp-3">
+							<!-- <div class="text-sm text-neutral-600 mb-3 line-clamp-3 pt-3">
 								{{ article.content ? article.content.substring(0, 200) + '...' : 'No content available' }}
-							</div>
+							</div> -->
 						</RouterLink>
 					</div>
 					<div v-else class="text-neutral-500 italic">No articles have been generated for this prompt yet.</div>
