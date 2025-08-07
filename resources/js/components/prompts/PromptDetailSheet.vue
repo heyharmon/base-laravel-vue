@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import VisibilityChart from '@/components/VisibilityChart.vue'
+import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import api from '@/services/api.js'
 import Sheet from '@/components/ui/Sheet.vue'
@@ -37,6 +38,10 @@ const isCopied = ref(false)
 
 // Add a ref to control chart visibility
 const showChart = ref(false)
+
+// Date range management for the prompt detail sheet
+const chartStartDate = ref(organizationStore.currentDateRange.startDate)
+const chartEndDate = ref(organizationStore.currentDateRange.endDate)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
@@ -119,7 +124,18 @@ const createArticle = async () => {
 	router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
 }
 
-onMounted(fetchDetails)
+// Handle date range changes from dropdown
+const handleDateRangeChange = (dateRange) => {
+	chartStartDate.value = dateRange.startDate
+	chartEndDate.value = dateRange.endDate
+}
+
+onMounted(() => {
+	// Initialize date range from organization store
+	chartStartDate.value = organizationStore.currentDateRange.startDate
+	chartEndDate.value = organizationStore.currentDateRange.endDate
+	fetchDetails()
+})
 
 watch(() => props.promptId, fetchDetails)
 </script>
@@ -152,16 +168,19 @@ watch(() => props.promptId, fetchDetails)
 					</div>
 				</div>
 
-				<!-- Visibility Chart for this Prompt -->
+				<!-- Date Filter and Visibility Chart for this Prompt -->
 				<div v-if="showChart && promptDetails" class="mt-6">
+					<div class="flex justify-between items-center mb-4">
+						<!-- <h3 class="text-lg font-medium text-neutral-800">Prompt visibility</h3> -->
+						<DateFilterDropdown :start-date="chartStartDate" :end-date="chartEndDate" @date-range-changed="handleDateRangeChange" />
+					</div>
 					<VisibilityChart
 						:prompt-id="props.promptId"
 						:team-id="teamId"
 						:campaign-id="campaignId"
-						:start-date="organizationStore.currentDateRange.startDate"
-						:end-date="organizationStore.currentDateRange.endDate"
+						:start-date="chartStartDate"
+						:end-date="chartEndDate"
 						title="Prompt visibility"
-						:default-interval="'daily'"
 					/>
 				</div>
 

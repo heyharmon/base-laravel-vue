@@ -97,7 +97,7 @@ watch(campaignId, async (newId) => {
 		<div v-else>
 			<!-- Your Organization -->
 			<div class="mt-6 mb-6">
-				<h2 class="text-xl font-semibold mb-4">Your organization</h2>
+				<h2 class="text-xl font-medium mb-4">Your organization</h2>
 				<div v-if="organizationStore.ownedOrganizations.length === 0" class="text-neutral-500">You don't have an organization yet.</div>
 				<div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 					<router-link
@@ -134,7 +134,7 @@ watch(campaignId, async (newId) => {
 			<!-- Competitor Organizations -->
 			<div class="mb-8">
 				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-xl font-semibold">Competitors ({{ organizationStore.competitorOrganizations.length }})</h2>
+					<h2 class="text-xl font-medium">Competitors ({{ organizationStore.competitorOrganizations.length }})</h2>
 					<div class="flex space-x-2">
 						<Button
 							v-if="organizationStore.ownedOrganizations.length > 0"

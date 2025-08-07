@@ -2,7 +2,7 @@
 	<div class="bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
 		<div class="flex items-center justify-between mb-4">
 			<div class="flex items-center gap-2">
-				<h2 class="text-xl font-bold">{{ title }}</h2>
+				<h2 class="text-xl font-medium">{{ title }}</h2>
 				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
@@ -52,6 +52,7 @@ import { ref, onMounted, watch, computed, nextTick, onUnmounted, onBeforeUnmount
 import { useOrganizationStore } from '@/stores/organizationStore'
 import ApexCharts from 'apexcharts'
 import api from '@/services/api'
+import moment from 'moment'
 import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const props = defineProps({
@@ -81,6 +82,23 @@ const isLoading = ref(false)
 const chartData = ref([])
 const selectedInterval = ref('monthly')
 const isDropdownOpen = ref(false)
+
+// Calculate appropriate interval based on date range
+const calculateInterval = (startDate, endDate) => {
+	if (!startDate || !endDate) return 'monthly'
+
+	const start = moment(startDate)
+	const end = moment(endDate)
+	const daysDiff = end.diff(start, 'days')
+
+	if (daysDiff <= 7) {
+		return 'daily'
+	} else if (daysDiff <= 30) {
+		return 'weekly'
+	} else {
+		return 'monthly'
+	}
+}
 
 const intervalOptions = [
 	{ value: 'daily', label: 'Daily' },
@@ -316,10 +334,15 @@ const updateChart = () => {
 	}
 }
 
-// Watch for date changes
+// Watch for date changes and auto-calculate interval
 watch(
 	() => [props.startDate, props.endDate],
-	() => {
+	([newStartDate, newEndDate]) => {
+		// Auto-calculate interval based on date range
+		const calculatedInterval = calculateInterval(newStartDate, newEndDate)
+		if (calculatedInterval !== selectedInterval.value) {
+			selectedInterval.value = calculatedInterval
+		}
 		fetchChartData()
 	}
 )
@@ -336,8 +359,9 @@ watch(
 )
 
 onMounted(() => {
-	// Initialize selectedInterval with defaultInterval prop
-	selectedInterval.value = props.defaultInterval
+	// Calculate interval based on date range, fallback to defaultInterval
+	const calculatedInterval = calculateInterval(props.startDate, props.endDate)
+	selectedInterval.value = calculatedInterval !== 'monthly' ? calculatedInterval : props.defaultInterval
 	fetchChartData()
 })
 

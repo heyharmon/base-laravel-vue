@@ -121,7 +121,7 @@ const deleteOrganization = async (organizationId) => {
 		<!-- Rankings -->
 		<div class="mt-6 bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
 			<div class="flex items-center gap-2 mb-4">
-				<h2 class="text-xl font-bold">Rankings</h2>
+				<h2 class="text-xl font-medium">Rankings</h2>
 				<div v-if="organizationStore.isLoadingVisibility" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
