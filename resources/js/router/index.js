@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import auth from '@/services/auth'
 
 // Import pages
-import Dashboard from '@/pages/Dashboard.vue'
+import Rankings from '@/pages/Rankings.vue'
 import { useCampaignStore } from '@/stores/campaignStore'
 import Login from '@/pages/auth/Login.vue'
 import Register from '@/pages/auth/Register.vue'
@@ -26,30 +26,15 @@ const routes = [
 		redirect: () => {
 			const user = JSON.parse(localStorage.getItem('user') || '{}')
 			const teamId = user.current_team_id
-			return teamId ? `/teams/${teamId}/campaigns` : '/login'
+			const campaign = teamId ? JSON.parse(localStorage.getItem(`team_${teamId}_current_campaign`) || '{}') : null
+			return teamId && campaign?.id ? `/teams/${teamId}/campaigns/${campaign.id}/rankings` : '/login'
 		}
 	},
 	{
-		path: '/teams/:teamId/campaigns/:campaignId?',
+		path: '/teams/:teamId/campaigns/:campaignId/rankings',
 		name: 'home',
-		component: Dashboard,
-		meta: { requiresAuth: true },
-		beforeEnter: async (to, from, next) => {
-			const campaignStore = useCampaignStore()
-			const teamId = to.params.teamId
-
-			// Always fetch fresh campaign data for the team to ensure we have the correct campaigns
-			await campaignStore.fetchCampaigns(teamId)
-
-			if (!to.params.campaignId && campaignStore.defaultCampaign) {
-				return next({
-					name: 'home',
-					params: { teamId: teamId, campaignId: campaignStore.defaultCampaign.id }
-				})
-			}
-
-			next()
-		}
+		component: Rankings,
+		meta: { requiresAuth: true }
 	},
 	{
 		path: '/dashboard',
