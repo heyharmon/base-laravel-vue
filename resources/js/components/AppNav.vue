@@ -29,6 +29,11 @@ const teams = computed(() => ({
 const currentTeam = computed(() => teamStore.currentTeam)
 const currentCampaign = computed(() => campaignStore.currentCampaign)
 
+// Active route checking
+const isActiveRoute = (routeName) => {
+	return route.name === routeName
+}
+
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
@@ -80,31 +85,31 @@ onMounted(async () => {
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'dashboard', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('dashboard') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Dashboard</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'home', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('home') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Rankings</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'prompts.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('prompts.index') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Prompts</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'organizations.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('organizations.index') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Organizations</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'articles.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('articles.index') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Articles</router-link
 					>
 				</div>
