@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import auth from '@/services/auth'
 
 // Import pages
+import Dashboard from '@/pages/Dashboard.vue'
 import Rankings from '@/pages/Rankings.vue'
 import { useCampaignStore } from '@/stores/campaignStore'
 import Login from '@/pages/auth/Login.vue'
@@ -27,8 +28,14 @@ const routes = [
 			const user = JSON.parse(localStorage.getItem('user') || '{}')
 			const teamId = user.current_team_id
 			const campaign = teamId ? JSON.parse(localStorage.getItem(`team_${teamId}_current_campaign`) || '{}') : null
-			return teamId && campaign?.id ? `/teams/${teamId}/campaigns/${campaign.id}/rankings` : '/login'
+			return teamId && campaign?.id ? `/teams/${teamId}/campaigns/${campaign.id}/` : '/login'
 		}
+	},
+	{
+		path: '/teams/:teamId/campaigns/:campaignId/',
+		name: 'dashboard',
+		component: Dashboard,
+		meta: { requiresAuth: true }
 	},
 	{
 		path: '/teams/:teamId/campaigns/:campaignId/rankings',

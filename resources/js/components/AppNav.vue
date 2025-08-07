@@ -69,8 +69,20 @@ onMounted(async () => {
 	<nav class="bg-neutral-900 text-white">
 		<div class="mx-auto px-6 py-3 flex items-center justify-between">
 			<div class="flex items-center space-x-4">
-				<router-link to="/" class="text-xl font-bold">Paraloom</router-link>
+				<router-link
+					v-if="currentTeam && currentCampaign"
+					:to="{ name: 'dashboard', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+					class="text-xl font-bold"
+					>Paraloom</router-link
+				>
+				<router-link v-else to="/" class="text-xl font-bold">Paraloom</router-link>
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
+					<router-link
+						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'dashboard', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						class="text-sm hover:text-neutral-300"
+						>Dashboard</router-link
+					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'home', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"

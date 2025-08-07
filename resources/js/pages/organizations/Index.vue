@@ -156,9 +156,9 @@ watch(campaignId, async (newId) => {
 				</div>
 
 				<!-- Competitor limit message -->
-				<div class="mb-4 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+				<div class="mb-4 p-3 border border-neutral-200 rounded-lg">
 					<div class="flex items-center justify-between text-sm">
-						<span class="text-neutral-600">
+						<span class="text-neutral-600 font-medium">
 							Competitor limit: {{ organizationStore.competitorCount }} / {{ organizationStore.competitorLimit }}
 						</span>
 						<div class="w-32 bg-neutral-200 rounded-full h-2">
