@@ -25,8 +25,8 @@ const login = async () => {
 			password: password.value
 		})
 
-		// Fetch teams immediately after login to ensure currentTeam is set
-		await teamStore.fetchTeams()
+                // Load teams after login
+                await teamStore.fetchTeams()
 
 		// Fetch campaigns for the current team if available
 		const user = JSON.parse(localStorage.getItem('user'))
