@@ -22,11 +22,13 @@
 						v-for="option in intervalOptions"
 						:key="option.value"
 						@click="selectInterval(option.value)"
+						:disabled="option.disabled"
 						:class="{
-							'bg-blue-50 text-blue-700': selectedInterval === option.value,
-							'text-neutral-700 hover:bg-neutral-50': selectedInterval !== option.value
+							'bg-blue-50 text-blue-700': selectedInterval === option.value && !option.disabled,
+							'text-neutral-700 hover:bg-neutral-50': selectedInterval !== option.value && !option.disabled,
+							'text-neutral-400 cursor-not-allowed': option.disabled
 						}"
-						class="w-full text-left px-3 py-2 text-sm transition-colors cursor-pointer first:rounded-t-md last:rounded-b-md"
+						class="w-full text-left px-3 py-2 text-sm transition-colors first:rounded-t-md last:rounded-b-md"
 					>
 						{{ option.label }}
 					</button>
@@ -93,7 +95,10 @@ const calculateInterval = (startDate, endDate) => {
 	const end = moment(endDate)
 	const daysDiff = end.diff(start, 'days')
 
-	if (daysDiff <= 7) {
+	// If date range is > 365 days, force monthly
+	if (daysDiff > 365) {
+		return 'monthly'
+	} else if (daysDiff <= 7) {
 		return 'daily'
 	} else if (daysDiff <= 30) {
 		return 'weekly'
@@ -102,18 +107,33 @@ const calculateInterval = (startDate, endDate) => {
 	}
 }
 
-const intervalOptions = [
-	{ value: 'daily', label: 'Daily' },
-	{ value: 'weekly', label: 'Weekly' },
-	{ value: 'monthly', label: 'Monthly' }
-]
+const intervalOptions = computed(() => {
+	const daysDiff = getDaysDifference()
+	const options = [
+		{ value: 'daily', label: 'Daily', disabled: daysDiff > 365 },
+		{ value: 'weekly', label: 'Weekly', disabled: daysDiff > 365 },
+		{ value: 'monthly', label: 'Monthly', disabled: false }
+	]
+	return options
+})
+
+const getDaysDifference = () => {
+	if (!props.startDate || !props.endDate) return 0
+	const start = moment(props.startDate)
+	const end = moment(props.endDate)
+	return end.diff(start, 'days')
+}
 
 const selectedIntervalLabel = computed(() => {
-	const option = intervalOptions.find((opt) => opt.value === selectedInterval.value)
+	const option = intervalOptions.value.find((opt) => opt.value === selectedInterval.value)
 	return option ? option.label : 'Monthly'
 })
 
 const selectInterval = (value) => {
+	// Don't select disabled options
+	const option = intervalOptions.value.find((opt) => opt.value === value)
+	if (option && option.disabled) return
+
 	selectedInterval.value = value
 	isDropdownOpen.value = false
 	fetchChartData()
