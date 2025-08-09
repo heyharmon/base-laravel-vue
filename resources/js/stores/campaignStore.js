@@ -28,6 +28,10 @@ export const useCampaignStore = defineStore('campaign', {
 					// If still no current campaign, use default
 					if (!this.currentCampaign) {
 						this.currentCampaign = this.defaultCampaign || this.campaigns[0]
+						// Save the current campaign to localStorage
+						if (this.currentCampaign) {
+							localStorage.setItem(`team_${teamId}_current_campaign`, JSON.stringify(this.currentCampaign))
+						}
 					}
 				}
 			} catch (error) {

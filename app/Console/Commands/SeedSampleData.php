@@ -35,34 +35,42 @@ class SeedSampleData extends Command
     public function handle(): int
     {
         DB::transaction(function () {
-            $this->info('Creating demo user...');
+            $this->info('Finding existing users...');
 
-            $user = User::updateOrCreate(
-                ['email' => 'demo@example.com'],
-                [
-                    'name' => 'Demo User',
-                    'password' => 'password',
-                    'email_verified_at' => now(),
-                ]
-            );
+            $user1 = User::find(1);
+            $user2 = User::find(2);
+
+            if (!$user1 || !$user2) {
+                $this->error('Users with id 1 and 2 must exist before running this command.');
+                return Command::FAILURE;
+            }
 
             $this->info('Creating team and campaign...');
 
             $team = Team::firstOrCreate(
                 ['name' => 'Demo Team'],
-                ['owner_id' => $user->id]
+                ['owner_id' => $user1->id]
             );
 
-            // Ensure user belongs to team and current_team_id is set
+            // Add both users to the team
             $team->users()->syncWithoutDetaching([
-                $user->id => [
+                $user1->id => [
                     'role' => 'owner',
                     'invitation_accepted' => true,
                     'invitation_sent_at' => now(),
                     'joined_at' => now(),
                 ],
+                $user2->id => [
+                    'role' => 'member',
+                    'invitation_accepted' => true,
+                    'invitation_sent_at' => now(),
+                    'joined_at' => now(),
+                ],
             ]);
-            $user->update(['current_team_id' => $team->id]);
+
+            // Set current team for both users
+            $user1->update(['current_team_id' => $team->id]);
+            $user2->update(['current_team_id' => $team->id]);
 
             $campaign = Campaign::firstOrCreate(
                 [
@@ -187,7 +195,7 @@ class SeedSampleData extends Command
         });
 
         $this->info('Sample data created.');
-        $this->info('Login with email: demo@example.com and password: password');
+        $this->info('Users with id 1 and 2 have been added to the Demo Team.');
 
         return Command::SUCCESS;
     }

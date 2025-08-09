@@ -23,8 +23,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:startDate', 'update:endDate'])
 
-// Initialize current date to show the end date's month (or current month if no end date)
-const currentDate = ref(props.endDate ? moment(props.endDate) : moment())
+// Initialize current date to show the current month
+const currentDate = ref(moment())
 
 // Use local reactive state instead of computed properties
 const localStartDate = ref(props.startDate ? moment(props.startDate) : null)
@@ -93,16 +93,6 @@ const generateCalendarDays = (monthDate) => {
 const previousMonthDate = computed(() => currentDate.value.clone().subtract(1, 'month'))
 const leftCalendarDays = computed(() => generateCalendarDays(previousMonthDate.value))
 const rightCalendarDays = computed(() => generateCalendarDays(currentDate.value))
-
-// Watch for endDate changes to update the calendar view
-watch(
-	() => props.endDate,
-	(newEndDate) => {
-		if (newEndDate) {
-			currentDate.value = moment(newEndDate)
-		}
-	}
-)
 
 const selectDate = (day) => {
 	if (day.isDisabled) return
