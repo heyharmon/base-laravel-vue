@@ -119,9 +119,14 @@ class SeedSampleData extends Command
             $allTerms = collect($termsByOrg)->flatten();
             $allResponses = collect();
 
+            $startDate = Carbon::today(); // Start from today
+            $endDate = $startDate->copy()->subYears(2); // Go back 2 years
+
             foreach ($prompts as $prompt) {
                 for ($i = 0; $i < 250; $i++) {
-                    $date = Carbon::now()->subDays(rand(0, 730));
+                    $date = Carbon::createFromTimestamp(
+                        rand($endDate->timestamp, $startDate->timestamp)
+                    );
 
                     $response = Response::factory()->create([
                         'prompt_id' => $prompt->id,
@@ -165,7 +170,9 @@ class SeedSampleData extends Command
             foreach ($allTerms as $term) {
                 if (!isset($termPromptData[$term->id])) {
                     $response = $allResponses->random();
-                    $date = Carbon::now()->subDays(rand(0, 730));
+                    $date = Carbon::createFromTimestamp(
+                        rand($endDate->timestamp, $startDate->timestamp)
+                    );
 
                     $response->terms()->attach($term->id, [
                         'created_at' => $date,
