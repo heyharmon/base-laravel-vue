@@ -76,7 +76,13 @@ const generateCalendarDays = (monthDate) => {
 
 	let day = start.clone()
 	while (day.isSameOrBefore(end, 'day')) {
-		days.push(createCalendarDay(day, monthDate))
+		// Only include days that belong to the current month
+		if (day.isSame(monthDate, 'month')) {
+			days.push(createCalendarDay(day, monthDate))
+		} else {
+			// Add empty placeholder for days not in current month
+			days.push(null)
+		}
 		day.add(1, 'day')
 	}
 
@@ -188,15 +194,12 @@ const getDayClasses = (day) => {
 
 				<!-- Calendar Days -->
 				<div class="grid grid-cols-7 gap-0">
-					<button
-						v-for="day in leftCalendarDays"
-						:key="day.date.format('YYYY-MM-DD')"
-						@click="selectDate(day)"
-						:class="getDayClasses(day)"
-						:disabled="day.isDisabled"
-					>
-						{{ day.date.date() }}
-					</button>
+					<template v-for="(day, index) in leftCalendarDays" :key="day ? day.date.format('YYYY-MM-DD') : `empty-left-${index}`">
+						<button v-if="day" @click="selectDate(day)" :class="getDayClasses(day)" :disabled="day.isDisabled">
+							{{ day.date.date() }}
+						</button>
+						<div v-else class="p-4 mb-2"></div>
+					</template>
 				</div>
 			</div>
 
@@ -211,15 +214,12 @@ const getDayClasses = (day) => {
 
 				<!-- Calendar Days -->
 				<div class="grid grid-cols-7 gap-0">
-					<button
-						v-for="day in rightCalendarDays"
-						:key="day.date.format('YYYY-MM-DD')"
-						@click="selectDate(day)"
-						:class="getDayClasses(day)"
-						:disabled="day.isDisabled"
-					>
-						{{ day.date.date() }}
-					</button>
+					<template v-for="(day, index) in rightCalendarDays" :key="day ? day.date.format('YYYY-MM-DD') : `empty-right-${index}`">
+						<button v-if="day" @click="selectDate(day)" :class="getDayClasses(day)" :disabled="day.isDisabled">
+							{{ day.date.date() }}
+						</button>
+						<div v-else class="p-4 mb-2"></div>
+					</template>
 				</div>
 			</div>
 		</div>

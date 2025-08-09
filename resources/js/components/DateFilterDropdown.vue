@@ -7,7 +7,6 @@ import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverPortal, PopoverClos
 
 import DatePickerRange from '@/components/DatePickerRange.vue'
 import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
-import CalendarIcon from '@/components/icons/CalendarIcon.vue'
 
 const props = defineProps({
 	startDate: {
