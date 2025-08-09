@@ -89,6 +89,7 @@ const isDropdownOpen = ref(false)
 
 // Calculate appropriate interval based on date range
 const calculateInterval = (startDate, endDate) => {
+	// If dates are null (all_time), force monthly
 	if (!startDate || !endDate) return 'monthly'
 
 	const start = moment(startDate)
@@ -108,17 +109,21 @@ const calculateInterval = (startDate, endDate) => {
 }
 
 const intervalOptions = computed(() => {
+	const isAllTime = !props.startDate || !props.endDate
 	const daysDiff = getDaysDifference()
+	const shouldDisableShortIntervals = isAllTime || daysDiff > 365
+
 	const options = [
-		{ value: 'daily', label: 'Daily', disabled: daysDiff > 365 },
-		{ value: 'weekly', label: 'Weekly', disabled: daysDiff > 365 },
+		{ value: 'daily', label: 'Daily', disabled: shouldDisableShortIntervals },
+		{ value: 'weekly', label: 'Weekly', disabled: shouldDisableShortIntervals },
 		{ value: 'monthly', label: 'Monthly', disabled: false }
 	]
 	return options
 })
 
 const getDaysDifference = () => {
-	if (!props.startDate || !props.endDate) return 0
+	// If dates are null (all_time), return a large number to indicate unlimited range
+	if (!props.startDate || !props.endDate) return Infinity
 	const start = moment(props.startDate)
 	const end = moment(props.endDate)
 	return end.diff(start, 'days')
@@ -371,6 +376,13 @@ watch(
 		if (calculatedInterval !== selectedInterval.value) {
 			selectedInterval.value = calculatedInterval
 		}
+
+		// If currently selected interval becomes disabled, switch to monthly
+		const currentOption = intervalOptions.value.find((opt) => opt.value === selectedInterval.value)
+		if (currentOption && currentOption.disabled) {
+			selectedInterval.value = 'monthly'
+		}
+
 		fetchChartData()
 	}
 )
