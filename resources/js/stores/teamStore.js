@@ -13,33 +13,21 @@ export const useTeamStore = defineStore('team', {
 	}),
 
 	actions: {
-		async fetchTeams() {
-			console.log('Fetching teams...')
-			this.isLoading = true
+                async fetchTeams() {
+                        console.log('Fetching teams...')
+                        this.isLoading = true
 
-			try {
-				const response = await api.get('/teams')
-				this.ownedTeams = response.ownedTeams
-				this.joinedTeams = response.joinedTeams
-				this.pendingInvitations = response.pendingInvitations
-
-				// Set current team based on user's current_team_id
-				const user = JSON.parse(localStorage.getItem('user'))
-				if (user && user.current_team_id) {
-					this.currentTeam = this.getCurrentTeam(
-						{
-							ownedTeams: this.ownedTeams,
-							joinedTeams: this.joinedTeams
-						},
-						user
-					)
-				}
-			} catch (error) {
-				console.error('Error fetching teams:', error)
-			} finally {
-				this.isLoading = false
-			}
-		},
+                        try {
+                                const response = await api.get('/teams')
+                                this.ownedTeams = response.ownedTeams
+                                this.joinedTeams = response.joinedTeams
+                                this.pendingInvitations = response.pendingInvitations
+                        } catch (error) {
+                                console.error('Error fetching teams:', error)
+                        } finally {
+                                this.isLoading = false
+                        }
+                },
 
 		async fetchTeam(teamId) {
 			console.log('Fetching team details for team ID:', teamId)
@@ -221,17 +209,8 @@ export const useTeamStore = defineStore('team', {
 			}
 		},
 
-		getCurrentTeam(teams, user) {
-			if (!teams || !user || !user.current_team_id) return null
-
-			// Find the current team from the list of teams
-			return (
-				teams.ownedTeams.find((team) => team.id === user.current_team_id) || teams.joinedTeams.find((team) => team.id === user.current_team_id) || null
-			)
-		},
-
-		async generatePasswordResetUrl(teamId, userId) {
-			console.log('Generating password reset URL for user ID:', userId)
+                async generatePasswordResetUrl(teamId, userId) {
+                        console.log('Generating password reset URL for user ID:', userId)
 
 			try {
 				const response = await api.post(`/teams/${teamId}/members/${userId}/password-reset`)

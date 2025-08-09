@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import auth from '@/services/auth'
@@ -26,10 +26,17 @@ const copiedInviteUrls = ref({})
 const activeDropdown = ref(null)
 
 onMounted(async () => {
-	await loadTeam()
-	// Close dropdown when clicking outside
-	document.addEventListener('click', handleClickOutside)
+        await loadTeam()
+        // Close dropdown when clicking outside
+        document.addEventListener('click', handleClickOutside)
 })
+
+watch(
+        () => route.params.teamId,
+        async () => {
+                await loadTeam()
+        }
+)
 
 const handleClickOutside = (event) => {
 	if (!event.target.closest('.dropdown-container')) {

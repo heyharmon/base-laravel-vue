@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import { useCampaignStore } from '@/stores/campaignStore'
@@ -54,20 +54,26 @@ const logout = async () => {
 }
 
 const switchTeam = async (teamId) => {
-	try {
-		const response = await teamStore.switchTeam(teamId)
-		window.location.href = `/teams/${teamId}/campaigns/${response.default_campaign.id}`
-	} catch (error) {
-		console.error('Error switching team:', error)
-	}
+        try {
+                const response = await teamStore.switchTeam(teamId)
+                window.location.href = `/teams/${teamId}/campaigns/${response.default_campaign.id}`
+        } catch (error) {
+                console.error('Error switching team:', error)
+        }
 }
 
-onMounted(async () => {
-	if (route.params.teamId) {
-		jobStatusStore.pollTeamJobs(route.params.teamId)
-	}
-	isTeamDropdownOpen.value = false
-})
+watch(
+        () => route.params.teamId,
+        async (newTeamId) => {
+                if (newTeamId) {
+                        await teamStore.fetchTeam(newTeamId)
+                        jobStatusStore.pollTeamJobs(newTeamId)
+                } else {
+                        teamStore.currentTeam = null
+                }
+        },
+        { immediate: true }
+)
 </script>
 
 <template>
