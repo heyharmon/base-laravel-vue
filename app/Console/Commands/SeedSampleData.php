@@ -112,7 +112,7 @@ class SeedSampleData extends Command
             $allResponses = collect();
 
             foreach ($prompts as $prompt) {
-                for ($i = 0; $i < 10; $i++) {
+                for ($i = 0; $i < 250; $i++) {
                     $date = Carbon::now()->subDays(rand(0, 730));
 
                     $response = Response::factory()->create([
@@ -123,7 +123,7 @@ class SeedSampleData extends Command
 
                     $allResponses->push($response);
 
-                    $selectedTerms = $allTerms->filter(fn ($term) => rand(0, 1));
+                    $selectedTerms = $allTerms->filter(fn($term) => rand(0, 1));
 
                     if ($selectedTerms->isEmpty()) {
                         continue;
