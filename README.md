@@ -2,6 +2,16 @@
 
 This document gives AI developers a high level overview of this **Paraloom** codebase. This app is an LLM visibility tracker–it uses LLMs to track how often a brand shows up in LLM responses. The backend is Laravel 12 and the frontend is Vue 3 with Pinia stores.
 
+## Prompts, Responses & Visibility
+
+Prompts ask large language models about a campaign or organization. Each prompt is run through background jobs that call one or more LLM providers (currently OpenAI's `gpt‑4o`). Every response records the provider, model, generated content and any search metadata. The response text is scanned for **terms** belonging to the team's owned organization and any competitor organizations in the same campaign. Found terms are attached to the response and the prompt, incrementing mention counts.
+
+These mention counts power visibility metrics:
+
+-   **PromptController@index** returns prompts with response and term counts and calculates `mentions_percentage` – the percentage of responses that mention the team's primary organization.
+-   **OrganizationVisibilityController@index** aggregates mentions across all prompts in a campaign and ranks organizations by visibility (mentions ÷ total responses).
+-   **OrganizationVisibilityChartController** and **PromptVisibilityChartController** provide visibility over time using daily, weekly or monthly intervals.
+
 ## Laravel Models
 
 This section summarises the main Eloquent models and how they relate to each other.
@@ -24,9 +34,10 @@ This section summarises the main Eloquent models and how they relate to each oth
 
 ### Organization
 
--   Belongs to a team.
+-   Belongs to a team and optionally a campaign.
 -   Stores brand details (website, logo, location, keywords array).
 -   Has many `terms` and `articles`.
+-   `is_competitor` flags whether the organization is a competitor.
 
 ### Term
 
@@ -36,7 +47,7 @@ This section summarises the main Eloquent models and how they relate to each oth
 
 ### Prompt
 
--   Belongs to a team.
+-   Belongs to a team and a campaign.
 -   Many-to-many with `terms` through `term_prompt`.
 -   Has many `responses` and `articles`.
 -   Attribute `mentions_percentage` indicates how often the primary organization is mentioned.
