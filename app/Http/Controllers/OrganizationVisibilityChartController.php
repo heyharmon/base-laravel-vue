@@ -96,17 +96,16 @@ class OrganizationVisibilityChartController extends Controller
                         ->count();
                 }
 
-                // Only add data points when there are actual responses
-                if ($totalResponses > 0) {
-                    $visibility = round(($totalMentions / $totalResponses) * 100, 2);
+                $visibility = $totalResponses > 0
+                    ? round(($totalMentions / $totalResponses) * 100, 2)
+                    : 0;
 
-                    $dataPoints[] = [
-                        'date' => $intervalData['label'],
-                        'visibility' => $visibility,
-                        'mentions' => $totalMentions,
-                        'responses' => $totalResponses
-                    ];
-                }
+                $dataPoints[] = [
+                    'date' => $intervalData['label'],
+                    'visibility' => $visibility,
+                    'mentions' => $totalMentions,
+                    'responses' => $totalResponses
+                ];
             }
 
             $chartData[] = [
