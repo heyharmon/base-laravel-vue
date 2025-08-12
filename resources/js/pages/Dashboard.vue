@@ -6,7 +6,7 @@ import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
-import VisibilityChart from '@/components/VisibilityChart.vue'
+import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
@@ -107,7 +107,7 @@ const handleDateRangeChange = (dateRange) => {
 
 		<!-- Visibility chart -->
 		<div class="mt-6">
-			<VisibilityChart
+			<VisibilityBarChart
 				v-if="organizationStore.visibilityMetrics.length > 0"
 				:start-date="organizationStore.currentDateRange.startDate"
 				:end-date="organizationStore.currentDateRange.endDate"
