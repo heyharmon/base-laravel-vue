@@ -292,13 +292,13 @@ const updateChart = () => {
 					formatter: function (val, opts) {
 						// Show "No Data" indicator for null values
 						if (val === null) {
-							return '—'
+							return 'No data'
 						}
 						return ''
 					},
-					offsetY: -20,
+					offsetY: -30,
 					style: {
-						fontSize: '12px',
+						fontSize: '13px',
 						colors: ['#999']
 					}
 				},
@@ -309,6 +309,23 @@ const updateChart = () => {
 				},
 				xaxis: {
 					categories: categories,
+					// labels: {
+					// 	formatter: function (value, timestamp, opts) {
+					// 		// Check if any series has data for this category index
+					// 		const categoryIndex = opts.dataPointIndex !== undefined ? opts.dataPointIndex : categories.indexOf(value)
+
+					// 		// Check if all series have null values for this category
+					// 		const hasNoData = series.every((serie) => !serie.data[categoryIndex] || serie.data[categoryIndex] === null)
+
+					// 		if (hasNoData) {
+					// 			return value + '\n(no data)'
+					// 		}
+					// 		return value
+					// 	},
+					// 	style: {
+					// 		fontSize: '12px'
+					// 	}
+					// },
 					tooltip: {
 						enabled: false
 					}

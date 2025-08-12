@@ -3,7 +3,7 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
-import VisibilityChart from '@/components/VisibilityChart.vue'
+import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import api from '@/services/api.js'
@@ -167,7 +167,7 @@ watch(() => props.promptId, fetchDetails)
 						<!-- <h3 class="text-lg font-medium text-neutral-800">Prompt visibility</h3> -->
 						<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
 					</div>
-					<VisibilityChart
+					<VisibilityBarChart
 						:prompt-id="props.promptId"
 						:team-id="teamId"
 						:campaign-id="campaignId"
