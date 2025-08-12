@@ -241,9 +241,14 @@ const updateChart = () => {
 			}
 
 			// Format the data for ApexCharts bar chart
+			// Use null for points with no responses to indicate no data
 			const series = chartData.value.map((org) => ({
 				name: org.name,
-				data: org.data?.map((point) => point.visibility) || []
+				data:
+					org.data?.map((point) => {
+						// If there are no responses, return null to indicate no data
+						return point.responses === 0 ? null : point.visibility
+					}) || []
 			}))
 
 			// Get categories (dates) from the first organization's data points
@@ -283,7 +288,19 @@ const updateChart = () => {
 				colors: colors,
 				series: series,
 				dataLabels: {
-					enabled: false
+					enabled: true,
+					formatter: function (val, opts) {
+						// Show "No Data" indicator for null values
+						if (val === null) {
+							return '—'
+						}
+						return ''
+					},
+					offsetY: -20,
+					style: {
+						fontSize: '12px',
+						colors: ['#999']
+					}
 				},
 				stroke: {
 					show: true,
@@ -314,7 +331,7 @@ const updateChart = () => {
 					intersect: false,
 					y: {
 						formatter: function (value) {
-							return value + '%'
+							return value === null ? 'No data' : value + '%'
 						}
 					},
 					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
@@ -329,6 +346,17 @@ const updateChart = () => {
 
 						const orgData = chartData.value[seriesIndex]
 						const point = orgData.data[dataPointIndex]
+
+						// Special handling for no responses
+						if (point.responses === 0) {
+							return `
+							<div class="p-2 bg-white border border-neutral-200 rounded shadow">
+								<div class="font-bold">${orgData.name}</div>
+								<div class="text-neutral-500">No data for this period</div>
+								<div class="text-sm text-neutral-400">0 responses</div>
+							</div>
+							`
+						}
 
 						return `
 						<div class="p-2 bg-white border border-neutral-200 rounded shadow">
