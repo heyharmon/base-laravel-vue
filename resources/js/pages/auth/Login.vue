@@ -2,9 +2,11 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
+import { useCampaignStore } from '@/stores/campaignStore'
 import auth from '@/services/auth'
 
 const teamStore = useTeamStore()
+const campaignStore = useCampaignStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -23,8 +25,14 @@ const login = async () => {
 			password: password.value
 		})
 
-		// Fetch teams immediately after login to ensure currentTeam is set
-		await teamStore.fetchTeams()
+                // Load teams after login
+                await teamStore.fetchTeams()
+
+		// Fetch campaigns for the current team if available
+		const user = JSON.parse(localStorage.getItem('user'))
+		if (user && user.current_team_id) {
+			await campaignStore.fetchCampaigns(user.current_team_id)
+		}
 
 		// Redirect to the originally requested page or home
 		const redirectTo = route.query.redirect || '/'

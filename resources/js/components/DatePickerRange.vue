@@ -23,8 +23,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:startDate', 'update:endDate'])
 
-// Initialize current date to show the end date's month (or current month if no end date)
-const currentDate = ref(props.endDate ? moment(props.endDate) : moment())
+// Initialize current date to show the current month
+const currentDate = ref(moment())
 
 // Use local reactive state instead of computed properties
 const localStartDate = ref(props.startDate ? moment(props.startDate) : null)
@@ -76,7 +76,13 @@ const generateCalendarDays = (monthDate) => {
 
 	let day = start.clone()
 	while (day.isSameOrBefore(end, 'day')) {
-		days.push(createCalendarDay(day, monthDate))
+		// Only include days that belong to the current month
+		if (day.isSame(monthDate, 'month')) {
+			days.push(createCalendarDay(day, monthDate))
+		} else {
+			// Add empty placeholder for days not in current month
+			days.push(null)
+		}
 		day.add(1, 'day')
 	}
 
@@ -87,16 +93,6 @@ const generateCalendarDays = (monthDate) => {
 const previousMonthDate = computed(() => currentDate.value.clone().subtract(1, 'month'))
 const leftCalendarDays = computed(() => generateCalendarDays(previousMonthDate.value))
 const rightCalendarDays = computed(() => generateCalendarDays(currentDate.value))
-
-// Watch for endDate changes to update the calendar view
-watch(
-	() => props.endDate,
-	(newEndDate) => {
-		if (newEndDate) {
-			currentDate.value = moment(newEndDate)
-		}
-	}
-)
 
 const selectDate = (day) => {
 	if (day.isDisabled) return
@@ -188,15 +184,12 @@ const getDayClasses = (day) => {
 
 				<!-- Calendar Days -->
 				<div class="grid grid-cols-7 gap-0">
-					<button
-						v-for="day in leftCalendarDays"
-						:key="day.date.format('YYYY-MM-DD')"
-						@click="selectDate(day)"
-						:class="getDayClasses(day)"
-						:disabled="day.isDisabled"
-					>
-						{{ day.date.date() }}
-					</button>
+					<template v-for="(day, index) in leftCalendarDays" :key="day ? day.date.format('YYYY-MM-DD') : `empty-left-${index}`">
+						<button v-if="day" @click="selectDate(day)" :class="getDayClasses(day)" :disabled="day.isDisabled">
+							{{ day.date.date() }}
+						</button>
+						<div v-else class="p-4 mb-2"></div>
+					</template>
 				</div>
 			</div>
 
@@ -211,15 +204,12 @@ const getDayClasses = (day) => {
 
 				<!-- Calendar Days -->
 				<div class="grid grid-cols-7 gap-0">
-					<button
-						v-for="day in rightCalendarDays"
-						:key="day.date.format('YYYY-MM-DD')"
-						@click="selectDate(day)"
-						:class="getDayClasses(day)"
-						:disabled="day.isDisabled"
-					>
-						{{ day.date.date() }}
-					</button>
+					<template v-for="(day, index) in rightCalendarDays" :key="day ? day.date.format('YYYY-MM-DD') : `empty-right-${index}`">
+						<button v-if="day" @click="selectDate(day)" :class="getDayClasses(day)" :disabled="day.isDisabled">
+							{{ day.date.date() }}
+						</button>
+						<div v-else class="p-4 mb-2"></div>
+					</template>
 				</div>
 			</div>
 		</div>

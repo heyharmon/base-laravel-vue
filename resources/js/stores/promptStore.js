@@ -26,10 +26,11 @@ export const usePromptStore = defineStore('prompts', () => {
 			let url = `/teams/${teamId}/campaigns/${campaignId}/prompts`
 			const params = new URLSearchParams()
 
-			if (dateRange?.startDate) {
+			// Only add date parameters if they are not null
+			if (dateRange?.startDate && dateRange.startDate !== null) {
 				params.append('start_date', dateRange.startDate)
 			}
-			if (dateRange?.endDate) {
+			if (dateRange?.endDate && dateRange.endDate !== null) {
 				params.append('end_date', dateRange.endDate)
 			}
 

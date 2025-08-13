@@ -174,17 +174,13 @@ const handleDateRangeChange = (dateRange) => {
 	<DefaultLayout>
 		<div class="flex justify-between items-center py-6">
 			<h1 class="text-2xl font-bold">Prompts</h1>
-			<CampaignSwitcher />
+			<div class="flex items-center gap-3">
+				<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
+				<CampaignSwitcher />
+			</div>
 		</div>
 
 		<div class="flex flex-col space-y-6">
-			<!-- Date Filter -->
-			<!-- <DateFilterDropdown
-				:start-date="organizationStore.currentDateRange.startDate"
-				:end-date="organizationStore.currentDateRange.endDate"
-				@date-range-changed="handleDateRangeChange"
-			/> -->
-
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 
@@ -194,7 +190,7 @@ const handleDateRangeChange = (dateRange) => {
 				<div class="w-full">
 					<div class="mb-4 flex justify-between items-center">
 						<div class="flex items-center gap-3">
-							<h1 class="text-xl font-bold">
+							<h1 class="text-xl font-medium">
 								{{ sortedPrompts.length ? sortedPrompts.length : 'No' }} {{ sortedPrompts.length === 1 ? 'Prompt' : 'Prompts' }}
 							</h1>
 							<div v-if="promptStore.isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>

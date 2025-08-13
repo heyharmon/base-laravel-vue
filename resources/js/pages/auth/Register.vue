@@ -41,8 +41,8 @@ const register = async () => {
 
 			await auth.register(registrationData)
 
-			// Fetch teams immediately after login to ensure currentTeam is set
-			await teamStore.fetchTeams()
+                        // Load teams after login
+                        await teamStore.fetchTeams()
 
 			router.push('/')
 		} else {

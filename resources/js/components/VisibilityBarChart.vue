@@ -1,13 +1,16 @@
 <template>
-	<div class="bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
-		<div class="flex items-center justify-between mb-4">
+	<div class="bg-white rounded-lg border border-neutral-200 shadow-sm">
+		<div class="flex items-center justify-between px-6 pt-6 mb-4">
 			<div class="flex items-center gap-2">
 				<h2 class="text-xl font-medium">{{ title }}</h2>
 				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
-			<!-- Interval selector -->
 			<div class="relative">
+				<p class="text-sm text-neutral-400">{{ selectedIntervalLabel }}</p>
+			</div>
+			<!-- Interval selector -->
+			<!-- <div class="relative">
 				<button
 					@click="isDropdownOpen = !isDropdownOpen"
 					class="flex items-center justify-between gap-2 text-sm border border-neutral-200 rounded-md px-3 py-1.5 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -15,8 +18,6 @@
 					<span>{{ selectedIntervalLabel }}</span>
 					<ChevronDownIcon class="text-neutral-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
 				</button>
-
-				<!-- Dropdown Content -->
 				<div v-if="isDropdownOpen" class="absolute top-full right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg z-50 min-w-[120px]">
 					<button
 						v-for="option in intervalOptions"
@@ -33,13 +34,11 @@
 						{{ option.label }}
 					</button>
 				</div>
-
-				<!-- Backdrop -->
 				<div v-if="isDropdownOpen" @click="isDropdownOpen = false" class="fixed inset-0 z-40"></div>
-			</div>
+			</div> -->
 		</div>
 
-		<div class="relative" style="height: 400px">
+		<div class="relative pl-3" style="height: 440px">
 			<div ref="chartContainer"></div>
 		</div>
 
@@ -240,10 +239,15 @@ const updateChart = () => {
 				return
 			}
 
-			// Format the data for ApexCharts
+			// Format the data for ApexCharts bar chart
+			// Use null for points with no responses to indicate no data
 			const series = chartData.value.map((org) => ({
 				name: org.name,
-				data: org.data?.map((point) => point.visibility) || []
+				data:
+					org.data?.map((point) => {
+						// If there are no responses, return null to indicate no data
+						return point.responses === 0 ? null : point.visibility
+					}) || []
 			}))
 
 			// Get categories (dates) from the first organization's data points
@@ -252,10 +256,10 @@ const updateChart = () => {
 			// Prepare colors array
 			const colors = chartData.value.map((org) => org.color)
 
-			// Create ApexCharts options
+			// Create ApexCharts options for bar chart
 			const options = {
 				chart: {
-					type: 'line',
+					type: 'bar',
 					height: 400,
 					fontFamily: 'inherit',
 					toolbar: {
@@ -270,17 +274,57 @@ const updateChart = () => {
 						enabled: false
 					}
 				},
+				plotOptions: {
+					bar: {
+						horizontal: false,
+						columnWidth: '55%',
+						endingShape: 'rounded',
+						dataLabels: {
+							position: 'top'
+						}
+					}
+				},
 				colors: colors,
 				series: series,
 				dataLabels: {
-					enabled: false
+					enabled: true,
+					formatter: function (val, opts) {
+						// Show "No Data" indicator for null values
+						if (val === null) {
+							return 'No data'
+						}
+						return ''
+					},
+					offsetY: -30,
+					style: {
+						fontSize: '13px',
+						colors: ['#999']
+					}
 				},
 				stroke: {
-					curve: 'smooth',
-					width: 2
+					show: true,
+					width: 2,
+					colors: ['transparent']
 				},
 				xaxis: {
 					categories: categories,
+					// labels: {
+					// 	formatter: function (value, timestamp, opts) {
+					// 		// Check if any series has data for this category index
+					// 		const categoryIndex = opts.dataPointIndex !== undefined ? opts.dataPointIndex : categories.indexOf(value)
+
+					// 		// Check if all series have null values for this category
+					// 		const hasNoData = series.every((serie) => !serie.data[categoryIndex] || serie.data[categoryIndex] === null)
+
+					// 		if (hasNoData) {
+					// 			return value + '\n(no data)'
+					// 		}
+					// 		return value
+					// 	},
+					// 	style: {
+					// 		fontSize: '12px'
+					// 	}
+					// },
 					tooltip: {
 						enabled: false
 					}
@@ -295,12 +339,15 @@ const updateChart = () => {
 						}
 					}
 				},
+				fill: {
+					opacity: 1
+				},
 				tooltip: {
 					shared: true,
 					intersect: false,
 					y: {
 						formatter: function (value) {
-							return value + '%'
+							return value === null ? 'No data' : value + '%'
 						}
 					},
 					custom: function ({ series, seriesIndex, dataPointIndex, w }) {
@@ -315,6 +362,17 @@ const updateChart = () => {
 
 						const orgData = chartData.value[seriesIndex]
 						const point = orgData.data[dataPointIndex]
+
+						// Special handling for no responses
+						if (point.responses === 0) {
+							return `
+							<div class="p-2 bg-white border border-neutral-200 rounded shadow">
+								<div class="font-bold">${orgData.name}</div>
+								<div class="text-neutral-500">No data for this period</div>
+								<div class="text-sm text-neutral-400">0 responses</div>
+							</div>
+							`
+						}
 
 						return `
 						<div class="p-2 bg-white border border-neutral-200 rounded shadow">
@@ -333,7 +391,7 @@ const updateChart = () => {
 					markers: {
 						width: 10,
 						height: 10,
-						radius: 100
+						radius: 2
 					}
 				},
 				grid: {
@@ -341,12 +399,6 @@ const updateChart = () => {
 					row: {
 						colors: ['#f3f3f3', 'transparent'],
 						opacity: 0.5
-					}
-				},
-				markers: {
-					size: 4,
-					hover: {
-						size: 6
 					}
 				}
 			}

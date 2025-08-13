@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
 import { useCampaignStore } from '@/stores/campaignStore'
@@ -29,6 +29,11 @@ const teams = computed(() => ({
 const currentTeam = computed(() => teamStore.currentTeam)
 const currentCampaign = computed(() => campaignStore.currentCampaign)
 
+// Active route checking
+const isActiveRoute = (routeName) => {
+	return route.name === routeName
+}
+
 // Explicitly set popover to closed by default
 const isTeamDropdownOpen = ref(false)
 const isJobStatusSheetOpen = ref(false)
@@ -49,50 +54,68 @@ const logout = async () => {
 }
 
 const switchTeam = async (teamId) => {
-	try {
-		await teamStore.switchTeam(teamId)
-		window.location.href = `/teams/${teamId}/campaigns`
-	} catch (error) {
-		console.error('Error switching team:', error)
-	}
+        try {
+                const response = await teamStore.switchTeam(teamId)
+                window.location.href = `/teams/${teamId}/campaigns/${response.default_campaign.id}`
+        } catch (error) {
+                console.error('Error switching team:', error)
+        }
 }
 
-onMounted(async () => {
-	if (route.params.teamId) {
-		jobStatusStore.pollTeamJobs(route.params.teamId)
-	}
-	isTeamDropdownOpen.value = false
-})
+watch(
+        () => route.params.teamId,
+        async (newTeamId) => {
+                if (newTeamId) {
+                        await teamStore.fetchTeam(newTeamId)
+                        jobStatusStore.pollTeamJobs(newTeamId)
+                } else {
+                        teamStore.currentTeam = null
+                }
+        },
+        { immediate: true }
+)
 </script>
 
 <template>
 	<nav class="bg-neutral-900 text-white">
 		<div class="mx-auto px-6 py-3 flex items-center justify-between">
 			<div class="flex items-center space-x-4">
-				<router-link to="/" class="text-xl font-bold">Paraloom</router-link>
+				<router-link
+					v-if="currentTeam && currentCampaign"
+					:to="{ name: 'dashboard', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+					class="text-xl font-bold"
+					>Paraloom</router-link
+				>
+				<router-link v-else to="/" class="text-xl font-bold">Paraloom</router-link>
 				<div v-if="isAuthenticated" class="flex items-center space-x-4 ml-6">
 					<router-link
 						v-if="currentTeam && currentCampaign"
+						:to="{ name: 'dashboard', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('dashboard') ? 'text-white font-medium' : 'text-neutral-400']"
+						>Dashboard</router-link
+					>
+					<router-link
+						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'home', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('home') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Rankings</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'prompts.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('prompts.index') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Prompts</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'organizations.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('organizations.index') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Organizations</router-link
 					>
 					<router-link
 						v-if="currentTeam && currentCampaign"
 						:to="{ name: 'articles.index', params: { teamId: currentTeam.id, campaignId: currentCampaign.id } }"
-						class="text-sm hover:text-neutral-300"
+						:class="['text-sm hover:text-neutral-300', isActiveRoute('articles.index') ? 'text-white font-medium' : 'text-neutral-400']"
 						>Articles</router-link
 					>
 				</div>

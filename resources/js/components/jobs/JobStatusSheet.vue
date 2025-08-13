@@ -1,11 +1,11 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
 import JobStatusList from '@/components/jobs/JobStatusList.vue'
 import SpinnerIcon from '@/components/icons/SpinnerIcon.vue'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
-import { useTeamStore } from '@/stores/teamStore'
 
 const props = defineProps({
 	isOpen: {
@@ -21,15 +21,15 @@ const closeSheet = () => {
 }
 
 const jobStatusStore = useJobStatusStore()
-const teamStore = useTeamStore()
+const route = useRoute()
+const teamId = computed(() => route.params.teamId)
 const isCancelling = ref(false)
 
 async function cancelJobs() {
-        const teamId = teamStore.currentTeam?.id
-        if (!teamId) return
+        if (!teamId.value) return
         isCancelling.value = true
         try {
-                await jobStatusStore.cancelTeamJobs(teamId)
+                await jobStatusStore.cancelTeamJobs(teamId.value)
         } finally {
                 isCancelling.value = false
         }
