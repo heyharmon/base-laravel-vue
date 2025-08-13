@@ -209,43 +209,6 @@ class OpenAIArticleAgentService
                 'required' => ['prompt_id']
             ]
         ],
-        [
-            'type' => 'function',
-            'name' => 'list_articles',
-            'description' => 'List articles in the database with pagination support',
-            'parameters' => [
-                'type' => 'object',
-                'properties' => [
-                    'page' => [
-                        'type' => 'integer',
-                        'description' => 'Page number (default: 1)',
-                        'minimum' => 1
-                    ],
-                    'per_page' => [
-                        'type' => 'integer',
-                        'description' => 'Number of articles per page (default: 20, max: 100)',
-                        'minimum' => 1,
-                        'maximum' => 100
-                    ]
-                ],
-                'required' => []
-            ]
-        ],
-        [
-            'type' => 'function',
-            'name' => 'create_article',
-            'description' => 'Create a new article',
-            'parameters' => [
-                'type' => 'object',
-                'properties' => [
-                    'title' => [
-                        'type' => 'string',
-                        'description' => 'The title of the article'
-                    ],
-                ],
-                'required' => ['title']
-            ]
-        ]
     ];
 
     public function processMessage(Conversation $conversation, string $userMessage, array $context = [])
@@ -395,7 +358,7 @@ class OpenAIArticleAgentService
 
     protected function composeSystemPrompt(Conversation $conversation, array $context = []): string
     {
-        $systemMessage = "You are an intelligent article management assistant with two distinct modes of operation.\n\n";
+        $systemMessage = "You are an intelligent article writing assistant.\n\n";
 
         $systemMessage .= "🚨 CRITICAL EDITING RULES - WHEN EDITING ARTICLES:\n";
         $systemMessage .= "1. NEVER show article content in your responses - not original, not edited, not proposed changes\n";
@@ -419,8 +382,8 @@ class OpenAIArticleAgentService
 
         $systemMessage .= "EDITING WORKFLOW:\n";
         $systemMessage .= "When user requests edits (revise, expand, shorten, delete, etc.):\n";
-        $systemMessage .= "1. Silently use view_article\n";
-        $systemMessage .= "2. Silently use find_content if needed\n";
+        $systemMessage .= "1. Use view_article\n";
+        $systemMessage .= "2. Use find_content if needed\n";
         $systemMessage .= "3. Execute the change immediately\n";
         $systemMessage .= "4. Respond with ONLY: 'Done.', 'Updated.', or similar (max 5 words)\n\n";
 
@@ -432,7 +395,7 @@ class OpenAIArticleAgentService
 
         $systemMessage .= "RESEARCH WORKFLOW:\n";
         $systemMessage .= "When user asks questions or requests research:\n";
-        $systemMessage .= "1. Use appropriate tools (view_article, web_search_preview, etc.)\n";
+        $systemMessage .= "1. Use appropriate tools (view_article, web_search_preview, fetch_prompt_with_responses, etc.)\n";
         $systemMessage .= "2. Provide helpful, detailed responses\n";
         $systemMessage .= "3. Share insights and findings\n";
         $systemMessage .= "4. BUT never directly quote article content\n\n";
@@ -651,32 +614,6 @@ class OpenAIArticleAgentService
         $arguments = json_decode($arguments, true);
 
         switch ($functionName) {
-            case 'list_articles':
-                $teamId = $this->getTeamId();
-
-                if (!$teamId) {
-                    return json_encode(['error' => 'Team ID not available']);
-                }
-
-                $page = $arguments['page'] ?? 1;
-                $perPage = min($arguments['per_page'] ?? 20, 100);
-
-                $paginatedArticles = Article::where('team_id', $teamId)
-                    ->select(['id', 'title', 'created_at'])
-                    ->orderBy('created_at', 'desc')
-                    ->paginate($perPage, ['*'], 'page', $page);
-
-                return json_encode([
-                    'current_page' => $paginatedArticles->currentPage(),
-                    'per_page' => $paginatedArticles->perPage(),
-                    'total' => $paginatedArticles->total(),
-                    'last_page' => $paginatedArticles->lastPage(),
-                    'from' => $paginatedArticles->firstItem(),
-                    'to' => $paginatedArticles->lastItem(),
-                    'has_more_pages' => $paginatedArticles->hasMorePages(),
-                    'articles' => $paginatedArticles->items()
-                ]);
-
             case 'view_article':
                 $teamId = $this->getTeamId();
 
@@ -789,25 +726,6 @@ class OpenAIArticleAgentService
                     'chunk_end_position' => min($startPos + $chunkSize, $totalLength),
                     'chunk_content' => $chunk,
                     'has_more_chunks' => $chunkNumber < $totalChunks
-                ]);
-
-
-            case 'create_article':
-                $teamId = $this->getTeamId();
-
-                if (!$teamId) {
-                    return json_encode(['error' => 'Team ID not available']);
-                }
-
-                $article = Article::create([
-                    'title' => $arguments['title'],
-                    'team_id' => $teamId
-                ]);
-
-                return json_encode([
-                    'success' => true,
-                    'message' => 'Article created successfully',
-                    'article' => $article->toArray()
                 ]);
 
             case 'edit_article_title':
@@ -1034,11 +952,6 @@ class OpenAIArticleAgentService
         $arguments = json_decode($arguments, true);
 
         switch ($functionName) {
-            case 'list_articles':
-                $page = $arguments['page'] ?? 1;
-                $perPage = $arguments['per_page'] ?? 20;
-                return "Listing articles (page {$page}, {$perPage} per page)";
-
             case 'view_article':
                 $article = Article::find($arguments['article_id']);
                 $title = $article ? $article->title : 'Unknown';
@@ -1055,9 +968,6 @@ class OpenAIArticleAgentService
                 $title = $article ? $article->title : 'Unknown';
                 $chunkNumber = $arguments['chunk_number'] ?? 1;
                 return "Checking formatting in article \"{$title}\" (chunk {$chunkNumber})";
-
-            case 'create_article':
-                return "Creating article: \"{$arguments['title']}\"";
 
             case 'edit_article_title':
                 $article = Article::find($arguments['article_id']);
