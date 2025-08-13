@@ -108,7 +108,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'append_content',
-            'description' => 'Add content to the end of an article. Use this for building articles in chunks of ~200 words.',
+            'description' => 'Add content to the end of an article. Use this for building articles in chunks of ~200 words. Do not use this tool to add more than 300 words in a single call.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -127,7 +127,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'prepend_content',
-            'description' => 'Add content to the beginning of an article in chunks of ~200 words. ',
+            'description' => 'Add content to the beginning of an article in chunks of ~200 words. Do not use this tool to add more than 300 words in a single call.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -146,7 +146,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'replace_content',
-            'description' => 'Replace content in article with HTML awareness. Automatically handles plain text to HTML conversion. Replace content in ~200-word chunks at a time. ALWAYS call \'view_article\' first then \'find_content\' to find selected_content location. Apply directly; NEVER output replacement_text or content in response to user—simply confirm briefly to the user after tool succeeds.',
+            'description' => 'Replace content in article with HTML awareness. Automatically handles plain text to HTML conversion. Replace content in ~200-word chunks at a time. Do not use this tool to add more than 300 words in a single call. ALWAYS call \'view_article\' first then \'find_content\' to find selected_content location. Apply directly; NEVER output replacement_text or content in response to user—simply confirm briefly to the user after tool succeeds.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -174,7 +174,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'insert_content',
-            'description' => 'Insert new content after a specific piece of text in an article in chunks of ~200 words. ALWAYS call \'view_article\' to find the location in the article before inserting content.',
+            'description' => 'Insert new content after a specific piece of text in an article in chunks of ~200 words. Do not use this tool to add more than 300 words in a single call. ALWAYS call \'view_article\' to find the location in the article before inserting content.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -256,8 +256,14 @@ class OpenAIArticleAgentService
 
                 // Build and send request
                 $request = $service->buildRequest($conversation, $userMessage, $context);
+                Log::error('OpenAI request:', [
+                    'response' => $request,
+                ]);
 
                 $response = OpenAI::responses()->create($request);
+                Log::error('OpenAI response:', [
+                    'response' => $response,
+                ]);
 
                 // Process the response
                 $service->processResponse($conversation, $response);
@@ -270,11 +276,23 @@ class OpenAIArticleAgentService
                     'error' => $e->getMessage()
                 ]);
 
-                // Create error message in chat
-                $conversation->chats()->create([
-                    'role' => 'assistant',
-                    'content' => 'Sorry, I encountered an error processing your message. Please try again.'
-                ]);
+                // Check if this is the specific tool output error
+                if (strpos($e->getMessage(), 'No tool output found for function call') !== false) {
+                    // Clear the corrupted conversation state
+                    $conversation->openai_response_id = null;
+                    $conversation->save();
+
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'I encountered an issue with a previous request. The conversation has been reset - please try your request again.'
+                    ]);
+                } else {
+                    // Create error message in chat
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'Sorry, I encountered an error processing your message. Please try again.'
+                    ]);
+                }
 
                 // Emit completion event with error
                 $service = new self();
@@ -539,9 +557,9 @@ class OpenAIArticleAgentService
         $functionCalls = [];
 
         // Log the response output
-        Log::error('OpenAI response output:', [
-            'output' => $response->output,
-        ]);
+        // Log::error('OpenAI response output:', [
+        //     'output' => $response->output,
+        // ]);
 
         // Process all output items
         foreach ($response->output as $item) {
@@ -581,10 +599,6 @@ class OpenAIArticleAgentService
             }
         }
 
-        // Save response ID
-        $conversation->openai_response_id = $response->id;
-        $conversation->save();
-
         // Send tool outputs back if any
         if (!empty($toolOutputs)) {
             try {
@@ -595,6 +609,10 @@ class OpenAIArticleAgentService
                     'input' => $toolOutputs,
                 ]);
 
+                // Only save response ID after successful tool output submission
+                $conversation->openai_response_id = $followUp->id;
+                $conversation->save();
+
                 return $this->processResponse($conversation, $followUp);
             } catch (\Exception $e) {
                 Log::error('OpenAI Service: Follow-up request failed', [
@@ -602,9 +620,23 @@ class OpenAIArticleAgentService
                     'error' => $e->getMessage()
                 ]);
 
+                // Clear the response ID to prevent conversation state corruption
+                $conversation->openai_response_id = null;
+                $conversation->save();
+
+                // Create error message in chat
+                $conversation->chats()->create([
+                    'role' => 'assistant',
+                    'content' => 'I encountered an issue processing your request. The conversation has been reset - please try your request again.'
+                ]);
+
                 return $conversation->fresh()->chats;
             }
         }
+
+        // Save response ID only if no tool outputs were needed
+        $conversation->openai_response_id = $response->id;
+        $conversation->save();
 
         return $conversation->fresh()->chats;
     }
@@ -698,7 +730,7 @@ class OpenAIArticleAgentService
                     return json_encode(['error' => 'Article not found']);
                 }
 
-                $chunkSize = $arguments['chunk_size'] ?? 1000;
+                $chunkSize = $arguments['chunk_size'] ?? 500;
                 $chunkNumber = $arguments['chunk_number'] ?? 1;
                 $content = $article->content;
                 $totalLength = strlen($content);
