@@ -148,6 +148,7 @@ class RunPromptJob extends TrackableJob
                         'provider' => $providerName,
                         'model' => $model,
                         'content' => $llm->responseMessages[0]->content ?? '',
+                        'usage' => $llm->usage ?? null,
                     ]);
 
                     $responses[] = $response;

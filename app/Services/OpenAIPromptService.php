@@ -92,12 +92,29 @@ class OpenAIPromptService
         }
 
 
+        // Extract usage information
+        $usage = null;
+        if (isset($response->usage)) {
+            $usage = [
+                'input_tokens' => $response->usage->inputTokens ?? null,
+                'input_tokens_details' => [
+                    'cached_tokens' => $response->usage->inputTokensDetails->cachedTokens ?? null,
+                ],
+                'output_tokens' => $response->usage->outputTokens ?? null,
+                'output_tokens_details' => [
+                    'reasoning_tokens' => $response->usage->outputTokensDetails->reasoningTokens ?? null,
+                ],
+                'total_tokens' => $response->usage->totalTokens ?? null,
+            ];
+        }
+
         // Create a response object that matches what RunPromptJob expects
         return (object) [
             'responseMessages' => [
                 (object) ['content' => $content]
             ],
             'annotations' => $annotations,
+            'usage' => $usage,
             'rawResponse' => $response, // Keep the raw response for debugging
         ];
     }
