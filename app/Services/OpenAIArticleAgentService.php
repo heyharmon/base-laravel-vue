@@ -21,28 +21,7 @@ class OpenAIArticleAgentService
     protected $teamId;
 
     protected $tools = [
-        [
-            'type' => 'function',
-            'name' => 'list_articles',
-            'description' => 'List articles in the database with pagination support',
-            'parameters' => [
-                'type' => 'object',
-                'properties' => [
-                    'page' => [
-                        'type' => 'integer',
-                        'description' => 'Page number (default: 1)',
-                        'minimum' => 1
-                    ],
-                    'per_page' => [
-                        'type' => 'integer',
-                        'description' => 'Number of articles per page (default: 20, max: 100)',
-                        'minimum' => 1,
-                        'maximum' => 100
-                    ]
-                ],
-                'required' => []
-            ]
-        ],
+        ['type' => 'web_search_preview'],
         [
             'type' => 'function',
             'name' => 'view_article',
@@ -105,21 +84,6 @@ class OpenAIArticleAgentService
                     ]
                 ],
                 'required' => ['article_id']
-            ]
-        ],
-        [
-            'type' => 'function',
-            'name' => 'create_article',
-            'description' => 'Create a new article',
-            'parameters' => [
-                'type' => 'object',
-                'properties' => [
-                    'title' => [
-                        'type' => 'string',
-                        'description' => 'The title of the article'
-                    ],
-                ],
-                'required' => ['title']
             ]
         ],
         [
@@ -245,7 +209,43 @@ class OpenAIArticleAgentService
                 'required' => ['prompt_id']
             ]
         ],
-        ['type' => 'web_search']
+        [
+            'type' => 'function',
+            'name' => 'list_articles',
+            'description' => 'List articles in the database with pagination support',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'page' => [
+                        'type' => 'integer',
+                        'description' => 'Page number (default: 1)',
+                        'minimum' => 1
+                    ],
+                    'per_page' => [
+                        'type' => 'integer',
+                        'description' => 'Number of articles per page (default: 20, max: 100)',
+                        'minimum' => 1,
+                        'maximum' => 100
+                    ]
+                ],
+                'required' => []
+            ]
+        ],
+        [
+            'type' => 'function',
+            'name' => 'create_article',
+            'description' => 'Create a new article',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'title' => [
+                        'type' => 'string',
+                        'description' => 'The title of the article'
+                    ],
+                ],
+                'required' => ['title']
+            ]
+        ]
     ];
 
     public function processMessage(Conversation $conversation, string $userMessage, array $context = [])
@@ -332,10 +332,6 @@ class OpenAIArticleAgentService
         // Previous response maintains the conversation state in OpenAI.
         $previous = $conversation->openai_response_id;
 
-        Log::info('System instructions: ', [
-            'instructions' => $instructions
-        ]);
-
         return array_filter([
             'model' => 'gpt-4.1', // Non-reasoning
             // 'model' => 'o4-mini-2025-04-16', // Reasoning
@@ -414,7 +410,7 @@ class OpenAIArticleAgentService
         $systemMessage .= "- Maximum 5 words: 'Done.', 'Updated.', 'Content updated.', 'Changes applied.'\n";
         $systemMessage .= "- NEVER show what you changed\n\n";
 
-        $systemMessage .= "🔍 FOR RESEARCH/VIEWING/QUESTIONS (list_articles, view_article, fetch_prompt_with_responses, web_search):\n";
+        $systemMessage .= "🔍 FOR RESEARCH/VIEWING/QUESTIONS (view_article, fetch_prompt_with_responses, web_search_preview):\n";
         $systemMessage .= "- Respond normally and helpfully\n";
         $systemMessage .= "- Share insights from your research\n";
         $systemMessage .= "- Answer questions thoroughly\n";
@@ -436,7 +432,7 @@ class OpenAIArticleAgentService
 
         $systemMessage .= "RESEARCH WORKFLOW:\n";
         $systemMessage .= "When user asks questions or requests research:\n";
-        $systemMessage .= "1. Use appropriate tools (list_articles, view_article, web_search, etc.)\n";
+        $systemMessage .= "1. Use appropriate tools (view_article, web_search_preview, etc.)\n";
         $systemMessage .= "2. Provide helpful, detailed responses\n";
         $systemMessage .= "3. Share insights and findings\n";
         $systemMessage .= "4. BUT never directly quote article content\n\n";
@@ -475,13 +471,8 @@ class OpenAIArticleAgentService
         $systemMessage .= "YOU: [silently: view_article, find_content, replace_content with shorter version]\n";
         $systemMessage .= "YOU: Updated.\n\n";
 
-        $systemMessage .= "RESEARCH EXAMPLES:\n";
-        $systemMessage .= "USER: What articles do I have about SEO?\n";
-        $systemMessage .= "YOU: [use list_articles]\n";
-        $systemMessage .= "YOU: You have 3 articles about SEO: 'SEO Best Practices', 'Local SEO Guide', and 'Technical SEO Checklist'. Would you like to explore any of these?\n\n";
-
         $systemMessage .= "USER: Research current AI trends for my article\n";
-        $systemMessage .= "YOU: [use web_search]\n";
+        $systemMessage .= "YOU: [use web_search_preview]\n";
         $systemMessage .= "YOU: Based on my research, the current AI trends include multimodal models, AI agents, and increased focus on safety. Key developments include... [detailed helpful response]\n\n";
 
         $systemMessage .= "EXAMPLES OF VIOLATIONS (NEVER DO THIS):\n";
@@ -533,9 +524,9 @@ class OpenAIArticleAgentService
         $reasoningContent = $item->content ?? $item->text ?? $item->reasoning ?? '';
 
         // Log reasoning for debugging
-        Log::info('OpenAI Reasoning:', [
-            'item' => $item,
-        ]);
+        // Log::info('OpenAI Reasoning:', [
+        //     'item' => $item,
+        // ]);
 
         // You might want to format or summarize the reasoning here
         $conversation->chats()->create([
@@ -583,6 +574,11 @@ class OpenAIArticleAgentService
     {
         $toolOutputs = [];
         $functionCalls = [];
+
+        // Log the response output
+        Log::error('OpenAI response output:', [
+            'output' => $response->output,
+        ]);
 
         // Process all output items
         foreach ($response->output as $item) {
@@ -1009,7 +1005,7 @@ class OpenAIArticleAgentService
                     ]);
                 }
 
-            case 'web_search':
+            case 'web_search_call':
                 return; // Handled by OpenAI
 
             default:
@@ -1102,7 +1098,7 @@ class OpenAIArticleAgentService
                 $contentPreview = substr($prompt->content, 0, 30) . '...';
                 return "Fetching prompt: \"{$contentPreview}\" with recent responses";
 
-            case 'web_search':
+            case 'web_search_call':
                 return "Searching for: \"{$arguments['query']}\"";
 
             default:
