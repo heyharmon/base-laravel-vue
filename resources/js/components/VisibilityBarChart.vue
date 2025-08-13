@@ -1,13 +1,16 @@
 <template>
-	<div class="bg-white rounded-lg p-6 border border-neutral-200 shadow-sm">
-		<div class="flex items-center justify-between mb-4">
+	<div class="bg-white rounded-lg border border-neutral-200 shadow-sm">
+		<div class="flex items-center justify-between px-6 pt-6 mb-4">
 			<div class="flex items-center gap-2">
 				<h2 class="text-xl font-medium">{{ title }}</h2>
 				<div v-if="isLoading" class="animate-spin rounded-full size-4 border-b-2 border-neutral-800"></div>
 			</div>
 
-			<!-- Interval selector -->
 			<div class="relative">
+				<p class="text-sm text-neutral-400">{{ selectedIntervalLabel }}</p>
+			</div>
+			<!-- Interval selector -->
+			<!-- <div class="relative">
 				<button
 					@click="isDropdownOpen = !isDropdownOpen"
 					class="flex items-center justify-between gap-2 text-sm border border-neutral-200 rounded-md px-3 py-1.5 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -15,8 +18,6 @@
 					<span>{{ selectedIntervalLabel }}</span>
 					<ChevronDownIcon class="text-neutral-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
 				</button>
-
-				<!-- Dropdown Content -->
 				<div v-if="isDropdownOpen" class="absolute top-full right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg z-50 min-w-[120px]">
 					<button
 						v-for="option in intervalOptions"
@@ -33,13 +34,11 @@
 						{{ option.label }}
 					</button>
 				</div>
-
-				<!-- Backdrop -->
 				<div v-if="isDropdownOpen" @click="isDropdownOpen = false" class="fixed inset-0 z-40"></div>
-			</div>
+			</div> -->
 		</div>
 
-		<div class="relative" style="height: 400px">
+		<div class="relative pl-3" style="height: 440px">
 			<div ref="chartContainer"></div>
 		</div>
 
