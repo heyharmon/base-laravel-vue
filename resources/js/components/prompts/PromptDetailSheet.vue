@@ -93,6 +93,43 @@ const highlightTerms = (content) => {
 	return highlightedContent
 }
 
+// Method to calculate cost for GPT-5 responses
+const calculateCost = (usage) => {
+	if (!usage) return null
+
+	// GPT-5 pricing (per 1M tokens)
+	const inputPrice = 1.25 // $1.250 per 1M tokens
+	const cachedInputPrice = 0.125 // $0.125 per 1M tokens
+	const outputPrice = 10.0 // $10.000 per 1M tokens
+
+	const inputTokens = usage.input_tokens || 0
+	const cachedTokens = usage.input_tokens_details?.cached_tokens || 0
+	const outputTokens = usage.output_tokens || 0
+
+	// Calculate regular input tokens (total input minus cached)
+	const regularInputTokens = inputTokens - cachedTokens
+
+	// Calculate costs
+	const regularInputCost = (regularInputTokens / 1000000) * inputPrice
+	const cachedInputCost = (cachedTokens / 1000000) * cachedInputPrice
+	const outputCost = (outputTokens / 1000000) * outputPrice
+
+	const totalCost = regularInputCost + cachedInputCost + outputCost
+
+	return totalCost
+}
+
+// Method to format cost as currency
+const formatCost = (cost) => {
+	if (cost === null || cost === undefined) return 'N/A'
+	return new Intl.NumberFormat('en-US', {
+		style: 'currency',
+		currency: 'USD',
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 4
+	}).format(cost)
+}
+
 const closeSheet = () => {
 	emit('close')
 }
@@ -235,11 +272,16 @@ watch(() => props.promptId, fetchDetails)
 							>
 								<!-- Response provider and model -->
 								<div class="mb-3 flex justify-between">
+									<div class="flex gap-4">
+										<span class="text-neutral-500 text-sm"
+											>Provider: <span class="font-medium">{{ response.provider }}</span></span
+										>
+										<span class="text-neutral-500 text-sm"
+											>Model: <span class="font-medium">{{ response.model }}</span></span
+										>
+									</div>
 									<span class="text-neutral-500 text-sm"
-										>Provider: <span class="font-medium">{{ response.provider }}</span></span
-									>
-									<span class="text-neutral-500 text-sm"
-										>Model: <span class="font-medium">{{ response.model }}</span></span
+										>Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span></span
 									>
 								</div>
 
