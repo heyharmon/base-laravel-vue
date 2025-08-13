@@ -256,14 +256,8 @@ class OpenAIArticleAgentService
 
                 // Build and send request
                 $request = $service->buildRequest($conversation, $userMessage, $context);
-                Log::error('OpenAI request:', [
-                    'response' => $request,
-                ]);
 
                 $response = OpenAI::responses()->create($request);
-                Log::error('OpenAI response:', [
-                    'response' => $response,
-                ]);
 
                 // Process the response
                 $service->processResponse($conversation, $response);
