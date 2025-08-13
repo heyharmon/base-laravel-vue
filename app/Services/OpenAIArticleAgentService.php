@@ -278,14 +278,44 @@ class OpenAIArticleAgentService
 
                 // Check if this is the specific tool output error
                 if (strpos($e->getMessage(), 'No tool output found for function call') !== false) {
-                    // Clear the corrupted conversation state
-                    $conversation->openai_response_id = null;
-                    $conversation->save();
+                    // Start a fresh conversation thread without the problematic tool calls
+                    try {
+                        $service = new self();
+                        $service->withTeamId($teamId);
 
-                    $conversation->chats()->create([
-                        'role' => 'assistant',
-                        'content' => 'I encountered an issue with a previous request. The conversation has been reset - please try your request again.'
-                    ]);
+                        $freshResponse = OpenAI::responses()->create([
+                            'model' => 'gpt-4.1',
+                            'instructions' => $service->composeSystemPrompt($conversation),
+                            'input' => 'I encountered an issue with a previous tool call, but I can continue helping you. What would you like me to do?',
+                            'tools' => $service->tools,
+                            'tool_choice' => 'auto',
+                            'store' => true,
+                        ]);
+
+                        // Save the new response ID
+                        $conversation->openai_response_id = $freshResponse->id;
+                        $conversation->save();
+
+                        // Create a helpful message
+                        $conversation->chats()->create([
+                            'role' => 'assistant',
+                            'content' => 'I encountered an issue with a previous request, but I can continue helping you. Please let me know what you\'d like me to do.'
+                        ]);
+                    } catch (\Exception $freshException) {
+                        Log::error('OpenAI Service: Fresh conversation start failed', [
+                            'conversation_id' => $conversation->id,
+                            'error' => $freshException->getMessage()
+                        ]);
+
+                        // Fallback to clearing state
+                        $conversation->openai_response_id = null;
+                        $conversation->save();
+
+                        $conversation->chats()->create([
+                            'role' => 'assistant',
+                            'content' => 'I encountered an issue with a previous request. Please try your request again.'
+                        ]);
+                    }
                 } else {
                     // Create error message in chat
                     $conversation->chats()->create([
@@ -620,17 +650,43 @@ class OpenAIArticleAgentService
                     'error' => $e->getMessage()
                 ]);
 
-                // Clear the response ID to prevent conversation state corruption
-                $conversation->openai_response_id = null;
-                $conversation->save();
+                // Check if this is the specific "No tool output found" error
+                if (strpos($e->getMessage(), 'No tool output found for function call') !== false) {
+                    // Start a fresh conversation thread without the problematic tool calls
+                    // This allows the conversation to continue without being stuck
+                    $freshResponse = OpenAI::responses()->create([
+                        'model' => 'gpt-4.1',
+                        'instructions' => $this->composeSystemPrompt($conversation),
+                        'input' => 'I encountered an issue with a previous tool call, but I can continue helping you. What would you like me to do?',
+                        'tools' => $this->tools,
+                        'tool_choice' => 'auto',
+                        'store' => true,
+                    ]);
 
-                // Create error message in chat
-                $conversation->chats()->create([
-                    'role' => 'assistant',
-                    'content' => 'I encountered an issue processing your request. The conversation has been reset - please try your request again.'
-                ]);
+                    // Save the new response ID
+                    $conversation->openai_response_id = $freshResponse->id;
+                    $conversation->save();
 
-                return $conversation->fresh()->chats;
+                    // Create a helpful message
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'I encountered an issue with a previous request, but I can continue helping you. Please let me know what you\'d like me to do.'
+                    ]);
+
+                    return $conversation->fresh()->chats;
+                } else {
+                    // For other errors, clear the response ID to prevent corruption
+                    $conversation->openai_response_id = null;
+                    $conversation->save();
+
+                    // Create error message in chat
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'I encountered an issue processing your request. Please try again.'
+                    ]);
+
+                    return $conversation->fresh()->chats;
+                }
             }
         }
 
