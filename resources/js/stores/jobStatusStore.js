@@ -45,7 +45,7 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 	// Actions
 	async function pollTeamJobs(teamId) {
 		await fetchTeamJobs(teamId)
-		startAutoRefresh(teamId, 1500)
+		startAutoRefresh(teamId, 3000)
 	}
 
 	async function fetchTeamJobs(teamId) {
@@ -79,10 +79,10 @@ export const useJobStatusStore = defineStore('jobStatus', () => {
 		return Array.isArray(jobs.value) && jobs.value.some((job) => job.status === 'pending' || job.status === 'processing')
 	}
 
-	function startAutoRefresh(teamId, interval = 2000) {
+	function startAutoRefresh(teamId, interval = 3000) {
 		stopAutoRefresh()
 		let pollsAfterCompletion = 0
-		const maxPollsAfterCompletion = 2 // Poll 3 more times after completion
+		const maxPollsAfterCompletion = 6 // Poll 6 more times after completion
 
 		refreshTimer.value = setInterval(() => {
 			if (hasActiveJobs()) {

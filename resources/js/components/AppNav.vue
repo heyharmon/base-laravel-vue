@@ -262,5 +262,5 @@ watch(
 		</div>
 	</nav>
 
-	<JobStatusSheet v-if="teams?.ownedTeams.length" :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
+	<JobStatusSheet :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

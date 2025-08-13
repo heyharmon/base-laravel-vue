@@ -28,7 +28,7 @@ class OpenAIPromptService
             $response = OpenAI::responses()->create([
                 'model' => $model,
                 'input' => $promptContent,
-                'reasoning' => ['effort' => 'medium'], // Options: minimal, low, medium (default), high
+                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
                 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
