@@ -135,7 +135,10 @@ const deleteOrganization = async (organizationId) => {
 					</thead>
 					<tbody class="bg-white divide-y divide-neutral-200">
 						<tr v-for="org in organizationStore.visibilityMetrics" :key="org.id" class="group" :class="{ 'bg-green-50': !org.is_competitor }">
-							<td class="px-3 py-2 text-left whitespace-nowrap font-medium text-neutral-500">#{{ org.visibility_rank }}</td>
+							<td class="px-3 py-2 text-left whitespace-nowrap font-medium text-neutral-500">
+								<span v-if="org.total_responses > 0">#{{ org.visibility_rank }}</span>
+								<span v-else class="text-neutral-400">-</span>
+							</td>
 							<td class="px-3 py-2 flex items-center gap-2 whitespace-nowrap font-medium">
 								<img
 									:src="`https://cdn.brandfetch.io/${org.website}/w/400/h/400?c=1idaplhOcH8x9kYGESa`"
@@ -154,7 +157,10 @@ const deleteOrganization = async (organizationId) => {
 									></div>
 								</div>
 							</td>
-							<td class="py-2 whitespace-nowrap text-sm flex items-start gap-0.5">{{ org.visibility }}<span class="text-xs">%</span></td>
+							<td class="py-2 whitespace-nowrap text-sm">
+								<div v-if="org.total_responses > 0" class="flex items-start gap-0.5">{{ org.visibility }}<span class="text-xs">%</span></div>
+								<span v-else class="text-neutral-400">No data</span>
+							</td>
 							<td class="px-3 py-2 whitespace-nowrap text-sm">{{ org.total_mentions }}</td>
 							<td class="px-3 py-2 whitespace-nowrap text-sm">
 								{{ org.total_responses }}

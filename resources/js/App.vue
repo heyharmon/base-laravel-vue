@@ -17,14 +17,11 @@ onMounted(async () => {
 			try {
 				await teamStore.fetchTeams()
 			} catch (error) {
-				console.error('Error fetching teams in router guard:', error)
+				console.error('Error fetching teams:', error)
+				// Don't redirect here - let the router handle navigation
 			}
 		}
-
-		// Redirect to teams.create if user has no teams
-		if (teamStore.ownedTeams.length === 0 && teamStore.joinedTeams.length === 0) {
-			router.push({ name: 'teams.create' })
-		}
+		// Remove redirect logic from here - router handles all navigation
 	}
 })
 </script>
