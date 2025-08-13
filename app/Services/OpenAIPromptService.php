@@ -8,26 +8,10 @@ use Illuminate\Support\Facades\Log;
 class OpenAIPromptService
 {
     /**
-     * The tools available for the OpenAI Chat API.
+     * The tools available for the OpenAI Response API.
      */
     protected array $tools = [
-        [
-            'type' => 'function',
-            'function' => [
-                'name' => 'web_search',
-                'description' => 'Search the web for current information',
-                'parameters' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'query' => [
-                            'type' => 'string',
-                            'description' => 'The search query to execute'
-                        ]
-                    ],
-                    'required' => ['query']
-                ]
-            ]
-        ]
+        ['type' => 'web_search_preview']
     ];
 
     /**
@@ -41,13 +25,12 @@ class OpenAIPromptService
     public function getResponse(string $promptContent, string $model = 'gpt-4o'): object
     {
         try {
-            $response = OpenAI::chat()->create([
+            $response = OpenAI::responses()->create([
                 'model' => $model,
-                'messages' => [
-                    ['role' => 'user', 'content' => $promptContent]
-                ],
+                'input' => $promptContent,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
+                'store' => false, // We don't need to store the conversation
             ]);
 
             return $this->processResponse($response);
@@ -73,20 +56,24 @@ class OpenAIPromptService
         $searchData = [];
         $annotations = [];
 
-        // Extract content from the first choice
-        if (isset($response->choices[0]->message->content)) {
-            $content = $response->choices[0]->message->content;
-        }
+        // Process all output items
+        foreach ($response->output as $item) {
+            switch ($item->type) {
+                case 'message':
+                    // Extract the assistant's message content
+                    if (isset($item->content[0]->text)) {
+                        $content = $item->content[0]->text;
+                    }
 
-        // Process tool calls if present
-        if (isset($response->choices[0]->message->tool_calls)) {
-            foreach ($response->choices[0]->message->tool_calls as $toolCall) {
-                if ($toolCall->type === 'function' && $toolCall->function->name === 'web_search') {
-                    $searchData[] = [
-                        'query' => json_decode($toolCall->function->arguments, true)['query'] ?? '',
-                        'results' => []
-                    ];
-                }
+                    // Extract annotations if present
+                    if (isset($item->content[0]->annotations)) {
+                        $annotations = $this->processAnnotations($item->content[0]->annotations);
+                    }
+                    break;
+
+                case 'function_call':
+                    // Handle any other function calls if needed
+                    break;
             }
         }
 
@@ -95,7 +82,6 @@ class OpenAIPromptService
             'responseMessages' => [
                 (object) ['content' => $content]
             ],
-            'searchData' => $searchData,
             'annotations' => $annotations,
             'rawResponse' => $response, // Keep the raw response for debugging
         ];
