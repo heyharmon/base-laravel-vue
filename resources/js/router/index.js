@@ -25,10 +25,50 @@ const routes = [
 	{
 		path: '/',
 		redirect: () => {
-			const user = JSON.parse(localStorage.getItem('user') || '{}')
-			const teamId = user.current_team_id
-			const campaign = teamId ? JSON.parse(localStorage.getItem(`team_${teamId}_current_campaign`) || '{}') : null
-			return teamId && campaign?.id ? `/teams/${teamId}/campaigns/${campaign.id}/` : '/login'
+			try {
+				// Check if authenticated
+				const token = localStorage.getItem('token')
+				if (!token) {
+					return '/login'
+				}
+
+				// Get user and validate
+				const user = JSON.parse(localStorage.getItem('user') || '{}')
+				if (!user || !user.current_team_id) {
+					// If user exists but has no team, redirect to team creation
+					if (user && Object.keys(user).length > 0) {
+						return '/teams/create'
+					}
+					// Invalid user data, clear auth and redirect to login
+					localStorage.removeItem('token')
+					localStorage.removeItem('user')
+					return '/login'
+				}
+
+				const teamId = user.current_team_id
+
+				// Get campaign and validate
+				const campaignData = localStorage.getItem(`team_${teamId}_current_campaign`)
+				if (!campaignData) {
+					// No campaign data, redirect to campaigns list
+					return `/teams/${teamId}/campaigns/list`
+				}
+
+				const campaign = JSON.parse(campaignData || '{}')
+				if (!campaign || !campaign.id) {
+					// Invalid campaign data, redirect to campaigns list
+					return `/teams/${teamId}/campaigns/list`
+				}
+
+				// Valid team and campaign, redirect to dashboard
+				return `/teams/${teamId}/campaigns/${campaign.id}/`
+			} catch (error) {
+				console.error('Error in root redirect:', error)
+				// On any error, clear potentially corrupted data and redirect to login
+				localStorage.removeItem('token')
+				localStorage.removeItem('user')
+				return '/login'
+			}
 		}
 	},
 	{
