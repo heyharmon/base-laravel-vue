@@ -108,7 +108,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'append_content',
-            'description' => 'Add content to the end of an article. Use this for building articles in chunks of ~200 words.',
+            'description' => 'Add content to the end of an article. Use this for building articles in chunks of ~200 words. Do not use this tool to add more than 300 words in a single call.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -127,7 +127,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'prepend_content',
-            'description' => 'Add content to the beginning of an article in chunks of ~200 words. ',
+            'description' => 'Add content to the beginning of an article in chunks of ~200 words. Do not use this tool to add more than 300 words in a single call.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -146,7 +146,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'replace_content',
-            'description' => 'Replace content in article with HTML awareness. Automatically handles plain text to HTML conversion. Replace content in ~200-word chunks at a time. ALWAYS call \'view_article\' first then \'find_content\' to find selected_content location. Apply directly; NEVER output replacement_text or content in response to user—simply confirm briefly to the user after tool succeeds.',
+            'description' => 'Replace content in article with HTML awareness. Automatically handles plain text to HTML conversion. Replace content in ~200-word chunks at a time. Do not use this tool to add more than 300 words in a single call. ALWAYS call \'view_article\' first then \'find_content\' to find selected_content location. Apply directly; NEVER output replacement_text or content in response to user—simply confirm briefly to the user after tool succeeds.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -174,7 +174,7 @@ class OpenAIArticleAgentService
         [
             'type' => 'function',
             'name' => 'insert_content',
-            'description' => 'Insert new content after a specific piece of text in an article in chunks of ~200 words. ALWAYS call \'view_article\' to find the location in the article before inserting content.',
+            'description' => 'Insert new content after a specific piece of text in an article in chunks of ~200 words. Do not use this tool to add more than 300 words in a single call. ALWAYS call \'view_article\' to find the location in the article before inserting content.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -270,11 +270,53 @@ class OpenAIArticleAgentService
                     'error' => $e->getMessage()
                 ]);
 
-                // Create error message in chat
-                $conversation->chats()->create([
-                    'role' => 'assistant',
-                    'content' => 'Sorry, I encountered an error processing your message. Please try again.'
-                ]);
+                // Check if this is the specific tool output error
+                if (strpos($e->getMessage(), 'No tool output found for function call') !== false) {
+                    // Start a fresh conversation thread without the problematic tool calls
+                    try {
+                        $service = new self();
+                        $service->withTeamId($teamId);
+
+                        $freshResponse = OpenAI::responses()->create([
+                            'model' => 'gpt-4.1',
+                            'instructions' => $service->composeSystemPrompt($conversation),
+                            'input' => 'I encountered an issue with a previous tool call, but I can continue helping you. What would you like me to do?',
+                            'tools' => $service->tools,
+                            'tool_choice' => 'auto',
+                            'store' => true,
+                        ]);
+
+                        // Save the new response ID
+                        $conversation->openai_response_id = $freshResponse->id;
+                        $conversation->save();
+
+                        // Create a helpful message
+                        $conversation->chats()->create([
+                            'role' => 'assistant',
+                            'content' => 'I encountered an issue with a previous request, but I can continue helping you. Please try again.'
+                        ]);
+                    } catch (\Exception $freshException) {
+                        Log::error('OpenAI Service: Fresh conversation start failed', [
+                            'conversation_id' => $conversation->id,
+                            'error' => $freshException->getMessage()
+                        ]);
+
+                        // Fallback to clearing state
+                        $conversation->openai_response_id = null;
+                        $conversation->save();
+
+                        $conversation->chats()->create([
+                            'role' => 'assistant',
+                            'content' => 'I encountered an issue with a previous request. Please try your request again.'
+                        ]);
+                    }
+                } else {
+                    // Create error message in chat
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'Sorry, I encountered an error processing your message. Please try again.'
+                    ]);
+                }
 
                 // Emit completion event with error
                 $service = new self();
@@ -539,9 +581,9 @@ class OpenAIArticleAgentService
         $functionCalls = [];
 
         // Log the response output
-        Log::error('OpenAI response output:', [
-            'output' => $response->output,
-        ]);
+        // Log::error('OpenAI response output:', [
+        //     'output' => $response->output,
+        // ]);
 
         // Process all output items
         foreach ($response->output as $item) {
@@ -581,10 +623,6 @@ class OpenAIArticleAgentService
             }
         }
 
-        // Save response ID
-        $conversation->openai_response_id = $response->id;
-        $conversation->save();
-
         // Send tool outputs back if any
         if (!empty($toolOutputs)) {
             try {
@@ -595,6 +633,10 @@ class OpenAIArticleAgentService
                     'input' => $toolOutputs,
                 ]);
 
+                // Only save response ID after successful tool output submission
+                $conversation->openai_response_id = $followUp->id;
+                $conversation->save();
+
                 return $this->processResponse($conversation, $followUp);
             } catch (\Exception $e) {
                 Log::error('OpenAI Service: Follow-up request failed', [
@@ -602,9 +644,49 @@ class OpenAIArticleAgentService
                     'error' => $e->getMessage()
                 ]);
 
-                return $conversation->fresh()->chats;
+                // Check if this is the specific "No tool output found" error
+                if (strpos($e->getMessage(), 'No tool output found for function call') !== false) {
+                    // Start a fresh conversation thread without the problematic tool calls
+                    // This allows the conversation to continue without being stuck
+                    $freshResponse = OpenAI::responses()->create([
+                        'model' => 'gpt-4.1',
+                        'instructions' => $this->composeSystemPrompt($conversation),
+                        'input' => 'I encountered an issue with a previous tool call, but I can continue helping you. What would you like me to do?',
+                        'tools' => $this->tools,
+                        'tool_choice' => 'auto',
+                        'store' => true,
+                    ]);
+
+                    // Save the new response ID
+                    $conversation->openai_response_id = $freshResponse->id;
+                    $conversation->save();
+
+                    // Create a helpful message
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'I encountered an issue with a previous request, but I can continue helping you. Please let me know what you\'d like me to do.'
+                    ]);
+
+                    return $conversation->fresh()->chats;
+                } else {
+                    // For other errors, clear the response ID to prevent corruption
+                    $conversation->openai_response_id = null;
+                    $conversation->save();
+
+                    // Create error message in chat
+                    $conversation->chats()->create([
+                        'role' => 'assistant',
+                        'content' => 'I encountered an issue processing your request. Please try again.'
+                    ]);
+
+                    return $conversation->fresh()->chats;
+                }
             }
         }
+
+        // Save response ID only if no tool outputs were needed
+        $conversation->openai_response_id = $response->id;
+        $conversation->save();
 
         return $conversation->fresh()->chats;
     }
@@ -698,7 +780,7 @@ class OpenAIArticleAgentService
                     return json_encode(['error' => 'Article not found']);
                 }
 
-                $chunkSize = $arguments['chunk_size'] ?? 1000;
+                $chunkSize = $arguments['chunk_size'] ?? 500;
                 $chunkNumber = $arguments['chunk_number'] ?? 1;
                 $content = $article->content;
                 $totalLength = strlen($content);

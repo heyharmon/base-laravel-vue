@@ -54,25 +54,25 @@ const logout = async () => {
 }
 
 const switchTeam = async (teamId) => {
-        try {
-                const response = await teamStore.switchTeam(teamId)
-                window.location.href = `/teams/${teamId}/campaigns/${response.default_campaign.id}`
-        } catch (error) {
-                console.error('Error switching team:', error)
-        }
+	try {
+		const response = await teamStore.switchTeam(teamId)
+		window.location.href = `/teams/${teamId}/campaigns/${response.default_campaign.id}`
+	} catch (error) {
+		console.error('Error switching team:', error)
+	}
 }
 
 watch(
-        () => route.params.teamId,
-        async (newTeamId) => {
-                if (newTeamId) {
-                        await teamStore.fetchTeam(newTeamId)
-                        jobStatusStore.pollTeamJobs(newTeamId)
-                } else {
-                        teamStore.currentTeam = null
-                }
-        },
-        { immediate: true }
+	() => route.params.teamId,
+	async (newTeamId) => {
+		if (newTeamId) {
+			await teamStore.fetchTeam(newTeamId)
+			jobStatusStore.pollTeamJobs(newTeamId)
+		} else {
+			teamStore.currentTeam = null
+		}
+	},
+	{ immediate: true }
 )
 </script>
 
@@ -262,5 +262,5 @@ watch(
 		</div>
 	</nav>
 
-	<JobStatusSheet v-if="teams?.ownedTeams.length" :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
+	<JobStatusSheet :is-open="isJobStatusSheetOpen" @close="isJobStatusSheetOpen = false" />
 </template>

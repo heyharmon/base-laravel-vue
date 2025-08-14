@@ -18,20 +18,26 @@ class OpenAIPromptService
      * Send a prompt to OpenAI and get the response with web search capabilities.
      *
      * @param string $promptContent The prompt content to send
-     * @param string $model The OpenAI model to use (default: gpt-4o)
-     * @return object Response object with content and search data
+     * @param string $model The OpenAI model to use (default: gpt-5)
+     * @return object Response object with content and annotations
      * @throws \Exception
      */
-    public function getResponse(string $promptContent, string $model = 'gpt-4o'): object
+    public function getResponse(string $promptContent, string $model = 'gpt-5'): object
     {
         try {
             $response = OpenAI::responses()->create([
                 'model' => $model,
                 'input' => $promptContent,
+                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
+                'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => false, // We don't need to store the conversation
             ]);
+
+            // Log::info('OpenAI response:', [
+            //     'response' => $response
+            // ]);
 
             return $this->processResponse($response);
         } catch (\Exception $e) {
@@ -48,33 +54,58 @@ class OpenAIPromptService
      * Process the OpenAI response and extract relevant data.
      *
      * @param mixed $response The raw OpenAI response
-     * @return object Processed response with content and search data
+     * @return object Processed response with content and annotations
      */
     protected function processResponse($response): object
     {
         $content = '';
-        $searchData = [];
         $annotations = [];
 
         // Process all output items
-        foreach ($response->output as $item) {
-            switch ($item->type) {
-                case 'message':
-                    // Extract the assistant's message content
-                    if (isset($item->content[0]->text)) {
-                        $content = $item->content[0]->text;
-                    }
+        if (isset($response->output) && is_array($response->output)) {
+            foreach ($response->output as $item) {
+                switch ($item->type) {
+                    case 'message':
+                        // Extract the assistant's message content
+                        if (isset($item->content) && is_array($item->content) && count($item->content) > 0) {
+                            $firstContent = $item->content[0];
+                            if (isset($firstContent->text)) {
+                                $content = $firstContent->text;
+                            }
 
-                    // Extract annotations if present
-                    if (isset($item->content[0]->annotations)) {
-                        $annotations = $this->processAnnotations($item->content[0]->annotations);
-                    }
-                    break;
+                            // Extract annotations if present
+                            if (isset($firstContent->annotations) && is_array($firstContent->annotations)) {
+                                $annotations = $this->processAnnotations($firstContent->annotations);
+                            }
+                        }
+                        break;
 
-                case 'function_call':
-                    // Handle any other function calls if needed
-                    break;
+                    case 'reasoning':
+                        // GPT-5 reasoning - we don't need to process this for our use case
+                        break;
+
+                    case 'function_call':
+                        // Handle any function calls if needed
+                        break;
+                }
             }
+        }
+
+
+        // Extract usage information
+        $usage = null;
+        if (isset($response->usage)) {
+            $usage = [
+                'input_tokens' => $response->usage->inputTokens ?? null,
+                'input_tokens_details' => [
+                    'cached_tokens' => $response->usage->inputTokensDetails->cachedTokens ?? null,
+                ],
+                'output_tokens' => $response->usage->outputTokens ?? null,
+                'output_tokens_details' => [
+                    'reasoning_tokens' => $response->usage->outputTokensDetails->reasoningTokens ?? null,
+                ],
+                'total_tokens' => $response->usage->totalTokens ?? null,
+            ];
         }
 
         // Create a response object that matches what RunPromptJob expects
@@ -83,6 +114,7 @@ class OpenAIPromptService
                 (object) ['content' => $content]
             ],
             'annotations' => $annotations,
+            'usage' => $usage,
             'rawResponse' => $response, // Keep the raw response for debugging
         ];
     }

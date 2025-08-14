@@ -24,6 +24,13 @@ class RunPromptJob extends TrackableJob
     public $tries = 1;
 
     /**
+     * The number of seconds the job can run before timing out.
+     *
+     * @var int
+     */
+    public $timeout = 300; // 5 minutes for GPT-5 reasoning
+
+    /**
      * The prompt instance.
      *
      * @var \App\Models\Prompt
@@ -64,7 +71,7 @@ class RunPromptJob extends TrackableJob
      * @var array
      */
     private array $availableProviders = [
-        'openai' => 'gpt-4o',
+        'openai' => 'gpt-5',
     ];
 
     /**
@@ -141,6 +148,7 @@ class RunPromptJob extends TrackableJob
                         'provider' => $providerName,
                         'model' => $model,
                         'content' => $llm->responseMessages[0]->content ?? '',
+                        'usage' => $llm->usage ?? null,
                     ]);
 
                     $responses[] = $response;
@@ -206,18 +214,8 @@ class RunPromptJob extends TrackableJob
     private function saveSearchToolResults(object $llmResponse, Response $response): void
     {
         $searchData = [
-            'search_calls' => $llmResponse->searchData ?? [],
             'annotations' => $llmResponse->annotations ?? [],
         ];
-
-        // For backward compatibility, also extract just the queries
-        $queries = [];
-        foreach ($llmResponse->searchData ?? [] as $searchCall) {
-            if (isset($searchCall['query'])) {
-                $queries[] = $searchCall['query'];
-            }
-        }
-        $searchData['queries'] = $queries;
 
         $response->update(['search' => $searchData]);
     }
