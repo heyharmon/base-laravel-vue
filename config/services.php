@@ -54,6 +54,8 @@ return [
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
         'organization' => env('OPENAI_ORGANIZATION'),
+        'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
+        'reasoning_timeout' => env('OPENAI_REASONING_TIMEOUT', 300),
     ],
 
     'perplexity' => [
