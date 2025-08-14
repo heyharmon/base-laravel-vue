@@ -71,7 +71,7 @@ class RunPromptJob extends TrackableJob
      * @var array
      */
     private array $availableProviders = [
-        'openai' => 'gpt-5',
+        'openai' => 'gpt-4o',
     ];
 
     /**

@@ -13,7 +13,7 @@ class OpenAIPromptService
     protected array $tools = [
         [
             'type' => 'web_search_preview',
-            'search_context_size' => 'low'
+            // 'search_context_size' => 'low'
         ]
     ];
 
@@ -25,7 +25,7 @@ class OpenAIPromptService
      * @return object Response object with content and annotations
      * @throws \Exception
      */
-    public function getResponse(string $promptContent, string $model = 'gpt-5'): object
+    public function getResponse(string $promptContent, string $model = 'gpt-4o'): object
     {
         $startTime = microtime(true);
 
@@ -39,8 +39,8 @@ class OpenAIPromptService
             $requestData = [
                 'model' => $model,
                 'input' => $promptContent,
-                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
-                'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
+                // 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
+                // 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,
