@@ -75,10 +75,10 @@ class FindCompetitorsInResponseJob extends TrackableJob
                 ->first();
 
             if (!$ownedOrganization) {
-                Log::info('FindCompetitorsInResponseJob: No owned organization found', [
-                    'prompt_id' => $this->prompt->id,
-                    'team_id' => $this->prompt->team_id
-                ]);
+                // Log::info('FindCompetitorsInResponseJob: No owned organization found', [
+                //     'prompt_id' => $this->prompt->id,
+                //     'team_id' => $this->prompt->team_id
+                // ]);
                 $this->markJobAsCompleted('Skipping prompt without owned organization');
                 return;
             }
@@ -88,19 +88,19 @@ class FindCompetitorsInResponseJob extends TrackableJob
 
             // Skip prompts without responses
             if ($recentResponses->isEmpty()) {
-                Log::info('FindCompetitorsInResponseJob: No responses found for prompt', [
-                    'prompt_id' => $this->prompt->id
-                ]);
+                // Log::info('FindCompetitorsInResponseJob: No responses found for prompt', [
+                //     'prompt_id' => $this->prompt->id
+                // ]);
                 $this->markJobAsCompleted('Skipping prompt because it has no responses');
                 return;
             }
 
-            Log::info('FindCompetitorsInResponseJob: Processing prompt', [
-                'prompt_id' => $this->prompt->id,
-                'owned_organization' => $ownedOrganization->name,
-                'responses_count' => $recentResponses->count(),
-                'content_length' => strlen($recentResponses->pluck('content')->implode('\n\n---\n\n'))
-            ]);
+            // Log::info('FindCompetitorsInResponseJob: Processing prompt', [
+            //     'prompt_id' => $this->prompt->id,
+            //     'owned_organization' => $ownedOrganization->name,
+            //     'responses_count' => $recentResponses->count(),
+            //     'content_length' => strlen($recentResponses->pluck('content')->implode('\n\n---\n\n'))
+            // ]);
 
             // Combine content from all recent responses
             $combinedContent = $recentResponses->pluck('content')->implode('\n\n---\n\n');
@@ -108,11 +108,11 @@ class FindCompetitorsInResponseJob extends TrackableJob
             // Get competitors from the LLM
             $competitors = $this->findCompetitorsWithLlm($combinedContent, $ownedOrganization);
 
-            Log::info('FindCompetitorsInResponseJob: Found competitors from LLM', [
-                'prompt_id' => $this->prompt->id,
-                'competitors_count' => count($competitors),
-                'competitors' => $competitors
-            ]);
+            // Log::info('FindCompetitorsInResponseJob: Found competitors from LLM', [
+            //     'prompt_id' => $this->prompt->id,
+            //     'competitors_count' => count($competitors),
+            //     'competitors' => $competitors
+            // ]);
 
             // Create competitor organizations
             $createdCount = $this->createCompetitorOrganizations($competitors);

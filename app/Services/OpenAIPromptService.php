@@ -32,7 +32,7 @@ class OpenAIPromptService
                 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
-                'store' => false, // We don't need to store the conversation
+                'store' => true,
             ]);
 
             // Log::info('OpenAI response:', [
@@ -107,6 +107,10 @@ class OpenAIPromptService
                 'total_tokens' => $response->usage->totalTokens ?? null,
             ];
         }
+
+        // Log::info('rawResponse', [
+        //     'response' => $response,
+        // ]);
 
         // Create a response object that matches what RunPromptJob expects
         return (object) [
