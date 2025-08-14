@@ -13,7 +13,7 @@ class OpenAIPromptService
     protected array $tools = [
         [
             'type' => 'web_search_preview',
-            // 'search_context_size' => 'low'
+            'search_context_size' => 'low'
         ]
     ];
 
@@ -39,7 +39,7 @@ class OpenAIPromptService
             $requestData = [
                 'model' => $model,
                 'input' => $promptContent,
-                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
+                'reasoning' => ['effort' => 'minimal'], // Options: minimal, low, medium (default), high
                 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
