@@ -109,7 +109,7 @@ class OpenAIPromptService
                 'trace' => $e->getTraceAsString()
             ]);
 
-            throw $e;
+            throw new \Exception('OpenAI Prompt Service: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 

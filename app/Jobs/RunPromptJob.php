@@ -192,11 +192,13 @@ class RunPromptJob extends TrackableJob
                 } catch (\Exception $e) {
                     $providerErrors[$providerName] = $e->getMessage();
 
-                    // Log the error but continue with other providers
+                    // Log the detailed error but continue with other providers
                     Log::error('Error running prompt with provider', [
                         'provider' => $providerName,
                         'prompt_id' => $this->prompt->id,
                         'error' => $e->getMessage(),
+                        'error_code' => $e->getCode(),
+                        'error_type' => get_class($e),
                         'trace' => $e->getTraceAsString()
                     ]);
                 }
