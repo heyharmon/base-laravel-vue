@@ -280,9 +280,9 @@ watch(() => props.promptId, fetchDetails)
 											>Model: <span class="font-medium">{{ response.model }}</span></span
 										>
 									</div>
-									<span class="text-neutral-500 text-sm"
+									<!-- <span class="text-neutral-500 text-sm"
 										>Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span></span
-									>
+									> -->
 								</div>
 
 								<!-- Response content -->
