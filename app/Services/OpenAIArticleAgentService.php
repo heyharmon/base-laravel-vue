@@ -293,7 +293,7 @@ class OpenAIArticleAgentService
                         // Create a helpful message
                         $conversation->chats()->create([
                             'role' => 'assistant',
-                            'content' => 'I encountered an issue with a previous request, but I can continue helping you. Please let me know what you\'d like me to do.'
+                            'content' => 'I encountered an issue with a previous request, but I can continue helping you. Please try again.'
                         ]);
                     } catch (\Exception $freshException) {
                         Log::error('OpenAI Service: Fresh conversation start failed', [
