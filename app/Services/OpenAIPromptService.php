@@ -11,7 +11,10 @@ class OpenAIPromptService
      * The tools available for the OpenAI Response API.
      */
     protected array $tools = [
-        ['type' => 'web_search_preview']
+        [
+            'type' => 'web_search_preview',
+            // 'search_context_size' => 'low'
+        ]
     ];
 
     /**
