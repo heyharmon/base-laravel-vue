@@ -24,29 +24,92 @@ class OpenAIPromptService
      */
     public function getResponse(string $promptContent, string $model = 'gpt-5'): object
     {
+        $startTime = microtime(true);
+
+        Log::info('OpenAI API request started', [
+            'model' => $model,
+            'prompt_length' => strlen($promptContent),
+            'prompt_preview' => substr($promptContent, 0, 100) . (strlen($promptContent) > 100 ? '...' : ''),
+        ]);
+
         try {
-            $response = OpenAI::responses()->create([
+            $requestData = [
                 'model' => $model,
                 'input' => $promptContent,
                 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
                 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
-                'store' => false, // We don't need to store the conversation
+                'store' => true,
+            ];
+
+            Log::info('OpenAI API request payload', [
+                'request_data' => array_merge($requestData, ['input' => '[REDACTED]'])
             ]);
 
-            // Log::info('OpenAI response:', [
-            //     'response' => $response
-            // ]);
+            $response = OpenAI::responses()->create($requestData);
 
-            return $this->processResponse($response);
-        } catch (\Exception $e) {
-            Log::error('OpenAI Prompt Service: API request failed', [
-                'prompt' => substr($promptContent, 0, 100) . '...',
+            $duration = microtime(true) - $startTime;
+
+            Log::info('OpenAI API request completed successfully', [
                 'model' => $model,
-                'error' => $e->getMessage()
+                'duration_seconds' => round($duration, 2),
+                'has_response' => !empty($response),
+                'response_type' => gettype($response)
             ]);
-            throw $e;
+
+            $processedResponse = $this->processResponse($response);
+
+            Log::info('OpenAI response processed', [
+                'has_content' => !empty($processedResponse->responseMessages[0]->content ?? ''),
+                'content_length' => strlen($processedResponse->responseMessages[0]->content ?? ''),
+                'annotations_count' => count($processedResponse->annotations ?? []),
+                'has_usage' => !empty($processedResponse->usage)
+            ]);
+
+            return $processedResponse;
+        } catch (\OpenAI\Exceptions\ErrorException $e) {
+            $duration = microtime(true) - $startTime;
+
+            Log::error('OpenAI API ErrorException', [
+                'prompt_preview' => substr($promptContent, 0, 100) . '...',
+                'model' => $model,
+                'duration_seconds' => round($duration, 2),
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_type' => get_class($e)
+            ]);
+
+            throw new \Exception('OpenAI API Error: ' . $e->getMessage(), $e->getCode(), $e);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $duration = microtime(true) - $startTime;
+
+            Log::error('OpenAI HTTP RequestException', [
+                'prompt_preview' => substr($promptContent, 0, 100) . '...',
+                'model' => $model,
+                'duration_seconds' => round($duration, 2),
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'has_response' => $e->hasResponse(),
+                'response_status' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null,
+                'response_body' => $e->hasResponse() ? substr($e->getResponse()->getBody()->getContents(), 0, 500) : null
+            ]);
+
+            throw new \Exception('OpenAI HTTP Request Error: ' . $e->getMessage(), $e->getCode(), $e);
+        } catch (\Exception $e) {
+            $duration = microtime(true) - $startTime;
+
+            Log::error('OpenAI Prompt Service: Unexpected error', [
+                'prompt_preview' => substr($promptContent, 0, 100) . '...',
+                'model' => $model,
+                'duration_seconds' => round($duration, 2),
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_type' => get_class($e),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw new \Exception('OpenAI Prompt Service: ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -107,6 +170,10 @@ class OpenAIPromptService
                 'total_tokens' => $response->usage->totalTokens ?? null,
             ];
         }
+
+        // Log::info('rawResponse', [
+        //     'response' => $response,
+        // ]);
 
         // Create a response object that matches what RunPromptJob expects
         return (object) [

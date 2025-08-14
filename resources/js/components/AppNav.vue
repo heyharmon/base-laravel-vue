@@ -125,11 +125,10 @@ watch(
 				<template v-if="isAuthenticated">
 					<!-- Jobs status button -->
 					<button
-						v-if="jobStatusStore.activeJobs.length > 0"
 						@click="isJobStatusSheetOpen = true"
 						class="flex items-center space-x-2 cursor-pointer -mr-1 px-2 py-1 rounded hover:bg-neutral-800"
 					>
-						<div class="relative size-5">
+						<div v-if="jobStatusStore.activeJobs.length > 0" class="relative size-5">
 							<SpinnerIcon class="absolute inset-0" />
 							<div class="absolute inset-0 flex items-center justify-center">
 								<span class="text-xs font-medium">{{ jobStatusStore.activeJobs.length }}</span>

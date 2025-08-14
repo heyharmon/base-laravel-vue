@@ -7,6 +7,7 @@ import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
 import api from '@/services/api.js'
+import auth from '@/services/auth'
 import Sheet from '@/components/ui/Sheet.vue'
 import Button from '@/components/ui/Button.vue'
 import CopyIcon from '@/components/icons/CopyIcon.vue'
@@ -38,6 +39,9 @@ const isCopied = ref(false)
 
 // Add a ref to control chart visibility
 const showChart = ref(false)
+
+const user = computed(() => auth.getUser())
+const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
 const promptDetails = computed(() => {
 	return promptStore.selectedPromptDetails
@@ -280,9 +284,9 @@ watch(() => props.promptId, fetchDetails)
 											>Model: <span class="font-medium">{{ response.model }}</span></span
 										>
 									</div>
-									<!-- <span class="text-neutral-500 text-sm"
+									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm"
 										>Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span></span
-									> -->
+									>
 								</div>
 
 								<!-- Response content -->
