@@ -29,6 +29,7 @@ const variants = {
 	dark: 'bg-neutral-800 text-white hover:bg-neutral-700',
 	primary: 'bg-blue-600 text-white hover:bg-blue-700',
 	success: 'bg-emerald-600 text-white hover:bg-emerald-700',
+	success_outline: 'border border-emerald-500 bg-emerald-50/50 text-emerald-700 shadow-xs hover:bg-emerald-100/60',
 	muted: 'bg-neutral-600 text-white hover:bg-neutral-700'
 }
 
