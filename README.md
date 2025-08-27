@@ -12,6 +12,10 @@ These mention counts power visibility metrics:
 -   **OrganizationVisibilityController@index** aggregates mentions across all prompts in a campaign and ranks organizations by visibility (mentions ÷ total responses).
 -   **OrganizationVisibilityChartController** and **PromptVisibilityChartController** provide visibility over time using daily, weekly or monthly intervals.
 
+## Timezones
+
+All timestamps are stored in UTC. When filtering by date, controllers accept a `timezone` query parameter and convert the provided `start_date` and `end_date` from that timezone into UTC before querying. Results are converted back to the user's timezone for display, so clients should send their IANA timezone identifier or already-normalized UTC strings.
+
 ## Laravel Models
 
 This section summarises the main Eloquent models and how they relate to each other.

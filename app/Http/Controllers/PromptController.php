@@ -9,6 +9,7 @@ use App\Models\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 class PromptController extends Controller
 {
@@ -18,16 +19,17 @@ class PromptController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'timezone' => 'nullable|timezone',
         ]);
 
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $endDateTime = null;
+        $timezone = $request->input('timezone', 'UTC');
 
-        if ($endDate) {
-            // Extend end date to include entire day (23:59:59)
-            $endDateTime = $endDate . ' 23:59:59';
-        }
+        $startDateUtc = $request->start_date
+            ? Carbon::parse($request->start_date, $timezone)->setTimezone('UTC')
+            : null;
+        $endDateUtc = $request->end_date
+            ? Carbon::parse($request->end_date, $timezone)->endOfDay()->setTimezone('UTC')
+            : null;
 
         $prompts = Prompt::where('team_id', $team->id)
             ->where('campaign_id', $campaign->id)
@@ -39,12 +41,12 @@ class PromptController extends Controller
                     });
                 },
                 // Count responses with date filtering
-                'responses' => function ($query) use ($startDate, $endDateTime) {
-                    if ($startDate) {
-                        $query->where('created_at', '>=', $startDate);
+                'responses' => function ($query) use ($startDateUtc, $endDateUtc) {
+                    if ($startDateUtc) {
+                        $query->where('created_at', '>=', $startDateUtc);
                     }
-                    if ($endDateTime) {
-                        $query->where('created_at', '<=', $endDateTime);
+                    if ($endDateUtc) {
+                        $query->where('created_at', '<=', $endDateUtc);
                     }
                 }
             ])
@@ -52,7 +54,7 @@ class PromptController extends Controller
             ->get();
 
         // Calculate mentions percentage for each prompt with date filtering
-        $prompts->each(function ($prompt) use ($startDate, $endDateTime, $team) {
+        $prompts->each(function ($prompt) use ($startDateUtc, $endDateUtc, $team) {
             $totalResponses = $prompt->responses_count;
 
             if ($totalResponses === 0) {
@@ -84,11 +86,11 @@ class PromptController extends Controller
                     $query->whereIn('terms.id', $termIds);
                 });
 
-            if ($startDate) {
-                $mentionsQuery->where('created_at', '>=', $startDate);
+            if ($startDateUtc) {
+                $mentionsQuery->where('created_at', '>=', $startDateUtc);
             }
-            if ($endDateTime) {
-                $mentionsQuery->where('created_at', '<=', $endDateTime);
+            if ($endDateUtc) {
+                $mentionsQuery->where('created_at', '<=', $endDateUtc);
             }
 
             $mentions = $mentionsQuery->count();
