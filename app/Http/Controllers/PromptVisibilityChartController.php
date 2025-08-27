@@ -18,11 +18,14 @@ class PromptVisibilityChartController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'interval' => 'nullable|in:daily,weekly,monthly'
+            'interval' => 'nullable|in:daily,weekly,monthly',
+            'timezone' => 'nullable|timezone'
         ]);
 
         $teamId = $prompt->team_id;
         $campaignId = $prompt->campaign_id;
+
+        $timezone = $request->input('timezone', 'UTC');
 
         // Handle date range
         if (!$request->start_date || !$request->end_date) {
@@ -38,12 +41,15 @@ class PromptVisibilityChartController extends Controller
                 ]);
             }
 
-            $startDate = Carbon::parse($firstResponse->created_at)->startOfDay();
-            $endDate = Carbon::parse($lastResponse->created_at)->endOfDay();
+            $startDateUser = Carbon::parse($firstResponse->created_at)->setTimezone($timezone)->startOfDay();
+            $endDateUser = Carbon::parse($lastResponse->created_at)->setTimezone($timezone)->endOfDay();
         } else {
-            $startDate = Carbon::parse($request->start_date);
-            $endDate = Carbon::parse($request->end_date);
+            $startDateUser = Carbon::parse($request->start_date, $timezone)->startOfDay();
+            $endDateUser = Carbon::parse($request->end_date, $timezone)->endOfDay();
         }
+
+        $startDate = $startDateUser->copy()->setTimezone('UTC');
+        $endDate = $endDateUser->copy()->setTimezone('UTC');
 
         $interval = $request->input('interval', 'daily');
 
@@ -54,7 +60,7 @@ class PromptVisibilityChartController extends Controller
             ->get();
 
         // Generate date intervals
-        $intervals = $this->generateIntervals($startDate, $endDate, $interval);
+        $intervals = $this->generateIntervals($startDateUser, $endDateUser, $interval);
 
         $chartData = [];
 
@@ -69,10 +75,12 @@ class PromptVisibilityChartController extends Controller
             foreach ($intervals as $intervalData) {
                 $intervalStart = $intervalData['start'];
                 $intervalEnd = $intervalData['end'];
+                $intervalStartUtc = $intervalStart->copy()->setTimezone('UTC');
+                $intervalEndUtc = $intervalEnd->copy()->setTimezone('UTC');
 
                 // Calculate visibility for this interval FOR THIS SPECIFIC PROMPT
                 $totalResponses = $prompt->responses()
-                    ->whereBetween('created_at', [$intervalStart, $intervalEnd])
+                    ->whereBetween('created_at', [$intervalStartUtc, $intervalEndUtc])
                     ->count();
 
                 $totalMentions = 0;
@@ -81,7 +89,7 @@ class PromptVisibilityChartController extends Controller
                         ->whereHas('terms', function ($query) use ($termIds) {
                             $query->whereIn('terms.id', $termIds);
                         })
-                        ->whereBetween('created_at', [$intervalStart, $intervalEnd])
+                        ->whereBetween('created_at', [$intervalStartUtc, $intervalEndUtc])
                         ->count();
                 }
 
@@ -109,8 +117,8 @@ class PromptVisibilityChartController extends Controller
         return response()->json([
             'organizations' => $chartData,
             'interval' => $interval,
-            'start_date' => $startDate->format('Y-m-d'),
-            'end_date' => $endDate->format('Y-m-d')
+            'start_date' => $startDateUser->format('Y-m-d'),
+            'end_date' => $endDateUser->format('Y-m-d')
         ]);
     }
 
