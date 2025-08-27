@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Team;
 use App\Models\Campaign;
+use Illuminate\Support\Carbon;
 
 class OrganizationVisibilityController extends Controller
 {
@@ -22,14 +23,20 @@ class OrganizationVisibilityController extends Controller
 		$campaignId = $campaign->id;
 
 		// Validate request parameters
-		$request->validate([
-			'start_date' => 'nullable|date',
-			'end_date' => 'nullable|date|after_or_equal:start_date',
-		]);
+                $request->validate([
+                        'start_date' => 'nullable|date',
+                        'end_date' => 'nullable|date|after_or_equal:start_date',
+                        'timezone' => 'nullable|timezone',
+                ]);
 
-		$startDate = $request->input('start_date');
-		$endDate = $request->input('end_date');
-		$endDateTime = null;
+                $timezone = $request->input('timezone', 'UTC');
+
+                $startDateUtc = $request->start_date
+                        ? Carbon::parse($request->start_date, $timezone)->setTimezone('UTC')
+                        : null;
+                $endDateUtc = $request->end_date
+                        ? Carbon::parse($request->end_date, $timezone)->endOfDay()->setTimezone('UTC')
+                        : null;
 
 		// Get total responses count with date filtering
 		$totalResponsesQuery = DB::table('responses')
@@ -37,14 +44,12 @@ class OrganizationVisibilityController extends Controller
 			->where('prompts.team_id', $teamId)
 			->where('prompts.campaign_id', $campaignId);
 
-		if ($startDate) {
-			$totalResponsesQuery->where('responses.created_at', '>=', $startDate);
-		}
-		if ($endDate) {
-			// Extend end date to include entire day (23:59:59)
-			$endDateTime = $endDate . ' 23:59:59';
-			$totalResponsesQuery->where('responses.created_at', '<=', $endDateTime);
-		}
+                if ($startDateUtc) {
+                        $totalResponsesQuery->where('responses.created_at', '>=', $startDateUtc);
+                }
+                if ($endDateUtc) {
+                        $totalResponsesQuery->where('responses.created_at', '<=', $endDateUtc);
+                }
 
 		$totalResponses = $totalResponsesQuery->count();
 
@@ -67,8 +72,8 @@ class OrganizationVisibilityController extends Controller
                AND p.campaign_id = ?
                AND org.team_id = ?
                AND (org.campaign_id = ? OR (org.campaign_id IS NULL AND org.is_competitor = 0))
-               ' . ($startDate ? 'AND r.created_at >= ?' : '') . '
-               ' . ($endDate ? 'AND r.created_at <= ?' : '') . '
+               ' . ($startDateUtc ? 'AND r.created_at >= ?' : '') . '
+               ' . ($endDateUtc ? 'AND r.created_at <= ?' : '') . '
                GROUP BY t.organization_id
            ) as mention_data'), 'organizations.id', '=', 'mention_data.organization_id')
 			->where('organizations.team_id', $teamId)
@@ -78,9 +83,9 @@ class OrganizationVisibilityController extends Controller
 			});
 
 		// Bind parameters for the subquery
-		$bindings = [$teamId, $campaignId, $teamId, $campaignId];
-		if ($startDate) $bindings[] = $startDate;
-		if ($endDate) $bindings[] = $endDateTime;
+                $bindings = [$teamId, $campaignId, $teamId, $campaignId];
+                if ($startDateUtc) $bindings[] = $startDateUtc->toDateTimeString();
+                if ($endDateUtc) $bindings[] = $endDateUtc->toDateTimeString();
 
 		$organizations = $organizationsWithMentions->addBinding($bindings, 'join')->get();
 
