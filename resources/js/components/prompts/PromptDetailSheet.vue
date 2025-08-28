@@ -234,9 +234,9 @@ watch(() => props.promptId, fetchDetails)
 							<h3 class="text-lg font-medium text-neutral-800 mb-1">Articles</h3>
 							<p class="text-neutral-600">Generate an article to optimize visibility for this prompt</p>
 						</div>
-						<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="outline" size="sm">
+						<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="success_outline" size="sm">
 							<SparkleIcon />
-							Create article
+							Improve visibility
 						</Button>
 					</div>
 

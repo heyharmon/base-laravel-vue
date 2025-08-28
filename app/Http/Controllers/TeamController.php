@@ -104,10 +104,19 @@ class TeamController extends Controller
 
         // Add invitation URLs and token information to pending invitations
         $pendingInvitations->each(function ($invitation) use ($team) {
-            // Check if there's an invitation token for this user (including expired ones)
-            $token = InvitationToken::where('email', $invitation->email)
+            // Only consider the most recent token created for this invitation
+            // and ignore any older tokens from past invitations
+            $query = InvitationToken::where('email', $invitation->email)
                 ->where('team_id', $team->id)
-                ->first();
+                ->orderByDesc('created_at');
+
+            // If we have an invitation_sent_at on the pivot, ensure the token
+            // belongs to this invitation (created at or after it was sent)
+            if (!empty($invitation->pivot?->invitation_sent_at)) {
+                $query->where('created_at', '>=', $invitation->pivot->invitation_sent_at);
+            }
+
+            $token = $query->first();
 
             if ($token) {
                 $invitation->token_expires_at = $token->expires_at;
