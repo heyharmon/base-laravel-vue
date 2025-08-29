@@ -208,24 +208,30 @@ const routes = [
 		component: ArticleEdit,
 		meta: { requiresAuth: true }
 	},
-        {
-                path: '/super-admin/',
-                name: 'super-admin',
-                component: () => import('@/pages/super-admin/SuperAdmin.vue'),
-                meta: { requiresAuth: true }
-        },
-        {
-                path: '/super-admin/teams',
-                name: 'super-admin.teams',
-                component: () => import('@/pages/super-admin/Teams.vue'),
-                meta: { requiresAuth: true }
-        },
-        {
-                path: '/super-admin/teams/:teamId',
-                name: 'super-admin.teams.show',
-                component: () => import('@/pages/super-admin/Team.vue'),
-                meta: { requiresAuth: true }
-        }
+	{
+		path: '/super-admin/',
+		name: 'super-admin',
+		component: () => import('@/pages/super-admin/Index.vue'),
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/super-admin/export',
+		name: 'super-admin.export',
+		component: () => import('@/pages/super-admin/Export.vue'),
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/super-admin/teams',
+		name: 'super-admin.teams',
+		component: () => import('@/pages/super-admin/Teams.vue'),
+		meta: { requiresAuth: true }
+	},
+	{
+		path: '/super-admin/teams/:teamId',
+		name: 'super-admin.teams.show',
+		component: () => import('@/pages/super-admin/Team.vue'),
+		meta: { requiresAuth: true }
+	}
 ]
 
 const router = createRouter({

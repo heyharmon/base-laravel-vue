@@ -30,7 +30,7 @@ onMounted(fetchTeams)
 <template>
 	<FullWidthLayout>
 		<div class="p-6">
-			<h1 class="text-2xl font-bold mb-6">Team Usage</h1>
+			<h1 class="text-2xl font-bold mb-6">Teams usage</h1>
 			<div v-if="isLoading" class="py-8 text-center">Loading...</div>
 			<div v-else>
 				<table class="min-w-full bg-white border border-neutral-200 rounded-lg overflow-hidden">

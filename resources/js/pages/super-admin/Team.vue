@@ -77,8 +77,8 @@ watch(selectedMonth, fetchUsage)
 			<!-- Header -->
 			<header class="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 				<div>
-					<h1 class="text-2xl font-semibold tracking-tight">{{ data.team.name }} Usage</h1>
-					<p class="mt-1 text-sm text-neutral-600">Track tokens and spending for your selected billing month.</p>
+					<h1 class="text-2xl font-semibold tracking-tight">{{ data.team.name }} usage</h1>
+					<p class="mt-1 text-sm text-neutral-600">Track tokens and spending for the selected billing month.</p>
 				</div>
 
 				<!-- Controls -->
