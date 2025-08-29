@@ -15,6 +15,8 @@ import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import { useUsageStore } from '@/stores/usageStore'
+import UsageBar from '@/components/ui/UsageBar.vue'
 
 const route = useRoute()
 
@@ -23,6 +25,7 @@ const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 const campaignStore = useCampaignStore()
+const usageStore = useUsageStore()
 
 // Route params
 const teamId = computed(() => route.params.teamId)
@@ -52,12 +55,13 @@ const activePromptJobs = computed(() => {
 })
 
 onMounted(async () => {
-	await campaignStore.fetchCampaigns(teamId.value)
-	if (campaignId.value) {
-		await campaignStore.switchCampaign(teamId.value, campaignId.value)
-	}
-	await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+    await campaignStore.fetchCampaigns(teamId.value)
+    if (campaignId.value) {
+        await campaignStore.switchCampaign(teamId.value, campaignId.value)
+    }
+    await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+    await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+    await usageStore.fetchUsage(teamId.value)
 })
 
 watch(
@@ -85,11 +89,17 @@ watch(
 // )
 
 watch(campaignId, async (newId) => {
-	if (newId) {
-		await campaignStore.switchCampaign(teamId.value, newId)
-		await promptStore.fetchPrompts(teamId.value, newId, organizationStore.currentDateRange)
-		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
-	}
+    if (newId) {
+        await campaignStore.switchCampaign(teamId.value, newId)
+        await promptStore.fetchPrompts(teamId.value, newId, organizationStore.currentDateRange)
+        await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+    }
+})
+
+watch(teamId, async (newTeamId) => {
+    if (newTeamId) {
+        await usageStore.fetchUsage(newTeamId)
+    }
 })
 
 // Track prompt deletion
@@ -158,9 +168,11 @@ const showPromptDetails = async (prompt) => {
 }
 
 const ownedOrg = computed(() => {
-	if (!organizationStore.visibilityMetrics.length) return null
-	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+    if (!organizationStore.visibilityMetrics.length) return null
+    return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
 })
+
+const usage = computed(() => usageStore.usage)
 
 // Handle date range changes from dropdown
 const handleDateRangeChange = (dateRange) => {
@@ -180,9 +192,13 @@ const handleDateRangeChange = (dateRange) => {
 			</div>
 		</div>
 
-		<div class="flex flex-col space-y-6">
-			<!-- Visibility score -->
-			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
+    <div class="flex flex-col space-y-6">
+            <!-- Usage information -->
+            <div v-if="usage" class="p-4 bg-neutral-50 border border-neutral-200 rounded">
+                <UsageBar :amount="usage?.usage_price || 0" :limit="usage?.limit_price" label="Monthly Usage" />
+            </div>
+            <!-- Visibility score -->
+            <VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 
 			<!-- Main Content -->
 			<div class="flex flex-col">

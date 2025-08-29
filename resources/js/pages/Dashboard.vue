@@ -11,6 +11,7 @@ import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
+import UsageBar from '@/components/ui/UsageBar.vue'
 
 const route = useRoute()
 const jobStatusStore = useJobStatusStore()
@@ -32,27 +33,6 @@ const ownedOrg = computed(() => {
 })
 
 const usage = computed(() => usageStore.usage)
-
-// Price-based usage only
-const usageLimit = computed(() => {
-	if (!usage.value) return null
-	if (usage.value.limit_price !== null && usage.value.limit_price !== undefined) {
-		return usage.value.limit_price
-	}
-	return null // Unlimited
-})
-
-const usageAmount = computed(() => {
-	if (!usage.value) return 0
-	return usage.value.usage_price || 0
-})
-
-const usagePercent = computed(() => {
-	if (!usageLimit.value) return 0
-	const denom = usageLimit.value || 0
-	if (!denom) return 0
-	return Math.min((usageAmount.value / denom) * 100, 100)
-})
 
 onMounted(async () => {
 	if (teamId.value) {
@@ -113,17 +93,10 @@ const handleDateRangeChange = (dateRange) => {
 				<CampaignSwitcher />
 			</div>
 		</div>
-		<!-- Usage information -->
-		<div v-if="usage" class="p-4 mt-6 bg-neutral-50 border border-neutral-200 rounded">
-			<div class="flex justify-between mb-2 text-sm">
-				<span>Monthly Usage</span>
-				<span v-if="usageLimit !== null"> ${{ usageAmount.toFixed(2) }} / ${{ usageLimit.toFixed(2) }} </span>
-				<span v-else> ${{ (usage.usage_price || 0).toFixed(2) }} / Unlimited </span>
-			</div>
-			<div class="w-full bg-neutral-200 rounded h-2">
-				<div class="h-2 bg-neutral-700 rounded" :style="{ width: usagePercent + '%' }"></div>
-			</div>
-		</div>
+        <!-- Usage information -->
+        <div v-if="usage" class="p-4 mt-6 bg-neutral-50 border border-neutral-200 rounded">
+            <UsageBar :amount="usage?.usage_price || 0" :limit="usage?.limit_price" label="Monthly Usage" />
+        </div>
 		<!-- Jobs currently processing message -->
 		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
 			<div class="flex items-center gap-4 mb-2">

@@ -6,6 +6,7 @@ import { useUsageStore } from '@/stores/usageStore'
 import auth from '@/services/auth'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
+import UsageBar from '@/components/ui/UsageBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,10 +28,6 @@ const copiedResetUrls = ref({})
 const copiedInviteUrls = ref({})
 const activeDropdown = ref(null)
 const usage = computed(() => usageStore.usage)
-const usagePercent = computed(() => {
-	if (!usage.value || !usage.value.limit_price) return 0
-	return Math.min((usage.value.usage_price / usage.value.limit_price) * 100, 100)
-})
 
 onMounted(async () => {
 	await loadTeam()
@@ -260,19 +257,12 @@ const cancelInvitation = async (userId) => {
 					</div>
 				</div>
 
-				<!-- Usage information -->
-				<div v-if="usage" class="mb-8">
-					<div class="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
-						<div class="flex justify-between mb-2 text-sm">
-							<span>Monthly Usage</span>
-							<span v-if="usage.limit_price"> ${{ usage.usage_price.toFixed(2) }} / ${{ usage.limit_price.toFixed(2) }} </span>
-							<span v-else> ${{ usage.usage_price.toFixed(2) }} / Unlimited </span>
-						</div>
-						<div class="w-full bg-neutral-200 rounded h-2">
-							<div class="h-2 bg-neutral-700 rounded" :style="{ width: usagePercent + '%' }"></div>
-						</div>
-					</div>
-				</div>
+                <!-- Usage information -->
+                <div v-if="usage" class="mb-8">
+                    <div class="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+                        <UsageBar :amount="usage?.usage_price || 0" :limit="usage?.limit_price" label="Monthly Usage" />
+                    </div>
+                </div>
 
 				<!-- Team Members -->
 				<div class="mb-8">
