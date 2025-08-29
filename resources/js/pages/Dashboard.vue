@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useUsageStore } from '@/stores/usageStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
@@ -15,6 +16,7 @@ const route = useRoute()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 const campaignStore = useCampaignStore()
+const usageStore = useUsageStore()
 
 // Route params
 const teamId = computed(() => route.params.teamId)
@@ -25,18 +27,48 @@ const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClas
 
 // The owned organization
 const ownedOrg = computed(() => {
-	if (!organizationStore.visibilityMetrics.length) return null
-	return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+        if (!organizationStore.visibilityMetrics.length) return null
+        return organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
+})
+
+const usage = computed(() => usageStore.usage)
+
+// Choose a limit basis: prefer price if set, otherwise cost; null means unlimited
+const usageLimit = computed(() => {
+        if (!usage.value) return null
+        if (usage.value.limit_price !== null && usage.value.limit_price !== undefined) {
+                return { amount: usage.value.limit_price, basis: 'price' }
+        }
+        if (usage.value.limit_cost !== null && usage.value.limit_cost !== undefined) {
+                return { amount: usage.value.limit_cost, basis: 'cost' }
+        }
+        return null
+})
+
+const usageAmount = computed(() => {
+        if (!usage.value) return 0
+        if (usageLimit.value?.basis === 'price') return usage.value.usage_price || 0
+        if (usageLimit.value?.basis === 'cost') return usage.value.usage_cost || 0
+        // Unlimited: default to showing price
+        return usage.value.usage_price || 0
+})
+
+const usagePercent = computed(() => {
+        if (!usageLimit.value) return 0
+        const denom = usageLimit.value.amount || 0
+        if (!denom) return 0
+        return Math.min((usageAmount.value / denom) * 100, 100)
 })
 
 onMounted(async () => {
-	if (teamId.value) {
-		await campaignStore.fetchCampaigns(teamId.value)
-		if (campaignId.value) {
-			await campaignStore.switchCampaign(teamId.value, campaignId.value)
-			fetchVisibilityData()
-		}
-	}
+        if (teamId.value) {
+                await campaignStore.fetchCampaigns(teamId.value)
+                if (campaignId.value) {
+                        await campaignStore.switchCampaign(teamId.value, campaignId.value)
+                        fetchVisibilityData()
+                }
+                await usageStore.fetchUsage(teamId.value)
+        }
 })
 
 // Watch for job completions and refresh data
@@ -52,10 +84,16 @@ watch(
 )
 
 watch(campaignId, async (newId) => {
-	if (newId) {
-		await campaignStore.switchCampaign(teamId.value, newId)
-		fetchVisibilityData()
-	}
+        if (newId) {
+                await campaignStore.switchCampaign(teamId.value, newId)
+                fetchVisibilityData()
+        }
+})
+
+watch(teamId, async (newTeamId) => {
+        if (newTeamId) {
+                await usageStore.fetchUsage(newTeamId)
+        }
 })
 
 const fetchVisibilityData = () => {
@@ -73,16 +111,31 @@ const handleDateRangeChange = (dateRange) => {
 </script>
 
 <template>
-	<DefaultLayout>
-		<div class="flex justify-between items-center pt-6">
-			<h1 class="text-2xl font-bold">Dashboard</h1>
-			<div class="flex items-center gap-3">
-				<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
-				<CampaignSwitcher />
-			</div>
-		</div>
-		<!-- Jobs currently processing message -->
-		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+        <DefaultLayout>
+                <div class="flex justify-between items-center pt-6">
+                        <h1 class="text-2xl font-bold">Dashboard</h1>
+                        <div class="flex items-center gap-3">
+                                <DateFilterDropdown @date-range-changed="handleDateRangeChange" />
+                                <CampaignSwitcher />
+                        </div>
+                </div>
+                <!-- Usage information -->
+                <div v-if="usage" class="p-4 mt-6 bg-neutral-50 border border-neutral-200 rounded">
+                        <div class="flex justify-between mb-2 text-sm">
+                                <span>Monthly Usage</span>
+                                <span v-if="usageLimit">
+                                        ${{ usageAmount.toFixed(2) }} / ${{ usageLimit.amount.toFixed(2) }}
+                                </span>
+                                <span v-else>
+                                        ${{ (usage.usage_price || 0).toFixed(2) }} / Unlimited
+                                </span>
+                        </div>
+                        <div class="w-full bg-neutral-200 rounded h-2">
+                                <div class="h-2 bg-blue-500 rounded" :style="{ width: usagePercent + '%' }"></div>
+                        </div>
+                </div>
+                <!-- Jobs currently processing message -->
+                <div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
 			<div class="flex items-center gap-4 mb-2">
 				<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
 				<span class="font-semibold">Working</span>

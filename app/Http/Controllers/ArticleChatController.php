@@ -6,15 +6,18 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Services\OpenAIArticleAgentService;
+use App\Services\TeamUsageService;
+use App\Exceptions\UsageLimitExceeded;
 use App\Models\Article;
 
 class ArticleChatController extends Controller
 {
     protected $articleAgent;
-
-    public function __construct(OpenAIArticleAgentService $articleAgent)
+    protected $teamUsage;
+    public function __construct(OpenAIArticleAgentService $articleAgent, TeamUsageService $teamUsage)
     {
         $this->articleAgent = $articleAgent;
+        $this->teamUsage = $teamUsage;
     }
 
     /**
@@ -87,6 +90,9 @@ class ArticleChatController extends Controller
                 'content' => $request->input('content')
             ]);
 
+            // Check usage limit before dispatching
+            $this->teamUsage->ensureWithinLimit($article->team);
+
             // Process message asynchronously with context
             $this->articleAgent
                 ->processMessageAsync(
@@ -99,8 +105,16 @@ class ArticleChatController extends Controller
                 'conversation' => $conversation->fresh(),
                 'chats' => $conversation->chats
             ]);
+        } catch (UsageLimitExceeded $e) {
+            $conversation->chats()->create([
+                'role' => 'assistant',
+                'content' => 'Monthly token limit reached. Please contact an administrator.'
+            ]);
+            return response()->json([
+                'conversation' => $conversation->fresh(),
+                'chats' => $conversation->chats
+            ], 403);
         } catch (\Exception $e) {
-
             Log::error('Error generating article chat response: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to generate response'], 500);
         }

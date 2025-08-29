@@ -19,11 +19,15 @@ class Response extends Model
         'content',
         'search',
         'usage',
+        'cost',
+        'price',
     ];
 
     protected $casts = [
         'search' => 'array',
         'usage' => 'array',
+        'cost' => 'float',
+        'price' => 'float',
     ];
 
     /**

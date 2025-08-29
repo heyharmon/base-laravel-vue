@@ -10,6 +10,10 @@ use App\Models\Conversation;
 use App\Models\Article;
 use App\Events\ArticleUpdated;
 use App\Events\ArticleChatAgentFinished;
+use App\Models\Team;
+use App\Services\TokenUsageCalculator;
+use App\Services\TeamUsageService;
+use App\Exceptions\UsageLimitExceeded;
 
 class OpenAIArticleAgentService
 {
@@ -216,10 +220,15 @@ class OpenAIArticleAgentService
         try {
             // Build and send request
             $request = $this->buildRequest($conversation, $userMessage, $context);
+
+            if ($team = Team::find($conversation->team_id)) {
+                app(TeamUsageService::class)->ensureWithinLimit($team);
+            }
+
             $response = OpenAI::responses()->create($request);
 
             // Process the response
-            $result = $this->processResponse($conversation, $response);
+            $result = $this->processResponse($conversation, $response, 'openai', $request['model']);
 
             // Emit completion event
             $this->emitCompletionEvent($conversation, true);
@@ -257,10 +266,14 @@ class OpenAIArticleAgentService
                 // Build and send request
                 $request = $service->buildRequest($conversation, $userMessage, $context);
 
+                if ($team = Team::find($conversation->team_id)) {
+                    app(TeamUsageService::class)->ensureWithinLimit($team);
+                }
+
                 $response = OpenAI::responses()->create($request);
 
                 // Process the response
-                $service->processResponse($conversation, $response);
+                $service->processResponse($conversation, $response, 'openai', $request['model']);
 
                 // Emit completion event
                 $service->emitCompletionEvent($conversation, true);
@@ -278,7 +291,7 @@ class OpenAIArticleAgentService
                         $service->withTeamId($teamId);
 
                         $freshResponse = OpenAI::responses()->create([
-                            'model' => 'gpt-4.1',
+                            'model' => 'gpt-4o',
                             'instructions' => $service->composeSystemPrompt($conversation),
                             'input' => 'I encountered an issue with a previous tool call, but I can continue helping you. What would you like me to do?',
                             'tools' => $service->tools,
@@ -338,7 +351,7 @@ class OpenAIArticleAgentService
         $previous = $conversation->openai_response_id;
 
         return array_filter([
-            'model' => 'gpt-4.1', // Non-reasoning
+            'model' => 'gpt-4o', // Default model
             // 'model' => 'o4-mini-2025-04-16', // Reasoning
             // 'reasoning' => [
             // 	'effort' => 'medium'  // low, medium, or high
@@ -508,11 +521,16 @@ class OpenAIArticleAgentService
         return $systemMessage;
     }
 
-    protected function handleAssistantMessage(Conversation $conversation, $item): void
+    protected function handleAssistantMessage(Conversation $conversation, $item, string $provider, string $model, ?array $usage = null, float $cost = 0, float $price = 0): void
     {
         $chatData = [
             'role' => 'assistant',
             'content' => $item->content[0]->text ?? '',
+            'provider' => $provider,
+            'model' => $model,
+            'usage' => $usage,
+            'cost' => $cost,
+            'price' => $price,
         ];
 
         // Check for annotations in the response
@@ -575,34 +593,41 @@ class OpenAIArticleAgentService
         ];
     }
 
-    protected function processResponse(Conversation $conversation, $response)
+    protected function processResponse(Conversation $conversation, $response, string $provider, string $model)
     {
         $toolOutputs = [];
         $functionCalls = [];
 
-        // Log the response output
-        // Log::error('OpenAI response output:', [
-        //     'output' => $response->output,
-        // ]);
+        $usage = null;
+        if (isset($response->usage)) {
+            $usage = [
+                'input_tokens' => $response->usage->inputTokens ?? null,
+                'input_tokens_details' => [
+                    'cached_tokens' => $response->usage->inputTokensDetails->cachedTokens ?? null,
+                ],
+                'output_tokens' => $response->usage->outputTokens ?? null,
+                'output_tokens_details' => [
+                    'reasoning_tokens' => $response->usage->outputTokensDetails->reasoningTokens ?? null,
+                ],
+                'total_tokens' => $response->usage->totalTokens ?? null,
+            ];
+        }
 
-        // Process all output items
+        $calculator = app(TokenUsageCalculator::class);
+        $costInfo = $calculator->calculate($usage ?? [], $provider, $model);
+
         foreach ($response->output as $item) {
             switch ($item->type) {
                 case 'message':
-                    $this->handleAssistantMessage($conversation, $item);
+                    $this->handleAssistantMessage($conversation, $item, $provider, $model, $usage, $costInfo['cost'], $costInfo['price']);
                     break;
-                // case 'reasoning':
-                // 	$this->handleReasoningMessage($conversation, $item);
-                // 	break;
                 case 'function_call':
                     $functionCalls[] = $item;
                     break;
                 case 'web_search_call':
-                    // Handled automatically by OpenAI
                     break;
             }
         }
-
         // Execute function calls
         foreach ($functionCalls as $functionCall) {
             try {
@@ -627,7 +652,7 @@ class OpenAIArticleAgentService
         if (!empty($toolOutputs)) {
             try {
                 $followUp = OpenAI::responses()->create([
-                    'model' => 'gpt-4.1',
+                    'model' => 'gpt-4o',
                     'previous_response_id' => $response->id,
                     'tools' => $this->tools,
                     'input' => $toolOutputs,
@@ -637,7 +662,7 @@ class OpenAIArticleAgentService
                 $conversation->openai_response_id = $followUp->id;
                 $conversation->save();
 
-                return $this->processResponse($conversation, $followUp);
+                return $this->processResponse($conversation, $followUp, 'openai', 'gpt-4o');
             } catch (\Exception $e) {
                 Log::error('OpenAI Service: Follow-up request failed', [
                     'conversation_id' => $conversation->id,
@@ -649,7 +674,7 @@ class OpenAIArticleAgentService
                     // Start a fresh conversation thread without the problematic tool calls
                     // This allows the conversation to continue without being stuck
                     $freshResponse = OpenAI::responses()->create([
-                        'model' => 'gpt-4.1',
+                        'model' => 'gpt-4o',
                         'instructions' => $this->composeSystemPrompt($conversation),
                         'input' => 'I encountered an issue with a previous tool call, but I can continue helping you. What would you like me to do?',
                         'tools' => $this->tools,

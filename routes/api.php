@@ -111,6 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('teams/{team}/decline-invitation', [TeamController::class, 'declineInvitation']);
     Route::delete('teams/{team}/members/{user}', [TeamController::class, 'removeMember']);
     Route::put('teams/{team}/members/{user}/role', [TeamController::class, 'updateMemberRole']);
+    Route::get('teams/{team}/usage', [App\Http\Controllers\TeamUsageController::class, 'show']);
 
     // Job status routes
     Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
@@ -138,6 +139,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
         Route::get('/organizations/stats', [SuperAdminOrganizationController::class, 'stats']);
         Route::get('/organizations/teams', [SuperAdminOrganizationController::class, 'teams']);
+
+        Route::get('/teams', [App\Http\Controllers\SuperAdminTeamUsageController::class, 'index']);
+        Route::get('/teams/{team}/usage', [App\Http\Controllers\SuperAdminTeamUsageController::class, 'show']);
+        Route::put('/teams/{team}/limit', [App\Http\Controllers\SuperAdminTeamUsageController::class, 'update']);
 
         // Export organizations data
         Route::post('/organizations/export', [SuperAdminOrganizationExportController::class, 'export']);

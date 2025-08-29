@@ -11,6 +11,10 @@ use App\Services\OpenAIPromptService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Term;
+use App\Models\Team;
+use App\Services\TeamUsageService;
+use App\Services\TokenUsageCalculator;
+use App\Exceptions\UsageLimitExceeded;
 
 class RunPromptJob extends TrackableJob
 {
@@ -97,7 +101,7 @@ class RunPromptJob extends TrackableJob
      *
      * @return void
      */
-    public function handle(JobDispatcherService $jobDispatcher)
+    public function handle(JobDispatcherService $jobDispatcher, TeamUsageService $usageService, TokenUsageCalculator $tokenCalculator)
     {
         // Log::info('RunPromptJob started', [
         //     'prompt_id' => $this->prompt->id,
@@ -153,6 +157,10 @@ class RunPromptJob extends TrackableJob
                 $this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);
 
                 try {
+                    if ($team = Team::find($this->teamId)) {
+                        $usageService->ensureWithinLimit($team);
+                    }
+
                     // Log::info('Calling LLM provider', [
                     //     'prompt_id' => $this->prompt->id,
                     //     'provider' => $providerName,
@@ -169,11 +177,15 @@ class RunPromptJob extends TrackableJob
                     // ]);
 
                     // Store the LLM's response
+                    $costInfo = $tokenCalculator->calculate($llm->usage ?? [], $providerName, $model);
+
                     $response = $this->prompt->responses()->create([
                         'provider' => $providerName,
                         'model' => $model,
                         'content' => $llm->responseMessages[0]->content ?? '',
                         'usage' => $llm->usage ?? null,
+                        'cost' => $costInfo['cost'],
+                        'price' => $costInfo['price'],
                     ]);
 
                     $responses[] = $response;

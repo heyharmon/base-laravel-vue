@@ -11,17 +11,25 @@ class Chat extends Model
 {
 	use HasFactory;
 
-	protected $fillable = [
-		'role', // The role (user, assistant, system)
-		'content', // The content of the chat
-		'metadata', // Any additional metadata
-		'annotations', // Web search annotations/citations
-	];
+        protected $fillable = [
+                'role', // The role (user, assistant, system)
+                'content', // The content of the chat
+                'metadata', // Any additional metadata
+                'annotations', // Web search annotations/citations
+                'provider',
+                'model',
+                'usage',
+                'cost',
+                'price',
+        ];
 
-	protected $casts = [
-		'metadata' => 'array',
-		'annotations' => 'array',
-	];
+        protected $casts = [
+                'metadata' => 'array',
+                'annotations' => 'array',
+                'usage' => 'array',
+                'cost' => 'float',
+                'price' => 'float',
+        ];
 
 	/**
 	 * Boot the model.

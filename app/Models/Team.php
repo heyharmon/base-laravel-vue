@@ -19,10 +19,17 @@ class Team extends Model
 	 *
 	 * @var array<int, string>
 	 */
-	protected $fillable = [
-		'name',
-		'owner_id',
-	];
+        protected $fillable = [
+                'name',
+                'owner_id',
+                'token_limit_cost',
+                'token_limit_price',
+        ];
+
+        protected $casts = [
+                'token_limit_cost' => 'float',
+                'token_limit_price' => 'float',
+        ];
 
 	/**
 	 * Get the user that owns the team.
