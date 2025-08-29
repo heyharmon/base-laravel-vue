@@ -102,13 +102,25 @@ class RunAllPromptsJob extends TrackableJob
 
             $this->updateJobProgress(30, 'Creating prompt run jobs');
 
-            // Create jobs for all prompts
+            // Create jobs for all prompts but respect response limit
             $jobs = [];
+            $team = \App\Models\Team::find($this->teamId);
+            $remaining = $team ? $team->responsesRemaining() : null;
             foreach ($prompts as $prompt) {
-                // For each prompt, create the specified number of jobs
                 for ($i = 0; $i < $this->count; $i++) {
+                    if (!is_null($remaining) && $remaining <= 0) {
+                        break 2;
+                    }
                     $jobs[] = new RunPromptJob($prompt, $this->providers, $this->teamId, $this->campaignId);
+                    if (!is_null($remaining)) {
+                        $remaining--;
+                    }
                 }
+            }
+
+            if (empty($jobs)) {
+                $this->markJobAsCompleted('Responses limit reached');
+                return;
             }
 
             $this->updateJobProgress(50, 'Dispatching batch of prompt jobs');

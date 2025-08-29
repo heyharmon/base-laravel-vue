@@ -36,6 +36,10 @@ class ArticleController extends Controller
                 // Get the users team id
                 $teamId = $team->id;
 
+                if (($remaining = $team->articlesRemaining()) !== null && $remaining <= 0) {
+                        return response()->json(['message' => 'Articles limit reached'], 403);
+                }
+
 		// Get the owned organization for this team
 		$ownedOrganization = Organization::where('team_id', $teamId)
 			->where('is_competitor', false)

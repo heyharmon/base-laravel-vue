@@ -113,6 +113,12 @@ class RunPromptJob extends TrackableJob
                 return;
             }
 
+            $team = \App\Models\Team::find($this->teamId);
+            if ($team && ($remaining = $team->responsesRemaining()) !== null && $remaining <= 0) {
+                $this->markJobAsCompleted('Responses limit reached');
+                return;
+            }
+
             // Mark the job as started
             $this->markJobAsStarted('Running a prompt');
 

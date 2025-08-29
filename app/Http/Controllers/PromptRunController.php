@@ -8,6 +8,7 @@ use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Team;
 
 class PromptRunController extends Controller
 {
@@ -29,7 +30,12 @@ class PromptRunController extends Controller
         $providers = $validated['providers'] ?? ['openai'];
         $count = $validated['count'] ?? 1;
         $teamId = Auth::user()->current_team_id;
-        
+
+        $team = Team::find($teamId);
+        if (($remaining = $team->responsesRemaining()) !== null && $remaining < $count) {
+            return response()->json(['message' => 'Responses limit reached', 'remaining' => $remaining], 403);
+        }
+
         if ($count === 1) {
             // Create a single job
             $job = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id);

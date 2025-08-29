@@ -3,6 +3,8 @@ import { onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { useArticleStore } from '@/stores/articleStore'
+import { useUsageStore } from '@/stores/usageStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import moment from 'moment'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
@@ -11,20 +13,24 @@ import TrashIcon from '../../components/icons/TrashIcon.vue'
 import PlusIcon from '../../components/icons/PlusIcon.vue'
 import DocumentIcon from '../../components/icons/DocumentIcon.vue'
 import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
+import UsageProgress from '@/components/UsageProgress.vue'
 
 const router = useRouter()
 const route = useRoute()
 const articleStore = useArticleStore()
 const campaignStore = useCampaignStore()
+const usageStore = useUsageStore()
+const notificationStore = useNotificationStore()
 const teamId = computed(() => route.params.teamId)
 const campaignId = computed(() => route.params.campaignId)
 
 onMounted(async () => {
-	await campaignStore.fetchCampaigns(teamId.value)
-	if (campaignId.value) {
-		await campaignStore.switchCampaign(teamId.value, campaignId.value)
-	}
-	await articleStore.fetchArticles(teamId.value, campaignId.value)
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+                await campaignStore.switchCampaign(teamId.value, campaignId.value)
+        }
+        await articleStore.fetchArticles(teamId.value, campaignId.value)
+        await usageStore.fetchUsage(teamId.value)
 })
 
 watch(campaignId, async (newId) => {
@@ -35,17 +41,22 @@ watch(campaignId, async (newId) => {
 })
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId.value, campaignId.value, {
-		title: 'Untitled article'
-	})
-	router.push({
-		name: 'articles.edit',
-		params: {
-			teamId: teamId.value,
-			campaignId: campaignId.value,
-			articleId: newArticle.id
-		}
-	})
+        try {
+                const newArticle = await articleStore.createArticle(teamId.value, campaignId.value, {
+                        title: 'Untitled article'
+                })
+                await usageStore.fetchUsage(teamId.value)
+                router.push({
+                        name: 'articles.edit',
+                        params: {
+                                teamId: teamId.value,
+                                campaignId: campaignId.value,
+                                articleId: newArticle.id
+                        }
+                })
+        } catch (error) {
+                notificationStore.addNotification({ message: error?.message || 'Unable to create article', type: 'error' })
+        }
 }
 
 const editArticle = (id) => {
@@ -60,33 +71,41 @@ const editArticle = (id) => {
 }
 
 const deleteArticle = async (id) => {
-	if (confirm('Are you sure you want to delete this article?')) {
-		try {
-			await articleStore.deleteArticle(teamId.value, campaignId.value, id)
-		} catch (error) {
-			console.error('Error deleting article:', error)
-		}
-	}
+        if (confirm('Are you sure you want to delete this article?')) {
+                try {
+                        await articleStore.deleteArticle(teamId.value, campaignId.value, id)
+                        await usageStore.fetchUsage(teamId.value)
+                } catch (error) {
+                        notificationStore.addNotification({ message: error?.message || 'Error deleting article', type: 'error' })
+                }
+        }
 }
 </script>
 
 <template>
 	<DefaultLayout>
 		<!-- Top bar -->
-		<div class="flex justify-between items-center py-6">
-			<div class="flex items-center gap-4">
-				<h1 class="text-2xl font-bold">Articles</h1>
-			</div>
-			<div class="flex items-center space-x-2">
-				<Button @click="createArticle" variant="link">
-					<div class="flex items-center gap-1">
-						<PlusIcon class="size-4" />
-						Create article
-					</div>
-				</Button>
-				<CampaignSwitcher />
-			</div>
-		</div>
+                <div class="flex justify-between items-center py-6">
+                        <div class="flex items-center gap-4">
+                                <h1 class="text-2xl font-bold">Articles</h1>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                                <Button @click="createArticle" variant="link">
+                                        <div class="flex items-center gap-1">
+                                                <PlusIcon class="size-4" />
+                                                Create article
+                                        </div>
+                                </Button>
+                                <CampaignSwitcher />
+                        </div>
+                </div>
+
+                <UsageProgress
+                        v-if="usageStore.usage"
+                        :used="usageStore.usage.articles_used"
+                        :limit="usageStore.usage.articles_limit"
+                        label="Articles"
+                />
 
 		<!-- Loading state -->
 		<div v-if="articleStore.isLoading" class="flex justify-center py-8">

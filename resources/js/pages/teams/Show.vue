@@ -2,13 +2,16 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTeamStore } from '@/stores/teamStore'
+import { useUsageStore } from '@/stores/usageStore'
 import auth from '@/services/auth'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import Button from '@/components/ui/Button.vue'
+import UsageProgress from '@/components/UsageProgress.vue'
 
 const route = useRoute()
 const router = useRouter()
 const teamStore = useTeamStore()
+const usageStore = useUsageStore()
 const currentUser = computed(() => auth.getUser())
 const isOwner = computed(() => teamStore.currentTeam?.owner_id === currentUser.value?.id)
 const isAdmin = computed(() => {
@@ -49,10 +52,11 @@ const toggleDropdown = (id) => {
 }
 
 const loadTeam = async () => {
-	await teamStore.fetchTeam(route.params.teamId)
-	if (teamStore.currentTeam) {
-		editTeamName.value = teamStore.currentTeam.name
-	}
+        await teamStore.fetchTeam(route.params.teamId)
+        if (teamStore.currentTeam) {
+                editTeamName.value = teamStore.currentTeam.name
+        }
+        await usageStore.fetchUsage(route.params.teamId)
 }
 
 const updateTeam = async () => {
@@ -239,17 +243,30 @@ const cancelInvitation = async (userId) => {
 			</div>
 
 			<div v-else-if="teamStore.currentTeam">
-				<div class="flex justify-between items-center mb-8">
-					<div>
-						<h1 class="text-2xl font-bold">{{ teamStore.currentTeam.name }}</h1>
-						<p class="text-neutral-600 mt-1">Owner: {{ teamStore.currentTeam.owner?.name || 'Unknown' }}</p>
-					</div>
-					<div class="flex space-x-2">
-						<Button v-if="isOwner || isAdmin" @click="showEditModal = true" variant="neutral"> Edit Team </Button>
-						<Button v-if="isOwner || isAdmin" @click="showInviteModal = true" variant="dark"> Invite Member </Button>
-						<Button v-if="isOwner" @click="deleteTeam" variant="destructive">Delete Team</Button>
-					</div>
-				</div>
+                                <div class="flex justify-between items-center mb-8">
+                                        <div>
+                                                <h1 class="text-2xl font-bold">{{ teamStore.currentTeam.name }}</h1>
+                                                <p class="text-neutral-600 mt-1">Owner: {{ teamStore.currentTeam.owner?.name || 'Unknown' }}</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                                <Button v-if="isOwner || isAdmin" @click="showEditModal = true" variant="neutral"> Edit Team </Button>
+                                                <Button v-if="isOwner || isAdmin" @click="showInviteModal = true" variant="dark"> Invite Member </Button>
+                                                <Button v-if="isOwner" @click="deleteTeam" variant="destructive">Delete Team</Button>
+                                        </div>
+                                </div>
+
+                                <UsageProgress
+                                        v-if="usageStore.usage"
+                                        :used="usageStore.usage.responses_used"
+                                        :limit="usageStore.usage.responses_limit"
+                                        label="Responses"
+                                />
+                                <UsageProgress
+                                        v-if="usageStore.usage"
+                                        :used="usageStore.usage.articles_used"
+                                        :limit="usageStore.usage.articles_limit"
+                                        label="Articles"
+                                />
 
 				<!-- Team Members -->
 				<div class="mb-8">

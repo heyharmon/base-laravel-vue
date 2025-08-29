@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\JobStatus;
 use App\Models\Campaign;
+use App\Models\Response;
 
 class Team extends Model
 {
@@ -19,10 +20,12 @@ class Team extends Model
 	 *
 	 * @var array<int, string>
 	 */
-	protected $fillable = [
-		'name',
-		'owner_id',
-	];
+        protected $fillable = [
+                'name',
+                'owner_id',
+                'responses_limit',
+                'articles_limit',
+        ];
 
 	/**
 	 * Get the user that owns the team.
@@ -117,8 +120,52 @@ class Team extends Model
 	/**
 	 * Get the job statuses that belong to the team.
 	 */
-	public function jobStatuses(): HasMany
-	{
-		return $this->hasMany(JobStatus::class);
-	}
+        public function jobStatuses(): HasMany
+        {
+                return $this->hasMany(JobStatus::class);
+        }
+
+        /**
+         * Get responses used in period.
+         */
+        public function responsesUsed($start = null, $end = null): int
+        {
+                $start = $start ? \Carbon\Carbon::parse($start) : now()->startOfMonth();
+                $end = $end ? \Carbon\Carbon::parse($end) : now()->endOfMonth();
+
+                return Response::whereHas('prompt', function ($q) {
+                        $q->where('team_id', $this->id);
+                })->whereBetween('created_at', [$start, $end])->count();
+        }
+
+        /**
+         * Get articles used in period.
+         */
+        public function articlesUsed($start = null, $end = null): int
+        {
+                $start = $start ? \Carbon\Carbon::parse($start) : now()->startOfMonth();
+                $end = $end ? \Carbon\Carbon::parse($end) : now()->endOfMonth();
+
+                return $this->articles()->whereBetween('created_at', [$start, $end])->count();
+        }
+
+        public function responsesRemaining($start = null, $end = null): ?int
+        {
+                if (is_null($this->responses_limit)) {
+                        return null;
+                }
+
+                $used = $this->responsesUsed($start, $end);
+                return max(0, $this->responses_limit - $used);
+        }
+
+        public function articlesRemaining($start = null, $end = null): ?int
+        {
+                if (is_null($this->articles_limit)) {
+                        return null;
+                }
+
+                $used = $this->articlesUsed($start, $end);
+                return max(0, $this->articles_limit - $used);
+        }
 }

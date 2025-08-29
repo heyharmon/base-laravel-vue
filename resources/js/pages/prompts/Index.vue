@@ -5,6 +5,8 @@ import { useCampaignStore } from '@/stores/campaignStore'
 import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { useUsageStore } from '@/stores/usageStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import CampaignSwitcher from '@/components/campaigns/CampaignSwitcher.vue'
 import PromptDetailSheet from '@/components/prompts/PromptDetailSheet.vue'
 import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
@@ -15,6 +17,7 @@ import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import UsageProgress from '@/components/UsageProgress.vue'
 
 const route = useRoute()
 
@@ -23,6 +26,8 @@ const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 const campaignStore = useCampaignStore()
+const usageStore = useUsageStore()
+const notificationStore = useNotificationStore()
 
 // Route params
 const teamId = computed(() => route.params.teamId)
@@ -52,12 +57,13 @@ const activePromptJobs = computed(() => {
 })
 
 onMounted(async () => {
-	await campaignStore.fetchCampaigns(teamId.value)
-	if (campaignId.value) {
-		await campaignStore.switchCampaign(teamId.value, campaignId.value)
-	}
-	await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+                await campaignStore.switchCampaign(teamId.value, campaignId.value)
+        }
+        await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+        await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+        await usageStore.fetchUsage(teamId.value)
 })
 
 watch(
@@ -98,17 +104,23 @@ const promptToDelete = ref(null)
 const showDeleteConfirmation = ref(false)
 
 const runPrompt = async (id, count = 1) => {
-	await promptStore.runPrompt(id, count)
-	await jobStatusStore.pollTeamJobs(teamId.value)
+        try {
+                await promptStore.runPrompt(id, count)
+                await usageStore.fetchUsage(teamId.value)
+                await jobStatusStore.pollTeamJobs(teamId.value)
+        } catch (error) {
+                notificationStore.addNotification({ message: error?.message || 'Unable to run prompt', type: 'error' })
+        }
 }
 
 const runAllPrompts = async (count = 1) => {
-	try {
-		await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
-		await jobStatusStore.pollTeamJobs(teamId.value)
-	} catch (error) {
-		console.error('Error running all prompts:', error)
-	}
+        try {
+                await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
+                await usageStore.fetchUsage(teamId.value)
+                await jobStatusStore.pollTeamJobs(teamId.value)
+        } catch (error) {
+                notificationStore.addNotification({ message: error?.message || 'Unable to run prompts', type: 'error' })
+        }
 }
 
 const confirmDeletePrompt = (prompt) => {
@@ -181,8 +193,15 @@ const handleDateRangeChange = (dateRange) => {
 		</div>
 
 		<div class="flex flex-col space-y-6">
-			<!-- Visibility score -->
-			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
+                        <!-- Visibility score -->
+                        <VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
+
+                        <UsageProgress
+                                v-if="usageStore.usage"
+                                :used="usageStore.usage.responses_used"
+                                :limit="usageStore.usage.responses_limit"
+                                label="Responses"
+                        />
 
 			<!-- Main Content -->
 			<div class="flex flex-col">
