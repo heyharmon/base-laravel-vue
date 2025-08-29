@@ -37,18 +37,18 @@ onMounted(fetchTeams)
 					<thead>
 						<tr class="bg-neutral-50 border-b border-neutral-200">
 							<th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Team</th>
-							<th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Limit</th>
-							<th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Usage</th>
-							<th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Remaining</th>
+                        <th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Price Limit</th>
+                        <th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Price Usage</th>
+                        <th class="text-left px-4 py-3 text-sm font-medium text-neutral-700">Price Remaining</th>
 							<th class="px-4 py-3"></th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr v-for="team in teams" :key="team.id" class="border-b border-neutral-200 last:border-b-0">
 							<td class="px-4 py-3">{{ team.name }}</td>
-							<td class="px-4 py-3">{{ team.limit_cost !== null ? '$' + team.limit_cost.toFixed(2) : '—' }}</td>
-							<td class="px-4 py-3">${{ team.usage_cost.toFixed(2) }}</td>
-							<td class="px-4 py-3">{{ team.remaining_cost !== null ? '$' + team.remaining_cost.toFixed(2) : '—' }}</td>
+                        <td class="px-4 py-3">{{ team.limit_price !== null ? '$' + team.limit_price.toFixed(2) : '—' }}</td>
+                        <td class="px-4 py-3">${{ (team.usage_price || 0).toFixed(2) }}</td>
+                        <td class="px-4 py-3">{{ team.remaining_price !== null ? '$' + team.remaining_price.toFixed(2) : '—' }}</td>
 							<td class="px-4 py-3">
 								<button class="text-blue-600 underline" @click="viewTeam(team)">Manage limitations</button>
 							</td>

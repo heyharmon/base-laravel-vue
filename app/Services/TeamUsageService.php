@@ -58,10 +58,12 @@ class TeamUsageService
 
         $responseTokens = (int) $responsesQuery->sum('usage->total_tokens');
         $responseCost = (float) $responsesQuery->sum('cost');
+        $responsePrice = (float) $responsesQuery->sum('price');
         $responsesCount = (int) $responsesQuery->count();
 
         $chatTokens = (int) $chatsQuery->sum('usage->total_tokens');
         $chatCost = (float) $chatsQuery->sum('cost');
+        $chatPrice = (float) $chatsQuery->sum('price');
         $chatsCount = (int) $chatsQuery->count();
 
         return [
@@ -69,15 +71,18 @@ class TeamUsageService
                 'count' => $responsesCount,
                 'tokens' => $responseTokens,
                 'cost' => $responseCost,
+                'price' => $responsePrice,
             ],
             'chats' => [
                 'count' => $chatsCount,
                 'tokens' => $chatTokens,
                 'cost' => $chatCost,
+                'price' => $chatPrice,
             ],
             'total' => [
                 'tokens' => $responseTokens + $chatTokens,
                 'cost' => $responseCost + $chatCost,
+                'price' => $responsePrice + $chatPrice,
             ],
         ];
     }

@@ -30,10 +30,10 @@ export const useUsageStore = defineStore('usage', {
                 throw error
             }
         },
-        async updateLimit(teamId, tokenLimitCost) {
+        async updateLimit(teamId, tokenLimitPrice) {
             try {
                 const response = await api.put(`/super-admin/teams/${teamId}/limit`, {
-                    token_limit_cost: tokenLimitCost
+                    token_limit_price: tokenLimitPrice
                 })
                 return response
             } catch (error) {

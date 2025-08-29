@@ -33,29 +33,23 @@ const ownedOrg = computed(() => {
 
 const usage = computed(() => usageStore.usage)
 
-// Choose a limit basis: prefer price if set, otherwise cost; null means unlimited
+// Price-based usage only
 const usageLimit = computed(() => {
         if (!usage.value) return null
         if (usage.value.limit_price !== null && usage.value.limit_price !== undefined) {
-                return { amount: usage.value.limit_price, basis: 'price' }
+                return usage.value.limit_price
         }
-        if (usage.value.limit_cost !== null && usage.value.limit_cost !== undefined) {
-                return { amount: usage.value.limit_cost, basis: 'cost' }
-        }
-        return null
+        return null // Unlimited
 })
 
 const usageAmount = computed(() => {
         if (!usage.value) return 0
-        if (usageLimit.value?.basis === 'price') return usage.value.usage_price || 0
-        if (usageLimit.value?.basis === 'cost') return usage.value.usage_cost || 0
-        // Unlimited: default to showing price
         return usage.value.usage_price || 0
 })
 
 const usagePercent = computed(() => {
         if (!usageLimit.value) return 0
-        const denom = usageLimit.value.amount || 0
+        const denom = usageLimit.value || 0
         if (!denom) return 0
         return Math.min((usageAmount.value / denom) * 100, 100)
 })
@@ -123,8 +117,8 @@ const handleDateRangeChange = (dateRange) => {
                 <div v-if="usage" class="p-4 mt-6 bg-neutral-50 border border-neutral-200 rounded">
                         <div class="flex justify-between mb-2 text-sm">
                                 <span>Monthly Usage</span>
-                                <span v-if="usageLimit">
-                                        ${{ usageAmount.toFixed(2) }} / ${{ usageLimit.amount.toFixed(2) }}
+                                <span v-if="usageLimit !== null">
+                                        ${{ usageAmount.toFixed(2) }} / ${{ usageLimit.toFixed(2) }}
                                 </span>
                                 <span v-else>
                                         ${{ (usage.usage_price || 0).toFixed(2) }} / Unlimited

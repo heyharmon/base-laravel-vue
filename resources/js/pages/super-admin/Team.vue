@@ -47,7 +47,8 @@ const fetchUsage = async () => {
     try {
         const response = await usageStore.fetchAdminTeamUsage(teamId, selectedMonth.value)
         data.value = response
-        editLimit.value = data.value.limit_cost
+        // Use price-based limit for editing/display
+        editLimit.value = data.value.limit_price
         editLimitDisplay.value = formatCurrency(editLimit.value)
     } catch (error) {
         console.error('Error fetching usage:', error)
@@ -59,7 +60,7 @@ const fetchUsage = async () => {
 const saveLimit = async () => {
     try {
         await usageStore.updateLimit(teamId, editLimit.value)
-        data.value.limit_cost = editLimit.value
+        data.value.limit_price = editLimit.value
         editLimitDisplay.value = formatCurrency(editLimit.value)
     } catch (error) {
         console.error('Error updating limit:', error)
@@ -83,8 +84,13 @@ watch(selectedMonth, fetchUsage)
                 <div class="mb-4">
                     <p>Total Tokens: {{ data.usage.total.tokens }}</p>
                     <p>Total Cost: ${{ data.usage.total.cost.toFixed(2) }}</p>
-                    <p v-if="data.limit_cost !== null">
-                        Limit: ${{ data.limit_cost.toFixed(2) }} (Remaining: ${{ (data.limit_cost - data.usage.total.cost).toFixed(2) }})
+                    <p>Total Price: ${{ (data.usage.total.price || 0).toFixed(2) }}</p>
+                    <p v-if="data.limit_price !== null">
+                        Price Limit: ${{ data.limit_price.toFixed(2) }}
+                        (Remaining: ${{ (data.limit_price - (data.usage.total.price || 0)).toFixed(2) }})
+                    </p>
+                    <p v-else>
+                        Price Limit: Unlimited
                     </p>
                     <p>Days until reset: {{ data.period.days_until_reset }}</p>
                 </div>
@@ -93,15 +99,17 @@ watch(selectedMonth, fetchUsage)
                     <p>Count: {{ data.usage.responses.count }}</p>
                     <p>Tokens: {{ data.usage.responses.tokens }}</p>
                     <p>Cost: ${{ data.usage.responses.cost.toFixed(2) }}</p>
+                    <p>Price: ${{ (data.usage.responses.price || 0).toFixed(2) }}</p>
                 </div>
                 <div class="mb-4">
                     <h2 class="font-semibold mb-2">Chats</h2>
                     <p>Count: {{ data.usage.chats.count }}</p>
                     <p>Tokens: {{ data.usage.chats.tokens }}</p>
                     <p>Cost: ${{ data.usage.chats.cost.toFixed(2) }}</p>
+                    <p>Price: ${{ (data.usage.chats.price || 0).toFixed(2) }}</p>
                 </div>
                 <div class="mt-6">
-                    <label class="block mb-1 text-sm">Token Limit (USD)</label>
+                    <label class="block mb-1 text-sm">Monthly Price Limit (USD)</label>
                     <Input
                         type="text"
                         :value="editLimitDisplay"

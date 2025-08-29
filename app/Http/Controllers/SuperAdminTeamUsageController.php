@@ -12,15 +12,23 @@ class SuperAdminTeamUsageController extends Controller
     public function index(TeamUsageService $service)
     {
         $teams = Team::all()->map(function ($team) use ($service) {
-            $usage = $service->currentMonthCost($team);
+            $usageCost = $service->currentMonthCost($team);
+            $usagePrice = $service->currentMonthPrice($team);
             return [
                 'id' => $team->id,
                 'name' => $team->name,
-                'usage_cost' => $usage,
+                // Keep cost for internal context, but prioritize price in UI
+                'usage_cost' => $usageCost,
                 'limit_cost' => $team->token_limit_cost,
                 'remaining_cost' => is_null($team->token_limit_cost)
                     ? null
-                    : max($team->token_limit_cost - $usage, 0),
+                    : max($team->token_limit_cost - $usageCost, 0),
+                // Price-based fields for super admin list UI
+                'usage_price' => $usagePrice,
+                'limit_price' => $team->token_limit_price,
+                'remaining_price' => is_null($team->token_limit_price)
+                    ? null
+                    : max($team->token_limit_price - $usagePrice, 0),
             ];
         });
 
@@ -52,6 +60,7 @@ class SuperAdminTeamUsageController extends Controller
             ],
             'usage' => $usage,
             'limit_cost' => $team->token_limit_cost,
+            'limit_price' => $team->token_limit_price,
         ]);
     }
 
