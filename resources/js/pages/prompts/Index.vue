@@ -200,7 +200,7 @@ const handleDateRangeChange = (dateRange) => {
                                 v-if="usageStore.usage"
                                 :used="usageStore.usage.responses_used"
                                 :limit="usageStore.usage.responses_limit"
-                                label="Responses"
+                                :label="`Responses (${usageStore.billingInterval})`"
                         />
 
 			<!-- Main Content -->

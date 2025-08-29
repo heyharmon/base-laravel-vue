@@ -104,7 +104,7 @@ const deleteArticle = async (id) => {
                         v-if="usageStore.usage"
                         :used="usageStore.usage.articles_used"
                         :limit="usageStore.usage.articles_limit"
-                        label="Articles"
+                        :label="`Articles (${usageStore.billingInterval})`"
                 />
 
 		<!-- Loading state -->

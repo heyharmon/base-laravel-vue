@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\JobStatus;
 use App\Models\Campaign;
 use App\Models\Response;
+use Laravel\Cashier\Billable;
+use Carbon\Carbon;
 
 class Team extends Model
 {
-	use HasFactory;
+        use HasFactory, Billable;
 
 	/**
 	 * The attributes that are mass assignable.
@@ -25,7 +27,25 @@ class Team extends Model
                 'owner_id',
                 'responses_limit',
                 'articles_limit',
+                'subscription_started_at',
+                'billing_interval',
         ];
+
+        protected $casts = [
+                'subscription_started_at' => 'date',
+        ];
+
+        protected static function booted(): void
+        {
+                static::creating(function ($team) {
+                        if (is_null($team->subscription_started_at)) {
+                                $team->subscription_started_at = Carbon::now();
+                        }
+                        if (is_null($team->billing_interval)) {
+                                $team->billing_interval = 'monthly';
+                        }
+                });
+        }
 
 	/**
 	 * Get the user that owns the team.
@@ -126,12 +146,36 @@ class Team extends Model
         }
 
         /**
+         * Determine the start and end for a subscription period.
+         */
+        public function periodBounds(int $index = 0): array
+        {
+                $start = $this->subscription_started_at ? $this->subscription_started_at->copy() : Carbon::now();
+
+                if ($this->billing_interval === 'yearly') {
+                        $currentIndex = $start->diffInYears(Carbon::now());
+                        $periodStart = $start->copy()->addYears($currentIndex - $index);
+                        $periodEnd = $periodStart->copy()->addYear()->subSecond();
+                } else {
+                        $currentIndex = $start->diffInMonths(Carbon::now());
+                        $periodStart = $start->copy()->addMonths($currentIndex - $index);
+                        $periodEnd = $periodStart->copy()->addMonth()->subSecond();
+                }
+
+                return [$periodStart, $periodEnd];
+        }
+
+        /**
          * Get responses used in period.
          */
         public function responsesUsed($start = null, $end = null): int
         {
-                $start = $start ? \Carbon\Carbon::parse($start) : now()->startOfMonth();
-                $end = $end ? \Carbon\Carbon::parse($end) : now()->endOfMonth();
+                if (!$start || !$end) {
+                        [$start, $end] = $this->periodBounds();
+                } else {
+                        $start = Carbon::parse($start);
+                        $end = Carbon::parse($end);
+                }
 
                 return Response::whereHas('prompt', function ($q) {
                         $q->where('team_id', $this->id);
@@ -143,8 +187,12 @@ class Team extends Model
          */
         public function articlesUsed($start = null, $end = null): int
         {
-                $start = $start ? \Carbon\Carbon::parse($start) : now()->startOfMonth();
-                $end = $end ? \Carbon\Carbon::parse($end) : now()->endOfMonth();
+                if (!$start || !$end) {
+                        [$start, $end] = $this->periodBounds();
+                } else {
+                        $start = Carbon::parse($start);
+                        $end = Carbon::parse($end);
+                }
 
                 return $this->articles()->whereBetween('created_at', [$start, $end])->count();
         }

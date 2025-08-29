@@ -11,12 +11,10 @@ class SuperAdminTeamUsageController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $start = $request->query('start_date');
-        $end = $request->query('end_date');
-        $startDate = $start ? Carbon::parse($start) : now()->startOfMonth();
-        $endDate = $end ? Carbon::parse($end) : now()->endOfMonth();
+        $period = (int) $request->query('period', 0);
 
-        $teams = Team::all()->map(function ($team) use ($startDate, $endDate) {
+        $teams = Team::all()->map(function ($team) use ($period) {
+            [$startDate, $endDate] = $team->periodBounds($period);
             return [
                 'id' => $team->id,
                 'name' => $team->name,
@@ -24,6 +22,7 @@ class SuperAdminTeamUsageController extends Controller
                 'responses_limit' => $team->responses_limit,
                 'articles_used' => $team->articlesUsed($startDate, $endDate),
                 'articles_limit' => $team->articles_limit,
+                'billing_interval' => $team->billing_interval,
             ];
         });
 
@@ -32,10 +31,8 @@ class SuperAdminTeamUsageController extends Controller
 
     public function show(Request $request, Team $team): JsonResponse
     {
-        $start = $request->query('start_date');
-        $end = $request->query('end_date');
-        $startDate = $start ? Carbon::parse($start) : now()->startOfMonth();
-        $endDate = $end ? Carbon::parse($end) : now()->endOfMonth();
+        $period = (int) $request->query('period', 0);
+        [$startDate, $endDate] = $team->periodBounds($period);
 
         return response()->json([
             'team' => $team,
@@ -46,6 +43,8 @@ class SuperAdminTeamUsageController extends Controller
                 'articles_used' => $team->articlesUsed($startDate, $endDate),
                 'articles_limit' => $team->articles_limit,
                 'articles_remaining' => $team->articlesRemaining($startDate, $endDate),
+                'period_index' => $period,
+                'billing_interval' => $team->billing_interval,
                 'period_start' => $startDate->toDateString(),
                 'period_end' => $endDate->toDateString(),
             ]
@@ -57,6 +56,7 @@ class SuperAdminTeamUsageController extends Controller
         $validated = $request->validate([
             'responses_limit' => 'nullable|integer|min:0',
             'articles_limit' => 'nullable|integer|min:0',
+            'billing_interval' => 'nullable|in:monthly,yearly',
         ]);
 
         $team->update($validated);

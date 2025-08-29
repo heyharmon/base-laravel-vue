@@ -259,13 +259,13 @@ const cancelInvitation = async (userId) => {
                                         v-if="usageStore.usage"
                                         :used="usageStore.usage.responses_used"
                                         :limit="usageStore.usage.responses_limit"
-                                        label="Responses"
+                                        :label="`Responses (${usageStore.billingInterval})`"
                                 />
                                 <UsageProgress
                                         v-if="usageStore.usage"
                                         :used="usageStore.usage.articles_used"
                                         :limit="usageStore.usage.articles_limit"
-                                        label="Articles"
+                                        :label="`Articles (${usageStore.billingInterval})`"
                                 />
 
 				<!-- Team Members -->
