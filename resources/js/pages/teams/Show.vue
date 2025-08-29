@@ -28,23 +28,23 @@ const copiedInviteUrls = ref({})
 const activeDropdown = ref(null)
 const usage = computed(() => usageStore.usage)
 const usagePercent = computed(() => {
-        if (!usage.value || !usage.value.limit_price) return 0
-        return Math.min((usage.value.usage_price / usage.value.limit_price) * 100, 100)
+	if (!usage.value || !usage.value.limit_price) return 0
+	return Math.min((usage.value.usage_price / usage.value.limit_price) * 100, 100)
 })
 
 onMounted(async () => {
-        await loadTeam()
-        await usageStore.fetchUsage(route.params.teamId)
-        // Close dropdown when clicking outside
-        document.addEventListener('click', handleClickOutside)
+	await loadTeam()
+	await usageStore.fetchUsage(route.params.teamId)
+	// Close dropdown when clicking outside
+	document.addEventListener('click', handleClickOutside)
 })
 
 watch(
-        () => route.params.teamId,
-        async () => {
-                await loadTeam()
-                await usageStore.fetchUsage(route.params.teamId)
-        }
+	() => route.params.teamId,
+	async () => {
+		await loadTeam()
+		await usageStore.fetchUsage(route.params.teamId)
+	}
 )
 
 const handleClickOutside = (event) => {
@@ -257,31 +257,27 @@ const cancelInvitation = async (userId) => {
 						<Button v-if="isOwner || isAdmin" @click="showEditModal = true" variant="neutral"> Edit Team </Button>
 						<Button v-if="isOwner || isAdmin" @click="showInviteModal = true" variant="dark"> Invite Member </Button>
 						<Button v-if="isOwner" @click="deleteTeam" variant="destructive">Delete Team</Button>
-                                </div>
-                        </div>
+					</div>
+				</div>
 
-                        <!-- Usage information -->
-                        <div v-if="usage" class="mb-8">
-                                <div class="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
-                                        <div class="flex justify-between mb-2 text-sm">
-                                                <span>Monthly Usage</span>
-                                                <span v-if="usage.limit_price">
-                                                        ${{ usage.usage_price.toFixed(2) }} / ${{ usage.limit_price.toFixed(2) }}
-                                                </span>
-                                                <span v-else>
-                                                        ${{ usage.usage_price.toFixed(2) }} / Unlimited
-                                                </span>
-                                        </div>
-                                        <div class="w-full bg-neutral-200 rounded h-2">
-                                                <div class="h-2 bg-blue-500 rounded" :style="{ width: usagePercent + '%' }"></div>
-                                        </div>
-                                </div>
-                        </div>
+				<!-- Usage information -->
+				<div v-if="usage" class="mb-8">
+					<div class="bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+						<div class="flex justify-between mb-2 text-sm">
+							<span>Monthly Usage</span>
+							<span v-if="usage.limit_price"> ${{ usage.usage_price.toFixed(2) }} / ${{ usage.limit_price.toFixed(2) }} </span>
+							<span v-else> ${{ usage.usage_price.toFixed(2) }} / Unlimited </span>
+						</div>
+						<div class="w-full bg-neutral-200 rounded h-2">
+							<div class="h-2 bg-neutral-700 rounded" :style="{ width: usagePercent + '%' }"></div>
+						</div>
+					</div>
+				</div>
 
-                        <!-- Team Members -->
-                        <div class="mb-8">
-                                <h2 class="text-xl font-semibold mb-2">Team Members</h2>
-                                <p class="text-neutral-600 mb-6">Manage your existing team members and their roles.</p>
+				<!-- Team Members -->
+				<div class="mb-8">
+					<h2 class="text-xl font-semibold mb-2">Team Members</h2>
+					<p class="text-neutral-600 mb-6">Manage your existing team members and their roles.</p>
 
 					<div class="bg-white rounded-lg shadow-sm border border-neutral-200">
 						<table class="w-full">
