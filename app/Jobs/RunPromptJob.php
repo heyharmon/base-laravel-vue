@@ -100,17 +100,8 @@ class RunPromptJob extends TrackableJob
      */
     public function handle(JobDispatcherService $jobDispatcher)
     {
-        // Log::info('RunPromptJob started', [
-        //     'prompt_id' => $this->prompt->id,
-        //     'providers' => $this->providers,
-        //     'team_id' => $this->teamId,
-        //     'campaign_id' => $this->campaignId,
-        //     'job_id' => $this->job->getJobId() ?? 'unknown'
-        // ]);
-
         try {
             if ($this->isCancelled()) {
-                // Log::info('RunPromptJob cancelled', ['prompt_id' => $this->prompt->id]);
                 return;
             }
 
@@ -160,20 +151,8 @@ class RunPromptJob extends TrackableJob
                 $this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);
 
                 try {
-                    // Log::info('Calling LLM provider', [
-                    //     'prompt_id' => $this->prompt->id,
-                    //     'provider' => $providerName,
-                    //     'model' => $model
-                    // ]);
-
                     // Get response from the LLM
                     $llm = $this->getLlmResponse($this->prompt->content, $model, $providerName);
-
-                    // Log::info('LLM response received', [
-                    //     'prompt_id' => $this->prompt->id,
-                    //     'provider' => $providerName,
-                    //     'has_content' => !empty($llm->responseMessages[0]->content ?? '')
-                    // ]);
 
                     // Store the LLM's response
                     $response = $this->prompt->responses()->create([
@@ -190,12 +169,6 @@ class RunPromptJob extends TrackableJob
 
                     // Check for terms in the response
                     $this->checkForTerms($response, $this->prompt);
-
-                    // Log::info('Successfully processed LLM response', [
-                    //     'prompt_id' => $this->prompt->id,
-                    //     'response_id' => $response->id,
-                    //     'provider' => $providerName
-                    // ]);
                 } catch (\Exception $e) {
                     $providerErrors[$providerName] = $e->getMessage();
 
@@ -239,11 +212,6 @@ class RunPromptJob extends TrackableJob
 
             // Mark the job as completed
             $this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt');
-
-            // Log::info('RunPromptJob completed successfully', [
-            //     'prompt_id' => $this->prompt->id,
-            //     'responses_count' => count($responses)
-            // ]);
         } catch (Throwable $exception) {
             Log::error('RunPromptJob failed with exception', [
                 'prompt_id' => $this->prompt->id,
@@ -372,9 +340,6 @@ class RunPromptJob extends TrackableJob
 
         // Mark job as failed in tracking
         $this->markJobAsFailed($exception);
-
-        // You could also notify administrators or take other cleanup actions here
-        // For example: send notification, update external status, etc.
     }
 
     /**

@@ -29,46 +29,22 @@ class OpenAIPromptService
     {
         $startTime = microtime(true);
 
-        // Log::info('OpenAI API request started', [
-        //     'model' => $model,
-        //     'prompt_length' => strlen($promptContent),
-        //     'prompt_preview' => substr($promptContent, 0, 100) . (strlen($promptContent) > 100 ? '...' : ''),
-        // ]);
-
         try {
             $requestData = [
                 'model' => $model,
                 'input' => $promptContent,
-                // 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
-                // 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
-                // 'tools' => $this->tools,
-                // 'tool_choice' => 'auto',
+                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
+                'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
+                'tools' => $this->tools,
+                'tool_choice' => 'auto',
                 'store' => true,
             ];
-
-            // Log::info('OpenAI API request payload', [
-            //     'request_data' => array_merge($requestData, ['input' => '[REDACTED]'])
-            // ]);
 
             $response = OpenAI::responses()->create($requestData);
 
             $duration = microtime(true) - $startTime;
 
-            // Log::info('OpenAI API request completed successfully', [
-            //     'model' => $model,
-            //     'duration_seconds' => round($duration, 2),
-            //     'has_response' => !empty($response),
-            //     'response_type' => gettype($response)
-            // ]);
-
             $processedResponse = $this->processResponse($response);
-
-            // Log::info('OpenAI response processed', [
-            //     'has_content' => !empty($processedResponse->responseMessages[0]->content ?? ''),
-            //     'content_length' => strlen($processedResponse->responseMessages[0]->content ?? ''),
-            //     'annotations_count' => count($processedResponse->annotations ?? []),
-            //     'has_usage' => !empty($processedResponse->usage)
-            // ]);
 
             return $processedResponse;
         } catch (\OpenAI\Exceptions\ErrorException $e) {
@@ -173,10 +149,6 @@ class OpenAIPromptService
                 'total_tokens' => $response->usage->totalTokens ?? null,
             ];
         }
-
-        // Log::info('rawResponse', [
-        //     'response' => $response,
-        // ]);
 
         // Create a response object that matches what RunPromptJob expects
         return (object) [
