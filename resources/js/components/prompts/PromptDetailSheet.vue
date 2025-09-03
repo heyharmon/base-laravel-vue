@@ -262,6 +262,7 @@ watch(() => props.promptId, fetchDetails)
 
 				<!-- Responses section -->
 				<div class="mt-6">
+					asdf
 					<div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
 						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 					</div>
@@ -276,17 +277,23 @@ watch(() => props.promptId, fetchDetails)
 							>
 								<!-- Response provider and model -->
 								<div class="mb-3 flex justify-between">
-									<div class="flex gap-4">
-										<span class="text-neutral-500 text-sm"
-											>Provider: <span class="font-medium">{{ response.provider }}</span></span
-										>
-										<span class="text-neutral-500 text-sm"
-											>Model: <span class="font-medium">{{ response.model }}</span></span
-										>
+									<div class="flex flex-wrap items-center gap-3">
+										<span class="text-neutral-500 text-sm">
+											Provider: <span class="font-medium">{{ response.provider }}</span>
+										</span>
+										<span class="text-neutral-500 text-sm">
+											Model: <span class="font-medium">{{ response.model }}</span>
+										</span>
+										<span v-if="response.flex" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">
+											Flex
+										</span>
+										<span class="text-neutral-500 text-sm">
+											Status: <span class="font-medium">{{ response.status || 'completed' }}</span>
+										</span>
 									</div>
-									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm"
-										>Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span></span
-									>
+									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
+										Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span>
+									</span>
 								</div>
 
 								<!-- Response content -->

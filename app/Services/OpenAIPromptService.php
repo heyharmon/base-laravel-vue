@@ -21,7 +21,7 @@ class OpenAIPromptService
      * @param string|null $model Optional override model
      * @return object Object with content, annotations and usage
      */
-    public function getResponse(string $promptContent, ?string $model = null): object
+    public function getResponse(string $promptContent, ?string $model = null, array $options = []): object
     {
         $startTime = microtime(true);
         // Enforce gpt-5 for prompt runs regardless of caller input
@@ -38,6 +38,11 @@ class OpenAIPromptService
                 'reasoning' => ['effort' => 'low'],
                 'text' => ['verbosity' => 'low'],
             ];
+
+            // Support flex processing via service_tier option
+            if (($options['service_tier'] ?? null) === 'flex') {
+                $request['service_tier'] = 'flex';
+            }
 
             $response = OpenAI::responses()->create($request);
 
@@ -104,7 +109,30 @@ class OpenAIPromptService
             'annotations' => $annotations,
             'usage' => $usage,
             'raw' => $response,
+            'status' => $response->status ?? 'completed',
+            'id' => $response->id ?? null,
         ];
+    }
+
+    /**
+     * Retrieve a previously created response by ID.
+     */
+    public function retrieveResponse(string $responseId): object
+    {
+        $startTime = microtime(true);
+        try {
+            $response = OpenAI::responses()->retrieve($responseId);
+            return $this->parseResponse($response);
+        } catch (\OpenAI\Exceptions\ErrorException $e) {
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-5', $startTime);
+            throw $e;
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-5', $startTime, true);
+            throw $e;
+        } catch (\Exception $e) {
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-5', $startTime);
+            throw $e;
+        }
     }
 
     /**

@@ -26,10 +26,14 @@ class PromptRunBatchController extends Controller
             'providers' => 'nullable|array',
             'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
             'count' => 'nullable|integer|min:1|max:5',
+            'flex' => 'nullable|boolean',
+            'service_tier' => 'nullable|string|in:flex',
         ]);
 
         $providers = $validated['providers'] ?? ['openai'];
         $count = $validated['count'] ?? 1;
+        // Always use Flex pricing for batch runs
+        $serviceTier = 'flex';
 
         // Get all prompts for this team and campaign
         $prompts = Prompt::where('team_id', $team->id)
@@ -54,7 +58,7 @@ class PromptRunBatchController extends Controller
         $queued = 0;
         foreach ($prompts as $prompt) {
             for ($i = 0; $i < $count; $i++) {
-                $job = new RunPromptJob($prompt, $providers, $team->id, $campaign->id);
+                $job = new RunPromptJob($prompt, $providers, $team->id, $campaign->id, $serviceTier);
                 $this->jobDispatcher->dispatch($prompt, $job);
                 $queued++;
             }

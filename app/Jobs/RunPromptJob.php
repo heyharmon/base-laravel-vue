@@ -10,6 +10,7 @@ use App\Services\OpenAIPromptService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Term;
+use App\Jobs\PollOpenAIResponseJob;
 
 class RunPromptJob extends TrackableJob
 {
@@ -50,6 +51,13 @@ class RunPromptJob extends TrackableJob
     protected $providers;
 
     /**
+     * Optional OpenAI service tier (e.g., 'flex').
+     *
+     * @var string|null
+     */
+    protected $serviceTier;
+
+    /**
      * The team ID.
      *
      * @var int
@@ -77,13 +85,14 @@ class RunPromptJob extends TrackableJob
      * @param  int  $campaignId
      * @return void
      */
-    public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId)
+    public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId, ?string $serviceTier = null)
     {
         $this->model = $prompt;
         $this->teamId = $teamId;
         $this->campaignId = $campaignId;
         $this->prompt = $prompt;
         $this->providers = $providers;
+        $this->serviceTier = $serviceTier;
     }
 
     /**
@@ -122,41 +131,64 @@ class RunPromptJob extends TrackableJob
             $this->updateJobProgress(20, 'Sending prompt to ' . $providerName);
 
             // Get response from the LLM (single provider for reliability)
-            $llm = $openAI->getResponse($this->prompt->content, $model);
+            $options = [];
+            if ($this->serviceTier === 'flex') {
+                $options['service_tier'] = 'flex';
+            }
+            $llm = $openAI->getResponse($this->prompt->content, $model, $options);
 
-            // Persist response
-            $response = $this->prompt->responses()->create([
-                'provider' => $providerName,
-                'model' => $model,
-                'content' => $llm->content ?? '',
-                'usage' => $llm->usage ?? null,
-            ]);
-
-            // Save search annotations/citations when present
-            $this->saveSearchData($llm, $response);
-
-            // Check for terms in the response
-            $this->updateJobProgress(60, 'Scanning for tracked terms');
-            $this->checkForTerms($response, $this->prompt);
-
-            $this->updateJobProgress(90, 'Processing complete');
-
-            // Find competitors in response if this is the first response to this prompt
-            try {
-                if ($this->prompt->responses()->count() == 1) {
-                    // Log::info('Dispatching FindCompetitorsInResponseJob', ['prompt_id' => $this->prompt->id]);
-                    $jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt));
-                }
-            } catch (\Exception $e) {
-                Log::error('Failed to dispatch FindCompetitorsInResponseJob', [
-                    'prompt_id' => $this->prompt->id,
-                    'error' => $e->getMessage()
+            // If response is completed immediately, persist content and process
+            if (($llm->status ?? 'completed') === 'completed') {
+                $response = $this->prompt->responses()->create([
+                    'provider' => $providerName,
+                    'model' => $model,
+                    'flex' => $this->serviceTier === 'flex',
+                    'status' => 'completed',
+                    'provider_id' => $llm->id ?? null,
+                    'content' => $llm->content ?? '',
+                    'usage' => $llm->usage ?? null,
                 ]);
-                // Don't throw - this is not critical to the main job
+
+                // Save search annotations/citations when present
+                $this->saveSearchData($llm, $response);
+
+                // Check for terms in the response
+                $this->updateJobProgress(60, 'Scanning for tracked terms');
+                $this->checkForTerms($response, $this->prompt);
+
+                $this->updateJobProgress(90, 'Processing complete');
+
+                // If this is the first COMPLETED response to this prompt, queue competitor detection
+                try {
+                    if ($this->prompt->responses()->where('status', 'completed')->count() == 1) {
+                        $jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt));
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to dispatch FindCompetitorsInResponseJob', [
+                        'prompt_id' => $this->prompt->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            } else {
+                // Async path: record placeholder and queue a polling job
+                $response = $this->prompt->responses()->create([
+                    'provider' => $providerName,
+                    'model' => $model,
+                    'flex' => $this->serviceTier === 'flex',
+                    'status' => $llm->status ?? 'in_progress',
+                    'provider_id' => $llm->id ?? null,
+                    'content' => '',
+                    'usage' => null,
+                ]);
+
+                // Schedule a poll after 300 seconds to reduce costs
+                $pollJob = new PollOpenAIResponseJob($response->id);
+                $pollJob->delay(now()->addSeconds(300));
+                $jobDispatcher->dispatch($this->prompt, $pollJob);
             }
 
             // Mark the job as completed
-            $this->markJobAsCompleted('Successfully generated 1 response for prompt');
+            $this->markJobAsCompleted('Successfully queued/processed 1 response for prompt');
         } catch (Throwable $exception) {
             Log::error('RunPromptJob failed with exception', [
                 'prompt_id' => $this->prompt->id,

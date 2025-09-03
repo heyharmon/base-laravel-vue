@@ -25,6 +25,8 @@ class PromptRunController extends Controller
             'providers' => 'nullable|array',
             'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
             'count' => 'nullable|integer|min:1|max:5',
+            'flex' => 'nullable|boolean',
+            'service_tier' => 'nullable|string|in:flex',
         ]);
 
         $providers = $validated['providers'] ?? ['openai'];
@@ -36,10 +38,16 @@ class PromptRunController extends Controller
             return response()->json(['message' => 'Responses limit reached', 'remaining' => $remaining], 403);
         }
 
+        // Determine service tier
+        $serviceTier = null;
+        if (($validated['service_tier'] ?? null) === 'flex' || ($validated['flex'] ?? false)) {
+            $serviceTier = 'flex';
+        }
+
         // Always dispatch independent jobs (no batches)
         $jobStatuses = [];
         for ($i = 0; $i < $count; $i++) {
-            $job = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id);
+            $job = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id, $serviceTier);
             $jobStatuses[] = $this->jobDispatcher->dispatch($prompt, $job);
         }
 
