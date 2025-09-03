@@ -4,17 +4,15 @@ namespace App\Jobs;
 
 use Throwable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Batchable;
 use App\Services\JobDispatcherService;
 use App\Services\OpenAIPromptService;
-use App\Models\Response;
 use App\Models\Prompt;
-use App\Models\Term;
+use App\Jobs\Concerns\HandlesPromptResponses;
 
 class RunPromptJob extends TrackableJob
 {
-    use Batchable;
+    use Batchable, HandlesPromptResponses;
 
     /**
      * The number of times the job may be attempted.
@@ -186,7 +184,7 @@ class RunPromptJob extends TrackableJob
                     $responses[] = $response;
 
                     // Save search tool results
-                    $this->saveSearchToolResults($llm, $response);
+            $this->saveSearchToolResults($llm, $response);
 
                     // Check for terms in the response
                     $this->checkForTerms($response, $this->prompt);
@@ -274,82 +272,6 @@ class RunPromptJob extends TrackableJob
 
             default:
                 throw new \Exception("Unsupported provider: {$provider}");
-        }
-    }
-
-    /**
-     * Save search tool results.
-     *
-     * @param  object  $llmResponse
-     * @param  Response  $response
-     * @return void
-     */
-    private function saveSearchToolResults(object $llmResponse, Response $response): void
-    {
-        $searchData = [
-            'annotations' => $llmResponse->annotations ?? [],
-        ];
-
-        $response->update(['search' => $searchData]);
-    }
-
-    /**
-     * Check for terms in the response.
-     *
-     * @param  Response  $response
-     * @param  Prompt  $prompt
-     * @return void
-     */
-    private function checkForTerms(Response $response, Prompt $prompt): void
-    {
-        // Get terms for all organizations scoped to the team and campaign
-        $terms = Term::whereHas('organization', function ($query) {
-            $query->where('team_id', $this->teamId)
-                ->where(function ($q) {
-                    // Include competitor organizations for this campaign
-                    $q->where('campaign_id', $this->campaignId)
-                        // OR include the owned organization (campaign_id is NULL and is_competitor is false)
-                        ->orWhere(function ($subQ) {
-                            $subQ->whereNull('campaign_id')->where('is_competitor', false);
-                        });
-                });
-        })->get();
-
-        $responseText = strtolower($response->content);
-        $foundTerms = [];
-
-        foreach ($terms as $term) {
-            $termName = strtolower($term->name);
-
-            // Check if the term exists in the response
-            if (str_contains($responseText, $termName)) {
-                $foundTerms[] = $term->id;
-
-                // Check if the relationship already exists
-                $existingRelation = $prompt->terms()->where('term_id', $term->id)->exists();
-
-                if (!$existingRelation) {
-                    // Create new relationship
-                    $prompt->terms()->attach($term->id, [
-                        'count' => 1,
-                        'last_found_at' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    // Update existing relationship
-                    $prompt->terms()->updateExistingPivot($term->id, [
-                        'count' => DB::raw('count + 1'),
-                        'last_found_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-        }
-
-        // Attach found terms to the response and record a mention
-        if (!empty($foundTerms)) {
-            $response->terms()->syncWithoutDetaching($foundTerms);
         }
     }
 

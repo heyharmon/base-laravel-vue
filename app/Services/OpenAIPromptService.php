@@ -122,7 +122,7 @@ class OpenAIPromptService
      * @param mixed $response The raw OpenAI response
      * @return object Processed response with content and annotations
      */
-    protected function processResponse($response): object
+    public function processResponse($response): object
     {
         $content = '';
         $annotations = [];
