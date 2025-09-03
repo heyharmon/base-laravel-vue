@@ -5,7 +5,6 @@ namespace App\Jobs;
 use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Bus\Batchable;
 use App\Services\JobDispatcherService;
 use App\Services\OpenAIPromptService;
 use App\Models\Response;
@@ -14,7 +13,6 @@ use App\Models\Term;
 
 class RunPromptJob extends TrackableJob
 {
-    use Batchable;
 
     /**
      * The number of times the job may be attempted.
@@ -66,14 +64,9 @@ class RunPromptJob extends TrackableJob
     protected $campaignId;
 
     /**
-     * Available LLM providers and their models.
-     *
-     * @var array
+     * Supported providers for this job.
      */
-    private array $availableProviders = [
-        'openai' => 'gpt-4o',
-        'openai' => 'gpt-5',
-    ];
+    private const SUPPORTED_PROVIDERS = ['openai'];
 
     /**
      * Create a new job instance.
@@ -98,7 +91,7 @@ class RunPromptJob extends TrackableJob
      *
      * @return void
      */
-    public function handle(JobDispatcherService $jobDispatcher)
+    public function handle(JobDispatcherService $jobDispatcher, OpenAIPromptService $openAI)
     {
         try {
             if ($this->isCancelled()) {
@@ -114,87 +107,39 @@ class RunPromptJob extends TrackableJob
             // Mark the job as started
             $this->markJobAsStarted('Running a prompt');
 
-            // If no providers specified, use OpenAI as default
-            if (!$this->providers) {
-                $this->providers = ['openai'];
-            }
-
-            // Filter providers to only include supported ones
-            $this->providers = array_intersect($this->providers, array_keys($this->availableProviders));
-
-            if (empty($this->providers)) {
+            // Determine provider (we currently support only OpenAI in this job)
+            $providers = $this->providers ?: ['openai'];
+            $providers = array_values(array_intersect($providers, self::SUPPORTED_PROVIDERS));
+            if (empty($providers)) {
                 $error = 'No supported providers specified';
                 Log::error('RunPromptJob failed: ' . $error, ['prompt_id' => $this->prompt->id]);
-                throw new \Exception($error);
+                throw new \RuntimeException($error);
             }
 
-            $responses = [];
-            $providerErrors = [];
+            $providerName = $providers[0];
+            $model = $this->defaultModelFor($providerName);
 
-            $this->updateJobProgress(20, 'Preparing to send prompt to LLMs');
+            $this->updateJobProgress(20, 'Sending prompt to ' . $providerName);
 
-            // Run the prompt with each provider
-            $totalProviders = count($this->providers);
-            $currentProvider = 0;
+            // Get response from the LLM (single provider for reliability)
+            $llm = $openAI->getResponse($this->prompt->content, $model);
 
-            foreach ($this->providers as $providerName) {
-                $currentProvider++;
-                $progress = 20 + (60 * ($currentProvider / $totalProviders));
+            // Persist response
+            $response = $this->prompt->responses()->create([
+                'provider' => $providerName,
+                'model' => $model,
+                'content' => $llm->content ?? '',
+                'usage' => $llm->usage ?? null,
+            ]);
 
-                // Setup the LLM provider
-                if (!isset($this->availableProviders[$providerName])) {
-                    continue;
-                }
+            // Save search annotations/citations when present
+            $this->saveSearchData($llm, $response);
 
-                $model = $this->availableProviders[$providerName];
+            // Check for terms in the response
+            $this->updateJobProgress(60, 'Scanning for tracked terms');
+            $this->checkForTerms($response, $this->prompt);
 
-                $this->updateJobProgress((int)$progress, 'Sending prompt "' . substr($this->prompt->content, 0, 50) . (strlen($this->prompt->content) > 50 ? '...' : '') . '" to ' . $providerName);
-
-                try {
-                    // Get response from the LLM
-                    $llm = $this->getLlmResponse($this->prompt->content, $model, $providerName);
-
-                    // Store the LLM's response
-                    $response = $this->prompt->responses()->create([
-                        'provider' => $providerName,
-                        'model' => $model,
-                        'content' => $llm->responseMessages[0]->content ?? '',
-                        'usage' => $llm->usage ?? null,
-                    ]);
-
-                    $responses[] = $response;
-
-                    // Save search tool results
-                    $this->saveSearchToolResults($llm, $response);
-
-                    // Check for terms in the response
-                    $this->checkForTerms($response, $this->prompt);
-                } catch (\Exception $e) {
-                    $providerErrors[$providerName] = $e->getMessage();
-
-                    // Log the detailed error but continue with other providers
-                    Log::error('Error running prompt with provider', [
-                        'provider' => $providerName,
-                        'prompt_id' => $this->prompt->id,
-                        'error' => $e->getMessage(),
-                        'error_code' => $e->getCode(),
-                        'error_type' => get_class($e),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                }
-            }
-
-            // Check if all providers failed
-            if (empty($responses)) {
-                $error = 'All providers failed: ' . json_encode($providerErrors);
-                Log::error('RunPromptJob: All providers failed', [
-                    'prompt_id' => $this->prompt->id,
-                    'provider_errors' => $providerErrors
-                ]);
-                throw new \Exception($error);
-            }
-
-            $this->updateJobProgress(90, 'Processing LLM response');
+            $this->updateJobProgress(90, 'Processing complete');
 
             // Find competitors in response if this is the first response to this prompt
             try {
@@ -211,7 +156,7 @@ class RunPromptJob extends TrackableJob
             }
 
             // Mark the job as completed
-            $this->markJobAsCompleted('Successfully generated ' . count($responses) . ' responses for prompt');
+            $this->markJobAsCompleted('Successfully generated 1 response for prompt');
         } catch (Throwable $exception) {
             Log::error('RunPromptJob failed with exception', [
                 'prompt_id' => $this->prompt->id,
@@ -233,15 +178,13 @@ class RunPromptJob extends TrackableJob
      * @param  string  $provider
      * @return mixed
      */
-    private function getLlmResponse(string $promptContent, string $model, string $provider)
+    private function defaultModelFor(string $provider): string
     {
+        // Extend this switch if more providers are added later
         switch ($provider) {
             case 'openai':
-                $service = new OpenAIPromptService();
-                return $service->getResponse($promptContent, $model);
-
             default:
-                throw new \Exception("Unsupported provider: {$provider}");
+                return 'gpt-5';
         }
     }
 
@@ -252,7 +195,7 @@ class RunPromptJob extends TrackableJob
      * @param  Response  $response
      * @return void
      */
-    private function saveSearchToolResults(object $llmResponse, Response $response): void
+    private function saveSearchData(object $llmResponse, Response $response): void
     {
         $searchData = [
             'annotations' => $llmResponse->annotations ?? [],

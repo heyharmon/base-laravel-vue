@@ -220,11 +220,11 @@ CRUD for prompt records.
 
 ### PromptRunController
 
--   `store` – run a single prompt immediately or as a batch. Uses `RunPromptJob`.
+-   `store` – run a single prompt 1–5 times by queueing independent `RunPromptJob` jobs (no batches).
 
 ### PromptRunBatchController
 
--   `store` – queue a batch job to run all prompts using `RunAllPromptsJob`.
+-   `store` – collect all prompts in a campaign and queue independent `RunPromptJob` jobs for each (no batch usage).
 
 ### PromptResponsesController
 
