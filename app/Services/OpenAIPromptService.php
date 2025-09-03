@@ -25,7 +25,7 @@ class OpenAIPromptService
      * @return object Response object with content and annotations
      * @throws \Exception
      */
-    public function getResponse(string $promptContent, string $model = 'gpt-4o-2024-08-06'): object
+    public function getResponse(string $promptContent, string $model = 'gpt-5'): object
     {
         $startTime = microtime(true);
 
@@ -41,8 +41,8 @@ class OpenAIPromptService
                 'input' => $promptContent,
                 // 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
                 // 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
-                'tools' => $this->tools,
-                'tool_choice' => 'required',
+                // 'tools' => $this->tools,
+                // 'tool_choice' => 'auto',
                 'store' => true,
             ];
 
