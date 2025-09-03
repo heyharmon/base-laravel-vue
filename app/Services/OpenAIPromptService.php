@@ -151,10 +151,10 @@ class OpenAIPromptService
             'error_type' => get_class($e),
         ];
 
-        if ($withResponse && method_exists($e, 'hasResponse') && $e->hasResponse()) {
-            $context['response_status'] = $e->getResponse()->getStatusCode();
-            $context['response_body'] = substr((string) $e->getResponse()->getBody(), 0, 500);
-        }
+        // if ($withResponse && method_exists($e, 'hasResponse') && $e->hasResponse()) {
+        //     $context['response_status'] = $e->getResponse()->getStatusCode();
+        //     $context['response_body'] = substr((string) $e->getResponse()->getBody(), 0, 500);
+        // }
 
         Log::error($label, $context);
     }
