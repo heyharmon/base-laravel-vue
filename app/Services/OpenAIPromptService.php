@@ -109,6 +109,7 @@ class OpenAIPromptService
             throw new \Exception('OpenAI Prompt Service: Rate limit retries exhausted');
         } catch (\OpenAI\Exceptions\ErrorException $e) {
             $duration = microtime(true) - $startTime;
+            $response = method_exists($e, 'getResponse') ? $e->getResponse() : null;
 
             Log::error('OpenAI API ErrorException', [
                 'prompt_preview' => substr($promptContent, 0, 100) . '...',
@@ -116,10 +117,13 @@ class OpenAIPromptService
                 'duration_seconds' => round($duration, 2),
                 'error_message' => $e->getMessage(),
                 'error_code' => $e->getCode(),
-                'error_type' => get_class($e)
+                'error_type' => get_class($e),
+                'response_status' => $response ? $response->getStatusCode() : null,
+                'response_headers' => $response ? $response->getHeaders() : null,
+                'response_body' => $response ? substr($response->getBody()->getContents(), 0, 500) : null,
             ]);
 
-            throw new \Exception('OpenAI API Error: ' . $e->getMessage(), $e->getCode(), $e);
+            throw new \Exception('OpenAI API Error (' . $e->getCode() . '): ' . $e->getMessage(), $e->getCode(), $e);
         } catch (\GuzzleHttp\Exception\RequestException $e) {
             $duration = microtime(true) - $startTime;
 
@@ -131,6 +135,7 @@ class OpenAIPromptService
                 'error_code' => $e->getCode(),
                 'has_response' => $e->hasResponse(),
                 'response_status' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null,
+                'response_headers' => $e->hasResponse() ? $e->getResponse()->getHeaders() : null,
                 'response_body' => $e->hasResponse() ? substr($e->getResponse()->getBody()->getContents(), 0, 500) : null
             ]);
 
