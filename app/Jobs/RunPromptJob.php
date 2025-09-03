@@ -196,8 +196,9 @@ class RunPromptJob extends TrackableJob
                     //     'response_id' => $response->id,
                     //     'provider' => $providerName
                     // ]);
-                } catch (\Exception $e) {
-                    $providerErrors[$providerName] = $e->getMessage();
+                } catch (\Throwable $e) {
+                    // Keep the whole exception for richer context later
+                    $providerErrors[$providerName] = $e;
 
                     // Log the detailed error but continue with other providers
                     Log::error('Error running prompt with provider', [
@@ -213,12 +214,21 @@ class RunPromptJob extends TrackableJob
 
             // Check if all providers failed
             if (empty($responses)) {
-                $error = 'All providers failed: ' . json_encode($providerErrors);
+                $firstError = reset($providerErrors);
+
                 Log::error('RunPromptJob: All providers failed', [
                     'prompt_id' => $this->prompt->id,
-                    'provider_errors' => $providerErrors
+                    'provider_errors' => array_map(function ($e) {
+                        return $e instanceof \Throwable ? $e->getMessage() : $e;
+                    }, $providerErrors),
                 ]);
-                throw new \Exception($error);
+
+                // Re-throw the first underlying exception to surface real cause
+                if ($firstError instanceof \Throwable) {
+                    throw $firstError;
+                }
+
+                throw new \Exception('All providers failed');
             }
 
             $this->updateJobProgress(90, 'Processing LLM response');
@@ -253,7 +263,8 @@ class RunPromptJob extends TrackableJob
             ]);
 
             $this->markJobAsFailed($exception);
-            throw $exception;
+            $this->fail($exception); // stop further retries and record failure
+            return;
         }
     }
 
