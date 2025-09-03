@@ -9,7 +9,7 @@ use App\Services\JobDispatcherService;
 use App\Models\Team;
 use App\Models\Campaign;
 use App\Models\Prompt;
-use App\Jobs\RunAllPromptsJob;
+use App\Jobs\RunPromptJob;
 
 class PromptRunBatchController extends Controller
 {
@@ -31,8 +31,10 @@ class PromptRunBatchController extends Controller
         $providers = $validated['providers'] ?? ['openai'];
         $count = $validated['count'] ?? 1;
 
-        // Get all prompts
-        $prompts = Prompt::where('team_id', $team->id)->get();
+        // Get all prompts for this team and campaign
+        $prompts = Prompt::where('team_id', $team->id)
+            ->where('campaign_id', $campaign->id)
+            ->get();
 
         if ($prompts->isEmpty()) {
             return response()->json([
@@ -48,14 +50,20 @@ class PromptRunBatchController extends Controller
             ], 403);
         }
 
-        // Dispatch the job to run all prompts
-        $job = new RunAllPromptsJob($prompts->first(), $team->id, $campaign->id, $providers, $count);
-        $this->jobDispatcher->dispatch($prompts->first(), $job);
+        // Queue independent jobs for each prompt (no batches)
+        $queued = 0;
+        foreach ($prompts as $prompt) {
+            for ($i = 0; $i < $count; $i++) {
+                $job = new RunPromptJob($prompt, $providers, $team->id, $campaign->id);
+                $this->jobDispatcher->dispatch($prompt, $job);
+                $queued++;
+            }
+        }
 
         return response()->json([
             'message' => 'All prompts queued for processing',
             'prompts_count' => $prompts->count(),
-            'expected_jobs' => $prompts->count() * $count
+            'queued_jobs' => $queued,
         ]);
     }
 }
