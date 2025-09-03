@@ -28,11 +28,11 @@ class PromptRunBatchController extends Controller
 			'count' => 'nullable|integer|min:1|max:5',
 		]);
 
-		$providers = $validated['providers'] ?? ['openai'];
-		$count = $validated['count'] ?? 1;
+                $providers = $validated['providers'] ?? ['openai'];
+                $count = $validated['count'] ?? 1;
 
-		// Get all prompts
-		$prompts = Prompt::where('team_id', $team->id)->get();
+                // Get all prompts
+                $prompts = Prompt::where('team_id', $team->id)->get();
 
 		if ($prompts->isEmpty()) {
 			return response()->json([
@@ -40,9 +40,17 @@ class PromptRunBatchController extends Controller
 			], 404);
 		}
 
-		// Dispatch the job to run all prompts
-		$job = new RunAllPromptsJob($prompts->first(), $team->id, $campaign->id, $providers, $count);
-		$this->jobDispatcher->dispatch($prompts->first(), $job);
+                $total = $prompts->count() * $count;
+                if (($remaining = $team->responsesRemaining()) !== null && $remaining < $total) {
+                        return response()->json([
+                                'message' => 'Responses limit reached',
+                                'remaining' => $remaining
+                        ], 403);
+                }
+
+                // Dispatch the job to run all prompts
+                $job = new RunAllPromptsJob($prompts->first(), $team->id, $campaign->id, $providers, $count);
+                $this->jobDispatcher->dispatch($prompts->first(), $job);
 
 		return response()->json([
 			'message' => 'All prompts queued for processing',

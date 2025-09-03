@@ -28,6 +28,8 @@ use App\Http\Controllers\ArticleConversationController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ArticleChatController;
 use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\TeamUsageController;
+use App\Http\Controllers\SuperAdminTeamUsageController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -116,6 +118,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('teams/{team}/jobs', [JobStatusController::class, 'getTeamJobs']);
     Route::post('teams/{team}/jobs/cancel', [JobStatusController::class, 'cancelTeamJobs']);
 
+    // Team usage
+    Route::get('teams/{team}/usage', [TeamUsageController::class, 'show']);
+
     // Articles
     Route::get('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'index']);
     Route::post('teams/{team}/campaigns/{campaign}/articles', [ArticleController::class, 'store']);
@@ -141,5 +146,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Export organizations data
         Route::post('/organizations/export', [SuperAdminOrganizationExportController::class, 'export']);
+
+        // Teams usage
+        Route::get('/teams', [SuperAdminTeamUsageController::class, 'index']);
+        Route::get('/teams/{team}', [SuperAdminTeamUsageController::class, 'show']);
+        Route::put('/teams/{team}', [SuperAdminTeamUsageController::class, 'update']);
     });
 });

@@ -238,11 +238,11 @@ watch(
 											</span>
 										</router-link>
 									</PopoverClose>
-									<PopoverClose as-child v-if="isSuperAdmin">
-										<router-link to="/super-admin" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
-											Super Admin
-										</router-link>
-									</PopoverClose>
+                                                                        <PopoverClose as-child v-if="isSuperAdmin">
+                                                                                <router-link to="/super-admin/teams" class="block px-3 py-2 text-sm text-white hover:bg-neutral-700">
+                                                                                        Super Admin
+                                                                                </router-link>
+                                                                        </PopoverClose>
 									<PopoverClose as-child>
 										<a @click="logout" class="cursor-pointer w-full text-left block px-3 py-2 text-sm text-white hover:bg-neutral-700">
 											Logout
