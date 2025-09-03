@@ -3,15 +3,16 @@
 namespace App\Jobs;
 
 use App\Models\Prompt;
-use App\Jobs\RunPromptJob;
-use Illuminate\Bus\Batchable;
+use App\Models\Team;
 use Illuminate\Support\Facades\Log;
 use App\Services\JobDispatcherService;
+use App\Services\OpenAIBatchService;
+use App\Jobs\ProcessOpenAIBatchJob;
 use Throwable;
 
 class RunAllPromptsJob extends TrackableJob
 {
-    use Batchable;
+    use \Illuminate\Bus\Batchable;
 
     /**
      * The number of times the job may be attempted.
@@ -78,19 +79,17 @@ class RunAllPromptsJob extends TrackableJob
      *
      * @return void
      */
-    public function handle(JobDispatcherService $jobDispatcher)
+    public function handle(JobDispatcherService $jobDispatcher, OpenAIBatchService $batchService)
     {
         try {
             if ($this->isCancelled()) {
                 return;
             }
-            // Mark the job as started
+
             $this->markJobAsStarted('Running all prompts');
 
-            // Update progress
             $this->updateJobProgress(10, 'Fetching prompts');
 
-            // Get prompts for the specified team and campaign
             $prompts = Prompt::where('team_id', $this->teamId)
                 ->where('campaign_id', $this->campaignId)
                 ->get();
@@ -100,41 +99,27 @@ class RunAllPromptsJob extends TrackableJob
                 return;
             }
 
-            $this->updateJobProgress(30, 'Creating prompt run jobs');
-
-            // Create jobs for all prompts but respect response limit
-            $jobs = [];
-            $team = \App\Models\Team::find($this->teamId);
-            $remaining = $team ? $team->responsesRemaining() : null;
-            foreach ($prompts as $prompt) {
-                for ($i = 0; $i < $this->count; $i++) {
-                    if (!is_null($remaining) && $remaining <= 0) {
-                        break 2;
-                    }
-                    $jobs[] = new RunPromptJob($prompt, $this->providers, $this->teamId, $this->campaignId);
-                    if (!is_null($remaining)) {
-                        $remaining--;
-                    }
-                }
-            }
-
-            if (empty($jobs)) {
+            $team = Team::find($this->teamId);
+            $totalRuns = $prompts->count() * $this->count;
+            if ($team && ($remaining = $team->responsesRemaining()) !== null && $remaining < $totalRuns) {
                 $this->markJobAsCompleted('Responses limit reached');
                 return;
             }
 
-            $this->updateJobProgress(50, 'Dispatching batch of prompt jobs');
+            $this->updateJobProgress(30, 'Creating OpenAI batch');
 
-            // Dispatch as a single batch with tracking using all prompts as models
-            $batch = $jobDispatcher->dispatchBatch($prompts, $jobs, [
-                'name' => "All Prompts Batch ({$this->count}x each)",
-                'allowFailures' => true
-            ]);
+            $batchId = $batchService->createBatch($prompts, $this->count);
+
+            $this->updateJobProgress(60, 'Dispatching batch processor');
+
+            $jobDispatcher->dispatch(
+                $this->model,
+                new ProcessOpenAIBatchJob($batchId, $this->teamId, $this->campaignId, $totalRuns)
+            );
 
             $this->updateJobProgress(90, 'Batch dispatched successfully');
 
-            // Mark the job as completed
-            $this->markJobAsCompleted('Successfully queued ' . count($jobs) . ' prompt jobs for processing');
+            $this->markJobAsCompleted('OpenAI batch ' . $batchId . ' created');
         } catch (Throwable $exception) {
             Log::error('All prompts batch job failed: ' . $exception->getMessage());
             $this->markJobAsFailed($exception);

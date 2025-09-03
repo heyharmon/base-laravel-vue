@@ -39,8 +39,8 @@ class OpenAIPromptService
             $requestData = [
                 'model' => $model,
                 'input' => $promptContent,
-                // 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
-                // 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
+                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
+                'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,
@@ -122,7 +122,7 @@ class OpenAIPromptService
      * @param mixed $response The raw OpenAI response
      * @return object Processed response with content and annotations
      */
-    protected function processResponse($response): object
+    public function processResponse($response): object
     {
         $content = '';
         $annotations = [];
