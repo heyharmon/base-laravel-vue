@@ -39,8 +39,8 @@ class OpenAIPromptService
             $requestData = [
                 'model' => $model,
                 'input' => $promptContent,
-                // 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
-                // 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
+                'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
+                'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,

@@ -7,6 +7,8 @@ use App\Models\Prompt;
 use App\Services\JobDispatcherService;
 use App\Services\OpenAIBatchService;
 use App\Services\OpenAIPromptService;
+use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use App\Jobs\FindCompetitorsInResponseJob;
@@ -19,6 +21,13 @@ class ProcessOpenAIBatchJob extends TrackableJob
     protected int $teamId;
     protected int $campaignId;
     protected int $totalRuns;
+    protected DateTimeInterface $retryUntilAt;
+
+    /**
+     * Allow many attempts so we can poll for up to 24h without failing.
+     * The queue worker's --tries setting will be overridden by this value.
+     */
+    public int $tries = 100000;
 
     public function __construct(string $batchId, int $teamId, int $campaignId, int $totalRuns)
     {
@@ -26,6 +35,13 @@ class ProcessOpenAIBatchJob extends TrackableJob
         $this->teamId = $teamId;
         $this->campaignId = $campaignId;
         $this->totalRuns = $totalRuns;
+        // Expire this job after ~24 hours to match the batch completion window
+        $this->retryUntilAt = Carbon::now()->addHours(24);
+    }
+
+    public function retryUntil(): DateTimeInterface
+    {
+        return $this->retryUntilAt;
     }
 
     public function handle(OpenAIBatchService $batchService, JobDispatcherService $jobDispatcher)
