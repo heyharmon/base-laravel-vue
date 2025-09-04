@@ -98,8 +98,9 @@ const highlightTerms = (content) => {
 }
 
 // Method to calculate cost for GPT-5 responses
-const calculateCost = (usage) => {
-	if (!usage) return null
+// If `isFlex` is true, apply 50% discount for batch pricing
+const calculateCost = (usage, isFlex = false) => {
+    if (!usage) return null
 
 	// GPT-5 pricing (per 1M tokens)
 	const inputPrice = 1.25 // $1.250 per 1M tokens
@@ -118,9 +119,10 @@ const calculateCost = (usage) => {
 	const cachedInputCost = (cachedTokens / 1000000) * cachedInputPrice
 	const outputCost = (outputTokens / 1000000) * outputPrice
 
-	const totalCost = regularInputCost + cachedInputCost + outputCost
+    const totalCost = regularInputCost + cachedInputCost + outputCost
 
-	return totalCost
+    // Apply 50% discount for flex (batch pricing)
+    return isFlex ? totalCost * 0.5 : totalCost
 }
 
 // Method to format cost as currency
@@ -291,9 +293,9 @@ watch(() => props.promptId, fetchDetails)
 											Status: <span class="font-medium">{{ response.status || 'completed' }}</span>
 										</span>
 									</div>
-									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
-										Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span>
-									</span>
+                                    <span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
+                                        Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage, response.flex)) }}</span>
+                                    </span>
 								</div>
 
 								<!-- Response content -->
