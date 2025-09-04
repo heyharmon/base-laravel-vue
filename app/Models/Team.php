@@ -38,11 +38,20 @@ class Team extends Model
         protected static function booted(): void
         {
                 static::creating(function ($team) {
+                        // Default subscription start and billing interval
                         if (is_null($team->subscription_started_at)) {
                                 $team->subscription_started_at = Carbon::now();
                         }
                         if (is_null($team->billing_interval)) {
                                 $team->billing_interval = 'monthly';
+                        }
+
+                        // Default usage limits
+                        if (is_null($team->responses_limit)) {
+                                $team->responses_limit = 1500;
+                        }
+                        if (is_null($team->articles_limit)) {
+                                $team->articles_limit = 6;
                         }
                 });
         }
