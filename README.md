@@ -433,3 +433,45 @@ Pages under `pages/articles` manage user written content:
 ### Super Admin
 
 `pages/super-admin/Organizations.vue` – admin dashboard to search, filter, and export organizations across all teams. Only reachable at `/super-admin/organizations`.
+
+## Team Subscription & Usage Limits
+
+Teams can have subscription limits that cap how many prompt responses and articles they can create within a billing period. These limits are enforced on the backend and surfaced in the UI with usage progress.
+
+### Model
+
+- Team fields: `responses_limit`, `articles_limit` (nullable = unlimited), `subscription_started_at` (period anchor), `billing_interval` (`monthly` or `yearly`, defaults to `monthly`). Defaults for `subscription_started_at` and `billing_interval` are set when a team is created.
+- Period calculation: `Team::periodBounds($index = 0)` returns `[start, end]` for the billing period containing “now” (`0`) or a prior period (`1` = previous, `2` = two periods ago, etc.), based on `subscription_started_at` and `billing_interval`.
+- Usage counters:
+  - `Team::responsesUsed([$start, $end])` – number of `responses` created for the team’s prompts in the period.
+  - `Team::articlesUsed([$start, $end])` – number of `articles` created by the team in the period.
+  - `Team::responsesRemaining([$start, $end])` / `articlesRemaining` – remaining quantity for the period, or `null` when unlimited.
+
+### API
+
+- Get usage for a team: `GET /api/teams/{team}/usage?period=:index`
+  - Returns: `responses_used`, `responses_limit`, `responses_remaining`, `articles_used`, `articles_limit`, `articles_remaining`, `period_index`, `billing_interval`, `period_start`, `period_end`.
+- Enforced operations (blocked with HTTP 403 when limits are exceeded):
+  - Run prompt: `POST /api/prompts/{prompt}/run` – checks `responsesRemaining` against requested `count` (1–5). On failure returns `{ message: 'Responses limit reached', remaining }`.
+  - Run all prompts in a campaign: `POST /api/teams/{team}/campaigns/{campaign}/prompt-run-batch` – checks `responsesRemaining` against total (`prompts_count * count`).
+  - Create article: `POST /api/teams/{team}/campaigns/{campaign}/articles` – blocked when `articlesRemaining` is `0`.
+
+### Super Admin
+
+- List usage across teams: `GET /api/super-admin/teams`.
+- View a single team’s usage: `GET /api/super-admin/teams/{team}`.
+- Update limits/interval: `PUT /api/super-admin/teams/{team}` with `responses_limit`, `articles_limit` (nullable integers ≥ 0), and `billing_interval` (`monthly`|`yearly`).
+- Frontend pages:
+  - `resources/js/pages/super-admin/Teams.vue` – list teams with usage bars.
+  - `resources/js/pages/super-admin/TeamUsage.vue` – inspect a team, page through periods, and update limits/interval.
+
+### Frontend Surfaces
+
+- Prompts: `resources/js/pages/prompts/Index.vue` loads usage (`useUsageStore`) and shows a progress bar. Attempts to run prompts beyond the limit receive a 403 from the API and display a notification.
+- Articles: `resources/js/pages/articles/Index.vue` loads usage and shows a progress bar. Creating an article when at the limit is blocked by the API with a 403 and surfaced as a notification.
+- Usage UI: `resources/js/components/UsageProgress.vue` renders used vs limit. When a limit is `null` (unlimited), it displays the used count without a progress bar.
+
+### Behavior Notes
+
+- Limits are per billing period and reset automatically at each new period boundary computed from `subscription_started_at` and `billing_interval`.
+- Setting a limit field to `null` removes the cap for that resource.
