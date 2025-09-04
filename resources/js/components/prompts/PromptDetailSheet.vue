@@ -100,7 +100,7 @@ const highlightTerms = (content) => {
 // Method to calculate cost for GPT-5 responses
 // If `isFlex` is true, apply 50% discount for batch pricing
 const calculateCost = (usage, isFlex = false) => {
-    if (!usage) return null
+	if (!usage) return null
 
 	// GPT-5 pricing (per 1M tokens)
 	const inputPrice = 1.25 // $1.250 per 1M tokens
@@ -119,10 +119,10 @@ const calculateCost = (usage, isFlex = false) => {
 	const cachedInputCost = (cachedTokens / 1000000) * cachedInputPrice
 	const outputCost = (outputTokens / 1000000) * outputPrice
 
-    const totalCost = regularInputCost + cachedInputCost + outputCost
+	const totalCost = regularInputCost + cachedInputCost + outputCost
 
-    // Apply 50% discount for flex (batch pricing)
-    return isFlex ? totalCost * 0.5 : totalCost
+	// Apply 50% discount for flex (batch pricing)
+	return isFlex ? totalCost * 0.5 : totalCost
 }
 
 // Method to format cost as currency
@@ -264,7 +264,6 @@ watch(() => props.promptId, fetchDetails)
 
 				<!-- Responses section -->
 				<div class="mt-6">
-					asdf
 					<div v-if="promptStore.isLoadingPromptResponses" class="mt-6 flex justify-center py-4">
 						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-800"></div>
 					</div>
@@ -286,16 +285,19 @@ watch(() => props.promptId, fetchDetails)
 										<span class="text-neutral-500 text-sm">
 											Model: <span class="font-medium">{{ response.model }}</span>
 										</span>
-										<span v-if="response.flex" class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">
+										<span
+											v-if="response.flex"
+											class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700"
+										>
 											Flex
 										</span>
 										<span class="text-neutral-500 text-sm">
 											Status: <span class="font-medium">{{ response.status || 'completed' }}</span>
 										</span>
 									</div>
-                                    <span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
-                                        Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage, response.flex)) }}</span>
-                                    </span>
+									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
+										Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage, response.flex)) }}</span>
+									</span>
 								</div>
 
 								<!-- Response content -->

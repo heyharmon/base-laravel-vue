@@ -234,6 +234,20 @@ CRUD for prompt records.
 
 -   `show` – export a prompt with its responses (provider, model, content, search).
 
+## OpenAI Flex Responses
+
+-   **What:** Uses OpenAI Responses API with `service_tier` set to `flex` for lower cost (around 50% cheaper) at the expense of higher latency. Responses can take 10–15 minutes.
+-   **When used:**
+    - Single run: `POST /api/prompts/{prompt}/run` accepts `service_tier=flex` or `flex=true` and passes this into `RunPromptJob`.
+    - Batch run: `POST /api/teams/{team}/campaigns/{campaign}/prompt-run-batch` always uses Flex.
+-   **Flow:**
+    - `RunPromptJob` sends the prompt via `OpenAIPromptService`. If OpenAI returns immediately, the response is stored as `completed`.
+    - If OpenAI returns an async response (`status` not `completed`), a `Response` row is created with `provider_id`, `status`, and `flex=true`, and `PollOpenAIResponseJob` is queued (15s delay).
+    - `PollOpenAIResponseJob` polls `retrieveResponse(provider_id)` every ~15s until `completed`, updating `content`, `usage`, and `status`. On `failed` or missing `provider_id`, it reissues the request and resumes polling.
+    - On first completed response for a prompt, competitor detection is dispatched.
+-   **Data model:** `responses` table has `provider_id`, `status` (`in_progress`|`completed`|`failed`), and `flex` (boolean). Search annotations from OpenAI are saved in `search.annotations`.
+-   **Developer notes:** Expect long gaps before content lands. The initial `RunPromptJob` may complete quickly while polling continues via separate jobs. Use Job Status and the prompt’s responses list to monitor progress; do not assume the HTTP call returns final content when Flex is enabled.
+
 ## Job Status
 
 ### JobStatusController

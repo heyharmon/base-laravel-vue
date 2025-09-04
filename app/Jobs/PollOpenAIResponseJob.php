@@ -116,12 +116,12 @@ class PollOpenAIResponseJob extends TrackableJob
                 return;
             }
 
-            // Still in progress; schedule another poll in 300 seconds
+            // Still in progress; schedule another poll in 15 seconds
             $response->status = $status;
             $response->save();
 
             $next = new self($response->id);
-            $next->delay(now()->addSeconds(300));
+            $next->delay(now()->addSeconds(15));
             $jobDispatcher->dispatch($response->prompt, $next);
 
             $this->markJobAsCompleted('Re-queued polling');
@@ -155,7 +155,7 @@ class PollOpenAIResponseJob extends TrackableJob
 
             // Schedule the next poll
             $next = new self($response->id);
-            $next->delay(now()->addSeconds(300));
+            $next->delay(now()->addSeconds(15));
             $jobDispatcher->dispatch($prompt, $next);
 
             $this->markJobAsCompleted('Reissued and re-queued polling');
