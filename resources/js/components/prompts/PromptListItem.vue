@@ -102,7 +102,12 @@ const createArticle = async () => {
 			</div>
 		</div>
 
-		<div class="flex justify-end items-center space-x-2">
+		<div class="flex justify-end items-center space-x-4">
+			<div v-if="hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
+				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
+				Running
+			</div>
+
 			<!-- Create article button -->
 			<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="success_outline" size="sm">
 				<SparkleIcon />
@@ -110,7 +115,7 @@ const createArticle = async () => {
 			</Button>
 
 			<!-- Run prompt button -->
-			<div class="relative flex items-center">
+			<!-- <div class="relative flex items-center">
 				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
 					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
 				</Button>
@@ -130,7 +135,7 @@ const createArticle = async () => {
 						Run 5x
 					</button>
 				</div>
-			</div>
+			</div> -->
 
 			<button
 				@click.stop="confirmDelete"

@@ -27,7 +27,7 @@ class RunPromptJob extends TrackableJob
      *
      * @var int
      */
-    public $timeout = 300; // 5 minutes for GPT-5 reasoning
+    public $timeout = 300; // 5 minutes
 
     /**
      * The prompt instance.
@@ -216,7 +216,7 @@ class RunPromptJob extends TrackableJob
         switch ($provider) {
             case 'openai':
             default:
-                return 'gpt-5';
+                return 'gpt-4o';
         }
     }
 

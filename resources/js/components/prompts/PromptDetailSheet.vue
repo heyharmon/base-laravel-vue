@@ -282,7 +282,7 @@ watch(() => props.promptId, fetchDetails)
 										<span class="text-neutral-500 text-sm">
 											Provider: <span class="font-medium">{{ response.provider }}</span>
 										</span>
-										<span class="text-neutral-500 text-sm">
+										<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
 											Model: <span class="font-medium">{{ response.model }}</span>
 										</span>
 										<span
@@ -291,9 +291,9 @@ watch(() => props.promptId, fetchDetails)
 										>
 											Flex
 										</span>
-										<span class="text-neutral-500 text-sm">
+										<!-- <span class="text-neutral-500 text-sm">
 											Status: <span class="font-medium">{{ response.status || 'completed' }}</span>
-										</span>
+										</span> -->
 									</div>
 									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
 										Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage, response.flex)) }}</span>

@@ -24,19 +24,19 @@ class OpenAIPromptService
     public function getResponse(string $promptContent, ?string $model = null, array $options = []): object
     {
         $startTime = microtime(true);
-        // Enforce gpt-5 for prompt runs regardless of caller input
-        $modelToUse = 'gpt-5';
+        // Enforce gpt-4o for prompt runs regardless of caller input
+        $modelToUse = 'gpt-4o';
 
         try {
             $request = [
                 'model' => $modelToUse,
-                'instructions' => $this->systemInstructions(),
+                // 'instructions' => $this->systemInstructions(),
                 'input' => $promptContent,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,
-                'reasoning' => ['effort' => 'low'], // can be 'low', 'medium', or 'high'
-                'text' => ['verbosity' => 'low'], // can be 'low', 'medium', or 'high'
+                // 'reasoning' => ['effort' => 'low'], // can be 'low', 'medium', or 'high'
+                // 'text' => ['verbosity' => 'low'], // can be 'low', 'medium', or 'high'
             ];
 
             // Support flex processing via service_tier option
@@ -61,8 +61,8 @@ class OpenAIPromptService
 
     protected function defaultModel(): string
     {
-        // Kept for future configurability; currently unused since we enforce gpt-5
-        return 'gpt-5';
+        // Kept for future configurability; currently unused since we enforce gpt-4o
+        return 'gpt-4o';
     }
 
     /**
@@ -124,13 +124,13 @@ class OpenAIPromptService
             $response = OpenAI::responses()->retrieve($responseId);
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-5', $startTime);
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
             throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-5', $startTime, true);
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime, true);
             throw $e;
         } catch (\Exception $e) {
-            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-5', $startTime);
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
             throw $e;
         }
     }
