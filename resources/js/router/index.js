@@ -20,6 +20,8 @@ import ArticlesIndex from '@/pages/articles/Index.vue'
 import ArticleEdit from '@/pages/articles/Edit.vue'
 import CampaignsIndex from '@/pages/campaigns/Index.vue'
 import CampaignsEdit from '@/pages/campaigns/Edit.vue'
+import SuperAdminTeams from '@/pages/super-admin/Teams.vue'
+import SuperAdminTeamUsage from '@/pages/super-admin/TeamUsage.vue'
 
 const routes = [
 	{
@@ -209,11 +211,23 @@ const routes = [
 		meta: { requiresAuth: true }
 	},
 	{
-		path: '/super-admin/',
-		name: 'super-admin',
-		component: () => import('@/pages/super-admin/SuperAdmin.vue'),
-		meta: { requiresAuth: true }
-	}
+                path: '/super-admin/',
+                name: 'super-admin',
+                component: () => import('@/pages/super-admin/SuperAdmin.vue'),
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/super-admin/teams',
+                name: 'super-admin.teams',
+                component: SuperAdminTeams,
+                meta: { requiresAuth: true }
+        },
+        {
+                path: '/super-admin/teams/:teamId',
+                name: 'super-admin.teams.show',
+                component: SuperAdminTeamUsage,
+                meta: { requiresAuth: true }
+        }
 ]
 
 const router = createRouter({

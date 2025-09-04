@@ -3,6 +3,8 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import { useUsageStore } from '@/stores/usageStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
@@ -34,6 +36,8 @@ const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const usageStore = useUsageStore()
+const notificationStore = useNotificationStore()
 const organizationStore = useOrganizationStore()
 const isCopied = ref(false)
 
@@ -98,7 +102,8 @@ const highlightTerms = (content) => {
 }
 
 // Method to calculate cost for GPT-5 responses
-const calculateCost = (usage) => {
+// If `isFlex` is true, apply 50% discount for batch pricing
+const calculateCost = (usage, isFlex = false) => {
 	if (!usage) return null
 
 	// GPT-5 pricing (per 1M tokens)
@@ -120,7 +125,8 @@ const calculateCost = (usage) => {
 
 	const totalCost = regularInputCost + cachedInputCost + outputCost
 
-	return totalCost
+	// Apply 50% discount for flex (batch pricing)
+	return isFlex ? totalCost * 0.5 : totalCost
 }
 
 // Method to format cost as currency
@@ -154,11 +160,19 @@ const exportPrompt = async () => {
 }
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId, campaignId, {
-		title: 'Untitled article',
-		prompt_id: props.promptId
-	})
-	router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
+	try {
+		const newArticle = await articleStore.createArticle(teamId, campaignId, {
+			title: 'Untitled article',
+			prompt_id: props.promptId
+		})
+		await usageStore.fetchUsage(teamId)
+		router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
+	} catch (error) {
+		notificationStore.addNotification({
+			message: error?.message || 'Unable to create article',
+			type: 'error'
+		})
+	}
 }
 
 // Handle date range changes from dropdown
@@ -276,17 +290,26 @@ watch(() => props.promptId, fetchDetails)
 							>
 								<!-- Response provider and model -->
 								<div class="mb-3 flex justify-between">
-									<div class="flex gap-4">
-										<span class="text-neutral-500 text-sm"
-											>Provider: <span class="font-medium">{{ response.provider }}</span></span
+									<div class="flex flex-wrap items-center gap-3">
+										<span class="text-neutral-500 text-sm">
+											Provider: <span class="font-medium">{{ response.provider }}</span>
+										</span>
+										<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
+											Model: <span class="font-medium">{{ response.model }}</span>
+										</span>
+										<span
+											v-if="response.flex"
+											class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700"
 										>
-										<span class="text-neutral-500 text-sm"
-											>Model: <span class="font-medium">{{ response.model }}</span></span
-										>
+											Flex
+										</span>
+										<!-- <span class="text-neutral-500 text-sm">
+											Status: <span class="font-medium">{{ response.status || 'completed' }}</span>
+										</span> -->
 									</div>
-									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm"
-										>Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage)) }}</span></span
-									>
+									<span v-if="isSuperAdmin" class="text-neutral-500 text-sm">
+										Cost: <span class="font-medium">{{ formatCost(calculateCost(response.usage, response.flex)) }}</span>
+									</span>
 								</div>
 
 								<!-- Response content -->

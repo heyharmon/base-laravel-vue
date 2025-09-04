@@ -16,6 +16,9 @@ class Response extends Model
         'prompt_id',
         'provider',
         'model',
+        'flex',
+        'provider_id',
+        'status',
         'content',
         'search',
         'usage',
@@ -24,6 +27,7 @@ class Response extends Model
     protected $casts = [
         'search' => 'array',
         'usage' => 'array',
+        'flex' => 'boolean',
     ];
 
     /**

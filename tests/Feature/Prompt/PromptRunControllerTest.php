@@ -22,10 +22,10 @@ it('dispatches a job to run a prompt', function () {
     $this->postJson("/api/prompts/{$prompt->id}/run")
         ->assertStatus(200)
         ->assertJsonPath('prompt.id', $prompt->id)
-        ->assertJsonPath('job_status.id', 'job');
+        ->assertJsonPath('job_statuses.0.id', 'job');
 });
 
-it('dispatches a batch when multiple runs are requested', function () {
+it('dispatches multiple independent jobs when multiple runs are requested', function () {
     $team = Team::factory()->create();
     $user = $team->owner;
     Sanctum::actingAs($user);
@@ -33,11 +33,13 @@ it('dispatches a batch when multiple runs are requested', function () {
     $prompt = Prompt::factory()->for($team)->create();
 
     $mock = Mockery::mock(JobDispatcherService::class);
-    $mock->shouldReceive('dispatchBatch')->once()->andReturn(['id' => 'batch']);
+    $mock->shouldReceive('dispatch')->times(2)->andReturn(['id' => 'job']);
     $this->app->instance(JobDispatcherService::class, $mock);
 
     $this->postJson("/api/prompts/{$prompt->id}/run", ['count' => 2])
         ->assertStatus(200)
         ->assertJsonPath('prompt.id', $prompt->id)
-        ->assertJsonPath('batch.id', 'batch');
+        ->assertJson(fn (\Illuminate\Testing\Fluent\AssertableJson $json) =>
+            $json->has('job_statuses', 2)->etc()
+        );
 });

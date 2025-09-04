@@ -19,6 +19,10 @@ class TeamFactory extends Factory
         return [
             'name' => 'Team ' . $count++,
             'owner_id' => User::factory(),
+            'responses_limit' => 1500,
+            'articles_limit' => 6,
+            'subscription_started_at' => now()->toDateString(),
+            'billing_interval' => 'monthly',
         ];
     }
 

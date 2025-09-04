@@ -25,7 +25,7 @@ it('returns 404 when no prompts exist', function () {
 		->assertJson(['message' => 'No prompts found to run']);
 });
 
-it('dispatches a job to run all prompts', function () {
+it('queues independent jobs for all prompts', function () {
 	$team = Team::factory()->create();
 	$campaign = Campaign::factory()->for($team)->create();
 	$user = $team->owner;
@@ -33,16 +33,17 @@ it('dispatches a job to run all prompts', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	$prompts = Prompt::factory()->count(3)->for($team)->create();
+	$prompts = Prompt::factory()->count(3)->for($team)->for($campaign)->create();
 
 	$mock = Mockery::mock(JobDispatcherService::class);
-	$mock->shouldReceive('dispatch')->once();
+	$expectedJobs = $prompts->count() * 2; // count=2 below
+	$mock->shouldReceive('dispatch')->times($expectedJobs);
 	$this->app->instance(JobDispatcherService::class, $mock);
 
 	$this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/prompt-run-batch", ['count' => 2])
 		->assertStatus(200)
 		->assertJson([
 			'prompts_count' => $prompts->count(),
-			'expected_jobs' => $prompts->count() * 2,
+			'queued_jobs' => $expectedJobs,
 		]);
 });

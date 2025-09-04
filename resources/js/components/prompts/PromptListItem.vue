@@ -4,6 +4,8 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import { useUsageStore } from '@/stores/usageStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import TrashIcon from '@/components/icons/TrashIcon.vue'
@@ -16,6 +18,8 @@ const campaignId = route.params.campaignId
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const usageStore = useUsageStore()
+const notificationStore = useNotificationStore()
 const jobStatusStore = useJobStatusStore()
 
 const props = defineProps({
@@ -67,11 +71,22 @@ const runPrompt = (count) => {
 const confirmDelete = () => emit('delete', props.prompt)
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId, campaignId, {
-		title: 'Untitled article',
-		prompt_id: props.prompt.id
-	})
-	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
+	try {
+		const newArticle = await articleStore.createArticle(teamId, campaignId, {
+			title: 'Untitled article',
+			prompt_id: props.prompt.id
+		})
+		await usageStore.fetchUsage(teamId)
+		router.push({
+			name: 'articles.edit',
+			params: { teamId, campaignId, articleId: newArticle.id }
+		})
+	} catch (error) {
+		notificationStore.addNotification({
+			message: error?.message || 'Unable to create article',
+			type: 'error'
+		})
+	}
 }
 </script>
 
@@ -102,7 +117,12 @@ const createArticle = async () => {
 			</div>
 		</div>
 
-		<div class="flex justify-end items-center space-x-2">
+		<div class="flex justify-end items-center space-x-4">
+			<div v-if="hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
+				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
+				Running
+			</div>
+
 			<!-- Create article button -->
 			<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="success_outline" size="sm">
 				<SparkleIcon />
@@ -110,7 +130,7 @@ const createArticle = async () => {
 			</Button>
 
 			<!-- Run prompt button -->
-			<div class="relative flex items-center">
+			<!-- <div class="relative flex items-center">
 				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
 					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
 				</Button>
@@ -130,7 +150,7 @@ const createArticle = async () => {
 						Run 5x
 					</button>
 				</div>
-			</div>
+			</div> -->
 
 			<button
 				@click.stop="confirmDelete"

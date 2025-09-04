@@ -8,157 +8,87 @@ use Illuminate\Support\Facades\Log;
 class OpenAIPromptService
 {
     /**
-     * The tools available for the OpenAI Response API.
+     * Default tools for the Responses API.
      */
     protected array $tools = [
-        [
-            'type' => 'web_search_preview',
-            // 'search_context_size' => 'low'
-        ]
+        ['type' => 'web_search_preview'],
     ];
 
     /**
-     * Send a prompt to OpenAI and get the response with web search capabilities.
+     * Send a prompt to OpenAI and parse the response.
      *
-     * @param string $promptContent The prompt content to send
-     * @param string $model The OpenAI model to use (default: gpt-5)
-     * @return object Response object with content and annotations
-     * @throws \Exception
+     * @param string $promptContent The prompt to send
+     * @param string|null $model Optional override model
+     * @return object Object with content, annotations and usage
      */
-    public function getResponse(string $promptContent, string $model = 'gpt-4o-2024-08-06'): object
+    public function getResponse(string $promptContent, ?string $model = null, array $options = []): object
     {
         $startTime = microtime(true);
-
-        // Log::info('OpenAI API request started', [
-        //     'model' => $model,
-        //     'prompt_length' => strlen($promptContent),
-        //     'prompt_preview' => substr($promptContent, 0, 100) . (strlen($promptContent) > 100 ? '...' : ''),
-        // ]);
+        // Enforce gpt-4o for prompt runs regardless of caller input
+        $modelToUse = 'gpt-4o';
 
         try {
-            $requestData = [
-                'model' => $model,
+            $request = [
+                'model' => $modelToUse,
+                // 'instructions' => $this->systemInstructions(),
                 'input' => $promptContent,
-                // 'reasoning' => ['effort' => 'low'], // Options: minimal, low, medium (default), high
-                // 'text' => ['verbosity' => 'medium'], // Options: low, medium (default), high
                 'tools' => $this->tools,
-                'tool_choice' => 'required',
+                'tool_choice' => 'auto',
                 'store' => true,
+                // 'reasoning' => ['effort' => 'low'], // can be 'low', 'medium', or 'high'
+                // 'text' => ['verbosity' => 'low'], // can be 'low', 'medium', or 'high'
             ];
 
-            // Log::info('OpenAI API request payload', [
-            //     'request_data' => array_merge($requestData, ['input' => '[REDACTED]'])
-            // ]);
+            // Support flex processing via service_tier option
+            if (($options['service_tier'] ?? null) === 'flex') {
+                $request['service_tier'] = 'flex';
+            }
 
-            $response = OpenAI::responses()->create($requestData);
+            $response = OpenAI::responses()->create($request);
 
-            $duration = microtime(true) - $startTime;
-
-            // Log::info('OpenAI API request completed successfully', [
-            //     'model' => $model,
-            //     'duration_seconds' => round($duration, 2),
-            //     'has_response' => !empty($response),
-            //     'response_type' => gettype($response)
-            // ]);
-
-            $processedResponse = $this->processResponse($response);
-
-            // Log::info('OpenAI response processed', [
-            //     'has_content' => !empty($processedResponse->responseMessages[0]->content ?? ''),
-            //     'content_length' => strlen($processedResponse->responseMessages[0]->content ?? ''),
-            //     'annotations_count' => count($processedResponse->annotations ?? []),
-            //     'has_usage' => !empty($processedResponse->usage)
-            // ]);
-
-            return $processedResponse;
+            return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $duration = microtime(true) - $startTime;
-
-            Log::error('OpenAI API ErrorException', [
-                'prompt_preview' => substr($promptContent, 0, 100) . '...',
-                'model' => $model,
-                'duration_seconds' => round($duration, 2),
-                'error_message' => $e->getMessage(),
-                'error_code' => $e->getCode(),
-                'error_type' => get_class($e)
-            ]);
-
-            throw new \Exception('OpenAI API Error: ' . $e->getMessage(), $e->getCode(), $e);
+            $this->logError('OpenAI API ErrorException', $e, $promptContent, $modelToUse, $startTime);
+            throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $duration = microtime(true) - $startTime;
-
-            Log::error('OpenAI HTTP RequestException', [
-                'prompt_preview' => substr($promptContent, 0, 100) . '...',
-                'model' => $model,
-                'duration_seconds' => round($duration, 2),
-                'error_message' => $e->getMessage(),
-                'error_code' => $e->getCode(),
-                'has_response' => $e->hasResponse(),
-                'response_status' => $e->hasResponse() ? $e->getResponse()->getStatusCode() : null,
-                'response_body' => $e->hasResponse() ? substr($e->getResponse()->getBody()->getContents(), 0, 500) : null
-            ]);
-
-            throw new \Exception('OpenAI HTTP Request Error: ' . $e->getMessage(), $e->getCode(), $e);
+            $this->logError('OpenAI HTTP RequestException', $e, $promptContent, $modelToUse, $startTime, true);
+            throw $e;
         } catch (\Exception $e) {
-            $duration = microtime(true) - $startTime;
-
-            Log::error('OpenAI Prompt Service: Unexpected error', [
-                'prompt_preview' => substr($promptContent, 0, 100) . '...',
-                'model' => $model,
-                'duration_seconds' => round($duration, 2),
-                'error_message' => $e->getMessage(),
-                'error_code' => $e->getCode(),
-                'error_type' => get_class($e),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            throw new \Exception('OpenAI Prompt Service: ' . $e->getMessage(), $e->getCode(), $e);
+            $this->logError('OpenAI Prompt Service: Unexpected error', $e, $promptContent, $modelToUse, $startTime);
+            throw $e;
         }
     }
 
-    /**
-     * Process the OpenAI response and extract relevant data.
-     *
-     * @param mixed $response The raw OpenAI response
-     * @return object Processed response with content and annotations
-     */
-    protected function processResponse($response): object
+    protected function defaultModel(): string
     {
-        $content = '';
+        // Kept for future configurability; currently unused since we enforce gpt-4o
+        return 'gpt-4o';
+    }
+
+    /**
+     * Normalize the OpenAI Responses API output into a simple object.
+     */
+    protected function parseResponse($response): object
+    {
+        $texts = [];
         $annotations = [];
 
-        // Process all output items
         if (isset($response->output) && is_array($response->output)) {
             foreach ($response->output as $item) {
-                switch ($item->type) {
-                    case 'message':
-                        // Extract the assistant's message content
-                        if (isset($item->content) && is_array($item->content) && count($item->content) > 0) {
-                            $firstContent = $item->content[0];
-                            if (isset($firstContent->text)) {
-                                $content = $firstContent->text;
-                            }
-
-                            // Extract annotations if present
-                            if (isset($firstContent->annotations) && is_array($firstContent->annotations)) {
-                                $annotations = $this->processAnnotations($firstContent->annotations);
-                            }
+                if (($item->type ?? null) === 'message' && isset($item->content) && is_array($item->content)) {
+                    foreach ($item->content as $part) {
+                        if (isset($part->text) && is_string($part->text)) {
+                            $texts[] = $part->text;
                         }
-                        break;
 
-                    case 'reasoning':
-                        // GPT-5 reasoning - we don't need to process this for our use case
-                        break;
-
-                    case 'function_call':
-                        // Handle any function calls if needed
-                        break;
+                        if (isset($part->annotations) && is_array($part->annotations)) {
+                            $annotations = array_merge($annotations, $this->normalizeAnnotations($part->annotations));
+                        }
+                    }
                 }
             }
         }
 
-
-        // Extract usage information
         $usage = null;
         if (isset($response->usage)) {
             $usage = [
@@ -174,35 +104,59 @@ class OpenAIPromptService
             ];
         }
 
-        // Log::info('rawResponse', [
-        //     'response' => $response,
-        // ]);
-
-        // Create a response object that matches what RunPromptJob expects
         return (object) [
-            'responseMessages' => [
-                (object) ['content' => $content]
-            ],
+            'content' => trim(implode("\n\n", $texts)),
             'annotations' => $annotations,
             'usage' => $usage,
-            'rawResponse' => $response, // Keep the raw response for debugging
+            'raw' => $response,
+            'status' => $response->status ?? 'completed',
+            'id' => $response->id ?? null,
         ];
     }
 
     /**
-     * Process annotations from the message content.
-     *
-     * @param array $rawAnnotations Raw annotations from OpenAI response
-     * @return array Processed annotations array
+     * Retrieve a previously created response by ID.
      */
-    protected function processAnnotations(array $rawAnnotations): array
+    public function retrieveResponse(string $responseId): object
     {
-        $annotations = [];
+        $startTime = microtime(true);
+        try {
+            $response = OpenAI::responses()->retrieve($responseId);
+            return $this->parseResponse($response);
+        } catch (\OpenAI\Exceptions\ErrorException $e) {
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            throw $e;
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime, true);
+            throw $e;
+        } catch (\Exception $e) {
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            throw $e;
+        }
+    }
 
+    /**
+     * System instructions for prompt runs.
+     */
+    protected function systemInstructions(): string
+    {
+        return join("\n", [
+            'Never ask the user follow-up questions.',
+            'Always answer in a single response without requesting clarification.',
+        ]);
+    }
+
+    /**
+     * Convert raw annotation structures to a simple array.
+     */
+    protected function normalizeAnnotations(array $rawAnnotations): array
+    {
+        $result = [];
         foreach ($rawAnnotations as $annotation) {
-            if ($annotation->type === 'url_citation') {
-                $annotations[] = [
-                    'type' => $annotation->type,
+            $type = $annotation->type ?? null;
+            if ($type === 'url_citation') {
+                $result[] = [
+                    'type' => $type,
                     'start_index' => $annotation->start_index ?? null,
                     'end_index' => $annotation->end_index ?? null,
                     'url' => $annotation->url ?? null,
@@ -210,7 +164,26 @@ class OpenAIPromptService
                 ];
             }
         }
+        return $result;
+    }
 
-        return $annotations;
+    protected function logError(string $label, \Exception $e, string $promptContent, string $model, float $startTime, bool $withResponse = false): void
+    {
+        $duration = microtime(true) - $startTime;
+        $context = [
+            'prompt_preview' => substr($promptContent, 0, 100) . '...',
+            'model' => $model,
+            'duration_seconds' => round($duration, 2),
+            'error_message' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+            'error_type' => get_class($e),
+        ];
+
+        // if ($withResponse && method_exists($e, 'hasResponse') && $e->hasResponse()) {
+        //     $context['response_status'] = $e->getResponse()->getStatusCode();
+        //     $context['response_body'] = substr((string) $e->getResponse()->getBody(), 0, 500);
+        // }
+
+        Log::error($label, $context);
     }
 }
