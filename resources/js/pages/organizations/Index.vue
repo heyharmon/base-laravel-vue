@@ -158,13 +158,13 @@ watch(campaignId, async (newId) => {
 				<!-- Competitor limit message -->
 				<div class="mb-4 p-3 border border-neutral-200 rounded-lg">
 					<div class="flex items-center justify-between text-sm">
-						<span class="text-neutral-600 font-medium">
+						<span class="text-neutral-800 font-medium">
 							Competitor limit: {{ organizationStore.competitorCount }} / {{ organizationStore.competitorLimit }}
 						</span>
 						<div class="w-32 bg-neutral-200 rounded-full h-2">
 							<div
 								class="h-2 rounded-full transition-all duration-300"
-								:class="isCompetitorLimitReached ? 'bg-red-500' : 'bg-blue-500'"
+								:class="isCompetitorLimitReached ? 'bg-red-500' : 'bg-neutral-900'"
 								:style="{ width: Math.min((organizationStore.competitorCount / organizationStore.competitorLimit) * 100, 100) + '%' }"
 							></div>
 						</div>
