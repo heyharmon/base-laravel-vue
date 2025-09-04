@@ -3,6 +3,8 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import { useUsageStore } from '@/stores/usageStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import VisibilityBarChart from '@/components/VisibilityBarChart.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
@@ -34,6 +36,8 @@ const emit = defineEmits(['close'])
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const usageStore = useUsageStore()
+const notificationStore = useNotificationStore()
 const organizationStore = useOrganizationStore()
 const isCopied = ref(false)
 
@@ -156,11 +160,19 @@ const exportPrompt = async () => {
 }
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId, campaignId, {
-		title: 'Untitled article',
-		prompt_id: props.promptId
-	})
-	router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
+	try {
+		const newArticle = await articleStore.createArticle(teamId, campaignId, {
+			title: 'Untitled article',
+			prompt_id: props.promptId
+		})
+		await usageStore.fetchUsage(teamId)
+		router.push({ name: 'articles.edit', params: { teamId, campaignId, articleId: newArticle.id } })
+	} catch (error) {
+		notificationStore.addNotification({
+			message: error?.message || 'Unable to create article',
+			type: 'error'
+		})
+	}
 }
 
 // Handle date range changes from dropdown

@@ -4,6 +4,8 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
+import { useUsageStore } from '@/stores/usageStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import TrashIcon from '@/components/icons/TrashIcon.vue'
@@ -16,6 +18,8 @@ const campaignId = route.params.campaignId
 
 const promptStore = usePromptStore()
 const articleStore = useArticleStore()
+const usageStore = useUsageStore()
+const notificationStore = useNotificationStore()
 const jobStatusStore = useJobStatusStore()
 
 const props = defineProps({
@@ -67,11 +71,22 @@ const runPrompt = (count) => {
 const confirmDelete = () => emit('delete', props.prompt)
 
 const createArticle = async () => {
-	const newArticle = await articleStore.createArticle(teamId, campaignId, {
-		title: 'Untitled article',
-		prompt_id: props.prompt.id
-	})
-	router.push({ name: 'articles.edit', params: { articleId: newArticle.id } })
+	try {
+		const newArticle = await articleStore.createArticle(teamId, campaignId, {
+			title: 'Untitled article',
+			prompt_id: props.prompt.id
+		})
+		await usageStore.fetchUsage(teamId)
+		router.push({
+			name: 'articles.edit',
+			params: { teamId, campaignId, articleId: newArticle.id }
+		})
+	} catch (error) {
+		notificationStore.addNotification({
+			message: error?.message || 'Unable to create article',
+			type: 'error'
+		})
+	}
 }
 </script>
 
