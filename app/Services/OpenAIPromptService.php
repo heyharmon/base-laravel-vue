@@ -35,8 +35,8 @@ class OpenAIPromptService
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,
-                'reasoning' => ['effort' => 'low'],
-                'text' => ['verbosity' => 'low'],
+                'reasoning' => ['effort' => 'low'], // can be 'low', 'medium', or 'high'
+                'text' => ['verbosity' => 'low'], // can be 'low', 'medium', or 'high'
             ];
 
             // Support flex processing via service_tier option

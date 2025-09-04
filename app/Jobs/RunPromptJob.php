@@ -128,7 +128,7 @@ class RunPromptJob extends TrackableJob
             $providerName = $providers[0];
             $model = $this->defaultModelFor($providerName);
 
-            $this->updateJobProgress(20, 'Sending prompt to ' . $providerName);
+            $this->updateJobProgress(20, 'Sending prompt to LLM');
 
             // Get response from the LLM (single provider for reliability)
             $options = [];
