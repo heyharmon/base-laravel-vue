@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use Throwable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -12,9 +11,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Services\OpenAIPromptService;
 use App\Models\Response as ResponseModel;
-use App\Models\Prompt;
-use App\Models\Term;
-use App\Jobs\FindCompetitorsInResponseJob;
 
 class PollOpenAIResponseJob implements ShouldQueue
 {
@@ -24,7 +20,7 @@ class PollOpenAIResponseJob implements ShouldQueue
      *
      * @var int
      */
-    public $tries = 1;
+    public $tries = 2;
 
     /**
      * The number of seconds the job can run before timing out.
@@ -70,29 +66,14 @@ class PollOpenAIResponseJob implements ShouldQueue
             $status = $fresh->status ?? 'in_progress';
 
             if ($status === 'completed') {
-                // Update with final content and usage
+                // Update with final content and usage, mark completed
                 $response->content = $fresh->content ?? '';
                 $response->usage = $fresh->usage ?? null;
                 $response->status = 'completed';
                 $response->save();
 
-                // Save citations/annotations
-                $this->saveSearchData($fresh, $response);
-
-                // Check for terms in the response
-                $this->checkForTerms($response, $response->prompt);
-
-                // If this is the first COMPLETED response for the prompt, run competitor finder
-                try {
-                    if ($response->prompt->responses()->where('status', 'completed')->count() == 1) {
-                        dispatch(new FindCompetitorsInResponseJob($response->prompt));
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Failed to dispatch FindCompetitorsInResponseJob (poll)', [
-                        'prompt_id' => $response->prompt->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                // Delegate further processing to a dedicated job
+                dispatch(new ProcessCompletedResponseJob($response->id));
                 return;
             }
 
@@ -146,63 +127,6 @@ class PollOpenAIResponseJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
             throw $e;
-        }
-    }
-
-    protected function saveSearchData(object $llmResponse, ResponseModel $response): void
-    {
-        $searchData = [
-            'annotations' => $llmResponse->annotations ?? [],
-        ];
-
-        $response->update(['search' => $searchData]);
-    }
-
-    protected function checkForTerms(ResponseModel $response, Prompt $prompt): void
-    {
-        $teamId = $prompt->team_id;
-        $campaignId = $prompt->campaign_id;
-
-        // Get terms for all organizations scoped to the team and campaign
-        $terms = Term::whereHas('organization', function ($query) use ($teamId, $campaignId) {
-            $query->where('team_id', $teamId)
-                ->where(function ($q) use ($campaignId) {
-                    $q->where('campaign_id', $campaignId)
-                        ->orWhere(function ($subQ) {
-                            $subQ->whereNull('campaign_id')->where('is_competitor', false);
-                        });
-                });
-        })->get();
-
-        $responseText = strtolower($response->content ?? '');
-        $foundTerms = [];
-
-        foreach ($terms as $term) {
-            $termName = strtolower($term->name);
-
-            if ($termName !== '' && str_contains($responseText, $termName)) {
-                $foundTerms[] = $term->id;
-                $existingRelation = $prompt->terms()->where('term_id', $term->id)->exists();
-
-                if (!$existingRelation) {
-                    $prompt->terms()->attach($term->id, [
-                        'count' => 1,
-                        'last_found_at' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    $prompt->terms()->updateExistingPivot($term->id, [
-                        'count' => DB::raw('count + 1'),
-                        'last_found_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-        }
-
-        if (!empty($foundTerms)) {
-            $response->terms()->syncWithoutDetaching($foundTerms);
         }
     }
 }

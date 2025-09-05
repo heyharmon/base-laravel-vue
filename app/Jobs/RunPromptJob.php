@@ -4,16 +4,13 @@ namespace App\Jobs;
 
 use Throwable;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Services\OpenAIPromptService;
-use App\Models\Response;
 use App\Models\Prompt;
-use App\Models\Term;
 use App\Jobs\PollOpenAIResponseJob;
 
 class RunPromptJob implements ShouldQueue
@@ -42,13 +39,6 @@ class RunPromptJob implements ShouldQueue
     protected $prompt;
 
     /**
-     * The providers to use for running the prompt.
-     *
-     * @var array
-     */
-    protected $providers;
-
-    /**
      * Optional OpenAI service tier (e.g., 'flex').
      *
      * @var string|null
@@ -70,11 +60,6 @@ class RunPromptJob implements ShouldQueue
     protected $campaignId;
 
     /**
-     * Supported providers for this job.
-     */
-    private const SUPPORTED_PROVIDERS = ['openai'];
-
-    /**
      * Create a new job instance.
      *
      * @param  \App\Models\Prompt  $prompt
@@ -88,7 +73,6 @@ class RunPromptJob implements ShouldQueue
         $this->teamId = $teamId;
         $this->campaignId = $campaignId;
         $this->prompt = $prompt;
-        $this->providers = $providers;
         $this->serviceTier = $serviceTier;
     }
 
@@ -105,17 +89,9 @@ class RunPromptJob implements ShouldQueue
                 return;
             }
 
-            // Determine provider (we currently support only OpenAI in this job)
-            $providers = $this->providers ?: ['openai'];
-            $providers = array_values(array_intersect($providers, self::SUPPORTED_PROVIDERS));
-            if (empty($providers)) {
-                $error = 'No supported providers specified';
-                Log::error('RunPromptJob failed: ' . $error, ['prompt_id' => $this->prompt->id]);
-                throw new \RuntimeException($error);
-            }
-
-            $providerName = $providers[0];
-            $model = $this->defaultModelFor($providerName);
+            // Simplified: always use OpenAI gpt-4
+            $providerName = 'openai';
+            $model = 'gpt-4';
 
             // Get response from the LLM (single provider for reliability)
             $options = [];
@@ -124,52 +100,21 @@ class RunPromptJob implements ShouldQueue
             }
             $llm = $openAI->getResponse($this->prompt->content, $model, $options);
 
-            // If response is completed immediately, persist content and process
-            if (($llm->status ?? 'completed') === 'completed') {
-                $response = $this->prompt->responses()->create([
-                    'provider' => $providerName,
-                    'model' => $model,
-                    'flex' => $this->serviceTier === 'flex',
-                    'status' => 'completed',
-                    'provider_id' => $llm->id ?? null,
-                    'content' => $llm->content ?? '',
-                    'usage' => $llm->usage ?? null,
-                ]);
+            // Always create a placeholder and rely on polling to finalize
+            $response = $this->prompt->responses()->create([
+                'provider' => $providerName,
+                'model' => $model,
+                'flex' => $this->serviceTier === 'flex',
+                'status' => 'in_progress',
+                'provider_id' => $llm->id ?? null,
+                'content' => '',
+                'usage' => null,
+            ]);
 
-                // Save search annotations/citations when present
-                $this->saveSearchData($llm, $response);
-
-                // Check for terms in the response
-                $this->checkForTerms($response, $this->prompt);
-
-                // If this is the first COMPLETED response to this prompt, queue competitor detection
-                try {
-                    if ($this->prompt->responses()->where('status', 'completed')->count() == 1) {
-                        dispatch(new FindCompetitorsInResponseJob($this->prompt));
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Failed to dispatch FindCompetitorsInResponseJob', [
-                        'prompt_id' => $this->prompt->id,
-                        'error' => $e->getMessage()
-                    ]);
-                }
-            } else {
-                // Async path: record placeholder and queue a polling job
-                $response = $this->prompt->responses()->create([
-                    'provider' => $providerName,
-                    'model' => $model,
-                    'flex' => $this->serviceTier === 'flex',
-                    'status' => $llm->status ?? 'in_progress',
-                    'provider_id' => $llm->id ?? null,
-                    'content' => '',
-                    'usage' => null,
-                ]);
-
-                // Schedule a poll after 15 seconds to reduce costs
-                $pollJob = new PollOpenAIResponseJob($response->id);
-                $pollJob->delay(now()->addSeconds(15));
-                dispatch($pollJob);
-            }
+            // Schedule a poll after 15 seconds to reduce costs
+            $pollJob = new PollOpenAIResponseJob($response->id);
+            $pollJob->delay(now()->addSeconds(15));
+            dispatch($pollJob);
         } catch (Throwable $exception) {
             Log::error('RunPromptJob failed with exception', [
                 'prompt_id' => $this->prompt->id,
@@ -181,99 +126,7 @@ class RunPromptJob implements ShouldQueue
         }
     }
 
-    /**
-     * Get response from the LLM using the appropriate service.
-     *
-     * @param  string  $promptContent
-     * @param  string  $model
-     * @param  string  $provider
-     * @return mixed
-     */
-    private function defaultModelFor(string $provider): string
-    {
-        // Extend this switch if more providers are added later
-        switch ($provider) {
-            case 'openai':
-            default:
-                return 'gpt-4o';
-        }
-    }
-
-    /**
-     * Save search tool results.
-     *
-     * @param  object  $llmResponse
-     * @param  Response  $response
-     * @return void
-     */
-    private function saveSearchData(object $llmResponse, Response $response): void
-    {
-        $searchData = [
-            'annotations' => $llmResponse->annotations ?? [],
-        ];
-
-        $response->update(['search' => $searchData]);
-    }
-
-    /**
-     * Check for terms in the response.
-     *
-     * @param  Response  $response
-     * @param  Prompt  $prompt
-     * @return void
-     */
-    private function checkForTerms(Response $response, Prompt $prompt): void
-    {
-        // Get terms for all organizations scoped to the team and campaign
-        $terms = Term::whereHas('organization', function ($query) {
-            $query->where('team_id', $this->teamId)
-                ->where(function ($q) {
-                    // Include competitor organizations for this campaign
-                    $q->where('campaign_id', $this->campaignId)
-                        // OR include the owned organization (campaign_id is NULL and is_competitor is false)
-                        ->orWhere(function ($subQ) {
-                            $subQ->whereNull('campaign_id')->where('is_competitor', false);
-                        });
-                });
-        })->get();
-
-        $responseText = strtolower($response->content);
-        $foundTerms = [];
-
-        foreach ($terms as $term) {
-            $termName = strtolower($term->name);
-
-            // Check if the term exists in the response
-            if (str_contains($responseText, $termName)) {
-                $foundTerms[] = $term->id;
-
-                // Check if the relationship already exists
-                $existingRelation = $prompt->terms()->where('term_id', $term->id)->exists();
-
-                if (!$existingRelation) {
-                    // Create new relationship
-                    $prompt->terms()->attach($term->id, [
-                        'count' => 1,
-                        'last_found_at' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    // Update existing relationship
-                    $prompt->terms()->updateExistingPivot($term->id, [
-                        'count' => DB::raw('count + 1'),
-                        'last_found_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-        }
-
-        // Attach found terms to the response and record a mention
-        if (!empty($foundTerms)) {
-            $response->terms()->syncWithoutDetaching($foundTerms);
-        }
-    }
+    // Term scanning and search data saving are handled by PollOpenAIResponseJob
 
     /**
      * Handle a job failure.

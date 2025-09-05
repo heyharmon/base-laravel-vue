@@ -130,7 +130,7 @@ const createArticle = async () => {
 			</Button>
 
 			<!-- Run prompt button -->
-			<!-- <div class="relative flex items-center">
+			<div class="relative flex items-center">
 				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
 					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
 				</Button>
@@ -150,7 +150,7 @@ const createArticle = async () => {
 						Run 5x
 					</button>
 				</div>
-			</div> -->
+			</div>
 
 			<button
 				@click.stop="confirmDelete"
