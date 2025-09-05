@@ -126,8 +126,6 @@ class RunPromptJob implements ShouldQueue
         }
     }
 
-    // Term scanning and search data saving are handled by PollOpenAIResponseJob
-
     /**
      * Handle a job failure.
      *
@@ -144,15 +142,5 @@ class RunPromptJob implements ShouldQueue
             'attempts' => $this->attempts(),
             'max_tries' => $this->tries
         ]);
-    }
-
-    /**
-     * Determine the time at which the job should timeout.
-     *
-     * @return \DateTime
-     */
-    public function retryUntil()
-    {
-        return now()->addMinutes(5); // Give up after 5 minutes total
     }
 }

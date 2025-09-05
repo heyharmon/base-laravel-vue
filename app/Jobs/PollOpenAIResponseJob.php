@@ -28,7 +28,7 @@ class PollOpenAIResponseJob implements ShouldQueue
      *
      * @var int
      */
-    public $timeout = 30;
+    public $timeout = 5;
 
     /**
      * The response ID (DB primary key) to poll.
