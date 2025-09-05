@@ -78,6 +78,8 @@ class RunPromptJob implements ShouldQueue
      * @param  array  $providers
      * @param  int  $teamId
      * @param  int  $campaignId
+     * @param  string|null $serviceTier Optional OpenAI service tier (e.g., 'flex')
+     * @param  int|null $responseId Existing response id when resuming
      * @return void
      */
     public function __construct(Prompt $prompt, array $providers, int $teamId, int $campaignId, ?string $serviceTier = null, ?int $responseId = null)
@@ -103,7 +105,7 @@ class RunPromptJob implements ShouldQueue
             }
 
             $providerName = 'openai';
-            $model = 'gpt-4';
+            $model = 'gpt-5';
 
             if (!$this->responseId) {
                 $response = $this->prompt->responses()->create([
