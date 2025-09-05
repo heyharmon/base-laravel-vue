@@ -32,12 +32,10 @@ class ProcessCompletedResponseJob implements ShouldQueue
     public function handle(OpenAIPromptService $openAI): void
     {
         $response = ResponseModel::with('prompt')->find($this->responseDbId);
-        if (!$response) return;
+        if (!$response || $response->status !== 'completed') {
+            return;
+        }
 
-        // Only process completed responses
-        if ($response->status !== 'completed') return;
-
-        // Attempt to enrich with search annotations if provider_id exists
         try {
             if ($response->provider_id) {
                 $fresh = $openAI->retrieveResponse($response->provider_id);
@@ -50,20 +48,28 @@ class ProcessCompletedResponseJob implements ShouldQueue
             ]);
         }
 
-        // Scan for terms and update pivot/relations
-        $this->checkForTerms($response, $response->prompt);
-
-        // If this is the first COMPLETED response for the prompt, run competitor finder
         try {
+            $this->checkForTerms($response, $response->prompt);
+
             if ($response->prompt->responses()->where('status', 'completed')->count() == 1) {
                 dispatch(new FindCompetitorsInResponseJob($response->prompt));
             }
-        } catch (\Exception $e) {
-            Log::error('Failed to dispatch FindCompetitorsInResponseJob (process)', [
-                'prompt_id' => $response->prompt->id,
+        } catch (Throwable $e) {
+            $response->update([
+                'status' => 'processing_failed',
+                'processing_error_code' => $e->getCode() ?: null,
+                'processing_error_message' => $e->getMessage(),
+            ]);
+            Log::error('ProcessCompletedResponseJob failed', [
+                'response_id' => $response->id,
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function tags(): array
+    {
+        return ['response:' . $this->responseDbId];
     }
 
     protected function saveSearchData(object $llmResponse, ResponseModel $response): void
