@@ -60,20 +60,35 @@ class RunPromptJob implements ShouldQueue
     protected $campaignId;
 
     /**
+     * The response DB id once created.
+     */
+    protected ?int $responseId = null;
+
+    /**
+     * Max attempts when creating the OpenAI response.
+     */
+    protected int $maxInitialAttempts = 5;
+
+    protected int $baseDelay = 15; // seconds
+
+    /**
      * Create a new job instance.
      *
      * @param  \App\Models\Prompt  $prompt
      * @param  array  $providers
      * @param  int  $teamId
      * @param  int  $campaignId
+     * @param  string|null $serviceTier Optional OpenAI service tier (e.g., 'flex')
+     * @param  int|null $responseId Existing response id when resuming
      * @return void
      */
-    public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId, ?string $serviceTier = null)
+    public function __construct(Prompt $prompt, array $providers, int $teamId, int $campaignId, ?string $serviceTier = null, ?int $responseId = null)
     {
         $this->teamId = $teamId;
         $this->campaignId = $campaignId;
         $this->prompt = $prompt;
         $this->serviceTier = $serviceTier;
+        $this->responseId = $responseId;
     }
 
     /**
@@ -89,32 +104,62 @@ class RunPromptJob implements ShouldQueue
                 return;
             }
 
-            // Simplified: always use OpenAI gpt-4
             $providerName = 'openai';
-            $model = 'gpt-4';
+            $model = $openAI->defaultModel();
 
-            // Get response from the LLM (single provider for reliability)
+            if (!$this->responseId) {
+                $response = $this->prompt->responses()->create([
+                    'provider' => $providerName,
+                    'model' => $model,
+                    'flex' => $this->serviceTier === 'flex',
+                    'status' => 'queued',
+                    'content' => '',
+                ]);
+                $this->responseId = $response->id;
+            } else {
+                $response = \App\Models\Response::find($this->responseId);
+            }
+
+            if (!$response) {
+                return;
+            }
+
+            $attempt = $response->initial_attempts ?? 0;
             $options = [];
             if ($this->serviceTier === 'flex') {
                 $options['service_tier'] = 'flex';
             }
-            $llm = $openAI->getResponse($this->prompt->content, $model, $options);
 
-            // Always create a placeholder and rely on polling to finalize
-            $response = $this->prompt->responses()->create([
-                'provider' => $providerName,
-                'model' => $model,
-                'flex' => $this->serviceTier === 'flex',
-                'status' => 'in_progress',
+            try {
+                $llm = $openAI->getResponse($this->prompt->content, null, $options);
+            } catch (Throwable $e) {
+                $attempt++;
+                $delay = (int) min($this->baseDelay * (2 ** ($attempt - 1)), 900);
+                $delay = (int) ($delay * random_int(80, 120) / 100);
+                $response->update([
+                    'initial_attempts' => $attempt,
+                    'status' => 'queued',
+                    'error_code' => $e->getCode() ?: null,
+                ]);
+                if ($attempt >= $this->maxInitialAttempts) {
+                    $response->update(['status' => 'failed']);
+                    Log::error('RunPromptJob exceeded attempts', ['response_id' => $response->id]);
+                    return;
+                }
+                $this->release($delay);
+                return;
+            }
+
+            $response->update([
+                'status' => $llm->status ?? 'in_progress',
                 'provider_id' => $llm->id ?? null,
-                'content' => '',
-                'usage' => null,
+                'usage' => $llm->usage ?? null,
             ]);
 
-            // Schedule a poll after 15 seconds to reduce costs
             $pollJob = new PollOpenAIResponseJob($response->id);
             $pollJob->delay(now()->addSeconds(15));
             dispatch($pollJob);
+            Log::info('RunPromptJob dispatched PollOpenAIResponseJob', ['response_id' => $response->id, 'job_id' => $this->job->getJobId() ?? 'unknown']);
         } catch (Throwable $exception) {
             Log::error('RunPromptJob failed with exception', [
                 'prompt_id' => $this->prompt->id,
@@ -124,6 +169,11 @@ class RunPromptJob implements ShouldQueue
             ]);
             throw $exception;
         }
+    }
+
+    public function tags(): array
+    {
+        return ['prompt:' . $this->prompt->id];
     }
 
     /**

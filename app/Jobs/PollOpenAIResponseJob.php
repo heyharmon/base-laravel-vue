@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use App\Services\OpenAIPromptService;
 use App\Models\Response as ResponseModel;
+use App\Jobs\ResumeStalledResponseJob;
 
 class PollOpenAIResponseJob implements ShouldQueue
 {
@@ -30,6 +31,10 @@ class PollOpenAIResponseJob implements ShouldQueue
      */
     public $timeout = 5;
 
+    protected int $maxPollAttempts = 25;
+    protected int $maxReissueAttempts = 5;
+    protected int $baseDelay = 15;
+
     /**
      * The response ID (DB primary key) to poll.
      *
@@ -47,49 +52,49 @@ class PollOpenAIResponseJob implements ShouldQueue
         try {
             $response = ResponseModel::with('prompt')->find($this->responseDbId);
             if (!$response) {
-                // Nothing to do
                 return;
             }
 
-            // If already completed, nothing to do
-            if ($response->status === 'completed') {
+            if (in_array($response->status, ['completed', 'failed', 'cancelled', 'processing_failed'])) {
                 return;
             }
+
+            $attempt = $response->poll_attempts;
+            $response->update(['poll_attempts' => $attempt + 1, 'last_polled_at' => now()]);
 
             if (!$response->provider_id) {
-                // No OpenAI response id to poll; treat as failed so we re-run
                 $this->reissueIfFailed($response, $openAI);
                 return;
             }
 
-            $fresh = $openAI->retrieveResponse($response->provider_id);
+            try {
+                $fresh = $openAI->retrieveResponse($response->provider_id);
+            } catch (Throwable $e) {
+                $this->scheduleNext($response, $attempt, $e->getCode() ?: null);
+                Log::warning('PollOpenAIResponseJob retrieve failed', ['response_id' => $response->id, 'error' => $e->getMessage()]);
+                return;
+            }
+
             $status = $fresh->status ?? 'in_progress';
 
             if ($status === 'completed') {
-                // Update with final content and usage, mark completed
-                $response->content = $fresh->content ?? '';
-                $response->usage = $fresh->usage ?? null;
-                $response->status = 'completed';
-                $response->save();
-
-                // Delegate further processing to a dedicated job
+                $response->update([
+                    'content' => $fresh->content ?? '',
+                    'usage' => $fresh->usage ?? null,
+                    'status' => 'completed',
+                ]);
                 dispatch(new ProcessCompletedResponseJob($response->id));
+                Log::info('PollOpenAIResponseJob completed', ['response_id' => $response->id]);
                 return;
             }
 
-            if ($status === 'failed') {
-                // Try again per requirements
+            if (in_array($status, ['failed', 'cancelled', 'incomplete'])) {
                 $this->reissueIfFailed($response, $openAI);
                 return;
             }
 
-            // Still in progress; schedule another poll in 15 seconds
-            $response->status = $status;
-            $response->save();
-
-            $next = new self($response->id);
-            $next->delay(now()->addSeconds(15));
-            dispatch($next);
+            $response->update(['status' => $status]);
+            $this->scheduleNext($response, $attempt);
         } catch (Throwable $exception) {
             Log::error('PollOpenAIResponseJob failed with exception', [
                 'response_db_id' => $this->responseDbId,
@@ -99,34 +104,55 @@ class PollOpenAIResponseJob implements ShouldQueue
         }
     }
 
+    protected function scheduleNext(ResponseModel $response, int $attempt, ?string $errorCode = null): void
+    {
+        if ($attempt + 1 >= $this->maxPollAttempts) {
+            $response->update(['status' => 'stalled', 'error_code' => $errorCode]);
+            dispatch((new ResumeStalledResponseJob($response->id))->delay(now()->addHour()));
+            return;
+        }
+        $delay = (int) min($this->baseDelay * (2 ** $attempt), 900);
+        $delay = (int) ($delay * random_int(80, 120) / 100);
+        $response->update(['next_poll_at' => now()->addSeconds($delay), 'error_code' => $errorCode]);
+        $this->release($delay);
+    }
+
     protected function reissueIfFailed(ResponseModel $response, OpenAIPromptService $openAI): void
     {
+        $attempts = $response->initial_attempts ?? 0;
+        if ($attempts >= $this->maxReissueAttempts) {
+            $response->update(['status' => 'failed']);
+            Log::error('Response failed after max retries', ['response_id' => $response->id]);
+            return;
+        }
+
         try {
             $prompt = $response->prompt;
             $options = [];
             if ($response->flex) {
                 $options['service_tier'] = 'flex';
             }
-            // Use the model stored on the response
             $fresh = $openAI->getResponse($prompt->content, $response->model, $options);
-
-            // Update response with new id/status and clear content until completion
-            $response->provider_id = $fresh->id ?? null;
-            $response->status = $fresh->status ?? 'in_progress';
-            $response->content = '';
-            $response->usage = null;
-            $response->save();
-
-            // Schedule the next poll
-            $next = new self($response->id);
-            $next->delay(now()->addSeconds(15));
-            dispatch($next);
+            $response->update([
+                'provider_id' => $fresh->id ?? null,
+                'status' => $fresh->status ?? 'in_progress',
+                'content' => '',
+                'usage' => null,
+                'initial_attempts' => $attempts + 1,
+                'poll_attempts' => 0,
+            ]);
+            $this->release($this->baseDelay);
         } catch (\Exception $e) {
+            $response->update(['status' => 'failed', 'error_code' => $e->getCode() ?: null]);
             Log::error('Failed to reissue OpenAI response after failure', [
                 'response_id' => $response->id,
                 'error' => $e->getMessage(),
             ]);
-            throw $e;
         }
+    }
+
+    public function tags(): array
+    {
+        return ['response:' . $this->responseDbId];
     }
 }

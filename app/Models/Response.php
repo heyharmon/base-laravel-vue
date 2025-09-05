@@ -22,12 +22,21 @@ class Response extends Model
         'content',
         'search',
         'usage',
+        'initial_attempts',
+        'poll_attempts',
+        'last_polled_at',
+        'next_poll_at',
+        'error_code',
+        'processing_error_code',
+        'processing_error_message',
     ];
 
     protected $casts = [
         'search' => 'array',
         'usage' => 'array',
         'flex' => 'boolean',
+        'last_polled_at' => 'datetime',
+        'next_poll_at' => 'datetime',
     ];
 
     /**

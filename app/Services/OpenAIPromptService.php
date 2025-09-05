@@ -19,13 +19,13 @@ class OpenAIPromptService
      *
      * @param string $promptContent The prompt to send
      * @param string|null $model Optional override model
+     * @param array $options Additional request options (e.g., service_tier)
      * @return object Object with content, annotations and usage
      */
     public function getResponse(string $promptContent, ?string $model = null, array $options = []): object
     {
         $startTime = microtime(true);
-        // Enforce gpt-4o for prompt runs regardless of caller input
-        $modelToUse = 'gpt-4o';
+        $modelToUse = $model ?? $this->defaultModel();
 
         try {
             $request = [
@@ -59,10 +59,9 @@ class OpenAIPromptService
         }
     }
 
-    protected function defaultModel(): string
+    public function defaultModel(): string
     {
-        // Kept for future configurability; currently unused since we enforce gpt-4o
-        return 'gpt-4o';
+        return 'gpt-5';
     }
 
     /**
@@ -124,13 +123,13 @@ class OpenAIPromptService
             $response = OpenAI::responses()->retrieve($responseId);
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', $this->defaultModel(), $startTime);
             throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime, true);
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', $this->defaultModel(), $startTime, true);
             throw $e;
         } catch (\Exception $e) {
-            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', $this->defaultModel(), $startTime);
             throw $e;
         }
     }
