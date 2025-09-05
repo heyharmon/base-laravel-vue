@@ -105,7 +105,7 @@ class RunPromptJob implements ShouldQueue
             }
 
             $providerName = 'openai';
-            $model = 'gpt-5';
+            $model = $openAI->defaultModel();
 
             if (!$this->responseId) {
                 $response = $this->prompt->responses()->create([
@@ -131,7 +131,7 @@ class RunPromptJob implements ShouldQueue
             }
 
             try {
-                $llm = $openAI->getResponse($this->prompt->content, $model, $options);
+                $llm = $openAI->getResponse($this->prompt->content, null, $options);
             } catch (Throwable $e) {
                 $attempt++;
                 $delay = (int) min($this->baseDelay * (2 ** ($attempt - 1)), 900);
