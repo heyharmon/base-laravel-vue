@@ -5,15 +5,20 @@ namespace App\Jobs;
 use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use App\Services\OpenAIPromptService;
-use App\Services\JobDispatcherService;
 use App\Models\Response as ResponseModel;
 use App\Models\Prompt;
 use App\Models\Term;
 use App\Jobs\FindCompetitorsInResponseJob;
 
-class PollOpenAIResponseJob extends TrackableJob
+class PollOpenAIResponseJob implements ShouldQueue
 {
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     /**
      * The number of times the job may be attempted.
      *
@@ -36,19 +41,12 @@ class PollOpenAIResponseJob extends TrackableJob
      */
     protected $responseDbId;
 
-    /**
-     * The model used for job tracking (we track against the prompt).
-     *
-     * @var \Illuminate\Database\Eloquent\Model|null
-     */
-    public $model;
-
     public function __construct(int $responseDbId)
     {
         $this->responseDbId = $responseDbId;
     }
 
-    public function handle(JobDispatcherService $jobDispatcher, OpenAIPromptService $openAI)
+    public function handle(OpenAIPromptService $openAI)
     {
         try {
             $response = ResponseModel::with('prompt')->find($this->responseDbId);
@@ -57,24 +55,14 @@ class PollOpenAIResponseJob extends TrackableJob
                 return;
             }
 
-            // Track against the prompt to keep UX consistent
-            $this->model = $response->prompt;
-
-            if ($this->isCancelled()) {
-                return;
-            }
-
-            $this->markJobAsStarted('Polling OpenAI response status');
-
             // If already completed, nothing to do
             if ($response->status === 'completed') {
-                $this->markJobAsCompleted('Already completed');
                 return;
             }
 
             if (!$response->provider_id) {
                 // No OpenAI response id to poll; treat as failed so we re-run
-                $this->reissueIfFailed($response, $jobDispatcher, $openAI);
+                $this->reissueIfFailed($response, $openAI);
                 return;
             }
 
@@ -97,7 +85,7 @@ class PollOpenAIResponseJob extends TrackableJob
                 // If this is the first COMPLETED response for the prompt, run competitor finder
                 try {
                     if ($response->prompt->responses()->where('status', 'completed')->count() == 1) {
-                        $jobDispatcher->dispatch($response->prompt, new FindCompetitorsInResponseJob($response->prompt));
+                        dispatch(new FindCompetitorsInResponseJob($response->prompt));
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to dispatch FindCompetitorsInResponseJob (poll)', [
@@ -105,14 +93,12 @@ class PollOpenAIResponseJob extends TrackableJob
                         'error' => $e->getMessage(),
                     ]);
                 }
-
-                $this->markJobAsCompleted('Response completed');
                 return;
             }
 
             if ($status === 'failed') {
                 // Try again per requirements
-                $this->reissueIfFailed($response, $jobDispatcher, $openAI);
+                $this->reissueIfFailed($response, $openAI);
                 return;
             }
 
@@ -122,20 +108,17 @@ class PollOpenAIResponseJob extends TrackableJob
 
             $next = new self($response->id);
             $next->delay(now()->addSeconds(15));
-            $jobDispatcher->dispatch($response->prompt, $next);
-
-            $this->markJobAsCompleted('Re-queued polling');
+            dispatch($next);
         } catch (Throwable $exception) {
             Log::error('PollOpenAIResponseJob failed with exception', [
                 'response_db_id' => $this->responseDbId,
                 'error' => $exception->getMessage(),
             ]);
-            $this->markJobAsFailed($exception);
             throw $exception;
         }
     }
 
-    protected function reissueIfFailed(ResponseModel $response, JobDispatcherService $jobDispatcher, OpenAIPromptService $openAI): void
+    protected function reissueIfFailed(ResponseModel $response, OpenAIPromptService $openAI): void
     {
         try {
             $prompt = $response->prompt;
@@ -156,9 +139,7 @@ class PollOpenAIResponseJob extends TrackableJob
             // Schedule the next poll
             $next = new self($response->id);
             $next->delay(now()->addSeconds(15));
-            $jobDispatcher->dispatch($prompt, $next);
-
-            $this->markJobAsCompleted('Reissued and re-queued polling');
+            dispatch($next);
         } catch (\Exception $e) {
             Log::error('Failed to reissue OpenAI response after failure', [
                 'response_id' => $response->id,

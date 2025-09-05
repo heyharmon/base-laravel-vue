@@ -5,15 +5,20 @@ namespace App\Jobs;
 use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use App\Services\JobDispatcherService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 use App\Services\OpenAIPromptService;
 use App\Models\Response;
 use App\Models\Prompt;
 use App\Models\Term;
 use App\Jobs\PollOpenAIResponseJob;
 
-class RunPromptJob extends TrackableJob
+class RunPromptJob implements ShouldQueue
 {
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
      * The number of times the job may be attempted.
@@ -35,13 +40,6 @@ class RunPromptJob extends TrackableJob
      * @var \App\Models\Prompt
      */
     protected $prompt;
-
-    /**
-     * The model to use for job tracking.
-     *
-     * @var \Illuminate\Database\Eloquent\Model
-     */
-    public $model;
 
     /**
      * The providers to use for running the prompt.
@@ -87,7 +85,6 @@ class RunPromptJob extends TrackableJob
      */
     public function __construct(Prompt $prompt, array $providers = [], int $teamId, int $campaignId, ?string $serviceTier = null)
     {
-        $this->model = $prompt;
         $this->teamId = $teamId;
         $this->campaignId = $campaignId;
         $this->prompt = $prompt;
@@ -100,21 +97,13 @@ class RunPromptJob extends TrackableJob
      *
      * @return void
      */
-    public function handle(JobDispatcherService $jobDispatcher, OpenAIPromptService $openAI)
+    public function handle(OpenAIPromptService $openAI)
     {
         try {
-            if ($this->isCancelled()) {
-                return;
-            }
-
             $team = \App\Models\Team::find($this->teamId);
             if ($team && ($remaining = $team->responsesRemaining()) !== null && $remaining <= 0) {
-                $this->markJobAsCompleted('Responses limit reached');
                 return;
             }
-
-            // Mark the job as started
-            $this->markJobAsStarted('Running a prompt');
 
             // Determine provider (we currently support only OpenAI in this job)
             $providers = $this->providers ?: ['openai'];
@@ -127,8 +116,6 @@ class RunPromptJob extends TrackableJob
 
             $providerName = $providers[0];
             $model = $this->defaultModelFor($providerName);
-
-            $this->updateJobProgress(20, 'Sending prompt to LLM');
 
             // Get response from the LLM (single provider for reliability)
             $options = [];
@@ -153,15 +140,12 @@ class RunPromptJob extends TrackableJob
                 $this->saveSearchData($llm, $response);
 
                 // Check for terms in the response
-                $this->updateJobProgress(60, 'Scanning for tracked terms');
                 $this->checkForTerms($response, $this->prompt);
-
-                $this->updateJobProgress(90, 'Processing complete');
 
                 // If this is the first COMPLETED response to this prompt, queue competitor detection
                 try {
                     if ($this->prompt->responses()->where('status', 'completed')->count() == 1) {
-                        $jobDispatcher->dispatch($this->prompt, new FindCompetitorsInResponseJob($this->prompt));
+                        dispatch(new FindCompetitorsInResponseJob($this->prompt));
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to dispatch FindCompetitorsInResponseJob', [
@@ -184,11 +168,8 @@ class RunPromptJob extends TrackableJob
                 // Schedule a poll after 15 seconds to reduce costs
                 $pollJob = new PollOpenAIResponseJob($response->id);
                 $pollJob->delay(now()->addSeconds(15));
-                $jobDispatcher->dispatch($this->prompt, $pollJob);
+                dispatch($pollJob);
             }
-
-            // Mark the job as completed
-            $this->markJobAsCompleted('Successfully queued/processed 1 response for prompt');
         } catch (Throwable $exception) {
             Log::error('RunPromptJob failed with exception', [
                 'prompt_id' => $this->prompt->id,
@@ -196,8 +177,6 @@ class RunPromptJob extends TrackableJob
                 'trace' => $exception->getTraceAsString(),
                 'job_id' => $this->job->getJobId() ?? 'unknown'
             ]);
-
-            $this->markJobAsFailed($exception);
             throw $exception;
         }
     }
@@ -312,9 +291,6 @@ class RunPromptJob extends TrackableJob
             'attempts' => $this->attempts(),
             'max_tries' => $this->tries
         ]);
-
-        // Mark job as failed in tracking
-        $this->markJobAsFailed($exception);
     }
 
     /**

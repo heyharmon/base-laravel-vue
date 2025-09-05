@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Prompt;
 use App\Jobs\RunPromptJob;
-use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -12,12 +11,6 @@ use App\Models\Team;
 
 class PromptRunController extends Controller
 {
-    protected $jobDispatcher;
-    
-    public function __construct(JobDispatcherService $jobDispatcher)
-    {
-        $this->jobDispatcher = $jobDispatcher;
-    }
 
     public function store(Request $request, Prompt $prompt): JsonResponse
     {
@@ -45,15 +38,15 @@ class PromptRunController extends Controller
         }
 
         // Always dispatch independent jobs (no batches)
-        $jobStatuses = [];
+        $queued = 0;
         for ($i = 0; $i < $count; $i++) {
-            $job = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id, $serviceTier);
-            $jobStatuses[] = $this->jobDispatcher->dispatch($prompt, $job);
+            dispatch(new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id, $serviceTier));
+            $queued++;
         }
 
         return response()->json([
             'prompt' => $prompt,
-            'job_statuses' => $jobStatuses,
+            'queued_jobs' => $queued,
         ]);
     }
 }
