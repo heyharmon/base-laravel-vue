@@ -34,35 +34,42 @@ class ProcessCompletedResponseJob implements ShouldQueue
         $response = ResponseModel::with('prompt')->find($this->responseDbId);
         if (!$response) return;
 
-        // Only process completed responses
         if ($response->status !== 'completed') return;
 
-        // Attempt to enrich with search annotations if provider_id exists
         try {
-            if ($response->provider_id) {
-                $fresh = $openAI->retrieveResponse($response->provider_id);
-                $this->saveSearchData($fresh, $response);
+            // Attempt to enrich with search annotations if provider_id exists
+            try {
+                if ($response->provider_id) {
+                    $fresh = $openAI->retrieveResponse($response->provider_id);
+                    $this->saveSearchData($fresh, $response);
+                }
+            } catch (Throwable $e) {
+                Log::warning('Failed to retrieve response for annotations during processing', [
+                    'response_id' => $response->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            $this->checkForTerms($response, $response->prompt);
+
+            try {
+                if ($response->prompt->responses()->where('status', 'completed')->count() == 1) {
+                    dispatch(new FindCompetitorsInResponseJob($response->prompt));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to dispatch FindCompetitorsInResponseJob (process)', [
+                    'prompt_id' => $response->prompt->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         } catch (Throwable $e) {
-            Log::warning('Failed to retrieve response for annotations during processing', [
+            Log::error('ProcessCompletedResponseJob failed', [
                 'response_id' => $response->id,
                 'error' => $e->getMessage(),
             ]);
-        }
-
-        // Scan for terms and update pivot/relations
-        $this->checkForTerms($response, $response->prompt);
-
-        // If this is the first COMPLETED response for the prompt, run competitor finder
-        try {
-            if ($response->prompt->responses()->where('status', 'completed')->count() == 1) {
-                dispatch(new FindCompetitorsInResponseJob($response->prompt));
-            }
-        } catch (\Exception $e) {
-            Log::error('Failed to dispatch FindCompetitorsInResponseJob (process)', [
-                'prompt_id' => $response->prompt->id,
-                'error' => $e->getMessage(),
-            ]);
+            $response->status = 'failed_processing';
+            $response->error = $e->getMessage();
+            $response->save();
         }
     }
 

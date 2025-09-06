@@ -22,12 +22,14 @@ class Response extends Model
         'content',
         'search',
         'usage',
+        'error',
     ];
 
     protected $casts = [
         'search' => 'array',
         'usage' => 'array',
         'flex' => 'boolean',
+        'error' => 'string',
     ];
 
     /**

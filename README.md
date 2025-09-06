@@ -4,7 +4,7 @@ This document gives AI developers a high level overview of this **Paraloom** cod
 
 ## Prompts, Responses & Visibility
 
-Prompts ask large language models about a campaign or organization. Each prompt is run through background jobs that call one or more LLM providers (currently OpenAI's `gpt‑4o`). Every response records the provider, model, generated content and any search metadata. The response text is scanned for **terms** belonging to the team's owned organization and any competitor organizations in the same campaign. Found terms are attached to the response and the prompt, incrementing mention counts.
+Prompts ask large language models about a campaign or organization. Each prompt is run through background jobs that call one or more LLM providers (currently OpenAI's `gpt‑5`). Every response records the provider, model, generated content and any search metadata. The response text is scanned for **terms** belonging to the team's owned organization and any competitor organizations in the same campaign. Found terms are attached to the response and the prompt, incrementing mention counts.
 
 These mention counts power visibility metrics:
 
