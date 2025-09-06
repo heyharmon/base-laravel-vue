@@ -114,11 +114,19 @@ class GeneratePrompt extends TrackableJob
 				'content' => $textResponse->text
 			]);
 
-			// Mark the job as completed
-			$this->markJobAsCompleted('Created new prompt for keyword "' . $this->keyword . '"');
+                        // Mark the job as completed
+                        $this->markJobAsCompleted('Created new prompt for keyword "' . $this->keyword . '"');
 
-			// Run the prompt
-			$jobDispatcher->dispatch($prompt, new RunPromptJob($prompt, ['openai'], $prompt->team_id, $prompt->campaign_id));
+                        // Create response and run the prompt
+                        $response = $prompt->responses()->create([
+                                'provider' => 'openai',
+                                'model' => 'gpt-5',
+                                'use_flex_processing' => false,
+                                'parameters' => [],
+                                'status' => 'pending',
+                        ]);
+
+                        $jobDispatcher->dispatch($prompt, new RunPromptJob($response));
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

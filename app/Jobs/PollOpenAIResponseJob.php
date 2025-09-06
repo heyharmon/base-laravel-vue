@@ -2,131 +2,148 @@
 
 namespace App\Jobs;
 
-use Throwable;
-use Illuminate\Support\Facades\Log;
+use App\Models\Response;
+use App\Services\OpenAIService;
+use App\Exceptions\OpenAIException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\OpenAIPromptService;
-use App\Models\Response as ResponseModel;
+use Illuminate\Support\Facades\Log;
 
 class PollOpenAIResponseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
-    public $tries = 2;
 
-    /**
-     * The number of seconds the job can run before timing out.
-     * Keep this short since we only poll a single endpoint.
-     *
-     * @var int
-     */
-    public $timeout = 5;
+    public $tries = 1;
+    public $timeout = 60;
 
-    /**
-     * The response ID (DB primary key) to poll.
-     *
-     * @var int
-     */
-    protected $responseDbId;
-
-    public function __construct(int $responseDbId)
+    public function __construct(private Response $response)
     {
-        $this->responseDbId = $responseDbId;
+        $this->onQueue('polling');
     }
 
-    public function handle(OpenAIPromptService $openAI)
+    public function handle(OpenAIService $openAIService): void
     {
         try {
-            $response = ResponseModel::with('prompt')->find($this->responseDbId);
-            if (!$response) {
-                // Nothing to do
+            if ($this->response->status === 'cancelled') {
+                Log::info('Polling cancelled by user', ['response_id' => $this->response->id]);
                 return;
             }
 
-            // If already completed, nothing to do
-            if ($response->status === 'completed') {
-                return;
-            }
+            $this->response->markAsPolling();
 
-            if (!$response->provider_id) {
-                // No OpenAI response id to poll; treat as failed so we re-run
-                $this->reissueIfFailed($response, $openAI);
-                return;
-            }
-
-            $fresh = $openAI->retrieveResponse($response->provider_id);
-            $status = $fresh->status ?? 'in_progress';
-
-            if ($status === 'completed') {
-                // Update with final content and usage, mark completed
-                $response->content = $fresh->content ?? '';
-                $response->usage = $fresh->usage ?? null;
-                $response->status = 'completed';
-                $response->save();
-
-                // Delegate further processing to a dedicated job
-                dispatch(new ProcessCompletedResponseJob($response->id));
-                return;
-            }
-
-            if ($status === 'failed') {
-                // Try again per requirements
-                $this->reissueIfFailed($response, $openAI);
-                return;
-            }
-
-            // Still in progress; schedule another poll in 15 seconds
-            $response->status = $status;
-            $response->save();
-
-            $next = new self($response->id);
-            $next->delay(now()->addSeconds(15));
-            dispatch($next);
-        } catch (Throwable $exception) {
-            Log::error('PollOpenAIResponseJob failed with exception', [
-                'response_db_id' => $this->responseDbId,
-                'error' => $exception->getMessage(),
+            Log::info('Polling for response', [
+                'response_id' => $this->response->id,
+                'poll_count' => $this->response->poll_count,
+                'request_id' => $this->response->provider_id,
             ]);
-            throw $exception;
+
+            $apiResponse = $this->checkRequestStatus($openAIService);
+
+            if ($this->isResponseComplete($apiResponse)) {
+                ProcessCompletedResponseJob::dispatch($this->response, $apiResponse)->onQueue('high');
+            } else {
+                $this->scheduleNextPoll();
+            }
+        } catch (OpenAIException $e) {
+            $this->handleOpenAIException($e);
+        } catch (\Exception $e) {
+            $this->handleGenericException($e);
         }
     }
 
-    protected function reissueIfFailed(ResponseModel $response, OpenAIPromptService $openAI): void
+    private function checkRequestStatus(OpenAIService $service): array
     {
         try {
-            $prompt = $response->prompt;
-            $options = [];
-            if ($response->flex) {
-                $options['service_tier'] = 'flex';
+            return $service->checkRequestStatus($this->response->provider_id);
+        } catch (OpenAIException $e) {
+            if ($e->getStatusCode() === 404) {
+                $payload = $service->buildPayload(
+                    $this->response->prompt->content,
+                    $this->response->parameters ?? [],
+                    $this->response->use_flex_processing
+                );
+                return $service->createCompletion($payload);
             }
-            // Use the model stored on the response
-            $fresh = $openAI->getResponse($prompt->content, $response->model, $options);
-
-            // Update response with new id/status and clear content until completion
-            $response->provider_id = $fresh->id ?? null;
-            $response->status = $fresh->status ?? 'in_progress';
-            $response->content = '';
-            $response->usage = null;
-            $response->save();
-
-            // Schedule the next poll
-            $next = new self($response->id);
-            $next->delay(now()->addSeconds(15));
-            dispatch($next);
-        } catch (\Exception $e) {
-            Log::error('Failed to reissue OpenAI response after failure', [
-                'response_id' => $response->id,
-                'error' => $e->getMessage(),
-            ]);
             throw $e;
         }
+    }
+
+    private function isResponseComplete(array $response): bool
+    {
+        return isset($response['choices'][0]['message']['content']) || (isset($response['status']) && $response['status'] === 'completed');
+    }
+
+    private function scheduleNextPoll(): void
+    {
+        $delay = $this->calculatePollDelay();
+        $maxPollingTime = config('openai.polling.max_time', 3600);
+        $started = $this->response->started_at;
+        if ($started && now()->diffInSeconds($started) > $maxPollingTime) {
+            Log::warning('Max polling time exceeded', [
+                'response_id' => $this->response->id,
+                'polling_time' => now()->diffInSeconds($started),
+            ]);
+            $this->response->markAsFailed('polling_timeout', 'Response polling exceeded maximum time limit');
+            return;
+        }
+
+        PollOpenAIResponseJob::dispatch($this->response)
+            ->delay(now()->addSeconds($delay))
+            ->onQueue('polling');
+        Log::info('Scheduled next poll', ['response_id' => $this->response->id, 'delay_seconds' => $delay]);
+    }
+
+    private function calculatePollDelay(): int
+    {
+        $pollCount = $this->response->poll_count;
+        $baseDelay = config('openai.polling.base_delay', 5);
+        $maxDelay = config('openai.polling.max_delay', 60);
+
+        if ($pollCount <= 5) {
+            return $baseDelay;
+        } elseif ($pollCount <= 10) {
+            return 10;
+        } elseif ($pollCount <= 20) {
+            return 30;
+        }
+        return $maxDelay;
+    }
+
+    private function handleOpenAIException(OpenAIException $e): void
+    {
+        Log::warning('Error during polling', [
+            'response_id' => $this->response->id,
+            'error_code' => $e->getErrorCode(),
+            'error_message' => $e->getMessage(),
+        ]);
+
+        if ($e->getErrorCode() === 'resource_unavailable') {
+            $this->scheduleNextPoll();
+            return;
+        }
+
+        $this->response->markAsFailed($e->getErrorCode(), $e->getMessage());
+    }
+
+    private function handleGenericException(\Exception $e): void
+    {
+        Log::error('Unexpected error in PollOpenAIResponseJob', [
+            'response_id' => $this->response->id,
+            'error' => $e->getMessage(),
+        ]);
+        $this->scheduleNextPoll();
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        Log::error('PollOpenAIResponseJob failed', [
+            'response_id' => $this->response->id,
+            'exception' => $exception->getMessage(),
+        ]);
+
+        $this->response->markAsFailed('polling_failed', 'Polling job failed: ' . $exception->getMessage());
     }
 }

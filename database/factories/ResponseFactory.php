@@ -6,9 +6,6 @@ use App\Models\Prompt;
 use App\Models\Response;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Response>
- */
 class ResponseFactory extends Factory
 {
     protected $model = Response::class;
@@ -17,10 +14,12 @@ class ResponseFactory extends Factory
     {
         return [
             'prompt_id' => Prompt::factory(),
-            'provider' => $this->faker->randomElement(['openai', 'anthropic']),
-            'model' => $this->faker->word(),
-            'content' => $this->faker->paragraph(),
-            'search' => null,
+            'provider' => 'openai',
+            'model' => 'gpt-5',
+            'use_flex_processing' => false,
+            'parameters' => [],
+            'status' => 'pending',
+            'content' => '',
         ];
     }
 }

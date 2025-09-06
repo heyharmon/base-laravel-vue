@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Team;
@@ -12,24 +11,20 @@ use App\Jobs\RunPromptJob;
 
 class PromptRunBatchController extends Controller
 {
-
     public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
     {
         $validated = $request->validate([
-            'providers' => 'nullable|array',
-            'providers.*' => 'string|in:openai,anthropic,gemini,xai,deepseek',
             'count' => 'nullable|integer|min:1|max:5',
-            'flex' => 'nullable|boolean',
-            'service_tier' => 'nullable|string|in:flex',
+            'use_flex_processing' => 'boolean',
+            'parameters' => 'array',
+            'parameters.temperature' => 'numeric|min:0|max:2',
+            'parameters.max_tokens' => 'integer|min:1|max:4000',
         ]);
 
-        $providers = $validated['providers'] ?? ['openai'];
         $count = $validated['count'] ?? 1;
-        // Always use Flex pricing for batch runs
-        // $serviceTier = 'flex';
-        $serviceTier = null;
+        $useFlex = $validated['use_flex_processing'] ?? false;
+        $parameters = $validated['parameters'] ?? [];
 
-        // Get all prompts for this team and campaign
         $prompts = Prompt::where('team_id', $team->id)
             ->where('campaign_id', $campaign->id)
             ->get();
@@ -48,11 +43,17 @@ class PromptRunBatchController extends Controller
             ], 403);
         }
 
-        // Queue independent jobs for each prompt (no batches)
         $queued = 0;
         foreach ($prompts as $prompt) {
             for ($i = 0; $i < $count; $i++) {
-                dispatch(new RunPromptJob($prompt, $providers, $team->id, $campaign->id, $serviceTier));
+                $response = $prompt->responses()->create([
+                    'provider' => 'openai',
+                    'model' => 'gpt-5',
+                    'use_flex_processing' => $useFlex,
+                    'parameters' => $parameters,
+                    'status' => 'pending',
+                ]);
+                RunPromptJob::dispatch($response);
                 $queued++;
             }
         }
