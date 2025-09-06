@@ -24,8 +24,8 @@ class OpenAIPromptService
     public function getResponse(string $promptContent, ?string $model = null, array $options = []): object
     {
         $startTime = microtime(true);
-        // Enforce gpt-4o for prompt runs regardless of caller input
-        $modelToUse = 'gpt-4o';
+        // Enforce gpt-5 for prompt runs regardless of caller input
+        $modelToUse = 'gpt-5';
 
         try {
             $request = [
@@ -44,7 +44,7 @@ class OpenAIPromptService
                 $request['service_tier'] = 'flex';
             }
 
-            $response = OpenAI::responses()->create($request);
+            $response = $this->retry(fn () => OpenAI::responses()->create($request));
 
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
@@ -61,8 +61,8 @@ class OpenAIPromptService
 
     protected function defaultModel(): string
     {
-        // Kept for future configurability; currently unused since we enforce gpt-4o
-        return 'gpt-4o';
+        // Kept for future configurability; currently unused since we enforce gpt-5
+        return 'gpt-5';
     }
 
     /**
@@ -121,17 +121,45 @@ class OpenAIPromptService
     {
         $startTime = microtime(true);
         try {
-            $response = OpenAI::responses()->retrieve($responseId);
+            $response = $this->retry(fn () => OpenAI::responses()->retrieve($responseId));
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-5', $startTime);
             throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime, true);
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-5', $startTime, true);
             throw $e;
         } catch (\Exception $e) {
-            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-5', $startTime);
             throw $e;
+        }
+    }
+
+    protected function retry(callable $callback, int $maxRetries = 5)
+    {
+        $delay = 1;
+        $attempt = 0;
+        while (true) {
+            try {
+                return $callback();
+            } catch (\OpenAI\Exceptions\ErrorException $e) {
+                if ($e->getCode() == 429 && $attempt < $maxRetries) {
+                    usleep($delay * 1000000);
+                    $delay *= 2;
+                    $attempt++;
+                    continue;
+                }
+                throw $e;
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                $status = $e->getResponse()?->getStatusCode();
+                if (in_array($status, [429, 503]) && $attempt < $maxRetries) {
+                    usleep($delay * 1000000);
+                    $delay *= 2;
+                    $attempt++;
+                    continue;
+                }
+                throw $e;
+            }
         }
     }
 

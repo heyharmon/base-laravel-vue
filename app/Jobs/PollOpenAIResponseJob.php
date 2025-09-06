@@ -15,31 +15,21 @@ use App\Models\Response as ResponseModel;
 class PollOpenAIResponseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
-    public $tries = 2;
 
-    /**
-     * The number of seconds the job can run before timing out.
-     * Keep this short since we only poll a single endpoint.
-     *
-     * @var int
-     */
+    public $tries = 1;
     public $timeout = 5;
 
-    /**
-     * The response ID (DB primary key) to poll.
-     *
-     * @var int
-     */
-    protected $responseDbId;
+    protected int $responseDbId;
+    protected int $pollCount;
+    protected int $retryCount;
 
-    public function __construct(int $responseDbId)
+    public const MAX_RETRIES = 5;
+
+    public function __construct(int $responseDbId, int $pollCount = 0, int $retryCount = 0)
     {
         $this->responseDbId = $responseDbId;
+        $this->pollCount = $pollCount;
+        $this->retryCount = $retryCount;
     }
 
     public function handle(OpenAIPromptService $openAI)
@@ -47,17 +37,14 @@ class PollOpenAIResponseJob implements ShouldQueue
         try {
             $response = ResponseModel::with('prompt')->find($this->responseDbId);
             if (!$response) {
-                // Nothing to do
                 return;
             }
 
-            // If already completed, nothing to do
             if ($response->status === 'completed') {
                 return;
             }
 
             if (!$response->provider_id) {
-                // No OpenAI response id to poll; treat as failed so we re-run
                 $this->reissueIfFailed($response, $openAI);
                 return;
             }
@@ -66,59 +53,65 @@ class PollOpenAIResponseJob implements ShouldQueue
             $status = $fresh->status ?? 'in_progress';
 
             if ($status === 'completed') {
-                // Update with final content and usage, mark completed
                 $response->content = $fresh->content ?? '';
                 $response->usage = $fresh->usage ?? null;
                 $response->status = 'completed';
                 $response->save();
 
-                // Delegate further processing to a dedicated job
                 dispatch(new ProcessCompletedResponseJob($response->id));
                 return;
             }
 
-            if ($status === 'failed') {
-                // Try again per requirements
+            if (in_array($status, ['failed', 'cancelled', 'incomplete'])) {
                 $this->reissueIfFailed($response, $openAI);
                 return;
             }
 
-            // Still in progress; schedule another poll in 15 seconds
             $response->status = $status;
             $response->save();
 
-            $next = new self($response->id);
-            $next->delay(now()->addSeconds(15));
+            $delay = min(15 * pow(2, $this->pollCount), 900);
+            $next = new self($response->id, $this->pollCount + 1, $this->retryCount);
+            $next->delay(now()->addSeconds($delay));
             dispatch($next);
         } catch (Throwable $exception) {
-            Log::error('PollOpenAIResponseJob failed with exception', [
+            Log::warning('PollOpenAIResponseJob encountered exception', [
                 'response_db_id' => $this->responseDbId,
                 'error' => $exception->getMessage(),
             ]);
-            throw $exception;
+
+            $delay = min(15 * pow(2, $this->pollCount), 900);
+            $next = new self($this->responseDbId, $this->pollCount + 1, $this->retryCount);
+            $next->delay(now()->addSeconds($delay));
+            dispatch($next);
         }
     }
 
     protected function reissueIfFailed(ResponseModel $response, OpenAIPromptService $openAI): void
     {
+        if ($this->retryCount >= self::MAX_RETRIES) {
+            $response->status = 'failed';
+            $response->error = 'Max retries exceeded';
+            $response->save();
+            return;
+        }
+
         try {
             $prompt = $response->prompt;
             $options = [];
             if ($response->flex) {
                 $options['service_tier'] = 'flex';
             }
-            // Use the model stored on the response
             $fresh = $openAI->getResponse($prompt->content, $response->model, $options);
 
-            // Update response with new id/status and clear content until completion
             $response->provider_id = $fresh->id ?? null;
             $response->status = $fresh->status ?? 'in_progress';
             $response->content = '';
             $response->usage = null;
+            $response->error = null;
             $response->save();
 
-            // Schedule the next poll
-            $next = new self($response->id);
+            $next = new self($response->id, 0, $this->retryCount + 1);
             $next->delay(now()->addSeconds(15));
             dispatch($next);
         } catch (\Exception $e) {
@@ -126,7 +119,9 @@ class PollOpenAIResponseJob implements ShouldQueue
                 'response_id' => $response->id,
                 'error' => $e->getMessage(),
             ]);
-            throw $e;
+            $response->status = 'failed';
+            $response->error = $e->getMessage();
+            $response->save();
         }
     }
 }

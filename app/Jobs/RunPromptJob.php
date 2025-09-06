@@ -22,7 +22,7 @@ class RunPromptJob implements ShouldQueue
      *
      * @var int
      */
-    public $tries = 1;
+    public $tries = 5;
 
     /**
      * The number of seconds the job can run before timing out.
@@ -30,6 +30,11 @@ class RunPromptJob implements ShouldQueue
      * @var int
      */
     public $timeout = 300; // 5 minutes
+
+    public function backoff(): array
+    {
+        return [15, 30, 60, 120, 240];
+    }
 
     /**
      * The prompt instance.
@@ -89,9 +94,9 @@ class RunPromptJob implements ShouldQueue
                 return;
             }
 
-            // Simplified: always use OpenAI gpt-4
+            // Simplified: always use OpenAI gpt-5
             $providerName = 'openai';
-            $model = 'gpt-4';
+            $model = 'gpt-5';
 
             // Get response from the LLM (single provider for reliability)
             $options = [];
@@ -105,12 +110,12 @@ class RunPromptJob implements ShouldQueue
                 'provider' => $providerName,
                 'model' => $model,
                 'flex' => $this->serviceTier === 'flex',
-                'status' => 'in_progress',
+                'status' => $llm->status ?? 'in_progress',
                 'provider_id' => $llm->id ?? null,
                 'content' => '',
                 'usage' => null,
             ]);
-
+        
             // Schedule a poll after 15 seconds to reduce costs
             $pollJob = new PollOpenAIResponseJob($response->id);
             $pollJob->delay(now()->addSeconds(15));
