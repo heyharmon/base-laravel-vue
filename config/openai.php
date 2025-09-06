@@ -1,49 +1,38 @@
 <?php
 
 return [
+    'api_key' => env('OPENAI_API_KEY'),
+    'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
 
-	/*
-    |--------------------------------------------------------------------------
-    | OpenAI API Key and Organization
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify your OpenAI API Key and organization. This will be
-    | used to authenticate with the OpenAI API - you can find your API key
-    | and organization on your OpenAI dashboard, at https://openai.com.
-    */
+    'timeout' => env('OPENAI_TIMEOUT', 900),
 
-	'api_key' => env('OPENAI_API_KEY'),
-	'organization' => env('OPENAI_ORGANIZATION'),
+    'models' => [
+        'default' => 'gpt-5',
+        'available' => ['gpt-5'],
+    ],
 
-	/*
-    |--------------------------------------------------------------------------
-    | OpenAI API Project
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify your OpenAI API project. This is used optionally in
-    | situations where you are using a legacy user API key and need association
-    | with a project. This is not required for the newer API keys.
-    */
-	'project' => env('OPENAI_PROJECT'),
+    'flex_processing' => [
+        'enabled' => env('OPENAI_FLEX_ENABLED', true),
+        'timeout' => 900,
+        'cost_reduction' => 0.5,
+    ],
 
-	/*
-    |--------------------------------------------------------------------------
-    | OpenAI Base URL
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify your OpenAI API base URL used to make requests. This
-    | is needed if using a custom API endpoint. Defaults to: api.openai.com/v1
-    */
-	'base_uri' => env('OPENAI_BASE_URL'),
+    'retry' => [
+        'max_attempts' => env('OPENAI_MAX_RETRIES', 10),
+        'base_delay' => 2,
+        'max_delay' => 300,
+        'exponential_base' => 2,
+    ],
 
-	/*
-    |--------------------------------------------------------------------------
-    | Request Timeout
-    |--------------------------------------------------------------------------
-    |
-    | The timeout may be used to specify the maximum number of seconds to wait
-    | for a response. By default, the client will time out after 30 seconds.
-    */
+    'polling' => [
+        'enabled' => true,
+        'base_delay' => 5,
+        'max_delay' => 60,
+        'max_time' => 3600,
+    ],
 
-	'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
+    'rate_limits' => [
+        'requests_per_minute' => 500,
+        'tokens_per_minute' => 150000,
+    ],
 ];
