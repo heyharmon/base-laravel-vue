@@ -7,6 +7,7 @@ import { useArticleStore } from '@/stores/articleStore'
 import { useUsageStore } from '@/stores/usageStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
+import auth from '@/services/auth'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import TrashIcon from '@/components/icons/TrashIcon.vue'
 import Button from '@/components/ui/Button.vue'
@@ -32,6 +33,10 @@ const emit = defineEmits(['select', 'run', 'delete'])
 const isRunMenuOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
+
+// Auth-based permissions
+const user = computed(() => auth.getUser())
+const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
 const hasActiveRunPromptJob = computed(() => {
 	let jobs = (jobStatusStore.jobs || []).filter(
@@ -129,11 +134,11 @@ const createArticle = async () => {
 				Improve visibility
 			</Button>
 
-			<!-- Run prompt button -->
-			<!-- <div class="relative flex items-center">
-				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
-					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
-				</Button>
+		<!-- Run prompt button -->
+		<div v-if="isSuperAdmin" class="relative flex items-center">
+			<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
+				<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
+			</Button>
 
 				<div
 					v-if="isRunMenuOpen"
@@ -150,7 +155,7 @@ const createArticle = async () => {
 						Run 5x
 					</button>
 				</div>
-			</div> -->
+			</div>
 
 			<button
 				@click.stop="confirmDelete"

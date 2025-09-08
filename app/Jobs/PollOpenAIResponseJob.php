@@ -139,12 +139,9 @@ class PollOpenAIResponseJob extends TrackableJob
     {
         try {
             $prompt = $response->prompt;
-            $options = [];
-            if ($response->flex) {
-                $options['service_tier'] = 'flex';
-            }
-            // Use the model stored on the response
-            $fresh = $openAI->getResponse($prompt->content, $response->model, $options);
+            $tier = $response->flex ? 'flex' : 'auto';
+            // Defer model selection to the service default
+            $fresh = $openAI->getResponse($prompt->content, $tier);
 
             // Update response with new id/status and clear content until completion
             $response->provider_id = $fresh->id ?? null;

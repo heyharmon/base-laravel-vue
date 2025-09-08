@@ -27,7 +27,7 @@ class RunPromptJob extends TrackableJob
      *
      * @var int
      */
-    public $timeout = 300; // 5 minutes
+    public $timeout = 900; // 15 minutes
 
     /**
      * The prompt instance.
@@ -131,11 +131,9 @@ class RunPromptJob extends TrackableJob
             $this->updateJobProgress(20, 'Sending prompt to LLM');
 
             // Get response from the LLM (single provider for reliability)
-            $options = [];
-            if ($this->serviceTier === 'flex') {
-                $options['service_tier'] = 'flex';
-            }
-            $llm = $openAI->getResponse($this->prompt->content, $model, $options);
+            $tier = $this->serviceTier === 'flex' ? 'flex' : 'auto';
+            // Do not specify a model here; defer to service default
+            $llm = $openAI->getResponse($this->prompt->content, $tier);
 
             // If response is completed immediately, persist content and process
             if (($llm->status ?? 'completed') === 'completed') {
