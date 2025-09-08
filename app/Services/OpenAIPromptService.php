@@ -15,11 +15,12 @@ class OpenAIPromptService
     ];
 
     /**
-     * Send a prompt to OpenAI and parse the response.
+     * Send a prompt to OpenAI using streaming so we can return as soon as we
+     * have a response id (for polling), or the completed response if it finishes quickly.
      *
      * @param string $promptContent The prompt to send
      * @param string $serviceTier Service tier: 'auto' (default) or 'flex'
-     * @return object Object with content, annotations and usage
+     * @return object Object with content, annotations, usage, status, and id
      */
     public function getResponse(string $promptContent, string $serviceTier = 'auto'): object
     {
@@ -33,18 +34,40 @@ class OpenAIPromptService
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,
-                'reasoning' => ['effort' => 'low'], // can be 'low', 'medium', or 'high'
-                'text' => ['verbosity' => 'low'], // can be 'low', 'medium', or 'high'
+                // Ensure the response continues generating and is retrievable even if we close the stream early
+                'background' => true,
+                'reasoning' => ['effort' => 'low'], // 'low', 'medium', or 'high'
+                'text' => ['verbosity' => 'low'], // 'low', 'medium', or 'high'
             ];
 
-            // Assume 'auto' unless explicitly set to 'flex'
             if ($serviceTier === 'flex') {
                 $request['service_tier'] = 'flex';
             }
 
-            $response = OpenAI::responses()->create($request);
+            // Stream so we can capture the response id immediately
+            $stream = OpenAI::responses()->createStreamed($request);
 
-            return $this->parseResponse($response);
+            foreach ($stream as $event) {
+                // The event types we care most about:
+                // - response.created / response.in_progress => contains id early
+                // - response.completed / response.failed / response.incomplete => final states
+                $type = $event->event;
+
+                if (in_array($type, ['response.created', 'response.in_progress'], true)) {
+                    // Return early with id + current status so caller can persist and poll
+                    return $this->parseResponse($event->response);
+                }
+
+                if (in_array($type, ['response.completed', 'response.failed', 'response.incomplete'], true)) {
+                    // Return the final result when available
+                    return $this->parseResponse($event->response);
+                }
+
+                // Other events (content deltas, tool calls, etc.) are ignored for this flow
+            }
+
+            // Safety fallback: if streaming yields nothing, raise an error
+            throw new \RuntimeException('No streaming events received from OpenAI Responses API');
         } catch (\OpenAI\Exceptions\ErrorException $e) {
             $this->logError('OpenAI API ErrorException', $e, $promptContent, $modelToUse);
             throw $e;
@@ -59,8 +82,8 @@ class OpenAIPromptService
 
     protected function defaultModel(): string
     {
-        // Kept for future configurability; currently unused since we enforce gpt-4o
-        return 'gpt-4o';
+        // Kept for future configurability; currently unused since we enforce gpt-5
+        return 'gpt-5';
     }
 
     /**
@@ -121,13 +144,13 @@ class OpenAIPromptService
             $response = OpenAI::responses()->retrieve($responseId);
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-4o');
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-5');
             throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-4o');
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-5');
             throw $e;
         } catch (\Exception $e) {
-            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-4o');
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-5');
             throw $e;
         }
     }

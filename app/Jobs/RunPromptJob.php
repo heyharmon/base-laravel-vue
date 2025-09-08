@@ -214,7 +214,7 @@ class RunPromptJob extends TrackableJob
         switch ($provider) {
             case 'openai':
             default:
-                return 'gpt-4o';
+                return 'gpt-5';
         }
     }
 
