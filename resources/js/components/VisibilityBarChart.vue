@@ -449,12 +449,20 @@ watch(
 
 // Watch for job completions and refresh data
 watch(
-	() => jobStatusStore.completedJobs.length,
-	(newCount, oldCount) => {
-		if (newCount > oldCount) {
-			fetchChartData()
-		}
-	}
+    () => jobStatusStore.completedJobs.length,
+    (newCount, oldCount) => {
+        if (newCount > oldCount) {
+            fetchChartData()
+        }
+    }
+)
+
+// When visibility metrics refresh (e.g., while responses are processing), refresh chart
+watch(
+    () => organizationStore.visibilityMetrics,
+    () => {
+        fetchChartData()
+    }
 )
 
 // Watch for defaultInterval changes and update selectedInterval
