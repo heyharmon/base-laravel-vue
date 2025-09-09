@@ -10,6 +10,7 @@ import auth from '@/services/auth'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import TrashIcon from '@/components/icons/TrashIcon.vue'
 import Button from '@/components/ui/Button.vue'
+import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -27,8 +28,9 @@ const props = defineProps({
 	jobs: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['select', 'run', 'delete'])
+const emit = defineEmits(['select', 'run'])
 const isRunMenuOpen = ref(false)
+const isDeleteOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 
@@ -87,7 +89,21 @@ const runPrompt = (count) => {
 	closeRunMenu()
 }
 
-const confirmDelete = () => emit('delete', props.prompt)
+const openDelete = () => {
+    isDeleteOpen.value = true
+}
+
+const closeDelete = () => {
+    isDeleteOpen.value = false
+}
+
+const confirmDelete = async () => {
+    try {
+        await promptStore.deletePrompt(props.prompt.id)
+    } finally {
+        isDeleteOpen.value = false
+    }
+}
 
 const createArticle = async () => {
 	try {
@@ -173,13 +189,16 @@ const createArticle = async () => {
 				</div>
 			</div>
 
-			<button
-				@click.stop="confirmDelete"
-				class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
-				aria-label="Delete prompt"
-			>
-				<TrashIcon />
-			</button>
-		</div>
-	</div>
+            <button
+                @click.stop="openDelete"
+                class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+                aria-label="Delete prompt"
+            >
+                <TrashIcon />
+            </button>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <DeletePromptModal :is-open="isDeleteOpen" @cancel="closeDelete" @confirm="confirmDelete" />
 </template>

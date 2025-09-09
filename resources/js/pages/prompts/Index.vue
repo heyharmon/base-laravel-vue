@@ -13,7 +13,6 @@ import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
 import GeneratePromptsModal from '@/components/prompts/GeneratePromptsModal.vue'
 import PromptToolbar from '@/components/prompts/PromptToolbar.vue'
 import PromptListItem from '@/components/prompts/PromptListItem.vue'
-import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -98,11 +97,6 @@ watch(campaignId, async (newId) => {
 	}
 })
 
-// Track prompt deletion
-// TODO: Move prompt deletion logic to the prompt list item component
-const promptToDelete = ref(null)
-const showDeleteConfirmation = ref(false)
-
 const runPrompt = async (id, count = 1) => {
         try {
                 await promptStore.runPrompt(id, count)
@@ -123,23 +117,7 @@ const runAllPrompts = async (count = 1) => {
         }
 }
 
-const confirmDeletePrompt = (prompt) => {
-	promptToDelete.value = prompt
-	showDeleteConfirmation.value = true
-}
-
-const deletePrompt = async () => {
-	if (promptToDelete.value) {
-		await promptStore.deletePrompt(promptToDelete.value.id)
-		promptToDelete.value = null
-		showDeleteConfirmation.value = false
-	}
-}
-
-const cancelDelete = () => {
-	promptToDelete.value = null
-	showDeleteConfirmation.value = false
-}
+// (intentionally left blank)
 
 const sortedPrompts = computed(() => {
 	if (!promptStore.prompts || promptStore.prompts.length === 0) return []
@@ -265,7 +243,6 @@ const handleDateRangeChange = (dateRange) => {
 							:jobs="jobStatusStore.jobs || []"
 							@select="showPromptDetails"
 							@run="(id, count) => runPrompt(id, count)"
-							@delete="confirmDeletePrompt"
 						/>
 					</div>
 
@@ -293,6 +270,5 @@ const handleDateRangeChange = (dateRange) => {
 		"
 	/>
 
-	<!-- Delete Confirmation Modal -->
-	<DeletePromptModal :is-open="showDeleteConfirmation" @cancel="cancelDelete" @confirm="deletePrompt" />
+	<!-- Delete confirmation is managed per-item in PromptListItem -->
 </template>
