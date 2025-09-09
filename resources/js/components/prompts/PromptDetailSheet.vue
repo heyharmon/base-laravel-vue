@@ -49,44 +49,40 @@ const user = computed(() => auth.getUser())
 const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
 const promptDetails = computed(() => {
-    return promptStore.selectedPromptDetails
+	return promptStore.selectedPromptDetails
 })
 
 // Get the basic prompt data from the store
 const prompt = computed(() => {
-    return promptStore.prompts.find((p) => p.id === Number(props.promptId)) || null
+	return promptStore.prompts.find((p) => p.id === Number(props.promptId)) || null
 })
 
 // Active (queued + in_progress) responses for this prompt, from details or list
 const inProgressResponses = computed(() => {
-    return (
-        promptDetails.value?.in_progress_responses ||
-        prompt.value?.in_progress_responses ||
-        []
-    )
+	return promptDetails.value?.in_progress_responses || prompt.value?.in_progress_responses || []
 })
 
 const inProgressSummary = computed(() => {
-    const counts = inProgressResponses.value.reduce((acc, r) => {
-        const st = r.status || 'in_progress'
-        acc[st] = (acc[st] || 0) + 1
-        return acc
-    }, {})
-    const parts = []
-    if (counts.queued) parts.push(`${counts.queued} queued`)
-    if (counts.in_progress) parts.push(`${counts.in_progress} in progress`)
-    return parts.join(', ')
+	const counts = inProgressResponses.value.reduce((acc, r) => {
+		const st = r.status || 'in_progress'
+		acc[st] = (acc[st] || 0) + 1
+		return acc
+	}, {})
+	const parts = []
+	if (counts.queued) parts.push(`${counts.queued} queued response${counts.queued > 1 ? 's' : ''}`)
+	if (counts.in_progress) parts.push(`${counts.in_progress} in progress response${counts.in_progress > 1 ? 's' : ''}`)
+	return parts.join(', ')
 })
 
 const inProgressLastUpdatedRelative = computed(() => {
-    if (!inProgressResponses.value || inProgressResponses.value.length === 0) return ''
-    let latest = null
-    for (const r of inProgressResponses.value) {
-        const ts = r.updated_at || r.created_at
-        if (!ts) continue
-        if (!latest || moment(ts).isAfter(moment(latest))) latest = ts
-    }
-    return latest ? moment(latest).fromNow() : ''
+	if (!inProgressResponses.value || inProgressResponses.value.length === 0) return ''
+	let latest = null
+	for (const r of inProgressResponses.value) {
+		const ts = r.updated_at || r.created_at
+		if (!ts) continue
+		if (!latest || moment(ts).isAfter(moment(latest))) latest = ts
+	}
+	return latest ? moment(latest).fromNow() : ''
 })
 
 // Get mentions percentage from either the prompt details or the prompt list
@@ -232,26 +228,22 @@ watch(() => props.promptId, fetchDetails)
 			<!-- Sheet content -->
 			<div v-else-if="promptDetails" class="space-y-6">
 				<!-- Prompt header -->
-                <div class="bg-neutral-50 p-4 rounded-lg">
-                    <div class="mb-4">
-                        <div class="flex justify-between items-start">
-                            <span class="text-neutral-500 text-sm">Content:</span>
-                            <Button @click="exportPrompt" variant="link" size="sm">
-                                <CopyIcon />
-                                {{ isCopied ? 'Copied!' : 'Export' }}
-                            </Button>
-                        </div>
-                        <p class="text-neutral-800 text-2xl/7 font-medium mt-1">{{ promptDetails.content }}</p>
-                    </div>
-                    <div class="mb-1 text-sm">
-                        <span class="text-neutral-500">Mentioned:</span>
-                        <span class="text-neutral-800 ml-2">{{ mentionsPercentage }}% of the time</span>
-                    </div>
-                    <div v-if="inProgressResponses.length > 0" class="mt-2 flex items-center gap-2 text-sm text-neutral-600">
-                        <div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
-                        <span>Processing: {{ inProgressSummary }}<template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template></span>
-                    </div>
-                </div>
+				<div class="bg-neutral-50 p-4 rounded-lg">
+					<div class="mb-4">
+						<div class="flex justify-between items-start">
+							<span class="text-neutral-500 text-sm">Content:</span>
+							<Button @click="exportPrompt" variant="link" size="sm">
+								<CopyIcon />
+								{{ isCopied ? 'Copied!' : 'Export' }}
+							</Button>
+						</div>
+						<p class="text-neutral-800 text-2xl/7 font-medium mt-1">{{ promptDetails.content }}</p>
+					</div>
+					<div class="mb-1 text-sm">
+						<span class="text-neutral-500">Mentioned:</span>
+						<span class="text-neutral-800 ml-2">{{ mentionsPercentage }}% of the time</span>
+					</div>
+				</div>
 
 				<!-- Date Filter and Visibility Chart for this Prompt -->
 				<div v-if="showChart && promptDetails" class="mt-6">
@@ -319,6 +311,15 @@ watch(() => props.promptId, fetchDetails)
 
 					<div v-else-if="promptDetails && promptStore.selectedPromptResponses.length > 0">
 						<h3 class="text-lg font-medium text-neutral-800 mb-2">Responses</h3>
+
+						<div v-if="inProgressResponses.length > 0" class="mb-5 flex items-center gap-2 text-neutral-600">
+							<div class="animate-spin rounded-full h-4 w-4 border border-b-transparent border-neutral-800"></div>
+							<span>
+								Processing: {{ inProgressSummary }}
+								<template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
+							</span>
+						</div>
+
 						<div class="space-y-4">
 							<div
 								v-for="response in promptStore.selectedPromptResponses"
