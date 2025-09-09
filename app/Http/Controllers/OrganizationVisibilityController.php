@@ -38,11 +38,12 @@ class OrganizationVisibilityController extends Controller
                         ? Carbon::parse($request->end_date, $timezone)->endOfDay()->setTimezone('UTC')
                         : null;
 
-		// Get total responses count with date filtering
-		$totalResponsesQuery = DB::table('responses')
-			->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
-			->where('prompts.team_id', $teamId)
-			->where('prompts.campaign_id', $campaignId);
+        // Get total responses count with date filtering (only completed)
+        $totalResponsesQuery = DB::table('responses')
+            ->join('prompts', 'responses.prompt_id', '=', 'prompts.id')
+            ->where('prompts.team_id', $teamId)
+            ->where('prompts.campaign_id', $campaignId)
+            ->where('responses.status', 'completed');
 
                 if ($startDateUtc) {
                         $totalResponsesQuery->where('responses.created_at', '>=', $startDateUtc);
@@ -54,12 +55,12 @@ class OrganizationVisibilityController extends Controller
 		$totalResponses = $totalResponsesQuery->count();
 
 		// Get all organizations with their mention counts in a single optimized query
-		$organizationsWithMentions = DB::table('organizations')
-			->select([
-				'organizations.*',
-				DB::raw('COALESCE(mention_data.mention_count, 0) as total_mentions')
-			])
-			->leftJoin(DB::raw('(
+        $organizationsWithMentions = DB::table('organizations')
+            ->select([
+                'organizations.*',
+                DB::raw('COALESCE(mention_data.mention_count, 0) as total_mentions')
+            ])
+            ->leftJoin(DB::raw('(
                SELECT
                    t.organization_id,
                    COUNT(DISTINCT r.id) as mention_count
@@ -72,22 +73,23 @@ class OrganizationVisibilityController extends Controller
                AND p.campaign_id = ?
                AND org.team_id = ?
                AND (org.campaign_id = ? OR (org.campaign_id IS NULL AND org.is_competitor = 0))
+               AND r.status = ?
                ' . ($startDateUtc ? 'AND r.created_at >= ?' : '') . '
                ' . ($endDateUtc ? 'AND r.created_at <= ?' : '') . '
                GROUP BY t.organization_id
            ) as mention_data'), 'organizations.id', '=', 'mention_data.organization_id')
-			->where('organizations.team_id', $teamId)
-			->where(function ($query) use ($campaignId) {
-				$query->where('organizations.campaign_id', $campaignId)
-					->orWhere('organizations.is_competitor', false);
-			});
+            ->where('organizations.team_id', $teamId)
+            ->where(function ($query) use ($campaignId) {
+                $query->where('organizations.campaign_id', $campaignId)
+                    ->orWhere('organizations.is_competitor', false);
+            });
 
-		// Bind parameters for the subquery
-                $bindings = [$teamId, $campaignId, $teamId, $campaignId];
+        // Bind parameters for the subquery in correct order
+                $bindings = [$teamId, $campaignId, $teamId, $campaignId, 'completed'];
                 if ($startDateUtc) $bindings[] = $startDateUtc->toDateTimeString();
                 if ($endDateUtc) $bindings[] = $endDateUtc->toDateTimeString();
 
-		$organizations = $organizationsWithMentions->addBinding($bindings, 'join')->get();
+        $organizations = $organizationsWithMentions->addBinding($bindings, 'join')->get();
 
 		// Calculate visibility and format results
 		$results = $organizations->map(function ($org) use ($totalResponses) {

@@ -179,10 +179,10 @@ class RunPromptJob extends TrackableJob
                     'usage' => null,
                 ]);
 
-                // Schedule a poll after 15 seconds to reduce costs
+                // Schedule a poll after 15 seconds to reduce costs (no tracking)
                 $pollJob = new PollOpenAIResponseJob($response->id);
                 $pollJob->delay(now()->addSeconds(15));
-                $jobDispatcher->dispatch($this->prompt, $pollJob);
+                dispatch($pollJob);
             }
 
             // Mark the job as completed

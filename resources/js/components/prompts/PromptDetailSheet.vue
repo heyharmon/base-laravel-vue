@@ -69,8 +69,8 @@ const inProgressSummary = computed(() => {
 		return acc
 	}, {})
 	const parts = []
-	if (counts.queued) parts.push(`${counts.queued} queued response${counts.queued > 1 ? 's' : ''}`)
-	if (counts.in_progress) parts.push(`${counts.in_progress} in progress response${counts.in_progress > 1 ? 's' : ''}`)
+	if (counts.queued) parts.push(`${counts.queued} response${counts.queued > 1 ? 's' : ''} queued`)
+	if (counts.in_progress) parts.push(`${counts.in_progress} response${counts.in_progress > 1 ? 's' : ''} in progress`)
 	return parts.join(', ')
 })
 
@@ -315,8 +315,7 @@ watch(() => props.promptId, fetchDetails)
 						<div v-if="inProgressResponses.length > 0" class="mb-5 flex items-center gap-2 text-neutral-600">
 							<div class="animate-spin rounded-full h-4 w-4 border border-b-transparent border-neutral-800"></div>
 							<span>
-								Processing: {{ inProgressSummary }}
-								<template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
+								{{ inProgressSummary }} <template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
 							</span>
 						</div>
 

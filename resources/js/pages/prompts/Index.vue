@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { usePromptStore } from '@/stores/promptStore'
@@ -44,9 +44,6 @@ const selectedPromptId = ref(null)
 // Sorting
 const sortOption = ref('default') // Default sort option
 
-// Jobs in progress by job class
-const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
-
 // Track active prompt jobs
 const activePromptJobs = computed(() => {
 	const promptJobClasses = ['GenerateCampaignKeywordsJob', 'GeneratePrompt', 'RunPromptJob', 'FindCompetitorsInResponseJob']
@@ -55,22 +52,30 @@ const activePromptJobs = computed(() => {
 	})
 })
 
-onMounted(async () => {
-        await campaignStore.fetchCampaigns(teamId.value)
-        if (campaignId.value) {
-                await campaignStore.switchCampaign(teamId.value, campaignId.value)
-        }
-        await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-        await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-        await usageStore.fetchUsage(teamId.value)
+// Track if any prompts have in-progress responses (queued or in_progress)
+const hasInProgressResponses = computed(() => {
+    return (promptStore.prompts || []).some((p) => Array.isArray(p?.in_progress_responses) && p.in_progress_responses.length > 0)
 })
 
+// While there are in-progress responses, poll prompts + visibility to reflect completions
+let inProgressRefreshTimer = null
+
+onMounted(async () => {
+	await campaignStore.fetchCampaigns(teamId.value)
+	if (campaignId.value) {
+		await campaignStore.switchCampaign(teamId.value, campaignId.value)
+	}
+	await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+	await usageStore.fetchUsage(teamId.value)
+})
+
+// Watch prompt specific jobs and refresh prompts when they complete
 watch(
 	activePromptJobs,
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-			console.log('Jobs completed, refreshing prompts and visibility metrics')
 			promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
 			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
 		}
@@ -78,17 +83,34 @@ watch(
 	{ deep: true }
 )
 
-// Watch for job completions and refresh data
-// watch(
-// 	// () => jobStatusStore.completedJobs.length,
-// 	() => processingJobsByClass.length,
-// 	(newCount, oldCount) => {
-// 		if (newCount > oldCount) {
-// 			promptStore.fetchPrompts(teamId.value, campaignId.value)
-// 		}
-// 	}
-// )
+// Also refresh while any prompt has in-progress responses
+watch(
+    hasInProgressResponses,
+    (hasAny) => {
+        if (hasAny && !inProgressRefreshTimer) {
+            // Start polling for updates while responses are running
+            inProgressRefreshTimer = setInterval(() => {
+                promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+                organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+            }, 3000)
+        } else if (!hasAny && inProgressRefreshTimer) {
+            // Stop polling once all responses complete and do a final refresh
+            clearInterval(inProgressRefreshTimer)
+            inProgressRefreshTimer = null
+            promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+            organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+        }
+    }
+)
 
+onUnmounted(() => {
+    if (inProgressRefreshTimer) {
+        clearInterval(inProgressRefreshTimer)
+        inProgressRefreshTimer = null
+    }
+})
+
+// Watch for campaign changes
 watch(campaignId, async (newId) => {
 	if (newId) {
 		await campaignStore.switchCampaign(teamId.value, newId)
@@ -98,26 +120,24 @@ watch(campaignId, async (newId) => {
 })
 
 const runPrompt = async (id, count = 1) => {
-        try {
-                await promptStore.runPrompt(id, count)
-                await usageStore.fetchUsage(teamId.value)
-                await jobStatusStore.pollTeamJobs(teamId.value)
-        } catch (error) {
-                notificationStore.addNotification({ message: error?.message || 'Unable to run prompt', type: 'error' })
-        }
+	try {
+		await promptStore.runPrompt(id, count)
+		await usageStore.fetchUsage(teamId.value)
+		await jobStatusStore.pollTeamJobs(teamId.value)
+	} catch (error) {
+		notificationStore.addNotification({ message: error?.message || 'Unable to run prompt', type: 'error' })
+	}
 }
 
 const runAllPrompts = async (count = 1) => {
-        try {
-                await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
-                await usageStore.fetchUsage(teamId.value)
-                await jobStatusStore.pollTeamJobs(teamId.value)
-        } catch (error) {
-                notificationStore.addNotification({ message: error?.message || 'Unable to run prompts', type: 'error' })
-        }
+	try {
+		await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
+		await usageStore.fetchUsage(teamId.value)
+		await jobStatusStore.pollTeamJobs(teamId.value)
+	} catch (error) {
+		notificationStore.addNotification({ message: error?.message || 'Unable to run prompts', type: 'error' })
+	}
 }
-
-// (intentionally left blank)
 
 const sortedPrompts = computed(() => {
 	if (!promptStore.prompts || promptStore.prompts.length === 0) return []
@@ -171,15 +191,15 @@ const handleDateRangeChange = (dateRange) => {
 		</div>
 
 		<div class="flex flex-col space-y-6">
-                        <!-- Visibility score -->
-                        <VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
+			<!-- Visibility score -->
+			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 
-                        <UsageProgress
-                                v-if="usageStore.usage"
-                                :used="usageStore.usage.responses_used"
-                                :limit="usageStore.usage.responses_limit"
-                                :label="`Responses (${usageStore.billingInterval})`"
-                        />
+			<UsageProgress
+				v-if="usageStore.usage"
+				:used="usageStore.usage.responses_used"
+				:limit="usageStore.usage.responses_limit"
+				:label="`Responses (${usageStore.billingInterval})`"
+			/>
 
 			<!-- Main Content -->
 			<div class="flex flex-col">

@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, onUnmounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { usePromptStore } from '@/stores/promptStore'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -14,6 +15,7 @@ const route = useRoute()
 const jobStatusStore = useJobStatusStore()
 const organizationStore = useOrganizationStore()
 const campaignStore = useCampaignStore()
+const promptStore = usePromptStore()
 
 // Route params
 const teamId = computed(() => route.params.teamId)
@@ -29,13 +31,15 @@ const ownedOrg = computed(() => {
 })
 
 onMounted(async () => {
-	if (teamId.value) {
-		await campaignStore.fetchCampaigns(teamId.value)
-		if (campaignId.value) {
-			await campaignStore.switchCampaign(teamId.value, campaignId.value)
-			fetchVisibilityData()
-		}
-	}
+    if (teamId.value) {
+        await campaignStore.fetchCampaigns(teamId.value)
+        if (campaignId.value) {
+            await campaignStore.switchCampaign(teamId.value, campaignId.value)
+            // Load prompts so we can detect in-progress responses
+            await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+            fetchVisibilityData()
+        }
+    }
 })
 
 // Watch for job completions and refresh data
@@ -51,16 +55,17 @@ watch(
 )
 
 watch(campaignId, async (newId) => {
-	if (newId) {
-		await campaignStore.switchCampaign(teamId.value, newId)
-		fetchVisibilityData()
-	}
+    if (newId) {
+        await campaignStore.switchCampaign(teamId.value, newId)
+        await promptStore.fetchPrompts(teamId.value, newId, organizationStore.currentDateRange)
+        fetchVisibilityData()
+    }
 })
 
 const fetchVisibilityData = () => {
-	if (teamId.value && campaignId.value) {
-		organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-	}
+    if (teamId.value && campaignId.value) {
+        organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+    }
 }
 
 // Handle date range changes from dropdown
@@ -79,6 +84,41 @@ const deleteOrganization = async (organizationId) => {
 		console.error('Error deleting organization:', error)
 	}
 }
+
+// ---- In-progress prompt responses detection and polling ----
+const hasInProgressResponses = computed(() => {
+    return (promptStore.prompts || []).some((p) => Array.isArray(p?.in_progress_responses) && p.in_progress_responses.length > 0)
+})
+
+const inProgressResponsesCount = computed(() => {
+    return (promptStore.prompts || []).reduce((sum, p) => sum + ((p?.in_progress_responses?.length) || 0), 0)
+})
+
+let inProgressRefreshTimer = null
+
+watch(
+    hasInProgressResponses,
+    async (hasAny) => {
+        if (hasAny && !inProgressRefreshTimer) {
+            inProgressRefreshTimer = setInterval(async () => {
+                await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+                await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+            }, 3000)
+        } else if (!hasAny && inProgressRefreshTimer) {
+            clearInterval(inProgressRefreshTimer)
+            inProgressRefreshTimer = null
+            await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+            await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+        }
+    }
+)
+
+onUnmounted(() => {
+    if (inProgressRefreshTimer) {
+        clearInterval(inProgressRefreshTimer)
+        inProgressRefreshTimer = null
+    }
+})
 </script>
 
 <template>
@@ -89,6 +129,19 @@ const deleteOrganization = async (organizationId) => {
 				<DateFilterDropdown @date-range-changed="handleDateRangeChange" />
 				<CampaignSwitcher />
 			</div>
+		</div>
+
+		<!-- Prompt responses in progress indicator -->
+		<div
+			v-if="hasInProgressResponses"
+			class="p-4 my-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
+		>
+			<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
+			<span>
+				{{ inProgressResponsesCount }}
+				{{ inProgressResponsesCount === 1 ? 'prompt response is being processed' : 'prompt responses are being processed' }}
+				— rankings will update automatically.
+			</span>
 		</div>
 		<!-- Jobs currently processing message -->
 		<div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 my-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">

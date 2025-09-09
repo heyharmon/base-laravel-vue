@@ -49,8 +49,8 @@ const inProgressSummary = computed(() => {
 		return acc
 	}, {})
 	const parts = []
-	if (counts.queued) parts.push(`${counts.queued} queued response${counts.queued > 1 ? 's' : ''}`)
-	if (counts.in_progress) parts.push(`${counts.in_progress} in progress response${counts.in_progress > 1 ? 's' : ''}`)
+	if (counts.queued) parts.push(`${counts.queued} response${counts.queued > 1 ? 's' : ''} queued`)
+	if (counts.in_progress) parts.push(`${counts.in_progress} response${counts.in_progress > 1 ? 's' : ''} in progress`)
 	return parts.join(', ')
 })
 
@@ -90,19 +90,19 @@ const runPrompt = (count) => {
 }
 
 const openDelete = () => {
-    isDeleteOpen.value = true
+	isDeleteOpen.value = true
 }
 
 const closeDelete = () => {
-    isDeleteOpen.value = false
+	isDeleteOpen.value = false
 }
 
 const confirmDelete = async () => {
-    try {
-        await promptStore.deletePrompt(props.prompt.id)
-    } finally {
-        isDeleteOpen.value = false
-    }
+	try {
+		await promptStore.deletePrompt(props.prompt.id)
+	} finally {
+		isDeleteOpen.value = false
+	}
 }
 
 const createArticle = async () => {
@@ -156,7 +156,7 @@ const createArticle = async () => {
 			<div v-if="inProgressResponses.length > 0" class="flex items-center gap-1.5 text-sm text-neutral-600">
 				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
 				<span>
-					Processing {{ inProgressSummary }} <template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
+					{{ inProgressSummary }} <template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
 				</span>
 			</div>
 
@@ -189,16 +189,16 @@ const createArticle = async () => {
 				</div>
 			</div>
 
-            <button
-                @click.stop="openDelete"
-                class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
-                aria-label="Delete prompt"
-            >
-                <TrashIcon />
-            </button>
-        </div>
-    </div>
+			<button
+				@click.stop="openDelete"
+				class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+				aria-label="Delete prompt"
+			>
+				<TrashIcon />
+			</button>
+		</div>
+	</div>
 
-    <!-- Delete Confirmation Modal -->
-    <DeletePromptModal :is-open="isDeleteOpen" @cancel="closeDelete" @confirm="confirmDelete" />
+	<!-- Delete Confirmation Modal -->
+	<DeletePromptModal :is-open="isDeleteOpen" @cancel="closeDelete" @confirm="confirmDelete" />
 </template>
