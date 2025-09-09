@@ -33,11 +33,17 @@ class OrganizationVisibilityChartController extends Controller
         if (!$request->start_date || !$request->end_date) {
             $firstResponse = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                 $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
-            })->orderBy('created_at')->first();
+            })
+                ->where('status', 'completed')
+                ->orderBy('created_at')
+                ->first();
 
             $lastResponse = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                 $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
-            })->orderBy('created_at', 'desc')->first();
+            })
+                ->where('status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->first();
 
             if (!$firstResponse || !$lastResponse) {
                 return response()->json([
@@ -89,6 +95,7 @@ class OrganizationVisibilityChartController extends Controller
                 $totalResponses = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                     $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
                 })
+                    ->where('status', 'completed')
                     ->whereBetween('created_at', [$intervalStartUtc, $intervalEndUtc])
                     ->count();
 
@@ -97,6 +104,7 @@ class OrganizationVisibilityChartController extends Controller
                     $totalMentions = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                         $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
                     })
+                        ->where('status', 'completed')
                         ->whereHas('terms', function ($query) use ($termIds) {
                             $query->whereIn('terms.id', $termIds);
                         })

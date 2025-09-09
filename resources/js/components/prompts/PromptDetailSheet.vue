@@ -1,4 +1,5 @@
 <script setup>
+import moment from 'moment'
 import { computed, watch, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
@@ -54,6 +55,34 @@ const promptDetails = computed(() => {
 // Get the basic prompt data from the store
 const prompt = computed(() => {
 	return promptStore.prompts.find((p) => p.id === Number(props.promptId)) || null
+})
+
+// Active (queued + in_progress) responses for this prompt, from details or list
+const inProgressResponses = computed(() => {
+	return promptDetails.value?.in_progress_responses || prompt.value?.in_progress_responses || []
+})
+
+const inProgressSummary = computed(() => {
+	const counts = inProgressResponses.value.reduce((acc, r) => {
+		const st = r.status || 'in_progress'
+		acc[st] = (acc[st] || 0) + 1
+		return acc
+	}, {})
+	const parts = []
+	if (counts.queued) parts.push(`${counts.queued} response${counts.queued > 1 ? 's' : ''} queued`)
+	if (counts.in_progress) parts.push(`${counts.in_progress} response${counts.in_progress > 1 ? 's' : ''} in progress`)
+	return parts.join(', ')
+})
+
+const inProgressLastUpdatedRelative = computed(() => {
+	if (!inProgressResponses.value || inProgressResponses.value.length === 0) return ''
+	let latest = null
+	for (const r of inProgressResponses.value) {
+		const ts = r.updated_at || r.created_at
+		if (!ts) continue
+		if (!latest || moment(ts).isAfter(moment(latest))) latest = ts
+	}
+	return latest ? moment(latest).fromNow() : ''
 })
 
 // Get mentions percentage from either the prompt details or the prompt list
@@ -282,6 +311,14 @@ watch(() => props.promptId, fetchDetails)
 
 					<div v-else-if="promptDetails && promptStore.selectedPromptResponses.length > 0">
 						<h3 class="text-lg font-medium text-neutral-800 mb-2">Responses</h3>
+
+						<div v-if="inProgressResponses.length > 0" class="mb-5 flex items-center gap-2 text-neutral-600">
+							<div class="animate-spin rounded-full h-4 w-4 border border-b-transparent border-neutral-800"></div>
+							<span>
+								{{ inProgressSummary }} <template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
+							</span>
+						</div>
+
 						<div class="space-y-4">
 							<div
 								v-for="response in promptStore.selectedPromptResponses"
