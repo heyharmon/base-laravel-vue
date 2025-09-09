@@ -28,11 +28,11 @@ it('calculates visibility for organizations', function () {
 
 	$prompt = Prompt::factory()->for($team)->for($campaign)->create();
 
-	$response1 = Response::factory()->for($prompt)->create();
-	$response1->terms()->attach($term1->id);
+    $response1 = Response::factory()->for($prompt)->state(['status' => 'completed'])->create();
+    $response1->terms()->attach($term1->id);
 
-	$response2 = Response::factory()->for($prompt)->create();
-	$response2->terms()->attach($term2->id);
+    $response2 = Response::factory()->for($prompt)->state(['status' => 'completed'])->create();
+    $response2->terms()->attach($term2->id);
 
 	$response = $this->getJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/organization-visibility");
 
