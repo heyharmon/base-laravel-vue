@@ -39,7 +39,8 @@ const user = computed(() => auth.getUser())
 const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
 const hasActiveRunPromptJob = computed(() => {
-	let jobs = (jobStatusStore.jobs || []).filter(
+	// Look for active RunPromptJob jobs for this prompt
+	const jobsActive = (jobStatusStore.jobs || []).some(
 		(job) =>
 			job.job_class.includes('RunPromptJob') &&
 			job.trackable_type === 'App\\Models\\Prompt' &&
@@ -47,7 +48,10 @@ const hasActiveRunPromptJob = computed(() => {
 			(job.status === 'pending' || job.status === 'processing')
 	)
 
-	return jobs.length > 0
+	// Also consider any existing responses still in progress for this prompt
+	const hasInProgressResponses = (props.prompt?.in_progress_responses_count || 0) > 0
+
+	return jobsActive || hasInProgressResponses
 })
 
 const formattedCreatedAt = computed(() => {
@@ -123,7 +127,7 @@ const createArticle = async () => {
 		</div>
 
 		<div class="flex justify-end items-center space-x-4">
-			<div v-if="hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
+			<div v-if="!isSuperAdmin && hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
 				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
 				Running
 			</div>
@@ -134,11 +138,11 @@ const createArticle = async () => {
 				Improve visibility
 			</Button>
 
-		<!-- Run prompt button -->
-		<div v-if="isSuperAdmin" class="relative flex items-center">
-			<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
-				<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
-			</Button>
+			<!-- Run prompt button -->
+			<div v-if="isSuperAdmin" class="relative flex items-center">
+				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
+					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
+				</Button>
 
 				<div
 					v-if="isRunMenuOpen"

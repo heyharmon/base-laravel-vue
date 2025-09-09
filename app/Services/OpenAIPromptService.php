@@ -15,8 +15,8 @@ class OpenAIPromptService
     ];
 
     /**
-     * Send a prompt to OpenAI using streaming so we can return as soon as we
-     * have a response id (for polling), or the completed response if it finishes quickly.
+     * Send a prompt to OpenAI using background create so we can return quickly
+     * with a response id for polling, or the completed response if it finishes immediately.
      *
      * @param string $promptContent The prompt to send
      * @param string $serviceTier Service tier: 'auto' (default) or 'flex'
@@ -44,30 +44,11 @@ class OpenAIPromptService
                 $request['service_tier'] = 'flex';
             }
 
-            // Stream so we can capture the response id immediately
-            $stream = OpenAI::responses()->createStreamed($request);
+            // Use non-streamed background create to immediately receive an id/status
+            // without relying on SSE event types that may change (e.g., response.queued).
+            $response = OpenAI::responses()->create($request);
 
-            foreach ($stream as $event) {
-                // The event types we care most about:
-                // - response.created / response.in_progress => contains id early
-                // - response.completed / response.failed / response.incomplete => final states
-                $type = $event->event;
-
-                if (in_array($type, ['response.created', 'response.in_progress'], true)) {
-                    // Return early with id + current status so caller can persist and poll
-                    return $this->parseResponse($event->response);
-                }
-
-                if (in_array($type, ['response.completed', 'response.failed', 'response.incomplete'], true)) {
-                    // Return the final result when available
-                    return $this->parseResponse($event->response);
-                }
-
-                // Other events (content deltas, tool calls, etc.) are ignored for this flow
-            }
-
-            // Safety fallback: if streaming yields nothing, raise an error
-            throw new \RuntimeException('No streaming events received from OpenAI Responses API');
+            return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
             $this->logError('OpenAI API ErrorException', $e, $promptContent, $modelToUse);
             throw $e;
