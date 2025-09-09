@@ -33,6 +33,11 @@ class PromptController extends Controller
 
         $prompts = Prompt::where('team_id', $team->id)
             ->where('campaign_id', $campaign->id)
+            ->with(['inProgressResponses' => function ($query) {
+                // Only select fields needed for status display
+                $query->select('id', 'prompt_id', 'status', 'flex', 'provider', 'provider_id', 'created_at', 'updated_at')
+                    ->latest();
+            }])
             ->withCount([
                 // Count terms that are not competitor terms
                 'terms' => function ($query) {
@@ -108,7 +113,14 @@ class PromptController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $prompt->load(['terms', 'articles']);
+        $prompt->load([
+            'terms',
+            'articles',
+            'inProgressResponses' => function ($query) {
+                $query->select('id', 'prompt_id', 'status', 'flex', 'provider', 'provider_id', 'created_at', 'updated_at')
+                    ->latest();
+            },
+        ]);
 
         return response()->json($prompt);
     }

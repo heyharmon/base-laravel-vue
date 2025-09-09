@@ -32,6 +32,7 @@ class Prompt extends Model
 
     protected $appends = [
         'in_progress_responses_count',
+        'in_progress_responses',
     ];
 
     /**
@@ -73,6 +74,19 @@ class Prompt extends Model
         }
 
         return (int) $this->inProgressResponses()->count();
+    }
+
+    /**
+     * Attribute: array of in-progress/queued responses for this prompt.
+     */
+    public function getInProgressResponsesAttribute()
+    {
+        // Use loaded relation if available to avoid extra query
+        if ($this->relationLoaded('inProgressResponses')) {
+            return $this->getRelation('inProgressResponses');
+        }
+
+        return $this->inProgressResponses()->get();
     }
 
     /**

@@ -6,7 +6,6 @@ import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import { useUsageStore } from '@/stores/usageStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { useJobStatusStore } from '@/stores/jobStatusStore'
 import auth from '@/services/auth'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import TrashIcon from '@/components/icons/TrashIcon.vue'
@@ -21,7 +20,6 @@ const promptStore = usePromptStore()
 const articleStore = useArticleStore()
 const usageStore = useUsageStore()
 const notificationStore = useNotificationStore()
-const jobStatusStore = useJobStatusStore()
 
 const props = defineProps({
 	prompt: { type: Object, required: true },
@@ -38,20 +36,32 @@ const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.pro
 const user = computed(() => auth.getUser())
 const isSuperAdmin = computed(() => user.value?.is_super_admin)
 
-const hasActiveRunPromptJob = computed(() => {
-	// Look for active RunPromptJob jobs for this prompt
-	const jobsActive = (jobStatusStore.jobs || []).some(
-		(job) =>
-			job.job_class.includes('RunPromptJob') &&
-			job.trackable_type === 'App\\Models\\Prompt' &&
-			job.trackable_id === props.prompt.id &&
-			(job.status === 'pending' || job.status === 'processing')
-	)
+// In-progress responses provided by backend (queued + in_progress)
+const inProgressResponses = computed(() => props.prompt?.in_progress_responses || [])
 
-	// Also consider any existing responses still in progress for this prompt
-	const hasInProgressResponses = (props.prompt?.in_progress_responses_count || 0) > 0
+// Human-friendly summary like: "2 queued" or "1 queued, 1 in progress"
+const inProgressSummary = computed(() => {
+	const counts = inProgressResponses.value.reduce((acc, r) => {
+		const st = r.status || 'in_progress'
+		acc[st] = (acc[st] || 0) + 1
+		return acc
+	}, {})
+	const parts = []
+	if (counts.queued) parts.push(`${counts.queued} queued response${counts.queued > 1 ? 's' : ''}`)
+	if (counts.in_progress) parts.push(`${counts.in_progress} in progress response${counts.in_progress > 1 ? 's' : ''}`)
+	return parts.join(', ')
+})
 
-	return jobsActive || hasInProgressResponses
+// Latest update time across active responses, shown as relative time (e.g., "2 minutes ago")
+const inProgressLastUpdatedRelative = computed(() => {
+	if (!inProgressResponses.value || inProgressResponses.value.length === 0) return ''
+	let latest = null
+	for (const r of inProgressResponses.value) {
+		const ts = r.updated_at || r.created_at
+		if (!ts) continue
+		if (!latest || moment(ts).isAfter(moment(latest))) latest = ts
+	}
+	return latest ? moment(latest).fromNow() : ''
 })
 
 const formattedCreatedAt = computed(() => {
@@ -61,7 +71,7 @@ const formattedCreatedAt = computed(() => {
 
 const isNewPrompt = computed(() => {
 	if (!props.prompt.created_at) return false
-	return moment().diff(moment(props.prompt.created_at), 'hours') <= 12
+	return moment().diff(moment(props.prompt.created_at), 'minutes') <= 10
 })
 
 const toggleRunMenu = () => {
@@ -106,6 +116,9 @@ const createArticle = async () => {
 		@click="$emit('select', prompt)"
 	>
 		<div>
+			<div v-if="isNewPrompt" class="flex items-center gap-2 text-xs mb-2">
+				<span class="bg-green-100 text-green-800 rounded-full px-2 py-0.5"> Created {{ formattedCreatedAt }} </span>
+			</div>
 			<p class="text-neutral-800 text-lg">{{ prompt.content }}</p>
 			<div v-if="prompt.terms_count >= 0" class="flex items-center gap-2 text-sm text-neutral-500 mt-1">
 				<p v-if="prompt.mentions_percentage !== undefined">
@@ -120,16 +133,15 @@ const createArticle = async () => {
 				</p> -->
 			</div>
 			<div v-else class="text-sm text-neutral-500 mt-1">New prompt</div>
-
-			<div v-if="isNewPrompt" class="flex items-center gap-2 text-xs mt-1">
-				<span class="bg-green-100 text-green-800 rounded-full px-2 py-0.5"> Created {{ formattedCreatedAt }} </span>
-			</div>
 		</div>
 
 		<div class="flex justify-end items-center space-x-4">
-			<div v-if="!isSuperAdmin && hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
+			<!-- Dedicated processing status (shows for all roles when any responses are active) -->
+			<div v-if="inProgressResponses.length > 0" class="flex items-center gap-1.5 text-sm text-neutral-600">
 				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
-				Running
+				<span>
+					Processing {{ inProgressSummary }} <template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
+				</span>
 			</div>
 
 			<!-- Create article button -->
@@ -140,8 +152,8 @@ const createArticle = async () => {
 
 			<!-- Run prompt button -->
 			<div v-if="isSuperAdmin" class="relative flex items-center">
-				<Button @click.stop="toggleRunMenu" :loading="hasActiveRunPromptJob" :disabled="isLoading" variant="outline" size="sm">
-					<span>{{ hasActiveRunPromptJob ? 'Running' : 'Run' }}</span>
+				<Button @click.stop="toggleRunMenu" :disabled="isLoading" variant="outline" size="sm">
+					<span>Run</span>
 				</Button>
 
 				<div
