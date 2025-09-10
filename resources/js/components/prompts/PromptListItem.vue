@@ -1,6 +1,6 @@
 <script setup>
 import moment from 'moment'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
@@ -8,7 +8,7 @@ import { useUsageStore } from '@/stores/usageStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import auth from '@/services/auth'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
-import TrashIcon from '@/components/icons/TrashIcon.vue'
+import EllipsesVerticalIcon from '@/components/icons/EllipsesVerticalIcon.vue'
 import Button from '@/components/ui/Button.vue'
 import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 
@@ -29,7 +29,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select', 'run'])
-const isRunMenuOpen = ref(false)
+const isMenuOpen = ref(false)
+const CLOSE_ALL_EVENT = 'prompt-item-menu:close-all'
+const menuButtonRef = ref(null)
+const menuRef = ref(null)
 const isDeleteOpen = ref(false)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
@@ -76,21 +79,26 @@ const isNewPrompt = computed(() => {
 	return moment().diff(moment(props.prompt.created_at), 'minutes') <= 10
 })
 
-const toggleRunMenu = () => {
-	isRunMenuOpen.value = !isRunMenuOpen.value
+const toggleMenu = () => {
+	if (!isMenuOpen.value) {
+		// Close any other open menus in sibling items before opening this one
+		document.dispatchEvent(new Event(CLOSE_ALL_EVENT))
+	}
+	isMenuOpen.value = !isMenuOpen.value
 }
 
-const closeRunMenu = () => {
-	isRunMenuOpen.value = false
+const closeMenu = () => {
+	isMenuOpen.value = false
 }
 
 const runPrompt = (count) => {
 	emit('run', props.prompt.id, count)
-	closeRunMenu()
+	closeMenu()
 }
 
 const openDelete = () => {
 	isDeleteOpen.value = true
+	closeMenu()
 }
 
 const closeDelete = () => {
@@ -123,6 +131,23 @@ const createArticle = async () => {
 		})
 	}
 }
+
+// Close menu on outside click
+const handleDocumentClick = () => {
+	if (isMenuOpen.value) {
+		isMenuOpen.value = false
+	}
+}
+
+onMounted(() => {
+	document.addEventListener('click', handleDocumentClick)
+	document.addEventListener(CLOSE_ALL_EVENT, closeMenu)
+})
+
+onBeforeUnmount(() => {
+	document.removeEventListener('click', handleDocumentClick)
+	document.removeEventListener(CLOSE_ALL_EVENT, closeMenu)
+})
 </script>
 
 <template>
@@ -166,36 +191,57 @@ const createArticle = async () => {
 				Improve visibility
 			</Button>
 
-			<!-- Run prompt button -->
-			<div v-if="isSuperAdmin" class="relative flex items-center">
-				<Button @click.stop="toggleRunMenu" :disabled="isLoading" variant="outline" size="sm">
-					<span>Run</span>
-				</Button>
+			<!-- Actions menu (Run + Delete) -->
+			<div class="relative flex items-center">
+				<button
+					ref="menuButtonRef"
+					@click.stop="toggleMenu"
+					class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+					:aria-expanded="isMenuOpen ? 'true' : 'false'"
+					aria-haspopup="menu"
+					aria-label="Open actions menu"
+				>
+					<EllipsesVerticalIcon />
+				</button>
 
 				<div
-					v-if="isRunMenuOpen"
-					class="absolute right-0 mt-1 w-20 bg-white border border-neutral-300 rounded-md shadow-lg z-10 overflow-hidden"
+					v-if="isMenuOpen"
+					ref="menuRef"
+					class="absolute right-0 mt-1 w-28 bg-white border border-neutral-300 rounded-md shadow-lg z-10 overflow-hidden"
 					@click.stop
 				>
-					<button @click.stop="runPrompt(1)" class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer">
-						Run 1x
-					</button>
-					<button @click.stop="runPrompt(3)" class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer">
-						Run 3x
-					</button>
-					<button @click.stop="runPrompt(5)" class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer">
-						Run 5x
+					<template v-if="isSuperAdmin">
+						<button
+							@click.stop="runPrompt(1)"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+							:disabled="isLoading"
+						>
+							Run 1x
+						</button>
+						<button
+							@click.stop="runPrompt(3)"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+							:disabled="isLoading"
+						>
+							Run 3x
+						</button>
+						<button
+							@click.stop="runPrompt(5)"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+							:disabled="isLoading"
+						>
+							Run 5x
+						</button>
+						<div class="border-t border-neutral-200"></div>
+					</template>
+					<button
+						@click.stop="openDelete"
+						class="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+					>
+						Delete
 					</button>
 				</div>
 			</div>
-
-			<button
-				@click.stop="openDelete"
-				class="-mr-2 p-1.5 text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
-				aria-label="Delete prompt"
-			>
-				<TrashIcon />
-			</button>
 		</div>
 	</div>
 
