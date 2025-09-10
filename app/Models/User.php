@@ -27,6 +27,7 @@ class User extends Authenticatable
         'password',
         'current_team_id',
         'is_super_admin',
+        'acknowledged_individual_run_warning',
     ];
 
     /**
@@ -50,6 +51,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
+            'acknowledged_individual_run_warning' => 'boolean',
         ];
     }
 

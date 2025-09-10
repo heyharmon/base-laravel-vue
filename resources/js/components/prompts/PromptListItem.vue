@@ -5,12 +5,14 @@ import { useRouter, useRoute } from 'vue-router'
 import { usePromptStore } from '@/stores/promptStore'
 import { useArticleStore } from '@/stores/articleStore'
 import { useUsageStore } from '@/stores/usageStore'
+import { useUserStore } from '@/stores/userStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import auth from '@/services/auth'
 import SparkleIcon from '@/components/icons/SparkleIcon.vue'
 import EllipsesVerticalIcon from '@/components/icons/EllipsesVerticalIcon.vue'
 import Button from '@/components/ui/Button.vue'
 import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
+import RunPromptWarningModal from '@/components/prompts/RunPromptWarningModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,6 +23,7 @@ const promptStore = usePromptStore()
 const articleStore = useArticleStore()
 const usageStore = useUsageStore()
 const notificationStore = useNotificationStore()
+const userStore = useUserStore()
 
 const props = defineProps({
 	prompt: { type: Object, required: true },
@@ -34,12 +37,15 @@ const CLOSE_ALL_EVENT = 'prompt-item-menu:close-all'
 const menuButtonRef = ref(null)
 const menuRef = ref(null)
 const isDeleteOpen = ref(false)
+const isRunWarningOpen = ref(false)
+const pendingRunCount = ref(null)
 
 const isLoading = computed(() => promptStore.loadingPromptIds.includes(props.prompt.id))
 
 // Auth-based permissions
-const user = computed(() => auth.getUser())
+const user = computed(() => userStore.currentUser?.value ?? auth.getUser())
 const isSuperAdmin = computed(() => user.value?.is_super_admin)
+const hasAcknowledgedRunWarning = computed(() => !!user.value?.acknowledged_individual_run_warning)
 
 // In-progress responses provided by backend (queued + in_progress)
 const inProgressResponses = computed(() => props.prompt?.in_progress_responses || [])
@@ -96,6 +102,16 @@ const runPrompt = (count) => {
 	closeMenu()
 }
 
+const onClickRun = (count) => {
+	if (!hasAcknowledgedRunWarning.value) {
+		pendingRunCount.value = count
+		isRunWarningOpen.value = true
+		closeMenu()
+		return
+	}
+	runPrompt(count)
+}
+
 const openDelete = () => {
 	isDeleteOpen.value = true
 	closeMenu()
@@ -111,6 +127,23 @@ const confirmDelete = async () => {
 	} finally {
 		isDeleteOpen.value = false
 	}
+}
+
+const confirmRunWarning = async () => {
+	try {
+		await userStore.acknowledgeIndividualRunWarning()
+		isRunWarningOpen.value = false
+		if (pendingRunCount.value) {
+			runPrompt(pendingRunCount.value)
+		}
+	} finally {
+		pendingRunCount.value = null
+	}
+}
+
+const cancelRunWarning = () => {
+	isRunWarningOpen.value = false
+	pendingRunCount.value = null
 }
 
 const createArticle = async () => {
@@ -211,27 +244,27 @@ onBeforeUnmount(() => {
 					@click.stop
 				>
 					<template v-if="isSuperAdmin">
-						<button
-							@click.stop="runPrompt(1)"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
-							:disabled="isLoading"
-						>
-							Run 1x
-						</button>
-						<button
-							@click.stop="runPrompt(3)"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
-							:disabled="isLoading"
-						>
-							Run 3x
-						</button>
-						<button
-							@click.stop="runPrompt(5)"
-							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
-							:disabled="isLoading"
-						>
-							Run 5x
-						</button>
+					<button
+						@click.stop="onClickRun(1)"
+						class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+						:disabled="isLoading"
+					>
+						Run 1x
+					</button>
+					<button
+						@click.stop="onClickRun(3)"
+						class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+						:disabled="isLoading"
+					>
+						Run 3x
+					</button>
+					<button
+						@click.stop="onClickRun(5)"
+						class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+						:disabled="isLoading"
+					>
+						Run 5x
+					</button>
 						<div class="border-t border-neutral-200"></div>
 					</template>
 					<button
@@ -247,4 +280,7 @@ onBeforeUnmount(() => {
 
 	<!-- Delete Confirmation Modal -->
 	<DeletePromptModal :is-open="isDeleteOpen" @cancel="closeDelete" @confirm="confirmDelete" />
+
+	<!-- Run Warning Modal (shown once) -->
+	<RunPromptWarningModal :is-open="isRunWarningOpen" @cancel="cancelRunWarning" @confirm="confirmRunWarning" />
 </template>

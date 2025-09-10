@@ -30,6 +30,7 @@ use App\Http\Controllers\ArticleChatController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\TeamUsageController;
 use App\Http\Controllers\SuperAdminTeamUsageController;
+use App\Http\Controllers\UserController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -48,6 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // User
+    Route::post('/user/acknowledge-individual-run-warning', [UserController::class, 'acknowledgeIndividualRunWarning']);
 
     // Organizations
     Route::get('teams/{team}/campaigns/{campaign}/organizations', [OrganizationController::class, 'index']);
