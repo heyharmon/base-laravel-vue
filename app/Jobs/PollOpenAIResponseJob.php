@@ -20,12 +20,13 @@ use App\Jobs\FindCompetitorsInResponseJob;
 class PollOpenAIResponseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
     /**
      * The number of times the job may be attempted.
      *
      * @var int
      */
-    public $tries = 1;
+    public $tries = 2;
 
     /**
      * The number of seconds the job can run before timing out.
@@ -45,6 +46,16 @@ class PollOpenAIResponseJob implements ShouldQueue
     public function __construct(int $responseDbId)
     {
         $this->responseDbId = $responseDbId;
+    }
+
+    /**
+     * Calculate the number of seconds to wait before retrying the job.
+     *
+     * @return array<int, int>
+     */
+    public function backoff()
+    {
+        return [5, 10, 15, 20, 30, 60];
     }
 
     public function handle(JobDispatcherService $jobDispatcher, OpenAIPromptService $openAI)
@@ -161,16 +172,17 @@ class PollOpenAIResponseJob implements ShouldQueue
             $response->status = $status;
             $response->save();
 
-            $next = new self($response->id);
-            $delay = 15;
-            $next->delay(now()->addSeconds($delay));
+            // Schedule the next poll
+            $next = (new self($response->id))
+                ->delay(now()->addSeconds(15))
+                ->onQueue('polling');
+
             dispatch($next);
 
             Log::info('PollOpenAIResponseJob: Re-queued polling', [
                 'response_db_id' => $response->id,
                 'provider_id' => $response->provider_id,
                 'status' => $status,
-                'delay_seconds' => $delay,
             ]);
         } catch (Throwable $exception) {
             Log::error('PollOpenAIResponseJob failed with exception', [
@@ -202,15 +214,15 @@ class PollOpenAIResponseJob implements ShouldQueue
             $response->save();
 
             // Schedule the next poll
-            $next = new self($response->id);
-            $delay = 15;
-            $next->delay(now()->addSeconds($delay));
+            $next = (new self($response->id))
+                ->delay(now()->addSeconds(15))
+                ->onQueue('polling');
+
             dispatch($next);
 
             Log::info('PollOpenAIResponseJob: Reissued and re-queued polling', [
                 'response_db_id' => $response->id,
                 'new_provider_id' => $response->provider_id,
-                'delay_seconds' => $delay,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to reissue OpenAI response after failure', [
