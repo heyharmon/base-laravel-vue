@@ -118,10 +118,10 @@ const createArticle = async () => {
 		</div>
 
 		<div class="flex justify-end items-center space-x-4">
-			<div v-if="hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
+			<!-- <div v-if="hasActiveRunPromptJob" class="flex items-center gap-1.5 text-sm text-neutral-500">
 				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
 				Running
-			</div>
+			</div> -->
 
 			<!-- Create article button -->
 			<Button @click.stop="createArticle" class="flex items-center gap-2 mr-2" variant="success_outline" size="sm">
