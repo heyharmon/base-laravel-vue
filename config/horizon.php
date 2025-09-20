@@ -70,7 +70,21 @@ return [
     |
     */
 
-    'middleware' => ['auth:sanctum'],
+    'middleware' => ['web', 'horizonBasicAuth'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Horizon Basic Authentication
+    |--------------------------------------------------------------------------
+    |
+    | Define the credentials used for protecting Horizon with HTTP basic auth.
+    |
+    */
+
+    'basic_auth' => [
+        'username' => env('HORIZON_AUTH_USERNAME'),
+        'password' => env('HORIZON_AUTH_PASSWORD'),
+    ],
 
     /*
     |--------------------------------------------------------------------------

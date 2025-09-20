@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'super_admin' => \App\Http\Middleware\SuperAdminMiddleware::class,
+            'superAdmin' => \App\Http\Middleware\SuperAdminMiddleware::class,
+            'horizonBasicAuth' => \App\Http\Middleware\HorizonBasicAuthMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

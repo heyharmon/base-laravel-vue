@@ -20,3 +20,4 @@ Horizon commands:
 - `php artisan horizon:forget --all` — delete all failed jobs
 - `php artisan horizon:clear` — delete all jobs from the default queue
 - `php artisan horizon:clear --queue=emails` — delete jobs in a specific queue (e.g., `emails`)
+- Horizon dashboard access in staging / production is guarded by HTTP basic auth. Configure `HORIZON_BASIC_AUTH_USERNAME` and `HORIZON_BASIC_AUTH_PASSWORD` in each environment; the `horizonBasicAuth` middleware challenges requests before the dashboard loads.
