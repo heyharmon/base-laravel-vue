@@ -71,26 +71,13 @@ class PollOpenAIResponseJob implements ShouldQueue
                 return;
             }
 
-            Log::info('PollOpenAIResponseJob: Started polling', [
-                'response_db_id' => $response->id,
-                'provider_id' => $response->provider_id,
-                'current_status' => $response->status,
-                'prompt_id' => optional($response->prompt)->id,
-                'flex' => (bool) $response->flex,
-                'job_id' => method_exists($this->job, 'getJobId') ? ($this->job->getJobId() ?? 'unknown') : 'unknown',
-            ]);
-
             // If already completed, nothing to do
             if ($response->status === 'completed') {
                 return;
             }
 
             if (!$response->provider_id) {
-                // No OpenAI response id to poll; treat as failed so we re-run
-                Log::warning('PollOpenAIResponseJob: Missing provider_id; reissuing', [
-                    'response_db_id' => $response->id,
-                    'prompt_id' => optional($response->prompt)->id,
-                ]);
+                // Missing OpenAI response id to poll; treat as failed so we re-run
                 $this->reissueIfFailed($response, $jobDispatcher, $openAI);
                 return;
             }
@@ -104,11 +91,7 @@ class PollOpenAIResponseJob implements ShouldQueue
                 $code = (int) $e->getCode();
 
                 if (str_contains(strtolower($message), 'not found') || $code === 404) {
-                    Log::info('PollOpenAIResponseJob: OpenAI response not found yet; will retry', [
-                        'response_db_id' => $response->id,
-                        'provider_id' => $response->provider_id,
-                        'delay_seconds' => 15,
-                    ]);
+                    // OpenAI response not found yet; will retry
                     $next = new self($response->id);
                     $next->delay(now()->addSeconds(15));
                     dispatch($next);
@@ -119,24 +102,16 @@ class PollOpenAIResponseJob implements ShouldQueue
                 // Unknown error; bubble up to existing handler
                 throw $e;
             }
+
+            // Get status from OpenAI response
             $status = $fresh->status ?? 'in_progress';
-            Log::info('PollOpenAIResponseJob: Retrieved status from OpenAI', [
-                'response_db_id' => $response->id,
-                'provider_id' => $response->provider_id,
-                'status' => $status,
-            ]);
 
             if ($status === 'completed') {
-                // Update with final content and usage
+                // Response completed: Update with final content and usage
                 $response->content = $fresh->content ?? '';
                 $response->usage = $fresh->usage ?? null;
                 $response->status = 'completed';
                 $response->save();
-                Log::info('PollOpenAIResponseJob: Response completed', [
-                    'response_db_id' => $response->id,
-                    'provider_id' => $response->provider_id,
-                    'usage' => $response->usage,
-                ]);
 
                 // Save citations/annotations
                 $this->saveSearchData($fresh, $response);
@@ -160,10 +135,6 @@ class PollOpenAIResponseJob implements ShouldQueue
 
             if ($status === 'failed') {
                 // Try again per requirements
-                Log::warning('PollOpenAIResponseJob: Response failed; reissuing', [
-                    'response_db_id' => $response->id,
-                    'provider_id' => $response->provider_id,
-                ]);
                 $this->reissueIfFailed($response, $jobDispatcher, $openAI);
                 return;
             }
@@ -177,13 +148,8 @@ class PollOpenAIResponseJob implements ShouldQueue
                 ->delay(now()->addSeconds(15))
                 ->onQueue('polling');
 
+            // Re-queue polling
             dispatch($next);
-
-            Log::info('PollOpenAIResponseJob: Re-queued polling', [
-                'response_db_id' => $response->id,
-                'provider_id' => $response->provider_id,
-                'status' => $status,
-            ]);
         } catch (Throwable $exception) {
             Log::error('PollOpenAIResponseJob failed with exception', [
                 'response_db_id' => $this->responseDbId,
@@ -198,12 +164,8 @@ class PollOpenAIResponseJob implements ShouldQueue
         try {
             $prompt = $response->prompt;
             $tier = $response->flex ? 'flex' : 'auto';
-            // Defer model selection to the service default
-            Log::info('PollOpenAIResponseJob: Reissuing response via OpenAI', [
-                'response_db_id' => $response->id,
-                'previous_provider_id' => $response->provider_id,
-                'tier' => $tier,
-            ]);
+
+            // Reissuing response via OpenAI
             $fresh = $openAI->getResponse($prompt->content, $tier);
 
             // Update response with new id/status and clear content until completion
@@ -218,12 +180,8 @@ class PollOpenAIResponseJob implements ShouldQueue
                 ->delay(now()->addSeconds(15))
                 ->onQueue('polling');
 
+            // Reissue and re-queue polling
             dispatch($next);
-
-            Log::info('PollOpenAIResponseJob: Reissued and re-queued polling', [
-                'response_db_id' => $response->id,
-                'new_provider_id' => $response->provider_id,
-            ]);
         } catch (\Exception $e) {
             Log::error('Failed to reissue OpenAI response after failure', [
                 'response_id' => $response->id,

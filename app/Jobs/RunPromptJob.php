@@ -5,11 +5,12 @@ namespace App\Jobs;
 use Throwable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use App\Services\JobDispatcherService;
 use App\Services\OpenAIPromptService;
+use App\Services\JobDispatcherService;
+use App\Models\Term;
+use App\Models\Team;
 use App\Models\Response;
 use App\Models\Prompt;
-use App\Models\Term;
 use App\Jobs\PollOpenAIResponseJob;
 
 class RunPromptJob extends TrackableJob
@@ -107,7 +108,7 @@ class RunPromptJob extends TrackableJob
                 return;
             }
 
-            $team = \App\Models\Team::find($this->teamId);
+            $team = Team::find($this->teamId);
             if ($team && ($remaining = $team->responsesRemaining()) !== null && $remaining <= 0) {
                 $this->markJobAsCompleted('Responses limit reached');
                 return;
@@ -132,7 +133,6 @@ class RunPromptJob extends TrackableJob
 
             // Get response from the LLM (single provider for reliability)
             $tier = $this->serviceTier === 'flex' ? 'flex' : 'auto';
-            // Do not specify a model here; defer to service default
             $llm = $openAI->getResponse($this->prompt->content, $tier);
 
             // If response is completed immediately, persist content and process
