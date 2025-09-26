@@ -147,6 +147,34 @@ export const usePromptStore = defineStore('prompts', () => {
 		}
 	}
 
+	async function fetchPromptVisibilityChartMetrics({ promptId, interval = 'monthly', startDate = null, endDate = null }) {
+		if (!promptId) {
+			console.error('Prompt ID is required')
+			return []
+		}
+
+		try {
+			const params = {
+				interval,
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+			}
+
+			if (startDate) {
+				params.start_date = startDate
+			}
+
+			if (endDate) {
+				params.end_date = endDate
+			}
+
+			const response = await api.get(`/prompts/${promptId}/visibility-chart`, { params })
+			return response.organizations || []
+		} catch (error) {
+			console.error('Error fetching prompt visibility chart metrics:', error)
+			return []
+		}
+	}
+
 	return {
 		// State
 		prompts: computed(() => prompts.value),
@@ -166,6 +194,7 @@ export const usePromptStore = defineStore('prompts', () => {
 		deletePrompt,
 		runPrompt,
 		runAllPrompts,
-		getPromptResponses
+		getPromptResponses,
+		fetchPromptVisibilityChartMetrics
 	}
 })

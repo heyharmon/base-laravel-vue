@@ -51,9 +51,9 @@
 <script setup>
 import { ref, onMounted, watch, computed, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
 import { useOrganizationStore } from '@/stores/organizationStore'
+import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import ApexCharts from 'apexcharts'
-import api from '@/services/api'
 import moment from 'moment'
 import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
@@ -77,6 +77,7 @@ const props = defineProps({
 })
 
 const organizationStore = useOrganizationStore()
+const promptStore = usePromptStore()
 const jobStatusStore = useJobStatusStore()
 
 const chartContainer = ref(null)
@@ -156,42 +157,37 @@ const fetchChartData = async () => {
 		const currentRequestId = Date.now()
 		latestRequestId = currentRequestId
 
-		const params = new URLSearchParams({
+		const payload = {
 			interval: selectedInterval.value,
-			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone // User's timezone
-		})
-
-		// Only add date parameters if they are not null
-		if (props.startDate) {
-			params.append('start_date', props.startDate)
-		}
-		if (props.endDate) {
-			params.append('end_date', props.endDate)
+			startDate: props.startDate || null,
+			endDate: props.endDate || null
 		}
 
-		// Determine which endpoint to use
-		let endpoint
+		let metrics = []
 		if (props.promptId) {
-			// Prompt-specific visibility
-			endpoint = `/prompts/${props.promptId}/visibility-chart`
+			metrics = await promptStore.fetchPromptVisibilityChartMetrics({
+				promptId: props.promptId,
+				interval: payload.interval,
+				startDate: payload.startDate,
+				endDate: payload.endDate
+			})
 		} else {
-			// Overall campaign visibility
-			endpoint = `/teams/${props.teamId}/campaigns/${props.campaignId}/organization-visibility/chart`
-
-			// For campaign view, include owned org
 			const ownedOrg = organizationStore.visibilityMetrics.find((org) => !org.is_competitor)
-			if (ownedOrg) {
-				params.append('organization_ids[]', ownedOrg.id)
-			}
+			metrics = await organizationStore.fetchCampaignVisibilityChartMetrics({
+				teamId: props.teamId,
+				campaignId: props.campaignId,
+				interval: payload.interval,
+				startDate: payload.startDate,
+				endDate: payload.endDate,
+				organizationIds: ownedOrg ? [ownedOrg.id] : []
+			})
 		}
-
-		const response = await api.get(`${endpoint}?${params}`)
 
 		if (currentRequestId !== latestRequestId || isUnmounting.value) {
 			return
 		}
 
-		chartData.value = response.organizations || []
+		chartData.value = metrics || []
 
 		if (isUnmounting.value) return
 

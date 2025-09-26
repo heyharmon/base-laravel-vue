@@ -168,6 +168,41 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
+	async function fetchCampaignVisibilityChartMetrics({ teamId, campaignId, interval = 'monthly', startDate = null, endDate = null, organizationIds = [] }) {
+		if (!teamId || !campaignId) {
+			console.error('Team ID and Campaign ID are required')
+			return []
+		}
+
+		try {
+			const params = {
+				interval,
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+			}
+
+			if (startDate) {
+				params.start_date = startDate
+			}
+
+			if (endDate) {
+				params.end_date = endDate
+			}
+
+			if (organizationIds && organizationIds.length > 0) {
+				params.organization_ids = organizationIds
+			}
+
+			const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organization-visibility/chart`, {
+				params
+			})
+
+			return response.organizations || []
+		} catch (error) {
+			console.error('Error fetching campaign visibility chart metrics:', error)
+			return []
+		}
+	}
+
 	async function findCompetitors(teamId, campaignId) {
 		console.log('Finding competitors from past responses...')
 		isLoading.value = true
@@ -216,6 +251,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		deleteOrganization,
 		fetchCampaignVisibilityMetrics,
 		setDateRange,
-		findCompetitors
+		findCompetitors,
+		fetchCampaignVisibilityChartMetrics
 	}
 })
