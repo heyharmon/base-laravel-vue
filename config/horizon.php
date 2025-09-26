@@ -194,44 +194,82 @@ return [
     */
 
     'defaults' => [
-        'supervisor-1' => [
+        'supervisor-default' => [
             'connection' => 'redis',
             'queue' => ['default'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
-            'maxProcesses' => 1,
+            'minProcesses' => 1,
+            'maxProcesses' => 6,
             'maxTime' => 0,
             'maxJobs' => 0,
             'memory' => 128,
             'tries' => 3,
             'timeout' => 120,
-            'backoff' => [5, 30, 60],
+            'backoff' => [2, 5, 10],
+            'nice' => 0,
+        ],
+
+        'supervisor-polling' => [
+            'connection' => 'redis',
+            'queue' => ['polling'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'minProcesses' => 1,
+            'maxProcesses' => 6,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 128,
+            'tries' => 3,
+            'timeout' => 60,
+            'backoff' => [5, 10, 15, 30, 60],
             'nice' => 0,
         ],
     ],
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
+            'supervisor-default' => [
+                'minProcesses' => 2,
+                'maxProcesses' => 8,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
+            ],
+            'supervisor-polling' => [
+                'minProcesses' => 2,
+                'maxProcesses' => 12,
+                'balanceMaxShift' => 2,
+                'balanceCooldown' => 2,
             ],
         ],
 
         'staging' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
+            'supervisor-default' => [
+                'minProcesses' => 2,
+                'maxProcesses' => 8,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
+            ],
+            'supervisor-polling' => [
+                'minProcesses' => 2,
+                'maxProcesses' => 12,
+                'balanceMaxShift' => 2,
+                'balanceCooldown' => 2,
             ],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
+            'supervisor-default' => [
+                'minProcesses' => 1,
+                'maxProcesses' => 4,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
+            ],
+            'supervisor-polling' => [
+                'minProcesses' => 1,
+                'maxProcesses' => 6,
+                'balanceMaxShift' => 1,
+                'balanceCooldown' => 2,
             ],
         ],
     ],
