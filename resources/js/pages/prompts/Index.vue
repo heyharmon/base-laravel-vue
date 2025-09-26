@@ -46,19 +46,31 @@ const sortOption = ref('default') // Default sort option
 
 // Track active prompt jobs
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['GenerateCampaignKeywordsJob', 'GeneratePrompt', 'RunPromptJob', 'FindCompetitorsInResponseJob']
+	const promptJobClasses = ['GenerateCampaignKeywordsJob', 'GeneratePrompt', 'FindCompetitorsInResponseJob']
 	return (jobStatusStore.jobs || []).filter((job) => {
 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
 	})
 })
 
 // Track if any prompts have in-progress responses (queued or in_progress)
+const hasJustStartedRuns = ref(false)
+let hasJustStartedRunsResetTimer = null
 const hasInProgressResponses = computed(() => {
 	return (promptStore.prompts || []).some((p) => Array.isArray(p?.in_progress_responses) && p.in_progress_responses.length > 0)
 })
 
 // While there are in-progress responses, poll prompts + visibility to reflect completions
 let inProgressRefreshTimer = null
+
+const scheduleJustStartedRunsReset = () => {
+	if (hasJustStartedRunsResetTimer) {
+		clearTimeout(hasJustStartedRunsResetTimer)
+	}
+	hasJustStartedRunsResetTimer = setTimeout(() => {
+		hasJustStartedRuns.value = false
+		hasJustStartedRunsResetTimer = null
+	}, 5000)
+}
 
 onMounted(async () => {
 	await campaignStore.fetchCampaigns(teamId.value)
@@ -85,6 +97,9 @@ watch(
 
 // Also refresh while any prompt has in-progress responses
 watch(hasInProgressResponses, (hasAny) => {
+	if (hasAny) {
+		hasJustStartedRuns.value = false
+	}
 	if (hasAny && !inProgressRefreshTimer) {
 		// Start polling for updates while responses are running
 		inProgressRefreshTimer = setInterval(() => {
@@ -105,6 +120,10 @@ onUnmounted(() => {
 		clearInterval(inProgressRefreshTimer)
 		inProgressRefreshTimer = null
 	}
+	if (hasJustStartedRunsResetTimer) {
+		clearTimeout(hasJustStartedRunsResetTimer)
+		hasJustStartedRunsResetTimer = null
+	}
 })
 
 // Watch for campaign changes
@@ -118,6 +137,9 @@ watch(campaignId, async (newId) => {
 
 const runPrompt = async (id, count = 1) => {
 	try {
+		hasJustStartedRuns.value = true
+		scheduleJustStartedRunsReset()
+
 		await promptStore.runPrompt(id, count)
 		await usageStore.fetchUsage(teamId.value)
 		await jobStatusStore.pollTeamJobs(teamId.value)
@@ -128,6 +150,9 @@ const runPrompt = async (id, count = 1) => {
 
 const runAllPrompts = async (count = 1) => {
 	try {
+		hasJustStartedRuns.value = true
+		scheduleJustStartedRunsReset()
+
 		await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
 		await usageStore.fetchUsage(teamId.value)
 		await jobStatusStore.pollTeamJobs(teamId.value)
@@ -191,6 +216,7 @@ const handleDateRangeChange = (dateRange) => {
 			<!-- Visibility score -->
 			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 
+			<!-- Usage -->
 			<UsageProgress
 				v-if="usageStore.usage"
 				:used="usageStore.usage.responses_used"
@@ -220,36 +246,12 @@ const handleDateRangeChange = (dateRange) => {
 
 					<!-- Active jobs message -->
 					<div
-						v-if="activePromptJobs.length > 0"
+						v-if="activePromptJobs.length > 0 || hasInProgressResponses || hasJustStartedRuns"
 						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 					>
 						<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-						<span>
-							{{ activePromptJobs.length }}
-							{{ activePromptJobs.length === 1 ? 'prompt related job is being run' : 'prompt related jobs are being run' }}
-						</span>
+						<span>Running prompt related jobs</span>
 					</div>
-
-					<!-- Jobs currently processing message -->
-					<!-- <div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 mb-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-						<div class="flex items-center gap-4 mb-2">
-							<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-							<span class="font-semibold">Working</span>
-						</div>
-						<div class="pl-8 space-y-1">
-							<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
-								<div class="flex items-center justify-between">
-									<span>{{ jobs[0].output }}</span>
-								</div>
-								<div v-if="jobs.length > 1" class="flex items-center justify-between">
-									<span>{{ jobs[1].output }}</span>
-								</div>
-								<div v-if="jobs.length > 2" class="flex items-center justify-between">
-									<span>{{ jobs[2].output }}</span>
-								</div>
-							</div>
-						</div>
-					</div> -->
 
 					<div v-if="sortedPrompts.length" class="space-y-4">
 						<PromptListItem
