@@ -135,7 +135,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function fetchVisibilityMetrics(teamId, campaignId) {
+	async function fetchCampaignVisibilityMetrics(teamId, campaignId) {
 		if (!campaignId) {
 			console.error('Campaign ID is required')
 			return
@@ -146,9 +146,6 @@ export const useOrganizationStore = defineStore('organization', () => {
 			const params = {
 				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone // User's timezone
 			}
-
-			// Use user's timezone for accurate visibility
-			// params.timezone = userTimezone
 
 			// Only add date parameters if they are not null
 			if (currentDateRange.value.startDate && currentDateRange.value.startDate !== null) {
@@ -192,7 +189,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 	// Function to update date range and refresh visibility data
 	function setDateRange(teamId, campaignId, dateRange) {
 		currentDateRange.value = dateRange
-		return fetchVisibilityMetrics(teamId, campaignId)
+		return fetchCampaignVisibilityMetrics(teamId, campaignId)
 	}
 
 	return {
@@ -217,7 +214,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		createOwnedOrganization,
 		updateOrganization,
 		deleteOrganization,
-		fetchVisibilityMetrics,
+		fetchCampaignVisibilityMetrics,
 		setDateRange,
 		findCompetitors
 	}

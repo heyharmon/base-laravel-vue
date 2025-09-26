@@ -54,7 +54,7 @@ const activePromptJobs = computed(() => {
 
 // Track if any prompts have in-progress responses (queued or in_progress)
 const hasInProgressResponses = computed(() => {
-    return (promptStore.prompts || []).some((p) => Array.isArray(p?.in_progress_responses) && p.in_progress_responses.length > 0)
+	return (promptStore.prompts || []).some((p) => Array.isArray(p?.in_progress_responses) && p.in_progress_responses.length > 0)
 })
 
 // While there are in-progress responses, poll prompts + visibility to reflect completions
@@ -66,7 +66,7 @@ onMounted(async () => {
 		await campaignStore.switchCampaign(teamId.value, campaignId.value)
 	}
 	await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-	await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+	await organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
 	await usageStore.fetchUsage(teamId.value)
 })
 
@@ -77,37 +77,34 @@ watch(
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
 			promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+			organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }
 )
 
 // Also refresh while any prompt has in-progress responses
-watch(
-    hasInProgressResponses,
-    (hasAny) => {
-        if (hasAny && !inProgressRefreshTimer) {
-            // Start polling for updates while responses are running
-            inProgressRefreshTimer = setInterval(() => {
-                promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-                organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-            }, 3000)
-        } else if (!hasAny && inProgressRefreshTimer) {
-            // Stop polling once all responses complete and do a final refresh
-            clearInterval(inProgressRefreshTimer)
-            inProgressRefreshTimer = null
-            promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-            organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-        }
-    }
-)
+watch(hasInProgressResponses, (hasAny) => {
+	if (hasAny && !inProgressRefreshTimer) {
+		// Start polling for updates while responses are running
+		inProgressRefreshTimer = setInterval(() => {
+			promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+			organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
+		}, 3000)
+	} else if (!hasAny && inProgressRefreshTimer) {
+		// Stop polling once all responses complete and do a final refresh
+		clearInterval(inProgressRefreshTimer)
+		inProgressRefreshTimer = null
+		promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+		organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
+	}
+})
 
 onUnmounted(() => {
-    if (inProgressRefreshTimer) {
-        clearInterval(inProgressRefreshTimer)
-        inProgressRefreshTimer = null
-    }
+	if (inProgressRefreshTimer) {
+		clearInterval(inProgressRefreshTimer)
+		inProgressRefreshTimer = null
+	}
 })
 
 // Watch for campaign changes
@@ -115,7 +112,7 @@ watch(campaignId, async (newId) => {
 	if (newId) {
 		await campaignStore.switchCampaign(teamId.value, newId)
 		await promptStore.fetchPrompts(teamId.value, newId, organizationStore.currentDateRange)
-		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+		await organizationStore.fetchCampaignVisibilityMetrics(teamId.value, newId)
 	}
 })
 
