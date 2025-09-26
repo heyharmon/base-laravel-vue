@@ -8,6 +8,12 @@ use App\Models\Term;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
+/**
+ * Prepare prompt-level visibility metrics for ApexCharts by slicing responses into
+ * daily, weekly, or monthly buckets aligned to the viewer's timezone. Generates
+ * contiguous ranges, computes mentions/visibility per owned organization, and
+ * returns chart-ready JSON for the Prompts dashboard.
+ */
 class PromptVisibilityChartController extends Controller
 {
     /**

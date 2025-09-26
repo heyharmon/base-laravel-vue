@@ -10,6 +10,12 @@ use Illuminate\Support\Carbon;
 use App\Models\Team;
 use App\Models\Campaign;
 
+/**
+ * Deliver organization-wide visibility trends for a campaign by grouping responses
+ * into timezone-aware daily, weekly, or monthly buckets. Ensures contiguous ranges,
+ * aggregates mentions for owned organizations, and emits chart-friendly JSON used
+ * across campaign analytics.
+ */
 class OrganizationVisibilityChartController extends Controller
 {
     /**
