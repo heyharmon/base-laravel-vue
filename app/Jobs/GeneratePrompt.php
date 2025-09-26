@@ -10,7 +10,6 @@ use Prism\Prism\Enums\Provider;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Bus\Batchable;
 use App\Tools\SearchApiTool;
-use App\Services\JobDispatcherService;
 use App\Models\Prompt;
 use App\Models\Organization;
 use App\Models\Campaign;
@@ -67,7 +66,7 @@ class GeneratePrompt extends TrackableJob
 	 *
 	 * @return void
 	 */
-	public function handle(JobDispatcherService $jobDispatcher)
+	public function handle()
 	{
 		if ($this->isCancelled()) return;
 
@@ -117,8 +116,8 @@ class GeneratePrompt extends TrackableJob
 			// Mark the job as completed
 			$this->markJobAsCompleted('Created new prompt for keyword "' . $this->keyword . '"');
 
-			// Run the prompt
-			$jobDispatcher->dispatch($prompt, new RunPromptJob($prompt, ['openai'], $prompt->team_id, $prompt->campaign_id));
+			// Run the prompt using the standard dispatcher
+			RunPromptJob::dispatch($prompt, ['openai'], $prompt->team_id, $prompt->campaign_id);
 		} catch (Throwable $exception) {
 			Log::error('Prompt generation job failed: ' . $exception->getMessage());
 			$this->markJobAsFailed($exception);

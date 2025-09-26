@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Prompt;
 use App\Jobs\RunPromptJob;
-use App\Services\JobDispatcherService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -12,13 +11,6 @@ use App\Models\Team;
 
 class PromptRunController extends Controller
 {
-    protected $jobDispatcher;
-    
-    public function __construct(JobDispatcherService $jobDispatcher)
-    {
-        $this->jobDispatcher = $jobDispatcher;
-    }
-
     public function store(Request $request, Prompt $prompt): JsonResponse
     {
         $validated = $request->validate([
@@ -31,9 +23,11 @@ class PromptRunController extends Controller
 
         $providers = $validated['providers'] ?? ['openai'];
         $count = $validated['count'] ?? 1;
-        $teamId = Auth::user()->current_team_id;
 
+        $teamId = Auth::user()->current_team_id;
         $team = Team::find($teamId);
+
+        // Check if the team has enough responses remaining
         if (($remaining = $team->responsesRemaining()) !== null && $remaining < $count) {
             return response()->json(['message' => 'Responses limit reached', 'remaining' => $remaining], 403);
         }
@@ -44,16 +38,16 @@ class PromptRunController extends Controller
             $serviceTier = 'flex';
         }
 
-        // Always dispatch independent jobs (no batches)
-        $jobStatuses = [];
+        // Dispatch jobs
+        $queuedJobs = 0;
         for ($i = 0; $i < $count; $i++) {
-            $job = new RunPromptJob($prompt, $providers, $teamId, $prompt->campaign_id, $serviceTier);
-            $jobStatuses[] = $this->jobDispatcher->dispatch($prompt, $job);
+            RunPromptJob::dispatch($prompt, $providers, $teamId, $prompt->campaign_id, $serviceTier);
+            $queuedJobs++;
         }
 
         return response()->json([
             'prompt' => $prompt,
-            'job_statuses' => $jobStatuses,
+            'queued_jobs' => $queuedJobs,
         ]);
     }
 }
