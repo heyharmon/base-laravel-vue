@@ -9,33 +9,6 @@
 			<div class="relative">
 				<p class="text-sm text-neutral-400">{{ selectedIntervalLabel }}</p>
 			</div>
-			<!-- Interval selector -->
-			<!-- <div class="relative">
-				<button
-					@click="isDropdownOpen = !isDropdownOpen"
-					class="flex items-center justify-between gap-2 text-sm border border-neutral-200 rounded-md px-3 py-1.5 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-				>
-					<span>{{ selectedIntervalLabel }}</span>
-					<ChevronDownIcon class="text-neutral-500 transition-transform" :class="{ 'rotate-180': isDropdownOpen }" />
-				</button>
-				<div v-if="isDropdownOpen" class="absolute top-full right-0 mt-1 bg-white border border-neutral-200 rounded-md shadow-lg z-50 min-w-[120px]">
-					<button
-						v-for="option in intervalOptions"
-						:key="option.value"
-						@click="selectInterval(option.value)"
-						:disabled="option.disabled"
-						:class="{
-							'bg-blue-50 text-blue-700': selectedInterval === option.value && !option.disabled,
-							'text-neutral-700 hover:bg-neutral-50': selectedInterval !== option.value && !option.disabled,
-							'text-neutral-400 cursor-not-allowed': option.disabled
-						}"
-						class="w-full text-left px-3 py-2 text-sm transition-colors first:rounded-t-md last:rounded-b-md"
-					>
-						{{ option.label }}
-					</button>
-				</div>
-				<div v-if="isDropdownOpen" @click="isDropdownOpen = false" class="fixed inset-0 z-40"></div>
-			</div> -->
 		</div>
 
 		<div class="relative pl-3" style="height: 440px">
@@ -55,7 +28,6 @@ import { usePromptStore } from '@/stores/promptStore'
 import { useJobStatusStore } from '@/stores/jobStatusStore'
 import ApexCharts from 'apexcharts'
 import moment from 'moment'
-import ChevronDownIcon from '@/components/icons/ChevronDownIcon.vue'
 
 const props = defineProps({
 	startDate: String,

@@ -151,33 +151,37 @@ class OrganizationVisibilityChartController extends Controller
 
         while ($current <= $endDate) {
             switch ($interval) {
-                case 'daily':
-                    $intervalEnd = $current->copy()->endOfDay();
-                    $label = $current->format('M d');
-                    $next = $current->copy()->addDay();
-                    break;
-
                 case 'weekly':
                     $intervalEnd = $current->copy()->endOfWeek();
-                    $label = $current->format('M d') . ' - ' . $intervalEnd->format('M d');
-                    $next = $current->copy()->addWeek();
                     break;
 
                 case 'monthly':
                     $intervalEnd = $current->copy()->endOfMonth();
-                    $label = $current->format('M Y');
-                    $next = $current->copy()->addMonth()->startOfMonth();
                     break;
 
+                case 'daily':
                 default:
                     $intervalEnd = $current->copy()->endOfDay();
-                    $label = $current->format('M d');
-                    $next = $current->copy()->addDay();
+                    break;
             }
 
-            // Don't exceed the end date
             if ($intervalEnd > $endDate) {
                 $intervalEnd = $endDate->copy()->endOfDay();
+            }
+
+            switch ($interval) {
+                case 'weekly':
+                    $label = $current->format('M d') . ' - ' . $intervalEnd->format('M d');
+                    break;
+
+                case 'monthly':
+                    $label = $current->format('M Y');
+                    break;
+
+                case 'daily':
+                default:
+                    $label = $current->format('M d');
+                    break;
             }
 
             $intervals[] = [
@@ -186,7 +190,7 @@ class OrganizationVisibilityChartController extends Controller
                 'label' => $label
             ];
 
-            $current = $next;
+            $current = $intervalEnd->copy()->addDay()->startOfDay();
         }
 
         return $intervals;
