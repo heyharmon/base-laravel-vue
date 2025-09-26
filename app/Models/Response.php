@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\TeamUsageEvent;
 
 class Response extends Model
 {
@@ -29,6 +30,19 @@ class Response extends Model
         'usage' => 'array',
         'flex' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Response $response) {
+            $teamId = $response->prompt()->value('team_id');
+
+            if (! $teamId) {
+                return;
+            }
+
+            TeamUsageEvent::record($teamId, TeamUsageEvent::TYPE_RESPONSE, $response->id);
+        });
+    }
 
     /**
      * The prompt that this response belongs to.

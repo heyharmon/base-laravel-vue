@@ -5,6 +5,7 @@ These guides orient AI coding agents to the major domains in this application. R
 ## Directory Map
 - `auth/AGENTS.md` – authentication flows, API endpoints, Pinia stores, and Vue pages.
 - `teams/AGENTS.md` – team management, membership, usage limits, UI management surfaces.
+- `team-usage/AGENTS.md` – usage ledger, event emitters, and quota calculations.
 - `invitations/AGENTS.md` – invitation lifecycle, tokens, acceptance flows.
 - `prompts/AGENTS.md` – prompt creation, execution pipeline, visibility metrics.
 - `responses/AGENTS.md` – response storage, term matching, visibility calculations.
