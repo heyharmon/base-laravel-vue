@@ -23,22 +23,21 @@ export const usePromptStore = defineStore('prompts', () => {
 
 		isLoading.value = true
 		try {
-			let url = `/teams/${teamId}/campaigns/${campaignId}/prompts`
-			const params = new URLSearchParams()
+			const params = {
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone // User's timezone
+			}
 
 			// Only add date parameters if they are not null
 			if (dateRange?.startDate && dateRange.startDate !== null) {
-				params.append('start_date', dateRange.startDate)
+				params.start_date = dateRange.startDate
 			}
 			if (dateRange?.endDate && dateRange.endDate !== null) {
-				params.append('end_date', dateRange.endDate)
+				params.end_date = dateRange.endDate
 			}
 
-			if (params.toString()) {
-				url += `?${params.toString()}`
-			}
-
-			prompts.value = await api.get(url)
+			prompts.value = await api.get(`/teams/${teamId}/campaigns/${campaignId}/prompts`, {
+				params
+			})
 		} catch (error) {
 			console.error('Error fetching prompts:', error)
 		} finally {

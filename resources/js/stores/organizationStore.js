@@ -143,7 +143,12 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 		isLoadingVisibility.value = true
 		try {
-			const params = {}
+			const params = {
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone // User's timezone
+			}
+
+			// Use user's timezone for accurate visibility
+			// params.timezone = userTimezone
 
 			// Only add date parameters if they are not null
 			if (currentDateRange.value.startDate && currentDateRange.value.startDate !== null) {
