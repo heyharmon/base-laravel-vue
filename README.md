@@ -11,15 +11,7 @@ Run locally
 -   php artisan horizon
 -   php artisan reverb:start
 
-## Redis & Horizon
-
-Install the Redis server with Homebrew:
-
--   `brew install redis`
-
-Start the Redis daemon locally:
-
--   `brew services start redis`
+## Horizon
 
 Horizon commands:
 
@@ -30,3 +22,13 @@ Horizon commands:
 -   `php artisan horizon:clear` — delete all jobs from the default queue
 -   `php artisan horizon:clear --queue=emails` — delete jobs in a specific queue (e.g., `emails`)
 -   Horizon dashboard access in staging / production is guarded by HTTP basic auth. Configure `HORIZON_BASIC_AUTH_USERNAME` and `HORIZON_BASIC_AUTH_PASSWORD` in each environment; the `horizonBasicAuth` middleware challenges requests before the dashboard loads.
+
+## Redis
+
+Install the Redis server with Homebrew:
+
+-   `brew install redis`
+
+Start the Redis daemon locally:
+
+-   `brew services start redis`
