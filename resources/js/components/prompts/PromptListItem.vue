@@ -213,9 +213,9 @@ onBeforeUnmount(() => {
 			<!-- Dedicated processing status (shows for all roles when any responses are active) -->
 			<div v-if="inProgressResponses.length > 0" class="flex items-center gap-1.5 text-sm text-neutral-600">
 				<div class="animate-spin rounded-full h-3 w-3 border border-b-transparent border-neutral-800"></div>
-				<span>
+				<!-- <span>
 					{{ inProgressSummary }} <template v-if="inProgressLastUpdatedRelative"> {{ inProgressLastUpdatedRelative }}</template>
-				</span>
+				</span> -->
 			</div>
 
 			<!-- Create article button -->
@@ -244,33 +244,30 @@ onBeforeUnmount(() => {
 					@click.stop
 				>
 					<template v-if="isSuperAdmin">
-					<button
-						@click.stop="onClickRun(1)"
-						class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
-						:disabled="isLoading"
-					>
-						Run 1x
-					</button>
-					<button
-						@click.stop="onClickRun(3)"
-						class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
-						:disabled="isLoading"
-					>
-						Run 3x
-					</button>
-					<button
-						@click.stop="onClickRun(5)"
-						class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
-						:disabled="isLoading"
-					>
-						Run 5x
-					</button>
+						<button
+							@click.stop="onClickRun(1)"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+							:disabled="isLoading"
+						>
+							Run 1x
+						</button>
+						<button
+							@click.stop="onClickRun(3)"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+							:disabled="isLoading"
+						>
+							Run 3x
+						</button>
+						<button
+							@click.stop="onClickRun(5)"
+							class="w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-100 transition-colors cursor-pointer disabled:opacity-50"
+							:disabled="isLoading"
+						>
+							Run 5x
+						</button>
 						<div class="border-t border-neutral-200"></div>
 					</template>
-					<button
-						@click.stop="openDelete"
-						class="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-					>
+					<button @click.stop="openDelete" class="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer">
 						Delete
 					</button>
 				</div>
