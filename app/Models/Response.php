@@ -23,12 +23,14 @@ class Response extends Model
         'content',
         'search',
         'usage',
+        'last_error',
     ];
 
     protected $casts = [
         'search' => 'array',
         'usage' => 'array',
         'flex' => 'boolean',
+        'last_error' => 'array',
     ];
 
     protected static function booted(): void

@@ -106,6 +106,11 @@ class OpenAIPromptService
             ];
         }
 
+        $error = null;
+        if (isset($response->error)) {
+            $error = json_decode(json_encode($response->error), true);
+        }
+
         return (object) [
             'content' => trim(implode("\n\n", $texts)),
             'annotations' => $annotations,
@@ -113,6 +118,7 @@ class OpenAIPromptService
             'raw' => $response,
             'status' => $response->status ?? 'completed',
             'id' => $response->id ?? null,
+            'error' => $error,
         ];
     }
 

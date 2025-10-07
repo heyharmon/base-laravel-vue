@@ -105,12 +105,23 @@ class PollOpenAIResponseJob implements ShouldQueue
 
             // Get status from OpenAI response
             $status = $fresh->status ?? 'in_progress';
+            $errorDetails = $fresh->error ?? null;
+
+            if (!empty($errorDetails)) {
+                $response->last_error = $errorDetails;
+                $response->status = $status;
+                $response->save();
+
+                $this->reissueIfFailed($response, $jobDispatcher, $openAI);
+                return;
+            }
 
             if ($status === 'completed') {
                 // Response completed: Update with final content and usage
                 $response->content = $fresh->content ?? '';
                 $response->usage = $fresh->usage ?? null;
                 $response->status = 'completed';
+                $response->last_error = null;
                 $response->save();
 
                 // Save citations/annotations
@@ -133,7 +144,10 @@ class PollOpenAIResponseJob implements ShouldQueue
                 return;
             }
 
-            if ($status === 'failed') {
+            if (in_array($status, ['failed', 'incomplete'], true)) {
+                $response->status = $status;
+                $response->save();
+
                 // Try again per requirements
                 $this->reissueIfFailed($response, $jobDispatcher, $openAI);
                 return;
@@ -173,6 +187,7 @@ class PollOpenAIResponseJob implements ShouldQueue
             $response->status = $fresh->status ?? 'in_progress';
             $response->content = '';
             $response->usage = null;
+            $response->last_error = null;
             $response->save();
 
             // Schedule the next poll
