@@ -10,6 +10,12 @@ use Illuminate\Support\Carbon;
 use App\Models\Team;
 use App\Models\Campaign;
 
+/**
+ * Deliver organization-wide visibility trends for a campaign by grouping responses
+ * into timezone-aware daily, weekly, or monthly buckets. Ensures contiguous ranges,
+ * aggregates mentions for owned organizations, and emits chart-friendly JSON used
+ * across campaign analytics.
+ */
 class OrganizationVisibilityChartController extends Controller
 {
     /**
@@ -33,11 +39,17 @@ class OrganizationVisibilityChartController extends Controller
         if (!$request->start_date || !$request->end_date) {
             $firstResponse = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                 $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
-            })->orderBy('created_at')->first();
+            })
+                ->where('status', 'completed')
+                ->orderBy('created_at')
+                ->first();
 
             $lastResponse = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                 $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
-            })->orderBy('created_at', 'desc')->first();
+            })
+                ->where('status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->first();
 
             if (!$firstResponse || !$lastResponse) {
                 return response()->json([
@@ -89,6 +101,7 @@ class OrganizationVisibilityChartController extends Controller
                 $totalResponses = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                     $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
                 })
+                    ->where('status', 'completed')
                     ->whereBetween('created_at', [$intervalStartUtc, $intervalEndUtc])
                     ->count();
 
@@ -97,6 +110,7 @@ class OrganizationVisibilityChartController extends Controller
                     $totalMentions = Response::whereHas('prompt', function ($query) use ($teamId, $campaignId) {
                         $query->where('team_id', $teamId)->where('campaign_id', $campaignId);
                     })
+                        ->where('status', 'completed')
                         ->whereHas('terms', function ($query) use ($termIds) {
                             $query->whereIn('terms.id', $termIds);
                         })
@@ -143,33 +157,37 @@ class OrganizationVisibilityChartController extends Controller
 
         while ($current <= $endDate) {
             switch ($interval) {
-                case 'daily':
-                    $intervalEnd = $current->copy()->endOfDay();
-                    $label = $current->format('M d');
-                    $next = $current->copy()->addDay();
-                    break;
-
                 case 'weekly':
                     $intervalEnd = $current->copy()->endOfWeek();
-                    $label = $current->format('M d') . ' - ' . $intervalEnd->format('M d');
-                    $next = $current->copy()->addWeek();
                     break;
 
                 case 'monthly':
                     $intervalEnd = $current->copy()->endOfMonth();
-                    $label = $current->format('M Y');
-                    $next = $current->copy()->addMonth()->startOfMonth();
                     break;
 
+                case 'daily':
                 default:
                     $intervalEnd = $current->copy()->endOfDay();
-                    $label = $current->format('M d');
-                    $next = $current->copy()->addDay();
+                    break;
             }
 
-            // Don't exceed the end date
             if ($intervalEnd > $endDate) {
                 $intervalEnd = $endDate->copy()->endOfDay();
+            }
+
+            switch ($interval) {
+                case 'weekly':
+                    $label = $current->format('M d') . ' - ' . $intervalEnd->format('M d');
+                    break;
+
+                case 'monthly':
+                    $label = $current->format('M Y');
+                    break;
+
+                case 'daily':
+                default:
+                    $label = $current->format('M d');
+                    break;
             }
 
             $intervals[] = [
@@ -178,7 +196,7 @@ class OrganizationVisibilityChartController extends Controller
                 'label' => $label
             ];
 
-            $current = $next;
+            $current = $intervalEnd->copy()->addDay()->startOfDay();
         }
 
         return $intervals;

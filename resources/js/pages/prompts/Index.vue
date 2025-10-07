@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCampaignStore } from '@/stores/campaignStore'
 import { usePromptStore } from '@/stores/promptStore'
@@ -13,7 +13,6 @@ import PromptCreateModal from '@/components/prompts/PromptCreateModal.vue'
 import GeneratePromptsModal from '@/components/prompts/GeneratePromptsModal.vue'
 import PromptToolbar from '@/components/prompts/PromptToolbar.vue'
 import PromptListItem from '@/components/prompts/PromptListItem.vue'
-import DeletePromptModal from '@/components/prompts/DeletePromptModal.vue'
 import VisibilityScore from '@/components/VisibilityScore.vue'
 import DateFilterDropdown from '@/components/DateFilterDropdown.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -45,100 +44,121 @@ const selectedPromptId = ref(null)
 // Sorting
 const sortOption = ref('default') // Default sort option
 
-// Jobs in progress by job class
-const processingJobsByClass = computed(() => jobStatusStore.processingJobsByClass)
-
 // Track active prompt jobs
 const activePromptJobs = computed(() => {
-	const promptJobClasses = ['GenerateCampaignKeywordsJob', 'GeneratePrompt', 'RunPromptJob', 'FindCompetitorsInResponseJob']
+	const promptJobClasses = ['GenerateCampaignKeywordsJob', 'GeneratePrompt', 'FindCompetitorsInResponseJob']
 	return (jobStatusStore.jobs || []).filter((job) => {
 		return promptJobClasses.some((className) => job.job_class.includes(className)) && (job.status === 'pending' || job.status === 'processing')
 	})
 })
 
-onMounted(async () => {
-        await campaignStore.fetchCampaigns(teamId.value)
-        if (campaignId.value) {
-                await campaignStore.switchCampaign(teamId.value, campaignId.value)
-        }
-        await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-        await organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
-        await usageStore.fetchUsage(teamId.value)
+// Track if any prompts have in-progress responses (queued or in_progress)
+const hasJustStartedRuns = ref(false)
+let hasJustStartedRunsResetTimer = null
+const hasInProgressResponses = computed(() => {
+	return (promptStore.prompts || []).some((p) => Array.isArray(p?.in_progress_responses) && p.in_progress_responses.length > 0)
 })
 
+// While there are in-progress responses, poll prompts + visibility to reflect completions
+let inProgressRefreshTimer = null
+
+const scheduleJustStartedRunsReset = () => {
+	if (hasJustStartedRunsResetTimer) {
+		clearTimeout(hasJustStartedRunsResetTimer)
+	}
+	hasJustStartedRunsResetTimer = setTimeout(() => {
+		hasJustStartedRuns.value = false
+		hasJustStartedRunsResetTimer = null
+	}, 5000)
+}
+
+onMounted(async () => {
+	await campaignStore.fetchCampaigns(teamId.value)
+	if (campaignId.value) {
+		await campaignStore.switchCampaign(teamId.value, campaignId.value)
+	}
+	await promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+	await organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
+	await usageStore.fetchUsage(teamId.value)
+})
+
+// Watch prompt specific jobs and refresh prompts when they complete
 watch(
 	activePromptJobs,
 	(newJobs, oldJobs) => {
 		if (oldJobs.length > newJobs.length || newJobs.length === 0) {
 			// At least one job completed, or all jobs are done
-			console.log('Jobs completed, refreshing prompts and visibility metrics')
 			promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
-			organizationStore.fetchVisibilityMetrics(teamId.value, campaignId.value)
+			organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
 		}
 	},
 	{ deep: true }
 )
 
-// Watch for job completions and refresh data
-// watch(
-// 	// () => jobStatusStore.completedJobs.length,
-// 	() => processingJobsByClass.length,
-// 	(newCount, oldCount) => {
-// 		if (newCount > oldCount) {
-// 			promptStore.fetchPrompts(teamId.value, campaignId.value)
-// 		}
-// 	}
-// )
+// Also refresh while any prompt has in-progress responses
+watch(hasInProgressResponses, (hasAny) => {
+	if (hasAny) {
+		hasJustStartedRuns.value = false
+	}
+	if (hasAny && !inProgressRefreshTimer) {
+		// Start polling for updates while responses are running
+		inProgressRefreshTimer = setInterval(() => {
+			promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+			organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
+		}, 3000)
+	} else if (!hasAny && inProgressRefreshTimer) {
+		// Stop polling once all responses complete and do a final refresh
+		clearInterval(inProgressRefreshTimer)
+		inProgressRefreshTimer = null
+		promptStore.fetchPrompts(teamId.value, campaignId.value, organizationStore.currentDateRange)
+		organizationStore.fetchCampaignVisibilityMetrics(teamId.value, campaignId.value)
+	}
+})
 
+onUnmounted(() => {
+	if (inProgressRefreshTimer) {
+		clearInterval(inProgressRefreshTimer)
+		inProgressRefreshTimer = null
+	}
+	if (hasJustStartedRunsResetTimer) {
+		clearTimeout(hasJustStartedRunsResetTimer)
+		hasJustStartedRunsResetTimer = null
+	}
+})
+
+// Watch for campaign changes
 watch(campaignId, async (newId) => {
 	if (newId) {
 		await campaignStore.switchCampaign(teamId.value, newId)
 		await promptStore.fetchPrompts(teamId.value, newId, organizationStore.currentDateRange)
-		await organizationStore.fetchVisibilityMetrics(teamId.value, newId)
+		await organizationStore.fetchCampaignVisibilityMetrics(teamId.value, newId)
 	}
 })
 
-// Track prompt deletion
-// TODO: Move prompt deletion logic to the prompt list item component
-const promptToDelete = ref(null)
-const showDeleteConfirmation = ref(false)
-
 const runPrompt = async (id, count = 1) => {
-        try {
-                await promptStore.runPrompt(id, count)
-                await usageStore.fetchUsage(teamId.value)
-                await jobStatusStore.pollTeamJobs(teamId.value)
-        } catch (error) {
-                notificationStore.addNotification({ message: error?.message || 'Unable to run prompt', type: 'error' })
-        }
-}
+	try {
+		hasJustStartedRuns.value = true
+		scheduleJustStartedRunsReset()
 
-const runAllPrompts = async (count = 1) => {
-        try {
-                await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
-                await usageStore.fetchUsage(teamId.value)
-                await jobStatusStore.pollTeamJobs(teamId.value)
-        } catch (error) {
-                notificationStore.addNotification({ message: error?.message || 'Unable to run prompts', type: 'error' })
-        }
-}
-
-const confirmDeletePrompt = (prompt) => {
-	promptToDelete.value = prompt
-	showDeleteConfirmation.value = true
-}
-
-const deletePrompt = async () => {
-	if (promptToDelete.value) {
-		await promptStore.deletePrompt(promptToDelete.value.id)
-		promptToDelete.value = null
-		showDeleteConfirmation.value = false
+		await promptStore.runPrompt(id, count)
+		await usageStore.fetchUsage(teamId.value)
+		await jobStatusStore.pollTeamJobs(teamId.value)
+	} catch (error) {
+		notificationStore.addNotification({ message: error?.message || 'Unable to run prompt', type: 'error' })
 	}
 }
 
-const cancelDelete = () => {
-	promptToDelete.value = null
-	showDeleteConfirmation.value = false
+const runAllPrompts = async (count = 1) => {
+	try {
+		hasJustStartedRuns.value = true
+		scheduleJustStartedRunsReset()
+
+		await promptStore.runAllPrompts(teamId.value, campaignId.value, count)
+		await usageStore.fetchUsage(teamId.value)
+		await jobStatusStore.pollTeamJobs(teamId.value)
+	} catch (error) {
+		notificationStore.addNotification({ message: error?.message || 'Unable to run prompts', type: 'error' })
+	}
 }
 
 const sortedPrompts = computed(() => {
@@ -193,15 +213,16 @@ const handleDateRangeChange = (dateRange) => {
 		</div>
 
 		<div class="flex flex-col space-y-6">
-                        <!-- Visibility score -->
-                        <VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
+			<!-- Visibility score -->
+			<VisibilityScore v-if="ownedOrg" :organization="ownedOrg" />
 
-                        <UsageProgress
-                                v-if="usageStore.usage"
-                                :used="usageStore.usage.responses_used"
-                                :limit="usageStore.usage.responses_limit"
-                                :label="`Responses (${usageStore.billingInterval})`"
-                        />
+			<!-- Usage -->
+			<UsageProgress
+				v-if="usageStore.usage"
+				:used="usageStore.usage.responses_used"
+				:limit="usageStore.usage.responses_limit"
+				:label="`Responses (${usageStore.billingInterval})`"
+			/>
 
 			<!-- Main Content -->
 			<div class="flex flex-col">
@@ -225,36 +246,12 @@ const handleDateRangeChange = (dateRange) => {
 
 					<!-- Active jobs message -->
 					<div
-						v-if="activePromptJobs.length > 0"
+						v-if="activePromptJobs.length > 0 || hasInProgressResponses || hasJustStartedRuns"
 						class="p-4 mb-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2"
 					>
 						<span class="animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-						<span>
-							{{ activePromptJobs.length }}
-							{{ activePromptJobs.length === 1 ? 'prompt related job is being run' : 'prompt related jobs are being run' }}
-						</span>
+						<span>Running prompt related jobs</span>
 					</div>
-
-					<!-- Jobs currently processing message -->
-					<!-- <div v-if="Object.keys(processingJobsByClass).length > 0" class="p-4 mb-6 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-						<div class="flex items-center gap-4 mb-2">
-							<span class="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-700 rounded-full"></span>
-							<span class="font-semibold">Working</span>
-						</div>
-						<div class="pl-8 space-y-1">
-							<div v-for="(jobs, jobClass) in processingJobsByClass" :key="jobClass">
-								<div class="flex items-center justify-between">
-									<span>{{ jobs[0].output }}</span>
-								</div>
-								<div v-if="jobs.length > 1" class="flex items-center justify-between">
-									<span>{{ jobs[1].output }}</span>
-								</div>
-								<div v-if="jobs.length > 2" class="flex items-center justify-between">
-									<span>{{ jobs[2].output }}</span>
-								</div>
-							</div>
-						</div>
-					</div> -->
 
 					<div v-if="sortedPrompts.length" class="space-y-4">
 						<PromptListItem
@@ -265,7 +262,6 @@ const handleDateRangeChange = (dateRange) => {
 							:jobs="jobStatusStore.jobs || []"
 							@select="showPromptDetails"
 							@run="(id, count) => runPrompt(id, count)"
-							@delete="confirmDeletePrompt"
 						/>
 					</div>
 
@@ -293,6 +289,5 @@ const handleDateRangeChange = (dateRange) => {
 		"
 	/>
 
-	<!-- Delete Confirmation Modal -->
-	<DeletePromptModal :is-open="showDeleteConfirmation" @cancel="cancelDelete" @confirm="deletePrompt" />
+	<!-- Delete confirmation is managed per-item in PromptListItem -->
 </template>

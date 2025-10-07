@@ -15,54 +15,56 @@ class OpenAIPromptService
     ];
 
     /**
-     * Send a prompt to OpenAI and parse the response.
+     * Send a prompt to OpenAI using background create so we can return quickly
+     * with a response id for polling, or the completed response if it finishes immediately.
      *
      * @param string $promptContent The prompt to send
-     * @param string|null $model Optional override model
-     * @return object Object with content, annotations and usage
+     * @param string $serviceTier Service tier: 'auto' (default) or 'flex'
+     * @return object Object with content, annotations, usage, status, and id
      */
-    public function getResponse(string $promptContent, ?string $model = null, array $options = []): object
+    public function getResponse(string $promptContent, string $serviceTier = 'auto'): object
     {
-        $startTime = microtime(true);
-        // Enforce gpt-4o for prompt runs regardless of caller input
-        $modelToUse = 'gpt-4o';
+        $modelToUse = 'gpt-5';
 
         try {
             $request = [
                 'model' => $modelToUse,
-                // 'instructions' => $this->systemInstructions(),
+                'instructions' => $this->systemInstructions(),
                 'input' => $promptContent,
                 'tools' => $this->tools,
                 'tool_choice' => 'auto',
                 'store' => true,
-                // 'reasoning' => ['effort' => 'low'], // can be 'low', 'medium', or 'high'
-                // 'text' => ['verbosity' => 'low'], // can be 'low', 'medium', or 'high'
+                // Ensure the response continues generating and is retrievable even if we close the stream early
+                'background' => true,
+                'reasoning' => ['effort' => 'low'], // 'low', 'medium', or 'high'
+                'text' => ['verbosity' => 'low'], // 'low', 'medium', or 'high'
             ];
 
-            // Support flex processing via service_tier option
-            if (($options['service_tier'] ?? null) === 'flex') {
+            if ($serviceTier === 'flex') {
                 $request['service_tier'] = 'flex';
             }
 
+            // Use non-streamed background create to immediately receive an id/status
+            // without relying on SSE event types that may change (e.g., response.queued).
             $response = OpenAI::responses()->create($request);
 
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $this->logError('OpenAI API ErrorException', $e, $promptContent, $modelToUse, $startTime);
+            $this->logError('OpenAI API ErrorException', $e, $promptContent, $modelToUse);
             throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $this->logError('OpenAI HTTP RequestException', $e, $promptContent, $modelToUse, $startTime, true);
+            $this->logError('OpenAI HTTP RequestException', $e, $promptContent, $modelToUse);
             throw $e;
         } catch (\Exception $e) {
-            $this->logError('OpenAI Prompt Service: Unexpected error', $e, $promptContent, $modelToUse, $startTime);
+            $this->logError('OpenAI Prompt Service: Unexpected error', $e, $promptContent, $modelToUse);
             throw $e;
         }
     }
 
     protected function defaultModel(): string
     {
-        // Kept for future configurability; currently unused since we enforce gpt-4o
-        return 'gpt-4o';
+        // Kept for future configurability; currently unused since we enforce gpt-5
+        return 'gpt-5';
     }
 
     /**
@@ -119,18 +121,17 @@ class OpenAIPromptService
      */
     public function retrieveResponse(string $responseId): object
     {
-        $startTime = microtime(true);
         try {
             $response = OpenAI::responses()->retrieve($responseId);
             return $this->parseResponse($response);
         } catch (\OpenAI\Exceptions\ErrorException $e) {
-            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            $this->logError('OpenAI API ErrorException (retrieve)', $e, 'N/A', 'gpt-5');
             throw $e;
         } catch (\GuzzleHttp\Exception\RequestException $e) {
-            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-4o', $startTime, true);
+            $this->logError('OpenAI HTTP RequestException (retrieve)', $e, 'N/A', 'gpt-5');
             throw $e;
         } catch (\Exception $e) {
-            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-4o', $startTime);
+            $this->logError('OpenAI Prompt Service: Unexpected error (retrieve)', $e, 'N/A', 'gpt-5');
             throw $e;
         }
     }
@@ -167,22 +168,15 @@ class OpenAIPromptService
         return $result;
     }
 
-    protected function logError(string $label, \Exception $e, string $promptContent, string $model, float $startTime, bool $withResponse = false): void
+    protected function logError(string $label, \Exception $e, string $promptContent, string $model): void
     {
-        $duration = microtime(true) - $startTime;
         $context = [
             'prompt_preview' => substr($promptContent, 0, 100) . '...',
             'model' => $model,
-            'duration_seconds' => round($duration, 2),
             'error_message' => $e->getMessage(),
             'error_code' => $e->getCode(),
             'error_type' => get_class($e),
         ];
-
-        // if ($withResponse && method_exists($e, 'hasResponse') && $e->hasResponse()) {
-        //     $context['response_status'] = $e->getResponse()->getStatusCode();
-        //     $context['response_body'] = substr((string) $e->getResponse()->getBody(), 0, 500);
-        // }
 
         Log::error($label, $context);
     }

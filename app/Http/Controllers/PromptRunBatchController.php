@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Services\JobDispatcherService;
 use App\Models\Team;
 use App\Models\Campaign;
 use App\Models\Prompt;
@@ -13,13 +12,6 @@ use App\Jobs\RunPromptJob;
 
 class PromptRunBatchController extends Controller
 {
-    protected $jobDispatcher;
-
-    public function __construct(JobDispatcherService $jobDispatcher)
-    {
-        $this->jobDispatcher = $jobDispatcher;
-    }
-
     public function store(Request $request, Team $team, Campaign $campaign): JsonResponse
     {
         $validated = $request->validate([
@@ -33,8 +25,7 @@ class PromptRunBatchController extends Controller
         $providers = $validated['providers'] ?? ['openai'];
         $count = $validated['count'] ?? 1;
         // Always use Flex pricing for batch runs
-        // $serviceTier = 'flex';
-        $serviceTier = null;
+        $serviceTier = 'flex';
 
         // Get all prompts for this team and campaign
         $prompts = Prompt::where('team_id', $team->id)
@@ -59,8 +50,7 @@ class PromptRunBatchController extends Controller
         $queued = 0;
         foreach ($prompts as $prompt) {
             for ($i = 0; $i < $count; $i++) {
-                $job = new RunPromptJob($prompt, $providers, $team->id, $campaign->id, $serviceTier);
-                $this->jobDispatcher->dispatch($prompt, $job);
+                RunPromptJob::dispatch($prompt, $providers, $team->id, $campaign->id, $serviceTier);
                 $queued++;
             }
         }

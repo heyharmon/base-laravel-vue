@@ -1,8 +1,9 @@
 <?php
 
+use App\Jobs\RunPromptJob;
 use App\Models\Prompt;
 use App\Models\Team;
-use App\Services\JobDispatcherService;
+use Illuminate\Support\Facades\Bus;
 use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -15,14 +16,14 @@ it('dispatches a job to run a prompt', function () {
 
     $prompt = Prompt::factory()->for($team)->create();
 
-    $mock = Mockery::mock(JobDispatcherService::class);
-    $mock->shouldReceive('dispatch')->once()->andReturn(['id' => 'job']);
-    $this->app->instance(JobDispatcherService::class, $mock);
+    Bus::fake();
 
     $this->postJson("/api/prompts/{$prompt->id}/run")
         ->assertStatus(200)
         ->assertJsonPath('prompt.id', $prompt->id)
-        ->assertJsonPath('job_statuses.0.id', 'job');
+        ->assertJsonPath('queued_jobs', 1);
+
+    Bus::assertDispatchedTimes(RunPromptJob::class, 1);
 });
 
 it('dispatches multiple independent jobs when multiple runs are requested', function () {
@@ -32,14 +33,12 @@ it('dispatches multiple independent jobs when multiple runs are requested', func
 
     $prompt = Prompt::factory()->for($team)->create();
 
-    $mock = Mockery::mock(JobDispatcherService::class);
-    $mock->shouldReceive('dispatch')->times(2)->andReturn(['id' => 'job']);
-    $this->app->instance(JobDispatcherService::class, $mock);
+    Bus::fake();
 
     $this->postJson("/api/prompts/{$prompt->id}/run", ['count' => 2])
         ->assertStatus(200)
         ->assertJsonPath('prompt.id', $prompt->id)
-        ->assertJson(fn (\Illuminate\Testing\Fluent\AssertableJson $json) =>
-            $json->has('job_statuses', 2)->etc()
-        );
+        ->assertJsonPath('queued_jobs', 2);
+
+    Bus::assertDispatchedTimes(RunPromptJob::class, 2);
 });

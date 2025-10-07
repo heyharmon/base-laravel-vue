@@ -135,7 +135,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 		}
 	}
 
-	async function fetchVisibilityMetrics(teamId, campaignId) {
+	async function fetchCampaignVisibilityMetrics(teamId, campaignId) {
 		if (!campaignId) {
 			console.error('Campaign ID is required')
 			return
@@ -143,7 +143,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 
 		isLoadingVisibility.value = true
 		try {
-			const params = {}
+			const params = {
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone // User's timezone
+			}
 
 			// Only add date parameters if they are not null
 			if (currentDateRange.value.startDate && currentDateRange.value.startDate !== null) {
@@ -163,6 +165,41 @@ export const useOrganizationStore = defineStore('organization', () => {
 			visibilityMetrics.value = []
 		} finally {
 			isLoadingVisibility.value = false
+		}
+	}
+
+	async function fetchCampaignVisibilityChartMetrics({ teamId, campaignId, interval = 'monthly', startDate = null, endDate = null, organizationIds = [] }) {
+		if (!teamId || !campaignId) {
+			console.error('Team ID and Campaign ID are required')
+			return []
+		}
+
+		try {
+			const params = {
+				interval,
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+			}
+
+			if (startDate) {
+				params.start_date = startDate
+			}
+
+			if (endDate) {
+				params.end_date = endDate
+			}
+
+			if (organizationIds && organizationIds.length > 0) {
+				params.organization_ids = organizationIds
+			}
+
+			const response = await api.get(`/teams/${teamId}/campaigns/${campaignId}/organization-visibility/chart`, {
+				params
+			})
+
+			return response.organizations || []
+		} catch (error) {
+			console.error('Error fetching campaign visibility chart metrics:', error)
+			return []
 		}
 	}
 
@@ -187,7 +224,7 @@ export const useOrganizationStore = defineStore('organization', () => {
 	// Function to update date range and refresh visibility data
 	function setDateRange(teamId, campaignId, dateRange) {
 		currentDateRange.value = dateRange
-		return fetchVisibilityMetrics(teamId, campaignId)
+		return fetchCampaignVisibilityMetrics(teamId, campaignId)
 	}
 
 	return {
@@ -212,8 +249,9 @@ export const useOrganizationStore = defineStore('organization', () => {
 		createOwnedOrganization,
 		updateOrganization,
 		deleteOrganization,
-		fetchVisibilityMetrics,
+		fetchCampaignVisibilityMetrics,
 		setDateRange,
-		findCompetitors
+		findCompetitors,
+		fetchCampaignVisibilityChartMetrics
 	}
 })

@@ -1,9 +1,10 @@
 <?php
 
+use App\Jobs\RunPromptJob;
 use App\Models\Prompt;
 use App\Models\Team;
 use App\Models\Campaign;
-use App\Services\JobDispatcherService;
+use Illuminate\Support\Facades\Bus;
 use Laravel\Sanctum\Sanctum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -17,12 +18,13 @@ it('returns 404 when no prompts exist', function () {
 	$user->save();
 	Sanctum::actingAs($user);
 
-	$mock = Mockery::mock(JobDispatcherService::class);
-	$this->app->instance(JobDispatcherService::class, $mock);
+	Bus::fake();
 
 	$this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/prompt-run-batch")
 		->assertStatus(404)
 		->assertJson(['message' => 'No prompts found to run']);
+
+	Bus::assertNothingDispatched();
 });
 
 it('queues independent jobs for all prompts', function () {
@@ -35,10 +37,8 @@ it('queues independent jobs for all prompts', function () {
 
 	$prompts = Prompt::factory()->count(3)->for($team)->for($campaign)->create();
 
-	$mock = Mockery::mock(JobDispatcherService::class);
+	Bus::fake();
 	$expectedJobs = $prompts->count() * 2; // count=2 below
-	$mock->shouldReceive('dispatch')->times($expectedJobs);
-	$this->app->instance(JobDispatcherService::class, $mock);
 
 	$this->postJson("/api/teams/{$team->id}/campaigns/{$campaign->id}/prompt-run-batch", ['count' => 2])
 		->assertStatus(200)
@@ -46,4 +46,6 @@ it('queues independent jobs for all prompts', function () {
 			'prompts_count' => $prompts->count(),
 			'queued_jobs' => $expectedJobs,
 		]);
+
+	Bus::assertDispatchedTimes(RunPromptJob::class, $expectedJobs);
 });

@@ -9,66 +9,72 @@ use Illuminate\Support\Carbon;
 
 class AddAdminsToAllTeams extends Command
 {
-	/**
-	 * The name and signature of the console command.
-	 *
-	 * @var string
-	 */
-	protected $signature = 'app:add-admins-to-all-teams';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'app:add-admins-to-all-teams';
 
-	/**
-	 * The console command description.
-	 *
-	 * @var string
-	 */
-	protected $description = 'Add specific users by email to all teams they are not already part of';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Add specific users by email to all teams they are not already part of';
 
-	/**
-	 * Execute the console command.
-	 */
-	public function handle()
-	{
-		$userEmails = ['derik.krauss@metrifi.com', 'ryan.harmon@metrifi.com', 'elisha.po@metrifi.com'];
-		$teams = Team::all();
-		$now = Carbon::now();
-		$addedCount = 0;
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $userEmails = [
+            'derik.krauss@metrifi.com',
+            'ryan.harmon@metrifi.com',
+            'elisha.po@metrifi.com',
+            'kaili.kaeo@metrifi.com'
+        ];
 
-		$this->info('Starting to add users to teams...');
+        $teams = Team::all();
+        $now = Carbon::now();
+        $addedCount = 0;
 
-		foreach ($userEmails as $email) {
-			$user = User::where('email', $email)->first();
+        $this->info('Starting to add users to teams...');
 
-			if (!$user) {
-				$this->error("User with email {$email} not found.");
-				continue;
-			}
+        foreach ($userEmails as $email) {
+            $user = User::where('email', $email)->first();
 
-			$this->info("Processing user {$user->id} ({$user->name}, {$email})...");
+            if (!$user) {
+                $this->error("User with email {$email} not found.");
+                continue;
+            }
 
-			$userTeamIds = $user->teams()->pluck('teams.id')->toArray();
-			$teamsToAdd = $teams->whereNotIn('id', $userTeamIds);
+            $this->info("Processing user {$user->id} ({$user->name}, {$email})...");
 
-			if ($teamsToAdd->isEmpty()) {
-				$this->info("User {$user->name} ({$email}) is already part of all teams.");
-				continue;
-			}
+            $userTeamIds = $user->teams()->pluck('teams.id')->toArray();
+            $teamsToAdd = $teams->whereNotIn('id', $userTeamIds);
 
-			foreach ($teamsToAdd as $team) {
-				$team->users()->attach($user->id, [
-					'role' => 'admin',
-					'invitation_accepted' => true,
-					'joined_at' => $now,
-					'created_at' => $now,
-					'updated_at' => $now
-				]);
+            if ($teamsToAdd->isEmpty()) {
+                $this->info("User {$user->name} ({$email}) is already part of all teams.");
+                continue;
+            }
 
-				$addedCount++;
-				$this->info("Added user {$user->name} ({$email}) to team {$team->id} ({$team->name}).");
-			}
-		}
+            foreach ($teamsToAdd as $team) {
+                $team->users()->attach($user->id, [
+                    'role' => 'admin',
+                    'invitation_accepted' => true,
+                    'joined_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now
+                ]);
 
-		$this->info("Completed. Added users to {$addedCount} team relationships.");
+                $addedCount++;
+                $this->info("Added user {$user->name} ({$email}) to team {$team->id} ({$team->name}).");
+            }
+        }
 
-		return Command::SUCCESS;
-	}
+        $this->info("Completed. Added users to {$addedCount} team relationships.");
+
+        return Command::SUCCESS;
+    }
 }

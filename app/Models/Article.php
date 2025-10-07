@@ -10,56 +10,68 @@ use App\Traits\HasVersions;
 use App\Traits\HasJobStatus;
 use App\Traits\BelongsToTeam;
 use App\Models\Campaign;
+use App\Models\TeamUsageEvent;
 
 class Article extends Model
 {
-	use HasFactory, HasJobStatus, HasVersions, BelongsToTeam;
+    use HasFactory, HasJobStatus, HasVersions, BelongsToTeam;
 
-        protected $fillable = [
-                'team_id',
-                'campaign_id',
-                'organization_id',
-                'prompt_id',
-                'current_version',
-		'title',
-		'meta_title',
-		'meta_description',
-		'schema',
-		'outline',
-		'content',
-		'perplexity_checks',
-	];
+    protected $fillable = [
+        'team_id',
+        'campaign_id',
+        'organization_id',
+        'prompt_id',
+        'current_version',
+        'title',
+        'meta_title',
+        'meta_description',
+        'schema',
+        'outline',
+        'content',
+        'perplexity_checks',
+    ];
 
-	/**
-	 * Attributes that trigger versioning.
-	 */
-	protected $versionableAttributes = ['title', 'meta_title', 'meta_description', 'schema', 'outline', 'content'];
+    protected static function booted(): void
+    {
+        static::created(function (Article $article) {
+            if (! $article->team_id) {
+                return;
+            }
 
-	/**
-	 * The version model class name.
-	 */
-	protected $versionModel = ArticleVersion::class;
+            TeamUsageEvent::record($article->team_id, TeamUsageEvent::TYPE_ARTICLE, $article->id);
+        });
+    }
 
-	public function organization(): BelongsTo
-	{
-		return $this->belongsTo(Organization::class);
-	}
+    /**
+     * Attributes that trigger versioning.
+     */
+    protected $versionableAttributes = ['title', 'meta_title', 'meta_description', 'schema', 'outline', 'content'];
 
-        public function prompt(): BelongsTo
-        {
-                return $this->belongsTo(Prompt::class);
-        }
+    /**
+     * The version model class name.
+     */
+    protected $versionModel = ArticleVersion::class;
 
-        /**
-         * Get the campaign that owns the article.
-         */
-        public function campaign(): BelongsTo
-        {
-                return $this->belongsTo(Campaign::class);
-        }
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
 
-	public function conversations(): MorphMany
-	{
-		return $this->morphMany(Conversation::class, 'conversable')->latest();
-	}
+    public function prompt(): BelongsTo
+    {
+        return $this->belongsTo(Prompt::class);
+    }
+
+    /**
+     * Get the campaign that owns the article.
+     */
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
+    }
+
+    public function conversations(): MorphMany
+    {
+        return $this->morphMany(Conversation::class, 'conversable')->latest();
+    }
 }
